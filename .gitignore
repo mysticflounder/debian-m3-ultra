@@ -1,0 +1,9 @@
+# Build artifacts and VM disk images — large, machine-specific, regenerable.
+out/
+*.ext4
+*.log
+*.deb
+*.img
+Image-*
+initrd.img-*
+vmlinuz-*
