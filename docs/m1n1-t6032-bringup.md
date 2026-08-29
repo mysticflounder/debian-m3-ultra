@@ -371,6 +371,169 @@ The m1n1 milestone is complete when:
 - [ ] Arrange a second recovery Mac or a maintainer-run first boot.
 - [ ] Review the proposed SMP and cpufreq patches before any target execution.
 
+## Audit of this plan (2026-08-29)
+
+This section records a review of the plan above against the real sources. It
+does not change the plan text. Corrections are listed in A for a follow-up
+edit.
+
+Sources checked:
+
+- m1n1 at the pinned commit `a735ea29aed4843c301d8d9665949b30a84d25df`
+  (equal to `main` on 2026-08-29);
+- `t6032.dtsi` from mainline `master`, `AsahiLinux/linux` `asahi-wip-7.2`,
+  and the Debian `linux-asahi 7.1.10-1-1` source;
+- the live ADT of this Mac Studio, read with `ioreg -p IODeviceTree`
+  (read-only; only the keys named below were printed; no device secrets);
+- every link under "Primary references" (all resolve).
+
+The `scratch/` checkouts in this repository are empty directories and
+zero-byte JSON files. They were not used.
+
+### A. Corrections to the plan text
+
+| Where | Problem | Correct statement |
+| --- | --- | --- |
+| Baselines, Linux row | `396331cc6447` is the `AsahiLinux/linux` copy of the patch. It is not on `apple-soc/dt-7.3`. | Mainline `master` and `apple-soc/dt-7.3` carry `67d9574cf8ed` ("arm64: dts: apple: Initial T603[124] (M3 Max and Ultra) device trees", committed 2026-08-01). It is not in tag `v7.2`; it is in the 7.3 merge window. The Asahi `t6032.dtsi` differs from mainline: it adds `t6031-nvme.dtsi` on die 1 and deletes the ISP nodes. State which tree is the cross-check. |
+| §6, "the loader can amend it" | m1n1 does not amend CPU nodes except `cpu-release-addr` and pruning. Only GPU OPPs are touched (`kboot_gpu.c:634`). | Whatever is missing from the source DTS reaches Linux unchanged. See E. |
+| §5, ISP example | The board DTS does not remove the ISP. | Mainline `t6031-die0.dtsi:381` leaves `isp` with `status = "disabled"`. Only the Asahi `t6032.dtsi` (lines 357-360) deletes `isp` and its DARTs. The ADT of this machine has no `isp` node, so `isp_init` returns 0 early (`isp.c:67-68`). The `case T6031 ... T6034` range in `isp.c:97` includes 0x6032 but is not reached here. |
+| Immediate first sprint, "Obtain a redacted T6032 ADT dump" | The ADT is available now on this machine. | macOS exposes the full ADT read-only through `ioreg -p IODeviceTree`. See B. |
+| §2, "the larger secondary-stack allocation fits the m1n1 layout" | Secondary stacks are not static. | `smp.c:138` allocates each stack with `memalign` when the CPU starts. Eight more CPUs cost 8 × 64 KiB of heap. |
+
+### B. ADT evidence read from macOS
+
+All values below come from `ioreg -p IODeviceTree` on this machine. Nothing
+was written to hardware.
+
+| ADT item | Value | Consequence |
+| --- | --- | --- |
+| `/target-type` | `J575d` | `payload.c:293-301` derives `apple,j575d`, which is the root compatible of `t6032-j575d.dts`. DTB selection works without change. |
+| `/chosen/chip-id` | `0x6032` | `smp_start_secondaries` hits `default` and returns (`smp.c:303-305`): no secondary CPU starts today. `cpufreq_get_clusters` returns NULL (`cpufreq.c:415-417`). |
+| `/chosen/board-id` | `0x44` | — |
+| `/cpus` | 32 nodes, `cpu0`..`cpu31` | Matches the 32-node mainline DTS. |
+| `cpu16` `reg` | `0x800` | Bit 11 set = die 1. `cpu31` `reg` = `0xa05` decodes to die 1, cluster 2, core 5 and matches its own `die-id = 1`, `cluster-id = 10`. The decoder in `smp.c:23-25` is correct for T6032. |
+| `cpu-impl-reg` | die 0: `0x210050000`; die 1: `0x2210050000` | Die 1 = die 0 + `0x2000000000` = `PMGR_DIE_OFFSET` (`pmgr.h:8`). |
+| `cpu4` `state` | `running` | macOS boots on cpu4. m1n1 finds the boot CPU by this field. |
+| `/arm-io` compatible, `ranges` | `arm-io,t6031`; child `0x0` maps to `0x200000000` | — |
+| `/arm-io/uart0` `reg` | `0x191200000`, absolute `0x391200000` | Equals `EARLY_UART_BASE` for T6031/T6034 (`soc.h:54-55`) and `serial0@391200000` in `t6031-die0.dtsi:532`. |
+| `/arm-io/pmgr` compatible | `pmgr1,t6031` | — |
+| `/arm-io/mcc` compatible | `mcc,t6031` | Dispatch selects `mcc_init_m3` → `mcc_init_t6031`. See C. |
+| `/arm-io/apcie0`, `apcie1` compatible | `apcie,t6031` | `pcie.c:303` selects the T6031 path. |
+| `/arm-io/isp` | absent | See A. |
+| die-1 node names | `die1-nub-spmi0`..`die1-nub-spmi4` | Die-1 SPMI nodes carry a `die1-` prefix. There is no `die1-pmgr` or `die1-mcc`; MCC lists both dies in one `reg`. |
+
+### C. New finding: `mcc_init_m3` miscounts the T6032 MCC instances
+
+`/arm-io/mcc` `reg` has 20 entries of 16 bytes:
+
+| Index | Base | Size | Meaning |
+| --- | --- | --- | --- |
+| 0 | `0x903c0000` | `0x20000` | header |
+| 1 | `0x904d0000` | `0x149c` | header |
+| 2 | `0x92818000` | `0x4000` | header, die 0 |
+| 3 | `0x2092818000` | `0x4000` | header, die 1 |
+| 4–11 | `0x20000000` .. `0x2e000000` | `0x2000000` | 8 MCC instances, die 0 |
+| 12–19 | `0x2020000000` .. `0x202e000000` | `0x2000000` | 8 MCC instances, die 1 |
+
+`mcc_init_m3` sets `reg_offset = 3` and computes
+`mcc_count = reg_len / 16 - reg_offset` (`mcc.c:406-421`). On this ADT that
+is 17, clamped to `MAX_MCC_INSTANCES = 16`. The result:
+
+- entry 3, a 16 KiB block, is treated as an MCC instance; its plane, global,
+  and DCS offsets (`+0x100000`, `+0x400000`) fall outside the block;
+- entry 19, a real die-1 instance, is dropped.
+
+`mcc_enable_cache()` runs at kernel handoff (`kboot.c:2909`) and writes
+`PLANE_CACHE_ENABLE` to every instance (`mcc.c:183`). This is an unknown MMIO
+write and violates the safety invariants. The hypothesis in the row "Memory
+controller" is false. The fix belongs in the patch series (§9) before any
+hardware run.
+
+The assumption that a T6031 ADT has 3 header entries was not checked against a
+T6031 ADT; it is inferred from `reg_offset = 3` working on M3 Max.
+{{NEEDS_PROOF}}
+
+### D. New finding: `kboot` cannot hand off the mainline DTS today
+
+`dt_set_cpus` counts `cpu@` nodes in FDT order and bails when
+`cpu > MAX_CPUS` (`kboot.c:561-562`). The mainline `t6032.dtsi` has 32 nodes,
+so the loop bails at the 26th. A "24 CPUs first" boot is not possible. Raising
+`MAX_CPUS` is a prerequisite for any boot, not only for the 32-CPU milestone.
+The comparison is `>` where `>=` is meant; it is harmless today because
+`smp_is_alive` is bounds-checked (`smp.c:502-504`).
+
+### E. New finding: die-1 CPU nodes in the merged DTS are incomplete
+
+`t6032.dtsi:90-265` (die-1 CPUs `cpu_e10`..`cpu_p35`) have no
+`operating-points-v2`, no `capacity-dmips-mhz`, and no `performance-domains`.
+Die-0 CPUs have all three (`t6031-base.dtsi:86-88`). T6022's die-1 CPUs have
+all three (`t6022.dtsi:91-93`). The `cpufreq_e_die1`, `cpufreq_p0_die1`, and
+`cpufreq_p1_die1` nodes exist in the FDT (from `t6031-dieX.dtsi` under
+`&die1`) but nothing references them. This part of the file is identical in
+mainline, `asahi-wip-7.2`, and Debian 7.1.10.
+
+Consequences in Linux:
+
+- `arch_topology.c:311,356`: capacity data is discarded for all CPUs when one
+  CPU lacks it. All 32 CPUs get capacity 1024, so the scheduler sees E-cores
+  and P-cores as equal.
+- `apple-soc-cpufreq.c:216` reads `performance-domains` in policy init. The
+  die-1 clusters get no cpufreq policy and stay at the p-state m1n1 leaves.
+
+The merged series was written without T6032 hardware; its commit message
+infers the design "judging by the advertised memory bandwidth". A DTS
+follow-up that copies the T6022 pattern is a candidate hardware-free
+contribution. Whether maintainers accept it untested is unknown.
+{{UNVALIDATED}}
+
+### F. Hypothesis status
+
+Update of the table "What is known and what must be measured":
+
+| Row | Status |
+| --- | --- |
+| SoC ID / early UART | Confirmed by ADT `uart0` `reg`. |
+| CPU capacity | Confirmed necessary; see D. Stack allocation is heap; see A. |
+| CPU start | Die offset confirmed by `cpu-impl-reg`. The `0x88000` start offset is not in the ADT. {{NEEDS_PROOF}} |
+| CPU clusters | Bases are not in the ADT; m1n1 hardcodes them. The DTS corroborates them: `cpufreq@210e20000`, `@211e20000`, `@212e20000` = base + `0x20000` (`t6031-dieX.dtsi:9-22`), and die 1 `ranges` map `0x2_00000000` to `0x22_00000000` (`t6032.dtsi:303-313`). {{NEEDS_PROOF}} |
+| Memory controller | False. See C. |
+| PCIe | Confirmed by ADT compatible `apcie,t6031`. |
+| CPU workarounds | MIDR is not in the ADT. The ADT CPU compatibles are `apple,sawtooth` and `apple,everest`. Precedent: T6002 and T6022 have no entries of their own in `chickens.c:136-147` and run on the T6001/T6021 MIDRs. {{NEEDS_PROOF}} |
+| Device tree | Both dies and all 32 CPUs are present. Die-1 CPU nodes are incomplete; see E. |
+
+### G. Plan claims verified as written
+
+| Claim | Evidence |
+| --- | --- |
+| m1n1 and installer pins | Both equal the current `main` heads on 2026-08-29. |
+| `soc.h` lacks T6032 | `soc.h:31-37` (also defines T6040, T6041, T6050, T6051). |
+| `MAX_CPUS` 24, `MAX_EL3_CPUS` 4, IDs ≥ bound dropped | `smp.h:9-10`, `smp.c:316-318`. |
+| T6031/T6034 start case, `0x88000`, per-die offset | `smp.c:21`, `smp.c:295-301`, `smp.c:157`. |
+| T6031 three clusters, Ultra tables six | `cpufreq.c:352-373`. |
+| `MAX_EL3_CPUS` is a separate EL3-only constraint | `smp.c:121` applies it only when `has_el3()`. M3 has no EL3. |
+| `reg` bit layout core 0-7, cluster 8-10, die 11-14 | `smp.c:23-25`; the ADT values decode correctly. |
+| `uart.c` runtime selection | `uart.c:22-34` tries `/arm-io/uart6/debug-console`, then `/arm-io/uart0`, and reads `reg`. |
+| Payload target-type check | `payload.c:293-301` builds `apple,` + lowercase `target-type`; `payload.c:352` errors when no DTB matches. |
+| PSCI via UEFI Runtime Services | Stated in the Asahi 7.2 progress report. |
+| SPMI and DebugUSB paths exist | `spmi.c`, `dockchannel_uart.c`, `usb.c`. |
+| Per-SoC debug image | `config.h:22` (`//#define TARGET T8103`) selects `EARLY_UART_BASE` in `soc.h:39-80`. T6032 needs a line in the `T6034 || T6031` branch. |
+
+### H. Housekeeping
+
+- `scratch/`, `scratch-upstream.json`, `m1n1-tree.json`, and
+  `t6032-history.json` are empty placeholders. They are untracked and not in
+  `.gitignore`.
+- kisd runs on a device that itself runs Asahi Linux (kisd README). It is one
+  more hardware dependency for the proxy path.
+- `lore.kernel.org` sits behind a JavaScript challenge for plain HTTP clients;
+  patchew serves the same series.
+
+### I. Not verified
+
+- The MIDR part numbers of this chip.
+- The T6031 ADT MCC header count (see C).
+- The `0x88000` CPU start offset and the six cluster bases on T6032.
+
 ## Primary references
 
 - [m1n1 source](https://github.com/AsahiLinux/m1n1/tree/a735ea29aed4843c301d8d9665949b30a84d25df)
