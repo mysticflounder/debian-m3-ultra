@@ -98,6 +98,80 @@ script checks for a running build and tells you what to do instead of letting
 QEMU print a lock error. `--peek` uses `-snapshot`, so writes are discarded — but
 a filesystem being written by another VM can read back stale or inconsistent.
 
+### `scripts/bench.c` and `scripts/bench-vm.sh`
+A matched host/guest microbenchmark: integer throughput and memory bandwidth,
+same source, same compiler family, so guest numbers can be compared with host
+numbers directly. It answers the question that decides this project — whether a
+VM runs native binaries close enough to full speed.
+
+On the host:
+
+```bash
+gcc-16 -O2 -pthread -o /tmp/bench scripts/bench.c
+/tmp/bench 1
+/tmp/bench 8
+```
+
+In the guest, put the source on the build disk first, then:
+
+```bash
+./scripts/bench-vm.sh
+```
+
+Or run it by hand from a VM shell, where `bench.c` sits on `/dev/vdb`:
+
+```sh
+mkdir -p /build && mount /dev/vdb /build && cd /build
+gcc -O2 -pthread -o /tmp/bench bench.c && /tmp/bench 1 && /tmp/bench 8
+```
+
+Measured host baseline (Mac Studio M3 Ultra, macOS 26.6.2, GCC 16):
+
+| threads | int Gops | mem GiB/s |
+|---|---|---|
+| 1 | 1.78 | 29.25 |
+| 8 | 12.92 | 29.00 |
+
+The benchmark deliberately avoids disk and network, which are the two paths
+that are *not* native under QEMU. Measure those separately.
+
+**Warning.** Do not write to a disk image while a VM has it open. QEMU's lock
+lives on the macOS side and a Linux container mounting the same file cannot see
+it. Two writers will corrupt the filesystem.
+
+## Contributing upstream
+
+A goal of this project is to get work merged upstream. Two projects, two models:
+
+| Target | Project | Model |
+|---|---|---|
+| `T6032` bring-up — the actual gap | m1n1 | GitHub, takes pull requests |
+| Device trees, drivers | Linux | **Email patches, not pull requests** |
+
+`MAINTAINERS`, `ARM/APPLE MACHINE SUPPORT`:
+
+```
+M:  Sven Peter <sven@kernel.org>
+M:  Janne Grunau <j@jannau.net>
+L:  asahi@lists.linux.dev
+L:  linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+T:  git https://github.com/AsahiLinux/linux.git
+```
+
+Rules that apply to every patch: author against a clean mainline or
+`asahi-soc/for-next` tree, never against the Debian source package, which
+carries Debian's own patches; one logical change per patch; a `Signed-off-by:`
+line under the DCO; `scripts/checkpatch.pl --strict` clean; recipients from
+`scripts/get_maintainer.pl`; `b4` to send and track a series.
+
+Maintainers require patches to be tested on the hardware. Nothing
+`t6032`-specific is submittable from a machine that cannot boot it.
+
+Hardware-free contributions that *are* possible: device tree schema fixes via
+`make ARCH=arm64 CHECK_DTBS=y`, checkpatch cleanups, build fixes, and
+documentation. Note that `dtschema` is not packaged in Debian sid — there is no
+`python3-dtschema` — so install it with `pip` in a virtualenv.
+
 ## Notes
 
 - Do not build on a bind mount from `/Users`. APFS is case-insensitive and the kernel
