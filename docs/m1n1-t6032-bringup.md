@@ -2,9 +2,13 @@
 
 Status: planning baseline, 2026-08-29
 
-Target hardware: Mac Studio (M3 Ultra), Apple model `Mac15,14`, board
+Primary target: Mac Studio (M3 Ultra), Apple model `Mac15,14`, board
 `J575dAP`, SoC `T6032`, 32 CPUs (8 efficiency and 24 performance cores),
 two dies.
+
+Secondary target: M5 Max. Its exact model, board target, SoC ID, CPU topology,
+ADT layout, and recovery/test hardware are not yet recorded. Nothing in this
+plan assumes that a T6032 register address or compatibility is valid on M5 Max.
 
 ## Objective
 
@@ -18,21 +22,38 @@ is not a Debian installer and does not include speculative kernel drivers.
 m1n1 provides the boot and hardware-enablement layer; Linux drivers remain a
 separate workstream.
 
+## Target strategy
+
+Build reusable mechanisms where the firmware evidence supports them, then keep
+small target-specific data and quirks:
+
+- shared work: CPU-count bounds, topology validation, ADT parsing helpers,
+  payload identity checks, safe timeouts, evidence capture, and test tooling;
+- T6032/J575d work: CPU-start selection, six-cluster initialization, the MCC
+  register-list correction, and T6032 device-tree completion;
+- M5 Max work: first capture its real ADT and identifiers, then add only the
+  target data or code proven necessary by that evidence.
+
+Passing a test on either target does not validate the other. Every hardware log
+and upstream commit must name the exact model, board target, and SoC ID.
+
 ## Baselines
 
-Record and pin all three inputs before implementation, then refresh them before
+Record and pin all inputs before implementation, then refresh them before
 submitting anything upstream:
 
 | Component | Planning baseline | Purpose |
 | --- | --- | --- |
 | m1n1 | `a735ea29aed4843c301d8d9665949b30a84d25df` | Source to modify |
-| Linux Apple SoC device tree | `396331cc6447` in `apple-soc/dt-7.3` | T6032 topology and address cross-check |
+| Mainline Linux Apple SoC device tree | `67d9574cf8ed1c81c472b932a9d9819f47fb5286` | Initial T603x topology in the Linux 7.3 merge window; no M3 cpufreq integration |
+| Asahi downstream Linux | `bdb78c2fe5e6e47332c7e0a3df470a0cc352995d` (`asahi-wip-7.2`) | Downstream M3 cpufreq and OPP reference; T6032 die 1 is incomplete |
 | Asahi installer | `f0469cea0899f3efed8efead604174c7a53c4451` | Installation dependency only; not an initial target |
 
-The accepted initial Linux series already describes T6032's 32 CPUs, two dies,
-AIC, power-state controllers, UART, pinctrl, I2C, watchdog, and boot
-framebuffer. The m1n1 work should consume that knowledge, not invent a second
-board description.
+The mainline initial series describes T6032's 32 CPUs, two dies, AIC,
+power-state controllers, UART, pinctrl, I2C, watchdog, and boot framebuffer.
+It does not contain the downstream M3 CPU OPP/cpufreq integration. Mainline,
+Asahi downstream, and Debian source observations must therefore be labeled by
+tree and revision instead of being combined into one "merged DTS" claim.
 
 ## Safety invariants
 
@@ -55,21 +76,27 @@ The first target execution after that gate must be a tethered or maintainer-run
 diagnostic payload. Linux, its DTB, and the initramfs stay in RAM; the initramfs
 contains no storage assembly or filesystem-writing services.
 
+On T6032, no native Linux handoff through `kboot_boot()` is allowed until the
+MCC register-list bug described below is fixed or cache enablement is safely
+disabled. A RAM-only root filesystem prevents storage writes; it does not make
+incorrect MMIO writes safe.
+
 ## What is known and what must be measured
 
 | Area | Established from current sources | Hypothesis requiring ADT or hardware evidence |
 | --- | --- | --- |
-| SoC ID | `src/soc.h` defines T6030, T6031, and T6034, but not T6032 | T6032 can share the T6031/T6034 early-UART path |
-| CPU capacity | `src/smp.h` caps m1n1 at 24 CPUs, and `src/smp.c` drops ADT CPUs whose ID exceeds the bound; T6032 exposes 32 | Raising the bound has no hidden 32-bit bitmap or layout limit; the separate four-CPU EL3 limit remains valid |
-| CPU start | `src/smp.c` has a T6031/T6034 start-register case and already applies a per-die PMGR offset | T6032 uses the same `0x88000` start offset on both dies |
-| CPU clusters | `src/cpufreq.c` lacks T6032; T6031 has three clusters and existing Ultra tables demonstrate explicit six-cluster/two-die layouts | T6032 uses T6031 p-state semantics at the six expected die-relative register blocks |
-| Memory controller | `src/mcc.c` selects `mcc,t6031` by ADT compatibility and has generic multi-die handling | T6032 firmware advertises a compatible layout needing no new code |
-| PCIe | `src/pcie.c` selects `apcie,t6031` by ADT compatibility | T6032 firmware advertises the same compatible and register contract |
-| CPU workarounds | `src/chickens.c` selects core workarounds from CPU identity and has existing T6030/T6031 M3 core initialization | T6032 uses identical Everest/Sawtooth MIDRs and feature behavior |
-| Device tree | Linux T6032 DTS has both dies and all CPU nodes | The final runtime FDT retains correct OPP, capacity, performance-domain, interrupt, and NUMA/topology data for die 1 |
+| SoC identity and UART | `src/soc.h` lacks T6032. The live ADT reports target `J575d`, chip `0x6032`, and `uart0` absolute address `0x391200000`, matching the T6031/T6034 early-UART base | The compile-time target definition and runtime ADT path both work after adding T6032 |
+| CPU capacity | `src/smp.h` caps m1n1 at 24 CPUs; `src/smp.c` drops larger IDs; `kboot.c` cannot process a 32-node FDT. Secondary stacks are heap allocations | Raising the bound has no hidden mask or heap limit; the separate four-CPU EL3 limit remains unchanged |
+| CPU start | The live ADT confirms 32 dense CPU IDs, the current `reg` decoder, and the `0x2000000000` per-die PMGR offset | T6032 uses the T6031 `0x88000` CPU-start offset; this value is not exposed by the ADT |
+| CPU clusters | `src/cpufreq.c` lacks T6032. Downstream DTS addresses corroborate six die-relative blocks | T6032 uses T6031 p-state semantics and the six candidate bases below |
+| Memory controller | The live ADT advertises `mcc,t6031` but contains four header/register blocks followed by 16 MCC instances. Current `mcc_init_m3()` starts at entry 3, selects the wrong block, and drops the last real instance | Whether the preferred fix is a T6032 offset of 4 or structural register-list parsing; a T6031 ADT is needed to preserve that path |
+| PCIe | The live ADT advertises `apcie,t6031`, so m1n1 selects `regs_t6031` | T6032 has the same register contract, hard-coded offsets, tunables, and PHY behavior; dispatch alone does not prove this |
+| CPU workarounds | ADT CPUs report `apple,sawtooth` and `apple,everest`; m1n1 selects workarounds from runtime CPU identity | T6032 MIDRs and feature behavior match the existing T6031 path |
+| Device tree | Mainline has all 32 CPUs but no M3 cpufreq integration. Asahi/Debian downstream add die-0 OPP/capacity/performance domains but omit them on die 1 | Verified T6032 OPP values and a schema-valid downstream die-1 completion; upstream mainline needs the broader M3 DVFS series, not a die-1-only patch |
+| M5 Max | Selected as the secondary project target | All hardware identity, topology, register, compatibility, recovery, and enablement claims await its own evidence capture |
 
-Candidate CPU frequency register blocks, to be checked against a real ADT
-before coding, are:
+Candidate CPU frequency register blocks, to be corroborated from source and
+validated safely on hardware before any write, are:
 
 | Cluster | Candidate base |
 | --- | --- |
@@ -81,20 +108,29 @@ before coding, are:
 | die 1 PCPU 1 | `0x2212e00000` |
 
 These addresses are a review aid derived from the existing T6031 and other
-dual-die tables. They are not permission to touch those registers until the
-ADT and a maintainer familiar with T603x confirm them.
+dual-die tables. The T6032 ADT does not expose them directly. They are not
+permission to touch those registers until maintainers confirm the derivation
+and read-only hardware evidence validates it.
 
 ## Deliverables
 
 1. A small, reviewable m1n1 patch series adding T6032 support without unrelated
    refactoring.
-2. A reproducible build manifest recording compiler, m1n1 revision, config,
+2. Shared, synthetic ADT/FDT fixtures that exercise 32 CPUs, multiple dies,
+   register-list parsing, target identity, and boundary failures without
+   hardware.
+3. A sanitized, reproducible ADT inventory tool and evidence snapshot for each
+   target. Raw dumps containing device identifiers are not deliverables.
+4. A reproducible build manifest recording compiler, m1n1 revision, config,
    payload hashes, Linux revision, DTB, and initramfs.
-3. A read-only diagnostic payload and serial/proxy capture procedure.
-4. Evidence for every reused compatibility or register layout.
-5. A hardware validation report covering all 32 CPUs, both dies, repeated
-   boots, and clean handoff to Linux.
-6. Upstream pull requests, revised from maintainer feedback.
+5. A purpose-built, read-only diagnostic initramfs and serial/proxy capture
+   procedure. This supplements rather than replaces Claude's completed,
+   bootable QEMU/HVF Debian image.
+6. A mandatory T6032 MCC correction and a separately scoped Linux DTS/binding
+   contribution for downstream die-1 CPU performance data.
+7. Hardware validation reports covering the exact target identity, every CPU
+   and die, repeated boots, and clean handoff to Linux.
+8. Upstream pull requests, revised from maintainer feedback.
 
 Not in the initial scope:
 
@@ -112,11 +148,16 @@ Not in the initial scope:
   exact board, recovery limitation, and proposed minimal patch split.
 - Ask whether unpublished T6032 m1n1 changes, ADT dumps, or a maintainer-owned
   test machine already exist.
-- Ask for confirmation of the CPU start offset, early UART, and CPU-frequency
-  register map. Keep all unconfirmed values marked as hypotheses.
+- Share the sanitized live T6032 ADT evidence and ask for confirmation of the
+  CPU start offset, CPU-frequency register map, and MCC fix design. Request a
+  T6031 ADT register list so the existing path is not broken.
 - Decide who can execute the first hardware test. Prefer a maintainer with a
   disposable/recoverable T6032 environment until this machine has a recovery
   host.
+- Collect the M5 Max inventory with the
+  [read-only local-agent prompt](m5-max-inventory-agent-prompt.md). Keep its
+  source baselines, hypotheses, patches, and hardware logs distinct from T6032
+  until shared behavior is proven.
 
 Exit gate: no known duplicate series, and a named safe path exists for the
 first hardware run.
@@ -131,6 +172,10 @@ first hardware run.
   universal image.
 - Enable warnings-as-errors where supported and retain the map file, ELF,
   stripped binary, symbols, and checksums.
+- Record dependency repository snapshots, package versions, container/toolchain
+  image digests, and exact commands. The existing floating `apt`-based QEMU
+  harness is useful for exploration but does not satisfy this reproducibility
+  gate.
 - Add a CI/static check that enumerates every `MAX_CPUS` consumer and every
   T603x `switch` so a new SoC cannot be partly supported unnoticed.
 
@@ -141,36 +186,45 @@ the artifact manifest is sufficient for another developer to reproduce them.
 
 Expected source areas:
 
-- `src/soc.h`: define `T6032` and, after confirmation, place it in the correct
-  early-UART mapping.
+- `src/soc.h`: define `T6032` and use the ADT-confirmed T6031/T6034 early-UART
+  base.
 - `src/uart.c`: verify that runtime selection finds the real T6032 ADT
   `uart6/debug-console` or `uart0` node and uses its `reg`, independent of the
   compile-time debug base.
 - `src/smp.h`: raise `MAX_CPUS` from 24 to at least 32.
+- `src/kboot.c`: change the CPU-node limit check from `>` to `>=` and prove a
+  32-node FDT completes without pruning or aborting merely because of the old
+  bound.
 - every use of `MAX_CPUS`: audit arrays, loops, CPU-ID validation, stack
   allocation, spin tables, printf formats, and masks.
 
 Do not assume that increasing the array bound is sufficient. Prove that no
 CPU-set representation uses a 32-bit value in a way that loses CPU 31, that
 logical IDs are dense or correctly mapped, and that the larger secondary-stack
-allocation fits the m1n1 layout. `MAX_EL3_CPUS`, currently four, is a separate
-constraint for the EL3 path; document why normal EL2 bring-up does or does not
-touch it instead of raising it mechanically.
+heap demand is available. Secondary stacks are allocated with `memalign`; eight
+additional CPUs require 512 KiB, not a larger static image section.
+`MAX_EL3_CPUS`, currently four, is a separate constraint for the EL3 path;
+document why normal EL2 bring-up does or does not touch it instead of raising it
+mechanically.
 
 Hardware-free tests:
 
 - compile-time assertions for array lengths and CPU-mask widths;
 - a fixture or host-side test containing all 32 T6032 CPU nodes;
 - boundary tests for CPU IDs 0, 23, 24, and 31;
-- inspection of the link map for overlap or unexpected image growth.
+- tests that reject a 33rd node before indexing any fixed-size storage;
+- a kboot test proving all 31 non-boot CPU nodes receive valid, unique release
+  addresses while the boot CPU is preserved without requiring one; and
+- heap-budget and allocation-failure tests for secondary stacks.
 
-Exit gate: the image represents all 32 CPUs without truncation, overflow, or
-layout overlap.
+Exit gate: the image and kboot FDT path represent all 32 CPUs without
+truncation, overflow, accidental pruning, or heap failure.
 
 ### 3. Bring up secondary CPUs on both dies
 
-- Add T6032 to the CPU-start path in `src/smp.c` only after confirming the PMGR
-  start-register offset from ADT or maintainer hardware evidence.
+- Add T6032 to the CPU-start path in `src/smp.c` only after confirming the
+  `0x88000` start-register offset from maintainer source or hardware evidence;
+  the ADT confirms the per-die offset but not this register offset.
 - Preserve the existing per-die offset logic; avoid copying a second complete
   bring-up routine for die 1.
 - Instrument enumeration and release with logical CPU ID, affinity/MPIDR,
@@ -184,6 +238,9 @@ layout overlap.
 - Confirm whether firmware has already initialized die-to-die transport and
   power domains. Do not add D2D register writes without evidence.
 
+An SMP-only diagnostic may return to the m1n1 shell, but no Phase 3 test image
+may expose a path to native kboot until the mandatory Phase 4 MCC gate passes.
+
 First hardware success criteria:
 
 - m1n1 retains console or proxy control;
@@ -196,7 +253,42 @@ Abort immediately on an unknown SoC/board identity, a computed address outside
 the confirmed PMGR windows, loss of console, repeated watchdog reset, or any
 sign that firmware state differs from the captured ADT.
 
-### 4. Initialize the six CPU clusters conservatively
+### 4. Correct T6032 MCC enumeration before kernel handoff
+
+The live T6032 ADT `/arm-io/mcc` node has 20 register entries: four
+non-instance blocks at indices 0-3, eight 32 MiB MCC instances for die 0 at
+4-11, and eight for die 1 at 12-19. It reports `mcc,t6031`, four planes per
+MCC, and four DCS channels per MCC.
+
+Current `mcc_init_m3()` uses `reg_offset = 3`, computes 17 instances, clamps
+the result to 16, treats the 16 KiB entry 3 as an MCC, and omits the real entry
+19. `mcc_enable_cache()` later writes the cache-enable register for every
+selected plane during `kboot_boot()`.
+
+For the misclassified entry, the first plane-0 write at `base + 0x1c00` is
+inside its 16 KiB range but targets an unproven register. Plane 1-3 addresses
+using the `0x40000` stride, and the `0x100000` global and `0x400000` DCS
+offsets, are outside that range. This is a mandatory safety fix, not an optional
+compatibility cleanup.
+
+Implementation requirements:
+
+- preserve a T6031 fixture or ADT capture before changing its working offset;
+- choose with maintainers between an explicit T6032 offset of 4 and structural
+  parsing that selects only register windows large enough for the declared
+  plane/global/DCS layout;
+- require exactly the expected number of instances and reject, rather than
+  clamp, an unexpected layout;
+- retain each ADT register size and bounds-check every derived MMIO range;
+- add a host-side 20-entry T6032 fixture proving entries 4-19 are selected in
+  order and no MMIO operation is performed by the parser; and
+- make MCC initialization or kboot fail closed when validation fails.
+
+Exit gate: the synthetic fixture selects all 16 real instances, T6031 behavior
+is preserved, and no T6032 native kernel handoff can reach cache enablement
+with an unvalidated register list.
+
+### 5. Initialize the six CPU clusters conservatively
 
 - Add a T6032 cluster table in `src/cpufreq.c` after validating the six bases.
 - Start from T6031 p-state limits and feature flags only where register-level
@@ -212,10 +304,10 @@ Exit gate: all six clusters initialize once, report plausible values, and boot
 Linux without unexplained frequency, thermal, or stability asymmetry between
 dies.
 
-### 5. Audit compatibility-driven subsystems
+### 6. Audit compatibility-driven subsystems
 
-For `src/mcc.c`, `src/pcie.c`, `src/chickens.c`, SPMI, and any early serial or
-DebugUSB path:
+For `src/pcie.c`, `src/chickens.c`, SPMI, and any early serial or DebugUSB
+path not already covered by the mandatory MCC work:
 
 1. capture the relevant ADT compatibles, register ranges, revisions, and CPU
    MIDRs;
@@ -225,39 +317,66 @@ DebugUSB path:
    valid implementation.
 
 Absence of a literal `T6032` case is not itself a bug when dispatch is based on
-an ADT compatible or MIDR. Conversely, adding T6032 to a broad numeric range is
-not proof that the hardware block exists. For example, ISP support is not a
-bring-up requirement when the board DTS deliberately removes the block.
+an ADT compatible or MIDR. Conversely, selecting the T6031 PCIe implementation
+from `apcie,t6031` confirms dispatch only; register geometry, hard-coded
+offsets, tunables, and PHY behavior remain unverified until checked
+field-by-field. The live T6032 ADT has no ISP node, so do not add an ISP case or
+infer its presence from a numeric SoC range.
+
+Repeat this audit independently for M5 Max. A shared compatible is evidence to
+investigate reuse, not permission to inherit a T6032 conclusion.
 
 Exit gate: each reused subsystem has recorded evidence, and each new special
 case is tied to a demonstrated mismatch.
 
-### 6. Validate the device-tree handoff
+### 7. Complete and validate the device-tree handoff
 
-- Capture both the firmware ADT view used by m1n1 and the final FDT received by
-  Linux.
-- Compare CPU count, `reg`/MPIDR values, enable method, cache hierarchy,
-  interrupt topology, die affinity, reserved memory, MMIO ranges, and board
-  compatibles.
-- Specifically inspect die-1 CPU nodes for OPP references,
-  `capacity-dmips-mhz`, and performance-domain bindings. The current source DTS
-  warrants checking, but the runtime FDT is authoritative because the loader
-  can amend it.
-- Validate that the selected DTB is T6032/J575d and fail closed on a board
-  mismatch. Require the genuine J575 board compatible together with
-  `apple,t6032` and `apple,arm-platform`; never relabel a T6031 payload DT.
-- Exercise m1n1's payload target-type rejection explicitly. Confirm that the
-  kboot handoff neither prunes CPUs 24-31 nor emits a duplicate or missing
-  `cpu-release-addr` for any surviving CPU node.
-- Check U-Boot's generic Apple target before proposing board-specific U-Boot
-  code; the intended difference should remain in m1n1 and DT data.
+m1n1 updates `cpu-release-addr` and prunes dead CPUs and their topology/AIC
+references. It does not synthesize missing CPU OPP, capacity, or performance
+domain properties. Keep the two Linux baselines separate:
 
-Exit gate: the kernel sees an internally consistent 32-CPU, two-die topology
-and no DT validation warnings relevant to the enabled nodes.
+- mainline commit `67d9574cf8ed` has the initial T603x topology but no M3 CPU
+  OPP/cpufreq integration on either die;
+- Asahi downstream and Debian `linux-asahi 7.1.10-1-1` add the M3 performance
+  data and cluster controllers for die 0, while T6032's die-1 CPU nodes omit
+  `operating-points-v2`, `capacity-dmips-mhz`, and `performance-domains`.
 
-### 7. Boot a diagnostic Linux payload from RAM
+In the downstream tree, partial capacity data makes arm64 topology fall back to
+capacity 1024 for every CPU. Missing `performance-domains` prevents Linux from
+managing the die-1 clusters through `apple-soc-cpufreq`; measure their runtime
+p-state instead of assuming it remains exactly at the m1n1 handoff value.
 
-Use a tiny initramfs first, not the Debian root filesystem. It should:
+Required work:
+
+- capture the ADT view used by m1n1 and the final FDT received by Linux;
+- compare CPU count, `reg`/MPIDR, enable method, cache hierarchy, interrupt
+  topology, die affinity, reserved memory, MMIO ranges, and compatibles;
+- prepare a downstream patch adding the die-1 CPU performance references only
+  after validating T6032 OPP values and phandle mapping;
+- update or reconcile the Apple cluster-cpufreq binding, which does not
+  currently admit the downstream `apple,t6031-cluster-cpufreq` compatible;
+- compile all affected DTBs and run the relevant `dtbs_check` schemas;
+- coordinate mainline work with the broader M3 DVFS series rather than sending
+  a die-1-only patch that references nodes absent from mainline;
+- require the genuine J575 board compatible with `apple,t6032` and
+  `apple,arm-platform`; never relabel a T6031 payload DT;
+- exercise m1n1's payload target-type rejection and prove kboot neither prunes
+  CPUs 24-31 nor emits duplicate or missing secondary release addresses; and
+- check U-Boot's generic Apple target before proposing board-specific U-Boot
+  code.
+
+Exit gate: the selected tree builds without relevant schema warnings, and the
+runtime FDT gives Linux a consistent 32-CPU/two-die topology with validated
+capacity and performance-domain relationships.
+
+### 8. Boot a diagnostic Linux payload from RAM
+
+Claude's existing image already boots Debian successfully under QEMU/HVF. Keep
+that completed emulation milestone as the build, packaging, init-system, and
+user-space regression harness. It cannot validate m1n1 or Apple hardware.
+
+For the first native handoff, build a separate tiny initramfs instead of using
+the emulated system's writable ext4 root. It should:
 
 - mount only `proc`, `sysfs`, and `debugfs` as needed;
 - leave internal NVMe unbound or explicitly read-only;
@@ -280,16 +399,15 @@ Test in this order:
 8. run bounded CPU, memory, interrupt, and scheduler stress;
 9. repeat cold boots and warm reboots while retaining full logs.
 
-The QEMU/HVF Debian harness in this repository may verify the initramfs,
-logging scripts, and user-space payload. It cannot validate these m1n1 changes:
-QEMU exposes a generic virtual board, not Apple PMGR, MCC, AIC, or dual-die CPU
-hardware.
+The QEMU/HVF harness should boot this additional initramfs and verify its
+logging and shutdown paths before target use. QEMU still exposes a generic
+virtual board, not Apple PMGR, MCC, AIC, or dual-die CPU hardware.
 
 Exit gate: Linux consistently reports 32 present and online CPUs, both dies
 make scheduler progress, bounded stress completes, and repeated boots show no
 new m1n1 or kernel errors.
 
-### 8. Keep PSCI/cpuidle as a follow-on project
+### 9. Keep PSCI/cpuidle as a follow-on project
 
 Basic secondary startup and a 32-CPU Linux boot use the current m1n1 mechanism.
 Deep idle and upstream Linux cpuidle are a separate interface project. Current
@@ -300,15 +418,16 @@ Do not upstream a new Apple-only cpuidle driver as part of the T6032 enablement
 series. Once basic bring-up is stable, test the shared PSCI implementation on
 T6032 and contribute only T6032-specific fixes backed by traces.
 
-### 9. Upstream in reviewable slices
+### 10. Upstream in reviewable slices
 
 Proposed patch sequence:
 
 1. `m1n1: add T6032 SoC identity and early-console support`
-2. `m1n1: support 32 CPUs and validate T6032 topology`
-3. `m1n1: add T6032 secondary CPU startup`
-4. `m1n1: initialize T6032 CPU clusters`
-5. optional compatibility or DT-handoff fixes, one subsystem per patch and
+2. `m1n1: support 32 CPUs and fix the kboot CPU-node bound`
+3. `m1n1: correct T6032 MCC register enumeration`
+4. `m1n1: add T6032 secondary CPU startup`
+5. `m1n1: initialize T6032 CPU clusters`
+6. optional compatibility fixes, one subsystem per patch and
    only when hardware evidence requires them
 
 Each commit should state the evidence for reused T6031 behavior, name the
@@ -317,6 +436,15 @@ Send a draft pull request early if maintainers want the changes squashed or
 ordered differently. Keep diagnostic instrumentation until reviewers and the
 hardware log agree; then remove noise or place it behind existing debug
 controls.
+
+Keep Linux work in a separate series and name the target tree explicitly. A
+planned Asahi/Debian downstream patch must complete T6032 die-1 performance
+relationships and the corresponding binding validation. Mainline M3 DVFS
+enablement is a broader series and must not be presented as the same patch.
+
+M5 Max starts with an inventory and gap analysis, not a copy of this patch
+list. Once its identifiers and layouts are known, split its work into shared
+infrastructure commits and independently reviewable target support.
 
 Installer work begins only after the m1n1 series is accepted, the boot chain is
 repeatable, Linux reaches a safe recovery shell, and a full restore path has
@@ -333,6 +461,8 @@ redacted before publication:
 - SHA-256 hashes of m1n1, DTB, U-Boot, kernel, and initramfs;
 - firmware/macOS version and hardware model/board/SoC IDs;
 - captured ADT nodes used to justify register choices;
+- the sanitized collection command/tool version, raw byte widths, decoded
+  values, redaction check, and a hash of every published evidence artifact;
 - complete m1n1 serial/proxy log from reset through handoff;
 - complete kernel log and runtime FDT;
 - CPU present/possible/online masks and per-CPU topology;
@@ -347,196 +477,55 @@ other device-bound secrets.
 The m1n1 milestone is complete when:
 
 - upstream m1n1 recognizes T6032/J575d without an unsafe fallback;
+- kboot processes all 32 CPU nodes with a correct upper-bound check;
+- MCC enumeration selects the 16 real instance windows, rejects unexpected
+  layouts, and cannot enable cache through an unvalidated address;
 - all 32 CPUs on both dies start deterministically;
 - all six CPU clusters enter a confirmed safe boot state;
 - compatibility-driven subsystems are either proven reusable or separately
   fixed;
-- a correct runtime FDT reaches Linux;
+- a topology-consistent runtime FDT reaches Linux without m1n1 pruning or
+  corrupting CPU nodes;
 - a RAM-only Linux payload repeatedly boots with 32 CPUs and survives bounded
   stress;
 - the implementation and evidence are reviewed upstream; and
 - recovery and rollback procedures are documented and exercised before any
   installer or internal-storage work.
 
+The M5 Max milestone is separate. Its first completion gate is a sanitized,
+reviewed hardware inventory and source-gap report; T6032 completion neither
+depends on nor implies M5 Max support.
+
+The separate T6032 Linux CPU-performance milestone is complete when the
+downstream DTS and binding pass compilation/schema checks, the runtime FDT has
+validated die-1 OPP/capacity/performance-domain relationships, and Linux
+demonstrates correct scheduler capacity and cpufreq control on both dies.
+
 ## Immediate first sprint
 
 - [ ] Ask maintainers about unpublished T6032 m1n1 work and test hardware.
-- [ ] Obtain a redacted T6032 ADT dump through a safe existing environment.
-- [ ] Confirm UART, CPU-start, PMGR die-offset, and six cluster bases.
+- [ ] Add a reproducible, whitelisted T6032 ADT collector and commit its
+  sanitized evidence; the live ADT is already readable from macOS.
+- [ ] Run the M5 Max read-only inventory prompt and review its sanitized output.
+- [ ] Confirm the CPU-start offset and six cluster bases; UART and the PMGR die
+  offset are already corroborated by the T6032 ADT.
 - [ ] Audit every `MAX_CPUS` use and CPU-mask width.
-- [ ] Prepare the first two hardware-free patches: SoC definition and 32-CPU
-  capacity.
-- [ ] Add synthetic 32-CPU topology tests and inspect the link map.
-- [ ] Build the read-only initramfs and validate it under QEMU.
+- [ ] Prepare the SoC identity, 32-CPU/kboot-bound, and mandatory MCC patches.
+- [ ] Add synthetic 32-CPU topology and 20-entry MCC fixtures.
+- [ ] Preserve Claude's bootable QEMU/HVF Debian image as the emulation
+  baseline, then build and boot the separate read-only diagnostic initramfs
+  under the same emulator.
+- [ ] Draft the tree-scoped downstream die-1 DTS/binding patch and run DT
+  compilation plus `dtbs_check` without claiming unvalidated OPP values.
 - [ ] Arrange a second recovery Mac or a maintainer-run first boot.
 - [ ] Review the proposed SMP and cpufreq patches before any target execution.
-
-## Audit of this plan (2026-08-29)
-
-This section records a review of the plan above against the real sources. It
-does not change the plan text. Corrections are listed in A for a follow-up
-edit.
-
-Sources checked:
-
-- m1n1 at the pinned commit `a735ea29aed4843c301d8d9665949b30a84d25df`
-  (equal to `main` on 2026-08-29);
-- `t6032.dtsi` from mainline `master`, `AsahiLinux/linux` `asahi-wip-7.2`,
-  and the Debian `linux-asahi 7.1.10-1-1` source;
-- the live ADT of this Mac Studio, read with `ioreg -p IODeviceTree`
-  (read-only; only the keys named below were printed; no device secrets);
-- every link under "Primary references" (all resolve).
-
-The `scratch/` checkouts in this repository are empty directories and
-zero-byte JSON files. They were not used.
-
-### A. Corrections to the plan text
-
-| Where | Problem | Correct statement |
-| --- | --- | --- |
-| Baselines, Linux row | `396331cc6447` is the `AsahiLinux/linux` copy of the patch. It is not on `apple-soc/dt-7.3`. | Mainline `master` and `apple-soc/dt-7.3` carry `67d9574cf8ed` ("arm64: dts: apple: Initial T603[124] (M3 Max and Ultra) device trees", committed 2026-08-01). It is not in tag `v7.2`; it is in the 7.3 merge window. The Asahi `t6032.dtsi` differs from mainline: it adds `t6031-nvme.dtsi` on die 1 and deletes the ISP nodes. State which tree is the cross-check. |
-| §6, "the loader can amend it" | m1n1 does not amend CPU nodes except `cpu-release-addr` and pruning. Only GPU OPPs are touched (`kboot_gpu.c:634`). | Whatever is missing from the source DTS reaches Linux unchanged. See E. |
-| §5, ISP example | The board DTS does not remove the ISP. | Mainline `t6031-die0.dtsi:381` leaves `isp` with `status = "disabled"`. Only the Asahi `t6032.dtsi` (lines 357-360) deletes `isp` and its DARTs. The ADT of this machine has no `isp` node, so `isp_init` returns 0 early (`isp.c:67-68`). The `case T6031 ... T6034` range in `isp.c:97` includes 0x6032 but is not reached here. |
-| Immediate first sprint, "Obtain a redacted T6032 ADT dump" | The ADT is available now on this machine. | macOS exposes the full ADT read-only through `ioreg -p IODeviceTree`. See B. |
-| §2, "the larger secondary-stack allocation fits the m1n1 layout" | Secondary stacks are not static. | `smp.c:138` allocates each stack with `memalign` when the CPU starts. Eight more CPUs cost 8 × 64 KiB of heap. |
-
-### B. ADT evidence read from macOS
-
-All values below come from `ioreg -p IODeviceTree` on this machine. Nothing
-was written to hardware.
-
-| ADT item | Value | Consequence |
-| --- | --- | --- |
-| `/target-type` | `J575d` | `payload.c:293-301` derives `apple,j575d`, which is the root compatible of `t6032-j575d.dts`. DTB selection works without change. |
-| `/chosen/chip-id` | `0x6032` | `smp_start_secondaries` hits `default` and returns (`smp.c:303-305`): no secondary CPU starts today. `cpufreq_get_clusters` returns NULL (`cpufreq.c:415-417`). |
-| `/chosen/board-id` | `0x44` | — |
-| `/cpus` | 32 nodes, `cpu0`..`cpu31` | Matches the 32-node mainline DTS. |
-| `cpu16` `reg` | `0x800` | Bit 11 set = die 1. `cpu31` `reg` = `0xa05` decodes to die 1, cluster 2, core 5 and matches its own `die-id = 1`, `cluster-id = 10`. The decoder in `smp.c:23-25` is correct for T6032. |
-| `cpu-impl-reg` | die 0: `0x210050000`; die 1: `0x2210050000` | Die 1 = die 0 + `0x2000000000` = `PMGR_DIE_OFFSET` (`pmgr.h:8`). |
-| `cpu4` `state` | `running` | macOS boots on cpu4. m1n1 finds the boot CPU by this field. |
-| `/arm-io` compatible, `ranges` | `arm-io,t6031`; child `0x0` maps to `0x200000000` | — |
-| `/arm-io/uart0` `reg` | `0x191200000`, absolute `0x391200000` | Equals `EARLY_UART_BASE` for T6031/T6034 (`soc.h:54-55`) and `serial0@391200000` in `t6031-die0.dtsi:532`. |
-| `/arm-io/pmgr` compatible | `pmgr1,t6031` | — |
-| `/arm-io/mcc` compatible | `mcc,t6031` | Dispatch selects `mcc_init_m3` → `mcc_init_t6031`. See C. |
-| `/arm-io/apcie0`, `apcie1` compatible | `apcie,t6031` | `pcie.c:303` selects the T6031 path. |
-| `/arm-io/isp` | absent | See A. |
-| die-1 node names | `die1-nub-spmi0`..`die1-nub-spmi4` | Die-1 SPMI nodes carry a `die1-` prefix. There is no `die1-pmgr` or `die1-mcc`; MCC lists both dies in one `reg`. |
-
-### C. New finding: `mcc_init_m3` miscounts the T6032 MCC instances
-
-`/arm-io/mcc` `reg` has 20 entries of 16 bytes:
-
-| Index | Base | Size | Meaning |
-| --- | --- | --- | --- |
-| 0 | `0x903c0000` | `0x20000` | header |
-| 1 | `0x904d0000` | `0x149c` | header |
-| 2 | `0x92818000` | `0x4000` | header, die 0 |
-| 3 | `0x2092818000` | `0x4000` | header, die 1 |
-| 4–11 | `0x20000000` .. `0x2e000000` | `0x2000000` | 8 MCC instances, die 0 |
-| 12–19 | `0x2020000000` .. `0x202e000000` | `0x2000000` | 8 MCC instances, die 1 |
-
-`mcc_init_m3` sets `reg_offset = 3` and computes
-`mcc_count = reg_len / 16 - reg_offset` (`mcc.c:406-421`). On this ADT that
-is 17, clamped to `MAX_MCC_INSTANCES = 16`. The result:
-
-- entry 3, a 16 KiB block, is treated as an MCC instance; its plane, global,
-  and DCS offsets (`+0x100000`, `+0x400000`) fall outside the block;
-- entry 19, a real die-1 instance, is dropped.
-
-`mcc_enable_cache()` runs at kernel handoff (`kboot.c:2909`) and writes
-`PLANE_CACHE_ENABLE` to every instance (`mcc.c:183`). This is an unknown MMIO
-write and violates the safety invariants. The hypothesis in the row "Memory
-controller" is false. The fix belongs in the patch series (§9) before any
-hardware run.
-
-The assumption that a T6031 ADT has 3 header entries was not checked against a
-T6031 ADT; it is inferred from `reg_offset = 3` working on M3 Max.
-{{NEEDS_PROOF}}
-
-### D. New finding: `kboot` cannot hand off the mainline DTS today
-
-`dt_set_cpus` counts `cpu@` nodes in FDT order and bails when
-`cpu > MAX_CPUS` (`kboot.c:561-562`). The mainline `t6032.dtsi` has 32 nodes,
-so the loop bails at the 26th. A "24 CPUs first" boot is not possible. Raising
-`MAX_CPUS` is a prerequisite for any boot, not only for the 32-CPU milestone.
-The comparison is `>` where `>=` is meant; it is harmless today because
-`smp_is_alive` is bounds-checked (`smp.c:502-504`).
-
-### E. New finding: die-1 CPU nodes in the merged DTS are incomplete
-
-`t6032.dtsi:90-265` (die-1 CPUs `cpu_e10`..`cpu_p35`) have no
-`operating-points-v2`, no `capacity-dmips-mhz`, and no `performance-domains`.
-Die-0 CPUs have all three (`t6031-base.dtsi:86-88`). T6022's die-1 CPUs have
-all three (`t6022.dtsi:91-93`). The `cpufreq_e_die1`, `cpufreq_p0_die1`, and
-`cpufreq_p1_die1` nodes exist in the FDT (from `t6031-dieX.dtsi` under
-`&die1`) but nothing references them. This part of the file is identical in
-mainline, `asahi-wip-7.2`, and Debian 7.1.10.
-
-Consequences in Linux:
-
-- `arch_topology.c:311,356`: capacity data is discarded for all CPUs when one
-  CPU lacks it. All 32 CPUs get capacity 1024, so the scheduler sees E-cores
-  and P-cores as equal.
-- `apple-soc-cpufreq.c:216` reads `performance-domains` in policy init. The
-  die-1 clusters get no cpufreq policy and stay at the p-state m1n1 leaves.
-
-The merged series was written without T6032 hardware; its commit message
-infers the design "judging by the advertised memory bandwidth". A DTS
-follow-up that copies the T6022 pattern is a candidate hardware-free
-contribution. Whether maintainers accept it untested is unknown.
-{{UNVALIDATED}}
-
-### F. Hypothesis status
-
-Update of the table "What is known and what must be measured":
-
-| Row | Status |
-| --- | --- |
-| SoC ID / early UART | Confirmed by ADT `uart0` `reg`. |
-| CPU capacity | Confirmed necessary; see D. Stack allocation is heap; see A. |
-| CPU start | Die offset confirmed by `cpu-impl-reg`. The `0x88000` start offset is not in the ADT. {{NEEDS_PROOF}} |
-| CPU clusters | Bases are not in the ADT; m1n1 hardcodes them. The DTS corroborates them: `cpufreq@210e20000`, `@211e20000`, `@212e20000` = base + `0x20000` (`t6031-dieX.dtsi:9-22`), and die 1 `ranges` map `0x2_00000000` to `0x22_00000000` (`t6032.dtsi:303-313`). {{NEEDS_PROOF}} |
-| Memory controller | False. See C. |
-| PCIe | Confirmed by ADT compatible `apcie,t6031`. |
-| CPU workarounds | MIDR is not in the ADT. The ADT CPU compatibles are `apple,sawtooth` and `apple,everest`. Precedent: T6002 and T6022 have no entries of their own in `chickens.c:136-147` and run on the T6001/T6021 MIDRs. {{NEEDS_PROOF}} |
-| Device tree | Both dies and all 32 CPUs are present. Die-1 CPU nodes are incomplete; see E. |
-
-### G. Plan claims verified as written
-
-| Claim | Evidence |
-| --- | --- |
-| m1n1 and installer pins | Both equal the current `main` heads on 2026-08-29. |
-| `soc.h` lacks T6032 | `soc.h:31-37` (also defines T6040, T6041, T6050, T6051). |
-| `MAX_CPUS` 24, `MAX_EL3_CPUS` 4, IDs ≥ bound dropped | `smp.h:9-10`, `smp.c:316-318`. |
-| T6031/T6034 start case, `0x88000`, per-die offset | `smp.c:21`, `smp.c:295-301`, `smp.c:157`. |
-| T6031 three clusters, Ultra tables six | `cpufreq.c:352-373`. |
-| `MAX_EL3_CPUS` is a separate EL3-only constraint | `smp.c:121` applies it only when `has_el3()`. M3 has no EL3. |
-| `reg` bit layout core 0-7, cluster 8-10, die 11-14 | `smp.c:23-25`; the ADT values decode correctly. |
-| `uart.c` runtime selection | `uart.c:22-34` tries `/arm-io/uart6/debug-console`, then `/arm-io/uart0`, and reads `reg`. |
-| Payload target-type check | `payload.c:293-301` builds `apple,` + lowercase `target-type`; `payload.c:352` errors when no DTB matches. |
-| PSCI via UEFI Runtime Services | Stated in the Asahi 7.2 progress report. |
-| SPMI and DebugUSB paths exist | `spmi.c`, `dockchannel_uart.c`, `usb.c`. |
-| Per-SoC debug image | `config.h:22` (`//#define TARGET T8103`) selects `EARLY_UART_BASE` in `soc.h:39-80`. T6032 needs a line in the `T6034 || T6031` branch. |
-
-### H. Housekeeping
-
-- `scratch/`, `scratch-upstream.json`, `m1n1-tree.json`, and
-  `t6032-history.json` are empty placeholders. They are untracked and not in
-  `.gitignore`.
-- kisd runs on a device that itself runs Asahi Linux (kisd README). It is one
-  more hardware dependency for the proxy path.
-- `lore.kernel.org` sits behind a JavaScript challenge for plain HTTP clients;
-  patchew serves the same series.
-
-### I. Not verified
-
-- The MIDR part numbers of this chip.
-- The T6031 ADT MCC header count (see C).
-- The `0x88000` CPU start offset and the six cluster bases on T6032.
 
 ## Primary references
 
 - [m1n1 source](https://github.com/AsahiLinux/m1n1/tree/a735ea29aed4843c301d8d9665949b30a84d25df)
+- [Mainline initial T603x DTS commit](https://github.com/torvalds/linux/commit/67d9574cf8ed1c81c472b932a9d9819f47fb5286)
+- [Pinned Asahi downstream comparison tree](https://github.com/AsahiLinux/linux/tree/bdb78c2fe5e6e47332c7e0a3df470a0cc352995d)
+- [Apple cluster-cpufreq binding in the comparison tree](https://github.com/AsahiLinux/linux/blob/bdb78c2fe5e6e47332c7e0a3df470a0cc352995d/Documentation/devicetree/bindings/cpufreq/apple%2Ccluster-cpufreq.yaml)
 - [Initial T603x Linux device-tree series](https://patchew.org/linux/20260724-apple-t603x-initial-devices-v3-0-bbeba0420603@jannau.net/)
 - [Asahi M3 feature-support matrix](https://asahilinux.org/docs/platform/feature-support/m3/)
 - [Asahi Linux 7.1 progress report](https://asahilinux.org/2026/06/progress-report-7-1/)
