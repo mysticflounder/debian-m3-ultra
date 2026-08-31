@@ -74,6 +74,13 @@ not consume those APIs. Newer SDK system-register enums include additional
 architectural ID registers, but enum availability alone does not prove that
 the feature-configuration API or a particular runtime can supply them.
 
+The first live 8-vCPU measurement completed on 2026-08-31. The guest exposed
+19 of the 20 probed registers and reported `CLIDR_EL1` unavailable. Across the
+14 registers also returned by the host HVF collector, five values matched,
+eight differed, and `CLIDR_EL1` was guest-unavailable. These raw differences
+still need architectural field decoding before they can be classified as
+intentional virtualization, masking, or QEMU gaps.
+
 ## Safety and ABI rules
 
 - All inventory tools are read-only and require neither root nor a VM disk
@@ -324,10 +331,10 @@ P/E-core identity, m1n1, or a bare-metal Debian installation.
 - [x] Add and statically validate the read-only Linux arm64 register collector.
 - [x] Add a QEMU probe mode that runs the guest collector without modifying
   the base disk.
-- [ ] Run and validate the guest collector after the active builder VM releases
+- [x] Run and validate the guest collector after the active builder VM releases
   `vmroot.ext4`.
 - [ ] Capture QEMU 11.1.1 M3 Ultra fingerprints at 1, 8, 16, 24, and 32
-  vCPUs.
+  vCPUs. The first 8-vCPU fingerprint completed on 2026-08-31.
 - [ ] Complete matched host/guest benchmark runs and retain distributions.
 - [ ] Produce the first classified host/guest gap matrix.
 - [ ] Send the measured baseline and proposed first patch boundary to the QEMU

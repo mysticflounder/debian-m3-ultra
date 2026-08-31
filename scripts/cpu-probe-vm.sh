@@ -53,7 +53,7 @@ mkdir -p "$OUT"
 
 GUEST='
 mkdir -p /mnt/cpu-probe
-if ! mount -o ro /dev/vdb /mnt/cpu-probe; then
+if ! mount -o ro /dev/vdb1 /mnt/cpu-probe; then
     echo "cpu probe: failed to mount read-only source drive" >&2
     poweroff -f
     exit 1
@@ -128,26 +128,62 @@ tr -d '\r' < "$LOG" \
 
 awk '
     /=== CPU PROBE JSON START ===/ {
-        capture = 1
+        armed = 1
+        capture = 0
+        complete = 0
         count = 0
         delete lines
         next
     }
-    /=== CPU PROBE JSON END ===/ && capture {
-        for (i = 1; i <= count; i++) {
-            print lines[i]
+    /=== CPU PROBE JSON END ===/ && armed {
+        if (complete) {
+            for (i = 1; i <= count; i++) {
+                print lines[i]
+            }
         }
         exit
     }
-    capture {
+    armed && !capture && index($0, "{") {
+        sub(/^[^{]*/, "")
+        capture = 1
+    }
+    capture && !complete {
         lines[++count] = $0
+        if ($0 == "}") {
+            complete = 1
+        }
     }
 ' "$CONSOLE" > "$JSON_TMP"
 
 if ! jq -e '
     type == "object" and
     .schema_version == 1 and
-    (.registers | type == "object")
+    (.auxv | type == "object") and
+    (.auxv.HWCAP_CPUID | type == "boolean") and
+    (.registers | type == "object") and
+    (.registers | keys) == [
+        "CLIDR_EL1",
+        "CTR_EL0",
+        "DCZID_EL0",
+        "ID_AA64DFR0_EL1",
+        "ID_AA64DFR1_EL1",
+        "ID_AA64ISAR0_EL1",
+        "ID_AA64ISAR1_EL1",
+        "ID_AA64ISAR2_EL1",
+        "ID_AA64MMFR0_EL1",
+        "ID_AA64MMFR1_EL1",
+        "ID_AA64MMFR2_EL1",
+        "ID_AA64MMFR3_EL1",
+        "ID_AA64MMFR4_EL1",
+        "ID_AA64PFR0_EL1",
+        "ID_AA64PFR1_EL1",
+        "ID_AA64PFR2_EL1",
+        "ID_AA64SMFR0_EL1",
+        "ID_AA64ZFR0_EL1",
+        "MIDR_EL1",
+        "MPIDR_EL1"
+    ] and
+    ([.registers[].status] | all(. == "available" or . == "unavailable"))
 ' "$JSON_TMP" >/dev/null; then
     echo "guest probe did not produce valid JSON; inspect $LOG" >&2
     exit 1
