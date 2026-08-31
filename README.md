@@ -1,6 +1,13 @@
 # debian-m3
 
-Test rig for Debian on Apple M3. Host is a Mac Studio (Mac15,14, M3 Ultra, `t6032`/`j575d`).
+Test rig for Debian on Apple M3. Host is a Mac Studio (Mac15,14, M3 Ultra,
+`t6032`/`j575d`).
+
+The active workstream is completing and validating QEMU's Apple Silicon
+`-cpu host` passthrough model. See the
+[QEMU Apple host-CPU passthrough plan](docs/qemu-apple-host-cpu-passthrough.md).
+The [m1n1 T6032 plan](docs/m1n1-t6032-bringup.md) is retained as a deferred
+bare-metal roadmap.
 
 ## What this proves and what it cannot prove
 
@@ -8,6 +15,7 @@ Test rig for Debian on Apple M3. Host is a Mac Studio (Mac15,14, M3 Ultra, `t603
 |---|---|---|
 | Build | `debian:unstable` arm64 container | The Asahi patch stack builds under Debian, and the M3 device trees compile |
 | Boot | QEMU `virt` + HVF | The Debian `linux-asahi` kernel boots and the userland runs |
+| CPU model | Host/guest feature probes | Which HVF-exposed architectural CPU features actually reach the guest |
 | Hardware | — | Nothing. QEMU has no Apple M-series machine model. |
 
 This host cannot run Asahi natively: the installer has no entry for chip `0x6032`
@@ -70,6 +78,39 @@ Boots the exported kernel in QEMU with HVF.
 
 Environment: `QEMU`, `SMP` (default 8), `MEM` (default `8G`).
 Login is `root` / `root`, with autologin on `ttyAMA0`.
+
+### Initial CPU passthrough probes
+
+`scripts/cpu-probe-host.sh` compiles and runs a read-only
+Hypervisor.framework collector. It creates a vCPU configuration object but no
+VM or vCPU, and writes the resulting fingerprint to
+`out/cpu-probe-host.json`:
+
+```bash
+./scripts/cpu-probe-host.sh
+```
+
+`scripts/cpu-probe-vm.sh` boots the existing builder image with `-cpu host`
+and `-snapshot`, attaches `scripts/` as a read-only vvfat disk, compiles the
+Linux arm64 collector in the guest, and writes its fingerprint to
+`out/cpu-probe-guest.json`:
+
+```bash
+./scripts/cpu-probe-vm.sh
+SMP=32 ./scripts/cpu-probe-vm.sh
+```
+
+These are the first register-level collectors. The roadmap's later evidence
+phase adds per-vCPU sysfs data, kernel logs, topology, the exact QEMU command,
+and the classified host/guest gap matrix.
+
+The base VM image is not modified. The probe checks for another QEMU using
+`vmroot.ext4`, and QEMU's own image lock remains the authoritative protection
+against a concurrent writer.
+
+Current QEMU deliberately exposes a homogeneous synthetic Apple MIDR
+(`0x610f0000`) instead of physical P/E-core identities. The probes measure the
+architectural feature contract separately from that known identity policy.
 
 ### `scripts/make-builder-vm.sh`
 Runs inside a **privileged** container. Builds a self-contained builder VM:
