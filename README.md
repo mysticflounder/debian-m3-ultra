@@ -118,11 +118,28 @@ Outputs are under `out/cpu-matrix/`. The measured interpretation is in the
 The probe scripts reject output paths outside the project `out/` tree and
 refuse symlinked output targets.
 
-The base VM image is not modified. The probe checks for another QEMU using
-`vmroot.ext4`, and QEMU's own image lock remains the authoritative protection
-against a concurrent writer. Guest writes go to a disposable overlay; the
-source share is read-only, and none of these probes uses host privilege or
-touches firmware, NVRAM, boot policy, partitions, or internal storage.
+`scripts/el1-probe-vm.sh` is the raw EL1 follow-up. It boots the same Debian
+builder as a disposable QEMU/HVF guest, builds and loads a short-lived kernel
+module there, and records `MPIDR_EL1`, `CLIDR_EL1`, and the ID registers Linux
+sanitizes from EL0. It is a QEMU-only evidence tool; it does not support or
+attempt bare-metal boot:
+
+```bash
+./scripts/el1-probe-vm.sh
+SMP=32 ./scripts/el1-probe-vm.sh
+./scripts/el1-probe-matrix.sh
+./scripts/el1-probe-compare.sh out/el1-probe-smp8.XXXXXX/evidence.json
+```
+
+The matrix runner collects 1, 8, 16, 24, and 32 vCPUs sequentially and runs
+the host/raw-EL1 comparison for every result. EL1 manifests and comparisons
+are written under `out/el1-probe-*`. The base rootfs is
+opened through an explicit disposable qcow2 overlay, while the build disk and
+source share are read-only; the runner also refuses a concurrent VM using the
+builder image. The only writes are project output files and the temporary
+overlay used by the guest. No firmware, NVRAM, boot policy, raw physical disk,
+or host system volume is passed through or intentionally modified; no host
+privilege is used.
 
 Current QEMU deliberately exposes a homogeneous synthetic Apple MIDR
 (`0x610f0000`) instead of physical P/E-core identities. The probes measure the

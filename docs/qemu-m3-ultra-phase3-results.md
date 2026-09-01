@@ -8,9 +8,11 @@ Hypervisor.framework vCPU-configuration view with Linux's guest-visible EL0
 CPU-feature ABI. It does not claim to observe the guest kernel's raw EL1
 register state.
 
-All guest runs used QEMU `-snapshot`, a read-only vvfat source drive, and no
-host privilege. The base root filesystem, macOS boot policy, firmware, NVRAM,
-partitions, and internal storage were not modified.
+All Phase 3 guest runs used QEMU `-snapshot`, a read-only vvfat source drive,
+and no host privilege. Their writes were confined to project output files and
+QEMU's disposable snapshot state. No firmware, NVRAM, boot policy, raw
+physical disk, or host system volume was passed through or intentionally
+modified.
 
 ## Evidence matrix
 
@@ -93,14 +95,54 @@ Consequently:
 
 The Phase 3 matrix demonstrates a stable, homogeneous Linux-visible CPU
 contract from 1 through 32 vCPUs. It shows no evidence of a QEMU feature-loss
-gap in fields Linux exposes through the EL0 CPU-feature ABI.
+gap in fields Linux exposes through the EL0 CPU-feature ABI. The follow-up raw
+EL1 observation is now recorded below; do not patch QEMU from the earlier EL0
+differences. Only a difference surviving the raw-register comparison and
+behavioral tests becomes a QEMU patch candidate.
 
-Do not patch QEMU from the raw register differences. The next evidence step is
-a snapshot-only EL1/kernel-side collector for `CLIDR_EL1`, the actual
-`MPIDR_EL1`, and the ID fields Linux sanitizes. QEMU instrumentation is an
-acceptable alternative if it records the finalized virtual register values
-without changing them. Only a difference surviving that comparison becomes a
-QEMU patch candidate.
+## Raw EL1 follow-up (verified)
+
+The EL0 limitations above were resolved for the registers that require a
+kernel-side observation. `scripts/el1-probe-vm.sh` builds and loads
+`scripts/arm64-el1-probe.c` only inside a disposable Debian guest running in
+QEMU/HVF. It is not a bare-metal probe and makes no firmware or boot-policy
+changes. The completed 1-, 8-, 16-, 24-, and 32-vCPU evidence set is retained
+under `out/el1-probe-*/evidence.json`.
+
+The raw EL1 collector reported a complete, homogeneous contract for every
+vCPU in those runs. Eleven raw register values matched the host HVF
+configuration exactly, including `CLIDR_EL1 = 0x0000000081000023`. Each
+`MPIDR_EL1` was unique; its topology encoding is not required to be a simple
+sequence. The collector therefore checks uniqueness and observed-vCPU
+correspondence rather than assuming sequential MPIDRs.
+
+The only comparable raw mismatch was `ID_AA64DFR0_EL1`: the host HVF
+configuration reported `0x0000000010305006`, while the instantiated guest
+vCPU reported `0x0000000010305106`. This is currently attributed to the
+distinct HVF configuration-versus-instantiated-vCPU API views and the
+minimal virtual PMU exposed by QEMU. It is not a patch target yet: the result
+does not demonstrate that QEMU is dropping a safe public-HVF value, and PMU
+behavior is an intentional virtualization boundary that needs independent
+behavioral tests.
+
+`ID_AA64ZFR0_EL1` and `ID_AA64SMFR0_EL1` were explicitly recorded as
+`not_read`, not as zero, because the guest contract reports no SVE or SME
+support. This is an absence/unavailability result, not evidence of a missing
+QEMU passthrough field.
+
+These EL1 runs write only project evidence and a disposable qcow2 overlay.
+The root backing image is opened through that overlay; the build disk and
+source share are read-only. No firmware, NVRAM, boot policy, raw physical
+disk, or host system volume is passed through or intentionally modified.
+
+## Remaining work
+
+The verified EL1 result closes the observation gate; it does not by itself
+justify a QEMU patch. Future work is to test PMU behavior, execute the
+advertised instruction/state suite, and classify any mismatch that survives
+those tests. M5 Max remains the secondary target and must repeat the same
+inventory and evidence process independently. The m1n1/T6032 bare-metal
+roadmap remains deferred and is outside this QEMU workstream.
 
 ## Primary sources
 

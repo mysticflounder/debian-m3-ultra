@@ -85,11 +85,26 @@ Linux deliberately sanitizes from its EL0 CPU-feature ABI; the current matrix
 therefore demonstrates no QEMU feature-loss gap. See the
 [M3 Ultra Phase 3 results](qemu-m3-ultra-phase3-results.md).
 
+A disposable QEMU/HVF EL1 collector subsequently observed the kernel's raw
+system registers directly. In the completed 1-, 8-, 16-, 24-, and 32-vCPU
+evidence set, eleven raw register values matched the host HVF configuration
+exactly, including `CLIDR_EL1 = 0x0000000081000023`. `MPIDR_EL1` values were unique and
+topology-encoded across vCPUs. The one comparable mismatch was
+`ID_AA64DFR0_EL1`: host configuration `0x0000000010305006`, instantiated
+guest vCPU `0x0000000010305106`. This is attributed to the distinct HVF
+configuration-versus-instantiated-vCPU API views and QEMU's minimal virtual
+PMU; it is not a patch target until PMU behavior establishes a demonstrated
+QEMU gap. SVE/SME registers were recorded as `not_read` because those features
+are absent, never inferred as zero. These are verified QEMU-guest results,
+not bare-metal observations.
+
 ## Safety and ABI rules
 
-- All inventory tools are read-only and require neither root nor a VM disk
-  write.
-- Run initial guest probes with snapshot or otherwise disposable storage.
+- Host inventory tools require neither root nor a VM disk write. Guest-side
+  collectors may write only their disposable overlay and project evidence;
+  they must never open a host physical device or system volume.
+- Run guest probes with an explicit disposable overlay and read-only source
+  drives. Never pass firmware, NVRAM, boot policy, or raw physical storage.
 - Never infer an absent register as zero; record `unavailable`, the API error,
   and the probe method.
 - Never expose a feature merely because the host compiler accepts its
@@ -180,6 +195,22 @@ The Debian collector must:
 
 Exit gate: the existing Debian image produces a complete feature fingerprint
 for all configured vCPUs.
+
+### 3a. Observe the raw EL1 contract (verified on M3 Ultra)
+
+- Build and load the small EL1 collector only inside a disposable QEMU/HVF
+  guest; no bare-metal or firmware path is permitted for this gate.
+- Capture `MPIDR_EL1`, `CLIDR_EL1`, and the ID registers sanitized by the EL0
+  ABI, with explicit `not_read` status for absent SVE/SME support.
+- Require unique topology-encoded MPIDRs and a homogeneous non-MPIDR register
+  contract across the selected vCPU counts.
+- Compare the raw values with the host HVF configuration view. Record the
+  observed `CLIDR_EL1` value (`0x81000023`) and keep the DFR0 PMU difference
+  (`0x...5006` host versus `0x...5106` guest) as a virtualization/API
+  investigation, not a patch request.
+
+Exit gate: the full 1/8/16/24/32 matrix passed the raw-EL1 consistency,
+safety, and host-comparison checks. PMU behavioral tests remain future work.
 
 ### 4. Build the host/guest gap matrix
 
@@ -333,14 +364,17 @@ P/E-core identity, m1n1, or a bare-metal Debian installation.
 
 - [x] Add and validate the read-only macOS HVF feature collector.
 - [x] Add and statically validate the read-only Linux arm64 register collector.
-- [x] Add a QEMU probe mode that runs the guest collector without modifying
-  the base disk.
+- [x] Add and validate the disposable QEMU/HVF raw EL1 kernel collector.
+- [x] Add a QEMU probe mode that runs the guest collectors with an explicit
+  disposable overlay and read-only source drives.
 - [x] Run and validate the guest collector after the active builder VM releases
   `vmroot.ext4`.
 - [x] Capture QEMU 11.1.1 M3 Ultra fingerprints at 1, 8, 16, 24, and 32
   vCPUs.
 - [ ] Complete matched host/guest benchmark runs and retain distributions.
 - [x] Produce the first classified host/guest gap matrix.
+- [ ] Classify the raw DFR0/PMU distinction with independent PMU behavior
+  tests before considering any QEMU patch.
 - [ ] Send the measured baseline and proposed first patch boundary to the QEMU
   Apple Silicon HVF maintainer and `qemu-devel`.
 
