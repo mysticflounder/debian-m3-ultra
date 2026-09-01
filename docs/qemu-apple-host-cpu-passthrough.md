@@ -56,9 +56,9 @@ The current guest reports Apple TSO, showing that some host feature state is
 already visible. It also reports MIDR `0x610f0000` for every vCPU, matching
 QEMU's deliberate synthetic Apple identity. There is no source-controlled
 evidence bundle containing the complete host/guest feature fingerprints, QEMU
-version manifest, or guest benchmark result yet. The machine-local manifests,
-including the complete advertised-feature behavior runs, remain under ignored
-`out/` paths.
+version manifest, or benchmark suite yet. Machine-local manifests under ignored
+`out/` paths now include the complete advertised-feature behavior runs and the
+initial matched integer/memory benchmark matrix.
 
 Upstream QEMU's HVF host model currently queries:
 
@@ -414,7 +414,11 @@ P/E-core identity, m1n1, or a bare-metal Debian installation.
   `vmroot.ext4`.
 - [x] Capture QEMU 11.1.1 M3 Ultra fingerprints at 1, 8, 16, 24, and 32
   vCPUs.
-- [ ] Complete matched host/guest benchmark runs and retain distributions.
+- [x] Run the initial matched integer/memory microbenchmark at 1, 8, 16, 24,
+  and 32 vCPUs and retain seven-sample distributions plus a normalized
+  descriptive comparison.
+- [ ] Complete the broader controlled performance suite, resolve the variable
+  24-vCPU result, and establish the numerical performance gate.
 - [x] Produce the first classified host/guest gap matrix.
 - [x] Run and classify the guest-only PMU behavior slice; record the raw
   DFR0/PMU distinction as `unavailable` (`hvf-gap`, runtime vPMU) with no

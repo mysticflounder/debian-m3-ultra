@@ -207,46 +207,43 @@ script checks for a running build and tells you what to do instead of letting
 QEMU print a lock error. `--peek` uses `-snapshot`, so writes are discarded — but
 a filesystem being written by another VM can read back stale or inconsistent.
 
-### `scripts/bench.c` and `scripts/bench-vm.sh`
-A matched host/guest microbenchmark: integer throughput and memory bandwidth,
-same source, same compiler family, so guest numbers can be compared with host
-numbers directly. It answers the question that decides this project — whether a
-VM runs native binaries close enough to full speed.
+### Matched host/guest benchmark
 
-On the host:
+`scripts/bench.c` measures integer throughput and single-thread memory
+bandwidth from identical source and GCC-family builds. `scripts/bench-host.sh`
+retains native samples and distributions. `scripts/bench-vm.sh` builds and runs
+the same source in an isolated QEMU/HVF guest, using only a disposable qcow2
+overlay and a read-only source drive. It never attaches `build.ext4`, a raw
+writable root image, networking, firmware, or host devices.
 
-```bash
-gcc-16 -O2 -pthread -o /tmp/bench scripts/bench.c
-/tmp/bench 1
-/tmp/bench 8
-```
-
-In the guest, put the source on the build disk first, then:
+The recorded run used one warmup and seven retained samples:
 
 ```bash
-./scripts/bench-vm.sh
+THREAD_COUNTS=1,8,16,24,32 WARMUPS=1 REPETITIONS=7 ./scripts/bench-host.sh
+SMP=8 MEM=8G THREAD_COUNTS=1,8 WARMUPS=1 REPETITIONS=7 ./scripts/bench-vm.sh
 ```
 
-Or run it by hand from a VM shell, where `bench.c` sits on `/dev/vdb`:
+The guest command was repeated at 1, 8, 16, 24, and 32 vCPUs, with thread
+counts `1,$SMP` (deduplicated at one vCPU). The full-utilization median results
+were:
 
-```sh
-mkdir -p /build && mount /dev/vdb /build && cd /build
-gcc -O2 -pthread -o /tmp/bench bench.c && /tmp/bench 1 && /tmp/bench 8
-```
+| vCPUs / threads | host int Gops | guest int Gops | int delta | host mem GiB/s | guest mem GiB/s | mem delta |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 / 1 | 1.66 | 1.76 | +6.15% | 26.15 | 28.68 | +9.70% |
+| 8 / 8 | 12.73 | 12.80 | +0.55% | 26.43 | 28.39 | +7.41% |
+| 16 / 16 | 25.41 | 25.26 | -0.60% | 26.47 | 28.28 | +6.83% |
+| 24 / 24 | 35.76 | 25.70 | -28.15% | 24.60 | 21.35 | -13.21% |
+| 32 / 32 | 34.28 | 41.02 | +19.67% | 21.36 | 25.18 | +17.86% |
 
-Measured host baseline (Mac Studio M3 Ultra, macOS 26.6.2, GCC 16):
+Evidence is retained in `out/benchmark-host.Do9Ue6/evidence.json`, the five
+`out/benchmark-guest-smp*.*/evidence.json` manifests recorded in the phase-3
+results, and `out/benchmark-comparison.LCB9zl/evidence.json`.
 
-| threads | int Gops | mem GiB/s |
-|---|---|---|
-| 1 | 1.78 | 29.25 |
-| 8 | 12.92 | 29.00 |
-
-The benchmark deliberately avoids disk and network, which are the two paths
-that are *not* native under QEMU. Measure those separately.
-
-**Warning.** Do not write to a disk image while a VM has it open. QEMU's lock
-lives on the macOS side and a Linux container mounting the same file cannot see
-it. Two writers will corrupt the filesystem.
+The comparison is deliberately `descriptive_only`, not a performance-gate
+pass. Host GCC 16.1 and guest GCC 16.2 differ; CPU affinity and thermal state
+were not controlled; host load during guest runs was not captured; the memory
+workload remains single-threaded; and the 24-thread results have substantial
+variance. Disk and network are intentionally outside this CPU-only benchmark.
 
 ## Contributing upstream
 

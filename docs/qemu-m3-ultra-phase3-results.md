@@ -173,14 +173,40 @@ At 1 vCPU, all 35 rows passed in
 results were homogeneous across vCPUs. Each evidence manifest records the
 eight protected input artifacts and their before/after hashes.
 
+## Matched integer/memory benchmark (verified, descriptive)
+
+The host runner retained seven measured samples at 1, 8, 16, 24, and 32
+threads in `out/benchmark-host.Do9Ue6/evidence.json`. Disposable guest runs
+retained the single-thread and full-utilization rows at each vCPU count:
+
+- `out/benchmark-guest-smp1.b9bWkx/evidence.json`;
+- `out/benchmark-guest-smp8.DFCWSU/evidence.json`;
+- `out/benchmark-guest-smp16.iX7pbC/evidence.json`;
+- `out/benchmark-guest-smp24.FNLcLN/evidence.json`; and
+- `out/benchmark-guest-smp32.FlatJT/evidence.json`.
+
+The normalized comparison is
+`out/benchmark-comparison.LCB9zl/evidence.json`. Full-utilization median guest
+deltas relative to the matched host thread count were +6.15%, +0.55%, -0.60%,
+-28.15%, and +19.67% for integer throughput, and +9.70%, +7.41%, +6.83%,
+-13.21%, and +17.86% for single-thread memory bandwidth. The 24-thread integer
+samples were highly variable on both host and guest.
+
+The result is `descriptive_only`: host GCC 16.1 and guest GCC 16.2 differ; CPU
+affinity and thermal state were not controlled; host load during guest runs was
+not captured; memory remains a single-thread workload; and this slice covers
+only integer and memory behavior. Every guest used a disposable overlay,
+read-only source, no network, no firmware, and no host devices.
+
 ## Remaining work
 
 The EL1, PMU, and complete 35-row advertised-feature results close their
 respective observation/classification slices; they do not by themselves
-justify a QEMU patch. Remaining work is benchmark completion, follow-up for any
-future mismatch, independent M5 Max validation, and upstream coordination. The
-m1n1/T6032 bare-metal roadmap remains deferred and is outside this QEMU
-workstream.
+justify a QEMU patch. Remaining work is to expand the controlled performance
+suite, explain or eliminate the 24-vCPU variance, set a numerical performance
+gate, follow up any future mismatch, validate M5 Max independently, and
+coordinate upstream. The m1n1/T6032 bare-metal roadmap remains deferred and is
+outside this QEMU workstream.
 
 ## Primary sources
 
