@@ -4,29 +4,115 @@
 #
 #   ./scripts/cpu-probe-vm.sh
 #
-# Environment: QEMU, SMP (default 8), MEM (default 8G), LOG, JSON_OUT.
+# Environment: QEMU, SMP (default 8), MEM (default 8G), LOG, JSON_OUT,
+#              ROOTFS_SHA256 (optional precomputed digest for matrix runs).
 set -euo pipefail
 
-HERE="$(cd "$(dirname "$0")/.." && pwd)"
+HERE="$(cd "$(dirname "$0")/.." && pwd -P)"
 OUT="$HERE/out"
-KVER="$(cat "$OUT/KVER")"
 QEMU="${QEMU:-/opt/homebrew/bin/qemu-system-aarch64}"
 SMP="${SMP:-8}"
 MEM="${MEM:-8G}"
-LOG="${LOG:-$OUT/cpu-probe.log}"
-JSON_OUT="${JSON_OUT:-$OUT/cpu-probe-guest.json}"
+LOG_INPUT="${LOG:-$OUT/cpu-probe.log}"
+JSON_OUT_INPUT="${JSON_OUT:-$OUT/cpu-probe-guest.json}"
+
+if [ -L "$OUT" ]; then
+    echo "refusing symlinked output root: $OUT" >&2
+    exit 1
+fi
+mkdir -p "$OUT"
+OUT_REAL="$(cd "$OUT" && pwd -P)"
+
+resolve_safe_output() {
+    local input candidate parent parent_real link_count
+
+    input="$1"
+    case "$input" in
+        /*) candidate="$input" ;;
+        *)  candidate="$HERE/$input" ;;
+    esac
+    case "$candidate/" in
+        *"/../"*|*"/./"*|*"//"*)
+            echo "output path contains an unsafe component: $input" >&2
+            return 1
+            ;;
+    esac
+    case "$candidate" in
+        "$OUT"/*) ;;
+        *)
+            echo "output path must stay under $OUT: $input" >&2
+            return 1
+            ;;
+    esac
+    parent="${candidate%/*}"
+    if [ ! -d "$parent" ]; then
+        echo "output directory does not exist: $parent" >&2
+        return 1
+    fi
+    parent_real="$(cd "$parent" && pwd -P)"
+    case "$parent_real" in
+        "$OUT_REAL"|"$OUT_REAL"/*) ;;
+        *)
+            echo "output directory resolves outside $OUT: $parent" >&2
+            return 1
+            ;;
+    esac
+    if [ -L "$candidate" ] || { [ -e "$candidate" ] && [ ! -f "$candidate" ]; }; then
+        echo "refusing non-regular or symlinked output: $candidate" >&2
+        return 1
+    fi
+    if [ -e "$candidate" ]; then
+        link_count="$(stat -f '%l' "$candidate")"
+        if [ "$link_count" -ne 1 ]; then
+            echo "refusing multiply linked output: $candidate" >&2
+            return 1
+        fi
+    fi
+    printf '%s\n' "$candidate"
+}
+
+LOG="$(resolve_safe_output "$LOG_INPUT")"
+JSON_OUT="$(resolve_safe_output "$JSON_OUT_INPUT")"
+if [ "$LOG" = "$JSON_OUT" ]; then
+    echo "LOG and JSON_OUT must be different files" >&2
+    exit 1
+fi
+
+KVER="$(cat "$OUT/KVER")"
 SOURCE="$HERE/scripts/arm64-guest-cpu.c"
+KERNEL="$OUT/Image-$KVER"
+INITRD="$OUT/initrd.img-$KVER"
+ROOTFS="$OUT/vmroot.ext4"
+
+case "$SMP" in
+    ''|*[!0-9]*)
+        echo "SMP must be a positive integer, got: $SMP" >&2
+        exit 1
+        ;;
+esac
+if [ "$SMP" -lt 1 ]; then
+    echo "SMP must be at least 1" >&2
+    exit 1
+fi
 
 for required in \
-    "$OUT/Image-$KVER" \
-    "$OUT/initrd.img-$KVER" \
-    "$OUT/vmroot.ext4" \
+    "$KERNEL" \
+    "$INITRD" \
+    "$ROOTFS" \
     "$SOURCE"; do
     if [ ! -r "$required" ]; then
         echo "missing required input: $required" >&2
         exit 1
     fi
 done
+
+sha256_file() {
+    shasum -a 256 "$1" | awk '{print $1}'
+}
+
+file_size() {
+    stat -f '%z' "$1"
+}
 
 running_pid() {
     local pid
@@ -48,8 +134,6 @@ if [ -n "$VM_PID" ]; then
     echo "VM pid $VM_PID already uses vmroot.ext4; stop it before collecting evidence" >&2
     exit 1
 fi
-
-mkdir -p "$OUT"
 
 GUEST='
 mkdir -p /mnt/cpu-probe
@@ -79,12 +163,12 @@ ARGS=(
     -M virt,highmem=on
     -accel hvf
     -cpu host
-    -smp "$SMP"
+    -smp "$SMP,sockets=1,cores=$SMP,threads=1"
     -m "$MEM"
-    -kernel "$OUT/Image-$KVER"
-    -initrd "$OUT/initrd.img-$KVER"
+    -kernel "$KERNEL"
+    -initrd "$INITRD"
     -append "root=/dev/vda rootfstype=ext4 rw console=ttyAMA0 systemd.unit=multi-user.target systemd.mask=m3-build.service"
-    -drive "if=virtio,file=$OUT/vmroot.ext4,format=raw"
+    -drive "if=virtio,file=$ROOTFS,format=raw"
     -drive "if=virtio,file=fat:ro:$HERE/scripts,format=raw"
     -snapshot
     -nographic
@@ -114,10 +198,12 @@ fi
 wait "$QPID" 2>/dev/null || true
 trap - EXIT
 
-CONSOLE="$OUT/.cpu-probe-console.$$"
-JSON_TMP="$OUT/.cpu-probe-json.$$"
+CONSOLE="$(mktemp "$OUT/.cpu-probe-console.XXXXXX")"
+JSON_TMP="$(mktemp "$OUT/.cpu-probe-json.XXXXXX")"
+FINAL_TMP="$(mktemp "$OUT/.cpu-probe-final.XXXXXX")"
+KMSG_TMP="$(mktemp "$OUT/.cpu-probe-kmsg.XXXXXX")"
 cleanup_files() {
-    rm -f "$CONSOLE" "$JSON_TMP"
+    rm -f "$CONSOLE" "$JSON_TMP" "$FINAL_TMP" "$KMSG_TMP"
 }
 trap cleanup_files EXIT
 
@@ -155,13 +241,8 @@ awk '
     }
 ' "$CONSOLE" > "$JSON_TMP"
 
-if ! jq -e '
-    type == "object" and
-    .schema_version == 1 and
-    (.auxv | type == "object") and
-    (.auxv.HWCAP_CPUID | type == "boolean") and
-    (.registers | type == "object") and
-    (.registers | keys) == [
+if ! jq -e --argjson smp "$SMP" '
+    def register_names: [
         "CLIDR_EL1",
         "CTR_EL0",
         "DCZID_EL0",
@@ -182,13 +263,173 @@ if ! jq -e '
         "ID_AA64ZFR0_EL1",
         "MIDR_EL1",
         "MPIDR_EL1"
-    ] and
-    ([.registers[].status] | all(. == "available" or . == "unavailable"))
+    ];
+
+    type == "object" and
+    .schema_version == 2 and
+    .read_only == true and
+    .auxv.HWCAP_CPUID == true and
+    .collector_state.sigill_install.status == "available" and
+    .collector_state.sigill_restore.status == "available" and
+    .affinity.enumeration.status == "available" and
+    .affinity.restore.status == "available" and
+    .affinity.online_mask_stability.matches == true and
+    .affinity.cpus == [range(0; $smp)] and
+    (.cpus | length) == $smp and
+    ([.cpus[].observed_cpu.value] | unique | length) == $smp and
+    all(.cpus[];
+        .pin.status == "available" and
+        .pin_validation.matches == true and
+        .requested_cpu == .observed_cpu.value and
+        (.registers | keys) == register_names and
+        ([.registers[].status] |
+            all(. == "available" or . == "unavailable"))
+    )
 ' "$JSON_TMP" >/dev/null; then
     echo "guest probe did not produce valid JSON; inspect $LOG" >&2
     exit 1
 fi
 
-mv "$JSON_TMP" "$JSON_OUT"
+awk '
+    /^\[[[:space:]]*[0-9.]+\]/ {
+        line = $0
+        lower = tolower(line)
+        if (lower ~ /(cpu feature|cache|pmu|sve|sme|tso|atomic|pointer auth|bti|gic|timer|dczva)/) {
+            sub(/^\[[^]]*\][[:space:]]*/, "", line)
+            if (!seen[line]++)
+                print line
+        }
+    }
+' "$CONSOLE" > "$KMSG_TMP"
+
+COLLECTED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+QEMU_VERSION="$("$QEMU" --version | head -1)"
+QEMU_ARGV_JSON="$(jq -n --args '$ARGS.positional' -- "$QEMU" "${ARGS[@]}")"
+KERNEL_SHA256="$(sha256_file "$KERNEL")"
+INITRD_SHA256="$(sha256_file "$INITRD")"
+ROOTFS_SHA256="${ROOTFS_SHA256:-$(sha256_file "$ROOTFS")}"
+SOURCE_SHA256="$(sha256_file "$SOURCE")"
+KERNEL_SIZE="$(file_size "$KERNEL")"
+INITRD_SIZE="$(file_size "$INITRD")"
+ROOTFS_SIZE="$(file_size "$ROOTFS")"
+SOURCE_SIZE="$(file_size "$SOURCE")"
+
+jq \
+    --arg collected_at "$COLLECTED_AT" \
+    --argjson requested_smp "$SMP" \
+    --arg memory "$MEM" \
+    --arg qemu_path "$QEMU" \
+    --arg qemu_version "$QEMU_VERSION" \
+    --argjson qemu_argv "$QEMU_ARGV_JSON" \
+    --arg kernel_path "$KERNEL" \
+    --arg kernel_sha256 "$KERNEL_SHA256" \
+    --arg kernel_size "$KERNEL_SIZE" \
+    --arg initrd_path "$INITRD" \
+    --arg initrd_sha256 "$INITRD_SHA256" \
+    --arg initrd_size "$INITRD_SIZE" \
+    --arg rootfs_path "$ROOTFS" \
+    --arg rootfs_sha256 "$ROOTFS_SHA256" \
+    --arg rootfs_size "$ROOTFS_SIZE" \
+    --arg source_path "$SOURCE" \
+    --arg source_sha256 "$SOURCE_SHA256" \
+    --arg source_size "$SOURCE_SIZE" \
+    --rawfile kernel_messages "$KMSG_TMP" \
+    '. + {
+        run: {
+            collected_at_utc: $collected_at,
+            requested_smp: $requested_smp,
+            memory: $memory,
+            safety: {
+                snapshot: true,
+                source_drive_read_only: true,
+                host_privilege_required: false
+            },
+            qemu: {
+                path: $qemu_path,
+                version: $qemu_version,
+                argv: $qemu_argv
+            },
+            inputs: {
+                kernel: {
+                    path: $kernel_path,
+                    sha256: $kernel_sha256,
+                    size_bytes: ($kernel_size | tonumber)
+                },
+                initrd: {
+                    path: $initrd_path,
+                    sha256: $initrd_sha256,
+                    size_bytes: ($initrd_size | tonumber)
+                },
+                rootfs: {
+                    path: $rootfs_path,
+                    sha256: $rootfs_sha256,
+                    size_bytes: ($rootfs_size | tonumber)
+                },
+                probe_source: {
+                    path: $source_path,
+                    sha256: $source_sha256,
+                    size_bytes: ($source_size | tonumber)
+                }
+            }
+        },
+        kernel_feature_messages: {
+            status: (if ($kernel_messages | length) > 0 then
+                        "available"
+                     else
+                        "missing"
+                     end),
+            source: "filtered_serial_console",
+            lines: ($kernel_messages | split("\n") |
+                    map(select(length > 0)))
+        },
+        consistency: {
+            requested_smp_matches_cpu_count:
+                ((.cpus | length) == $requested_smp),
+            affinity_cpu_list_matches:
+                (.affinity.cpus == [range(0; $requested_smp)]),
+            online_mask_stable:
+                (.affinity.online_mask_stability.matches == true),
+            all_pins_match:
+                all(.cpus[]; .pin_validation.matches == true),
+            observed_cpus_unique:
+                (([.cpus[].observed_cpu.value] | unique | length) ==
+                 $requested_smp),
+            register_contract_homogeneous:
+                (([.cpus[].registers | del(.MPIDR_EL1)] | unique | length) == 1),
+            sysfs_identification_homogeneous:
+                (([.cpus[].sysfs_identification] | unique | length) == 1)
+        },
+        observations: {
+            mpidr_userspace_values_available:
+                ([.cpus[].registers.MPIDR_EL1.status] |
+                    all(. == "available")),
+            mpidr_userspace_values_unique:
+                (([.cpus[].registers.MPIDR_EL1.status] |
+                    all(. == "available")) and
+                 (([.cpus[].registers.MPIDR_EL1.value] | unique | length) ==
+                  $requested_smp))
+        }
+    }' "$JSON_TMP" > "$FINAL_TMP"
+
+if rg -qi 'machineid|bootid|serial[_ -]?number' "$FINAL_TMP"; then
+    echo "guest evidence contains a prohibited host or VM identifier" >&2
+    exit 1
+fi
+
+CONSISTENCY_STATUS=0
+if ! jq -e '
+    .run.safety.snapshot == true and
+    .run.safety.source_drive_read_only == true and
+    ([.consistency[]] | all(. == true))
+' "$FINAL_TMP" >/dev/null; then
+    CONSISTENCY_STATUS=1
+fi
+
+mv "$FINAL_TMP" "$JSON_OUT"
 echo "guest CPU fingerprint: $JSON_OUT"
 echo "console log: $LOG"
+
+if [ "$CONSISTENCY_STATUS" -ne 0 ]; then
+    echo "guest evidence was preserved, but one or more consistency checks failed" >&2
+    exit "$CONSISTENCY_STATUS"
+fi

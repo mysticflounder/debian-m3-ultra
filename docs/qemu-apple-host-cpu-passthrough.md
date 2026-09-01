@@ -54,9 +54,10 @@ The repository already provides:
 
 The current guest reports Apple TSO, showing that some host feature state is
 already visible. It also reports MIDR `0x610f0000` for every vCPU, matching
-QEMU's deliberate synthetic Apple identity. There is no complete host/guest
-feature fingerprint, instruction-validation suite, QEMU version manifest, or
-guest benchmark result checked into the project yet.
+QEMU's deliberate synthetic Apple identity. There is no source-controlled
+evidence bundle containing the complete host/guest feature fingerprints, QEMU
+version manifest, instruction-validation suite, or guest benchmark result yet;
+the current machine-local manifests remain under ignored `out/` paths.
 
 Upstream QEMU's HVF host model currently queries:
 
@@ -74,12 +75,15 @@ not consume those APIs. Newer SDK system-register enums include additional
 architectural ID registers, but enum availability alone does not prove that
 the feature-configuration API or a particular runtime can supply them.
 
-The first live 8-vCPU measurement completed on 2026-08-31. The guest exposed
-19 of the 20 probed registers and reported `CLIDR_EL1` unavailable. Across the
-14 registers also returned by the host HVF collector, five values matched,
-eight differed, and `CLIDR_EL1` was guest-unavailable. These raw differences
-still need architectural field decoding before they can be classified as
-intentional virtualization, masking, or QEMU gaps.
+The first complete 1, 8, 16, 24, and 32-vCPU matrix completed on 2026-08-31.
+Every vCPU and configured count exposed the same Linux-visible register,
+HWCAP, and sysfs identification contract. The guest exposed 19 of the 20
+EL0-probed registers and reported `CLIDR_EL1` unavailable. Across the 14
+registers also returned by the host HVF collector, five values matched and
+eight differed. Field decoding shows that all eight differences are in fields
+Linux deliberately sanitizes from its EL0 CPU-feature ABI; the current matrix
+therefore demonstrates no QEMU feature-loss gap. See the
+[M3 Ultra Phase 3 results](qemu-m3-ultra-phase3-results.md).
 
 ## Safety and ABI rules
 
@@ -333,10 +337,10 @@ P/E-core identity, m1n1, or a bare-metal Debian installation.
   the base disk.
 - [x] Run and validate the guest collector after the active builder VM releases
   `vmroot.ext4`.
-- [ ] Capture QEMU 11.1.1 M3 Ultra fingerprints at 1, 8, 16, 24, and 32
-  vCPUs. The first 8-vCPU fingerprint completed on 2026-08-31.
+- [x] Capture QEMU 11.1.1 M3 Ultra fingerprints at 1, 8, 16, 24, and 32
+  vCPUs.
 - [ ] Complete matched host/guest benchmark runs and retain distributions.
-- [ ] Produce the first classified host/guest gap matrix.
+- [x] Produce the first classified host/guest gap matrix.
 - [ ] Send the measured baseline and proposed first patch boundary to the QEMU
   Apple Silicon HVF maintainer and `qemu-devel`.
 

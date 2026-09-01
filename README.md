@@ -79,7 +79,7 @@ Boots the exported kernel in QEMU with HVF.
 Environment: `QEMU`, `SMP` (default 8), `MEM` (default `8G`).
 Login is `root` / `root`, with autologin on `ttyAMA0`.
 
-### Initial CPU passthrough probes
+### CPU passthrough evidence
 
 `scripts/cpu-probe-host.sh` compiles and runs a read-only
 Hypervisor.framework collector. It creates a vCPU configuration object but no
@@ -92,7 +92,8 @@ VM or vCPU, and writes the resulting fingerprint to
 
 `scripts/cpu-probe-vm.sh` boots the existing builder image with `-cpu host`
 and `-snapshot`, attaches `scripts/` as a read-only vvfat disk, compiles the
-Linux arm64 collector in the guest, and writes its fingerprint to
+Linux arm64 collector in the guest, pins it to every configured vCPU, and
+writes a self-describing fingerprint to
 `out/cpu-probe-guest.json`:
 
 ```bash
@@ -100,13 +101,28 @@ Linux arm64 collector in the guest, and writes its fingerprint to
 SMP=32 ./scripts/cpu-probe-vm.sh
 ```
 
-These are the first register-level collectors. The roadmap's later evidence
-phase adds per-vCPU sysfs data, kernel logs, topology, the exact QEMU command,
-and the classified host/guest gap matrix.
+The guest manifest includes per-vCPU registers and sysfs identification,
+online/present/possible masks, `/proc/cpuinfo`, kernel feature messages, exact
+QEMU arguments, input hashes, and consistency checks.
+
+Run the required vCPU-count matrix sequentially and produce the raw host/guest
+gap report with:
+
+```bash
+./scripts/cpu-probe-matrix.sh
+./scripts/cpu-probe-compare.sh
+```
+
+Outputs are under `out/cpu-matrix/`. The measured interpretation is in the
+[M3 Ultra Phase 3 results](docs/qemu-m3-ultra-phase3-results.md).
+The probe scripts reject output paths outside the project `out/` tree and
+refuse symlinked output targets.
 
 The base VM image is not modified. The probe checks for another QEMU using
 `vmroot.ext4`, and QEMU's own image lock remains the authoritative protection
-against a concurrent writer.
+against a concurrent writer. Guest writes go to a disposable overlay; the
+source share is read-only, and none of these probes uses host privilege or
+touches firmware, NVRAM, boot policy, partitions, or internal storage.
 
 Current QEMU deliberately exposes a homogeneous synthetic Apple MIDR
 (`0x610f0000`) instead of physical P/E-core identities. The probes measure the
