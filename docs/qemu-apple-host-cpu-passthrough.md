@@ -57,8 +57,8 @@ already visible. It also reports MIDR `0x610f0000` for every vCPU, matching
 QEMU's deliberate synthetic Apple identity. There is no source-controlled
 evidence bundle containing the complete host/guest feature fingerprints, QEMU
 version manifest, or guest benchmark result yet. The machine-local manifests,
-including the first instruction-behavior slice, remain under ignored `out/`
-paths.
+including the complete advertised-feature behavior runs, remain under ignored
+`out/` paths.
 
 Upstream QEMU's HVF host model currently queries:
 
@@ -123,22 +123,21 @@ runtime vPMU. This does not demonstrate a QEMU host-passthrough
 patch. A focused direct EL1 PMU-register diagnostic and upstream report remain
 appropriate.
 
-### Advertised-feature first slice
+### Advertised-feature behavior
 
-The first slice uses `scripts/feature-probe-vm.sh`,
-`scripts/arm64-feature-behavior.c`, and `scripts/arm64-feature-tests.S`.
-The 14 advertised checks split into seven semantic checks — `fp_asimd`,
-`crc32`, `pmull`, `lse_atomic`, `flagm_cfinv`, `dit`, and `dc_zva` — and seven
-execution-only checks — `lrcpc_ldapr`, `ilrcpc_ldapur`, `sb`,
-`paca_roundtrip`, `pacg`, `dc_cvap`, and `dc_cvadp`.
+The complete probe uses `scripts/feature-probe-vm.sh`,
+`scripts/arm64-feature-behavior.c`, `scripts/arm64-feature-tests.S`,
+`scripts/arm64-feature-crypto-tests.S`, and
+`scripts/arm64-feature-advanced-tests.S`. Its 35 advertised ABI rows per CPU
+split into 26 semantic checks and 9 execution-only checks. `evtstrm_wfe` and
+`bti` verify instruction execution, not event-stream configuration or BTI
+enforcement semantics.
 
-All 14 checks passed at 1 vCPU in
-`out/feature-probe-smp1.xCza5u/evidence.json`. All 448 checks (14 per vCPU)
-passed at 32 vCPUs in `out/feature-probe-smp32.jhdO3F/evidence.json`; the
-results are homogeneous across vCPUs.
-
-**This is a first slice only. It does not close the full
-every-advertised-feature gate; AES/SHA and other advertised features remain.**
+All 35 rows passed at 1 vCPU in
+`out/feature-probe-smp1.k7ifKG/evidence.json`. All 1,120 rows (35 per vCPU)
+passed at 32 vCPUs in `out/feature-probe-smp32.85xa8v/evidence.json`; the
+results are homogeneous across vCPUs. Each manifest records before/after
+hashes for all eight protected inputs.
 
 ## Safety and ABI rules
 
@@ -251,9 +250,10 @@ for all configured vCPUs.
   (`0x...5006` host versus `0x...5106` guest) as a virtualization/API
   investigation, not a patch request.
 
-Exit gate: the full 1/8/16/24/32 matrix passed the raw-EL1 consistency,
-safety, and host-comparison checks. PMU behavior is classified in the verified
-slice above; the full every-advertised-feature behavioral gate remains open.
+Exit gate: the full 1/8/16/24/32 matrix passed the raw-EL1 consistency, safety,
+and host-comparison checks; PMU behavior is classified above; and the complete
+35-row advertised-feature behavior gate passed for the recorded 1- and
+32-vCPU runs.
 
 ### 4. Build the host/guest gap matrix
 
@@ -419,10 +419,11 @@ P/E-core identity, m1n1, or a bare-metal Debian installation.
 - [x] Run and classify the guest-only PMU behavior slice; record the raw
   DFR0/PMU distinction as `unavailable` (`hvf-gap`, runtime vPMU) with no
   demonstrated host-passthrough patch.
-- [x] Run the first advertised-feature behavior slice: 14/14 checks at 1 vCPU
-  and 448/448 checks at 32 vCPUs, homogeneous.
-- [ ] Complete the full every-advertised-feature behavioral gate, including
-  AES/SHA and the remaining advertised features.
+- [x] Run the complete advertised-feature behavior gate: 35/35 rows at 1 vCPU
+  and 1,120/1,120 rows at 32 vCPUs, homogeneous; 26 rows are semantic and 9
+  are execution-only checks.
+- [x] Cover AES/SHA and the remaining advertised features in the complete
+  behavior gate.
 - [ ] Send the measured baseline and proposed first patch boundary to the QEMU
   Apple Silicon HVF maintainer and `qemu-devel`.
 

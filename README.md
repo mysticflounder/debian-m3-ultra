@@ -147,18 +147,18 @@ architectural feature contract separately from that known identity policy.
 
 ### Guest feature and PMU behavior evidence
 
-The first instruction-behavior slice uses `scripts/feature-probe-vm.sh` with
-`scripts/arm64-feature-behavior.c` and `scripts/arm64-feature-tests.S`. It
-tests 14 advertised capabilities: the semantic checks are `fp_asimd`, `crc32`,
-`pmull`, `lse_atomic`, `flagm_cfinv`, `dit`, and `dc_zva`; the execution-only
-checks are `lrcpc_ldapr`, `ilrcpc_ldapur`, `sb`, `paca_roundtrip`, `pacg`,
-`dc_cvap`, and `dc_cvadp`. All 14 passed at 1 vCPU in
-`out/feature-probe-smp1.xCza5u/evidence.json`; all 448 checks (14 per vCPU)
-passed at 32 vCPUs in `out/feature-probe-smp32.jhdO3F/evidence.json`, with a
-homogeneous result across vCPUs.
-
-**This is a first slice only. It does not close the full
-every-advertised-feature gate. AES/SHA and other advertised features remain.**
+The advertised-feature behavior probe uses `scripts/feature-probe-vm.sh`,
+`scripts/arm64-feature-behavior.c`, `scripts/arm64-feature-tests.S`,
+`scripts/arm64-feature-crypto-tests.S`, and
+`scripts/arm64-feature-advanced-tests.S`. It validates 35 advertised ABI rows
+per CPU: 26 semantic checks and 9 execution-only checks. The execution-only
+set includes `evtstrm_wfe` and `bti`, which verify instruction execution rather
+than event-stream configuration or BTI enforcement semantics. All 35 rows
+passed at 1 vCPU in `out/feature-probe-smp1.k7ifKG/evidence.json`; all 1,120
+rows (35 per vCPU) passed at 32 vCPUs in
+`out/feature-probe-smp32.85xa8v/evidence.json`, with a homogeneous result
+across vCPUs. Each manifest records before/after hashes for the kernel version,
+kernel, initrd, rootfs, and four probe sources.
 
 The guest-only PMU behavior collector is `scripts/pmu-probe-vm.sh`, using
 `scripts/arm64-pmu-behavior.c`. Each run uses an explicit disposable overlay,

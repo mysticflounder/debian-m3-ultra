@@ -159,32 +159,28 @@ distinction conservatively as `unavailable`, reason `hvf-gap` in the runtime
 vPMU. This is not a demonstrated QEMU host-passthrough patch; a focused direct EL1
 PMU-register diagnostic and upstream report remain appropriate.
 
-## Advertised-feature behavior first slice (verified, incomplete)
+## Advertised-feature behavior (verified)
 
-The first slice uses `scripts/feature-probe-vm.sh`,
-`scripts/arm64-feature-behavior.c`, and `scripts/arm64-feature-tests.S`. It
-covers 14 advertised checks. The seven semantic checks are `fp_asimd`,
-`crc32`, `pmull`, `lse_atomic`, `flagm_cfinv`, `dit`, and `dc_zva`. The seven
-execution-only checks are `lrcpc_ldapr`, `ilrcpc_ldapur`, `sb`,
-`paca_roundtrip`, `pacg`, `dc_cvap`, and `dc_cvadp`.
+The probe uses `scripts/feature-probe-vm.sh` with the driver, base instruction,
+crypto instruction, and advanced instruction sources. It validates 35
+advertised ABI rows per CPU: 26 semantic checks and 9 execution-only checks.
+`evtstrm_wfe` and `bti` remain execution-only checks: they verify instruction
+execution, not event-stream configuration or BTI enforcement semantics.
 
-At 1 vCPU, all 14 checks passed in
-`out/feature-probe-smp1.xCza5u/evidence.json`. At 32 vCPUs, all 448 checks
-(14 per vCPU) passed in `out/feature-probe-smp32.jhdO3F/evidence.json`; the
-results were homogeneous across vCPUs.
-
-**This is a first slice only and does not close the full
-every-advertised-feature gate. AES/SHA and other advertised features remain.**
+At 1 vCPU, all 35 rows passed in
+`out/feature-probe-smp1.k7ifKG/evidence.json`. At 32 vCPUs, all 1,120 rows
+(35 per vCPU) passed in `out/feature-probe-smp32.85xa8v/evidence.json`; the
+results were homogeneous across vCPUs. Each evidence manifest records the
+eight protected input artifacts and their before/after hashes.
 
 ## Remaining work
 
-The verified EL1 and PMU results close their observation/classification slice;
-they do not by themselves justify a QEMU patch. Future work is to complete the
-advertised instruction/state suite, including AES/SHA and the remaining
-features, and classify any mismatch that survives those tests. M5 Max remains
-the secondary target and must repeat the same inventory and evidence process
-independently. The m1n1/T6032 bare-metal roadmap remains deferred and is
-outside this QEMU workstream.
+The EL1, PMU, and complete 35-row advertised-feature results close their
+respective observation/classification slices; they do not by themselves
+justify a QEMU patch. Remaining work is benchmark completion, follow-up for any
+future mismatch, independent M5 Max validation, and upstream coordination. The
+m1n1/T6032 bare-metal roadmap remains deferred and is outside this QEMU
+workstream.
 
 ## Primary sources
 

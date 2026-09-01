@@ -1,7 +1,7 @@
 #!/bin/bash
 # Run advertised AArch64 instruction-behavior checks in an isolated QEMU/HVF
 # guest. Guest writes land only in a disposable qcow2 overlay, and the source
-# share is a read-only vvfat image containing two copied inputs.
+# share is a read-only vvfat image containing four copied inputs.
 #
 #   SMP=8 ./scripts/feature-probe-vm.sh
 #
@@ -16,12 +16,15 @@ QEMU_IMG="/opt/homebrew/bin/qemu-img"
 TIMEOUT="/opt/homebrew/bin/gtimeout"
 LSOF="/usr/sbin/lsof"
 AWK="/usr/bin/awk"
+JQ="/usr/bin/jq"
 SMP="${SMP:-8}"
 MEM="${MEM:-8G}"
 KVER_FILE="$OUT/KVER"
 ROOTFS="$OUT/vmroot.ext4"
 C_SOURCE="$HERE/scripts/arm64-feature-behavior.c"
 ASM_SOURCE="$HERE/scripts/arm64-feature-tests.S"
+CRYPTO_ASM_SOURCE="$HERE/scripts/arm64-feature-crypto-tests.S"
+ADVANCED_ASM_SOURCE="$HERE/scripts/arm64-feature-advanced-tests.S"
 LOCK_DIR="$OUT/.vmroot.ext4.probe.lock"
 
 RUN_DIR=""
@@ -98,11 +101,14 @@ verify_protected_inputs() {
     ROOTFS_SHA256_AFTER="$(sha256_file "$ROOTFS")" || return 1
     C_SOURCE_SHA256_AFTER="$(sha256_file "$C_SOURCE")" || return 1
     ASM_SOURCE_SHA256_AFTER="$(sha256_file "$ASM_SOURCE")" || return 1
+    CRYPTO_ASM_SOURCE_SHA256_AFTER="$(sha256_file "$CRYPTO_ASM_SOURCE")" || return 1
+    ADVANCED_ASM_SOURCE_SHA256_AFTER="$(sha256_file "$ADVANCED_ASM_SOURCE")" || return 1
     QEMU_SHA256_AFTER="$(sha256_file "$QEMU_REAL")" || return 1
     QEMU_IMG_SHA256_AFTER="$(sha256_file "$QEMU_IMG_REAL")" || return 1
     TIMEOUT_SHA256_AFTER="$(sha256_file "$TIMEOUT_REAL")" || return 1
     LSOF_SHA256_AFTER="$(sha256_file "$LSOF_REAL")" || return 1
     AWK_SHA256_AFTER="$(sha256_file "$AWK_REAL")" || return 1
+    JQ_SHA256_AFTER="$(sha256_file "$JQ_REAL")" || return 1
 
     [ "$KVER_SHA256_BEFORE" = "$KVER_SHA256_AFTER" ] &&
         [ "$KERNEL_SHA256_BEFORE" = "$KERNEL_SHA256_AFTER" ] &&
@@ -110,11 +116,14 @@ verify_protected_inputs() {
         [ "$ROOTFS_SHA256_BEFORE" = "$ROOTFS_SHA256_AFTER" ] &&
         [ "$C_SOURCE_SHA256_BEFORE" = "$C_SOURCE_SHA256_AFTER" ] &&
         [ "$ASM_SOURCE_SHA256_BEFORE" = "$ASM_SOURCE_SHA256_AFTER" ] &&
+        [ "$CRYPTO_ASM_SOURCE_SHA256_BEFORE" = "$CRYPTO_ASM_SOURCE_SHA256_AFTER" ] &&
+        [ "$ADVANCED_ASM_SOURCE_SHA256_BEFORE" = "$ADVANCED_ASM_SOURCE_SHA256_AFTER" ] &&
         [ "$QEMU_SHA256_BEFORE" = "$QEMU_SHA256_AFTER" ] &&
         [ "$QEMU_IMG_SHA256_BEFORE" = "$QEMU_IMG_SHA256_AFTER" ] &&
         [ "$TIMEOUT_SHA256_BEFORE" = "$TIMEOUT_SHA256_AFTER" ] &&
         [ "$LSOF_SHA256_BEFORE" = "$LSOF_SHA256_AFTER" ] &&
-        [ "$AWK_SHA256_BEFORE" = "$AWK_SHA256_AFTER" ]
+        [ "$AWK_SHA256_BEFORE" = "$AWK_SHA256_AFTER" ] &&
+        [ "$JQ_SHA256_BEFORE" = "$JQ_SHA256_AFTER" ]
 }
 
 lsof_openers() {
@@ -186,6 +195,12 @@ cleanup() {
         if ! rm -f -- "$SOURCE_SHARE/arm64-feature-tests.S"; then
             cleanup_status=1
         fi
+        if ! rm -f -- "$SOURCE_SHARE/arm64-feature-crypto-tests.S"; then
+            cleanup_status=1
+        fi
+        if ! rm -f -- "$SOURCE_SHARE/arm64-feature-advanced-tests.S"; then
+            cleanup_status=1
+        fi
         if ! rmdir "$SOURCE_SHARE" 2>/dev/null; then
             cleanup_status=1
         fi
@@ -237,7 +252,7 @@ fi
 mkdir -p "$OUT"
 [ "$(cd "$OUT" && pwd -P)" = "$OUT" ] || fail "output root is not canonical: $OUT"
 
-for tool in "$QEMU" "$QEMU_IMG" "$TIMEOUT" "$LSOF" "$AWK"; do
+for tool in "$QEMU" "$QEMU_IMG" "$TIMEOUT" "$LSOF" "$AWK" "$JQ"; do
     [ -x "$tool" ] || fail "missing pinned executable: $tool"
     [ ! -u "$tool" ] && [ ! -g "$tool" ] || fail "refusing setuid/setgid executable: $tool"
 done
@@ -246,7 +261,9 @@ QEMU_IMG_REAL="$(realpath "$QEMU_IMG")"
 TIMEOUT_REAL="$(realpath "$TIMEOUT")"
 LSOF_REAL="$(realpath "$LSOF")"
 AWK_REAL="$(realpath "$AWK")"
-for tool in "$QEMU_REAL" "$QEMU_IMG_REAL" "$TIMEOUT_REAL" "$LSOF_REAL" "$AWK_REAL"; do
+JQ_REAL="$(realpath "$JQ")"
+for tool in "$QEMU_REAL" "$QEMU_IMG_REAL" "$TIMEOUT_REAL" "$LSOF_REAL" \
+            "$AWK_REAL" "$JQ_REAL"; do
     [ -f "$tool" ] && [ -x "$tool" ] || fail "pinned executable resolves unsafely: $tool"
 done
 QEMU="$QEMU_REAL"
@@ -254,6 +271,7 @@ QEMU_IMG="$QEMU_IMG_REAL"
 TIMEOUT="$TIMEOUT_REAL"
 LSOF="$LSOF_REAL"
 AWK="$AWK_REAL"
+JQ="$JQ_REAL"
 
 require_safe_input "$KVER_FILE"
 KVER_SHA256_SELECTED="$(sha256_file "$KVER_FILE")" || fail "could not hash KVER"
@@ -263,10 +281,12 @@ case "$KVER" in
 esac
 KERNEL="$OUT/Image-$KVER"
 INITRD="$OUT/initrd.img-$KVER"
-for input in "$KERNEL" "$INITRD" "$ROOTFS" "$C_SOURCE" "$ASM_SOURCE"; do
+for input in "$KERNEL" "$INITRD" "$ROOTFS" "$C_SOURCE" "$ASM_SOURCE" \
+             "$CRYPTO_ASM_SOURCE" "$ADVANCED_ASM_SOURCE"; do
     require_safe_input "$input"
 done
-INPUT_LIST=("$KVER_FILE" "$KERNEL" "$INITRD" "$ROOTFS" "$C_SOURCE" "$ASM_SOURCE")
+INPUT_LIST=("$KVER_FILE" "$KERNEL" "$INITRD" "$ROOTFS" "$C_SOURCE" \
+            "$ASM_SOURCE" "$CRYPTO_ASM_SOURCE" "$ADVANCED_ASM_SOURCE")
 for ((left = 0; left < ${#INPUT_LIST[@]}; left++)); do
     for ((right = left + 1; right < ${#INPUT_LIST[@]}; right++)); do
         [ ! "${INPUT_LIST[$left]}" -ef "${INPUT_LIST[$right]}" ] ||
@@ -279,6 +299,9 @@ case "$QEMU_VERSION" in
     'QEMU emulator version 11.1.1'*) ;;
     *) fail "expected pinned QEMU 11.1.1, got: $QEMU_VERSION" ;;
 esac
+JQ_VERSION="$($JQ --version)"
+[ "$JQ_VERSION" = "jq-1.7.1-apple" ] ||
+    fail "expected pinned jq-1.7.1-apple, got: $JQ_VERSION"
 
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
     fail "another VM probe owns $LOCK_DIR; inspect it rather than deleting it blindly"
@@ -296,7 +319,12 @@ SOURCE_SHARE="$RUN_DIR/source"
 mkdir -m 700 "$SOURCE_SHARE"
 cp "$C_SOURCE" "$SOURCE_SHARE/arm64-feature-behavior.c"
 cp "$ASM_SOURCE" "$SOURCE_SHARE/arm64-feature-tests.S"
-chmod 400 "$SOURCE_SHARE/arm64-feature-behavior.c" "$SOURCE_SHARE/arm64-feature-tests.S"
+cp "$CRYPTO_ASM_SOURCE" "$SOURCE_SHARE/arm64-feature-crypto-tests.S"
+cp "$ADVANCED_ASM_SOURCE" "$SOURCE_SHARE/arm64-feature-advanced-tests.S"
+chmod 400 "$SOURCE_SHARE/arm64-feature-behavior.c" \
+    "$SOURCE_SHARE/arm64-feature-tests.S" \
+    "$SOURCE_SHARE/arm64-feature-crypto-tests.S" \
+    "$SOURCE_SHARE/arm64-feature-advanced-tests.S"
 LOG="$RUN_DIR/serial.log"
 CONSOLE="$RUN_DIR/console.txt"
 RAW_JSON="$RUN_DIR/raw.json"
@@ -319,17 +347,24 @@ INITRD_SHA256_BEFORE="$(sha256_file "$INITRD")"
 ROOTFS_SHA256_BEFORE="$(sha256_file "$ROOTFS")"
 C_SOURCE_SHA256_BEFORE="$(sha256_file "$C_SOURCE")"
 ASM_SOURCE_SHA256_BEFORE="$(sha256_file "$ASM_SOURCE")"
+CRYPTO_ASM_SOURCE_SHA256_BEFORE="$(sha256_file "$CRYPTO_ASM_SOURCE")"
+ADVANCED_ASM_SOURCE_SHA256_BEFORE="$(sha256_file "$ADVANCED_ASM_SOURCE")"
 QEMU_SHA256_BEFORE="$(sha256_file "$QEMU_REAL")"
 QEMU_IMG_SHA256_BEFORE="$(sha256_file "$QEMU_IMG_REAL")"
 TIMEOUT_SHA256_BEFORE="$(sha256_file "$TIMEOUT_REAL")"
 LSOF_SHA256_BEFORE="$(sha256_file "$LSOF_REAL")"
 AWK_SHA256_BEFORE="$(sha256_file "$AWK_REAL")"
+JQ_SHA256_BEFORE="$(sha256_file "$JQ_REAL")"
 [ "$KVER_SHA256_SELECTED" = "$KVER_SHA256_BEFORE" ] ||
     fail "KVER changed while selecting the kernel inputs"
 [ "$(sha256_file "$SOURCE_SHARE/arm64-feature-behavior.c")" = "$C_SOURCE_SHA256_BEFORE" ] ||
     fail "staged C source differs from the protected input"
 [ "$(sha256_file "$SOURCE_SHARE/arm64-feature-tests.S")" = "$ASM_SOURCE_SHA256_BEFORE" ] ||
     fail "staged assembly source differs from the protected input"
+[ "$(sha256_file "$SOURCE_SHARE/arm64-feature-crypto-tests.S")" = "$CRYPTO_ASM_SOURCE_SHA256_BEFORE" ] ||
+    fail "staged crypto assembly source differs from the protected input"
+[ "$(sha256_file "$SOURCE_SHARE/arm64-feature-advanced-tests.S")" = "$ADVANCED_ASM_SOURCE_SHA256_BEFORE" ] ||
+    fail "staged advanced assembly source differs from the protected input"
 HASHES_READY=true
 LAUNCH_STARTED=true
 
@@ -362,12 +397,17 @@ fi
 WORK="$(mktemp -d /tmp/arm64-feature-behavior.XXXXXX)"
 cp /mnt/feature-source/arm64-feature-behavior.c "$WORK/"
 cp /mnt/feature-source/arm64-feature-tests.S "$WORK/"
+cp /mnt/feature-source/arm64-feature-crypto-tests.S "$WORK/"
+cp /mnt/feature-source/arm64-feature-advanced-tests.S "$WORK/"
 cd "$WORK"
 cc -O2 -Wall -Wextra -Werror -std=gnu11 -march=armv8-a \
     -fno-tree-vectorize -fno-builtin -mno-outline-atomics \
     -mgeneral-regs-only -c arm64-feature-behavior.c -o driver.o
 cc -c arm64-feature-tests.S -o feature-tests.o
-cc driver.o feature-tests.o -o arm64-feature-behavior
+cc -c arm64-feature-crypto-tests.S -o feature-crypto-tests.o
+cc -c arm64-feature-advanced-tests.S -o feature-advanced-tests.o
+cc driver.o feature-tests.o feature-crypto-tests.o feature-advanced-tests.o \
+    -o arm64-feature-behavior
 test -x arm64-feature-behavior
 ./arm64-feature-behavior
 echo "FEATURE_GUEST_COMPLETE"
@@ -394,11 +434,11 @@ ARGS=(
     -serial stdio
     -no-reboot
 )
-QEMU_ARGV_JSON="$(jq -n --args '$ARGS.positional' -- "$QEMU" "${ARGS[@]}")"
+QEMU_ARGV_JSON="$("$JQ" -n --args '$ARGS.positional' -- "$QEMU" "${ARGS[@]}")"
 EXPECTED_ACCEL="hvf,kernel-irqchip=on"
 EXPECTED_ROOT_DRIVE="if=virtio,file=$ROOT_OVERLAY,format=qcow2,cache=none"
 EXPECTED_SOURCE_DRIVE="if=virtio,file=fat:ro:$SOURCE_SHARE,format=raw,readonly=on"
-if ! jq -e \
+if ! "$JQ" -e \
     --arg qemu "$QEMU" \
     --arg accel "$EXPECTED_ACCEL" \
     --arg root_drive "$EXPECTED_ROOT_DRIVE" \
@@ -477,7 +517,10 @@ rm -f -- "$ROOT_OVERLAY"
 [ ! -e "$ROOT_OVERLAY" ] || fail "disposable overlay still exists after removal"
 ROOT_OVERLAY=""
 
-rm -f -- "$SOURCE_SHARE/arm64-feature-behavior.c" "$SOURCE_SHARE/arm64-feature-tests.S"
+rm -f -- "$SOURCE_SHARE/arm64-feature-behavior.c" \
+    "$SOURCE_SHARE/arm64-feature-tests.S" \
+    "$SOURCE_SHARE/arm64-feature-crypto-tests.S" \
+    "$SOURCE_SHARE/arm64-feature-advanced-tests.S"
 rmdir "$SOURCE_SHARE"
 SOURCE_SHARE=""
 [ ! -e "$RUN_DIR/source" ] || fail "temporary source share still exists after removal"
@@ -517,11 +560,11 @@ fi
     capture { print }
 ' "$CONSOLE" > "$RAW_JSON"
 
-# This first slice is a regression fixture for the already captured guest ABI,
+# This is a regression fixture for the already captured M3 Ultra guest ABI,
 # not a portable discovery runner. Capability values and positive expectations
 # are deliberately exact; DCZID is checked for sane decimal formatting/range
 # because its implementation-defined block-size field is not a fixed fixture.
-if ! jq -e --argjson smp "$SMP" '
+if ! "$JQ" -e --argjson smp "$SMP" '
     def expected_specs: [
         {feature:"fp_asimd", source:"AT_HWCAP", bit:"HWCAP_FP|HWCAP_ASIMD", level:"semantic"},
         {feature:"crc32", source:"AT_HWCAP", bit:"HWCAP_CRC32", level:"semantic"},
@@ -536,7 +579,28 @@ if ! jq -e --argjson smp "$SMP" '
         {feature:"pacg", source:"AT_HWCAP", bit:"HWCAP_PACG", level:"execution"},
         {feature:"dc_zva", source:"DCZID_EL0", bit:"DZP==0", level:"semantic"},
         {feature:"dc_cvap", source:"AT_HWCAP", bit:"HWCAP_DCPOP", level:"execution"},
-        {feature:"dc_cvadp", source:"AT_HWCAP2", bit:"HWCAP2_DCPODP", level:"execution"}
+        {feature:"dc_cvadp", source:"AT_HWCAP2", bit:"HWCAP2_DCPODP", level:"execution"},
+        {feature:"evtstrm_wfe", source:"AT_HWCAP", bit:"HWCAP_EVTSTRM", level:"execution"},
+        {feature:"aes_round", source:"AT_HWCAP", bit:"HWCAP_AES", level:"semantic"},
+        {feature:"sha1_h", source:"AT_HWCAP", bit:"HWCAP_SHA1", level:"semantic"},
+        {feature:"sha256_su0", source:"AT_HWCAP", bit:"HWCAP_SHA2", level:"semantic"},
+        {feature:"fphp_add", source:"AT_HWCAP", bit:"HWCAP_FPHP", level:"semantic"},
+        {feature:"asimdhp_add", source:"AT_HWCAP", bit:"HWCAP_ASIMDHP", level:"semantic"},
+        {feature:"cpuid_isar0", source:"AT_HWCAP", bit:"HWCAP_CPUID", level:"semantic"},
+        {feature:"asimdrdm_sqrdmlah", source:"AT_HWCAP", bit:"HWCAP_ASIMDRDM", level:"semantic"},
+        {feature:"jscvt_fjcvtzs", source:"AT_HWCAP", bit:"HWCAP_JSCVT", level:"semantic"},
+        {feature:"fcma_fcadd", source:"AT_HWCAP", bit:"HWCAP_FCMA", level:"semantic"},
+        {feature:"sha3_eor3", source:"AT_HWCAP", bit:"HWCAP_SHA3", level:"semantic"},
+        {feature:"asimddp_udot", source:"AT_HWCAP", bit:"HWCAP_ASIMDDP", level:"semantic"},
+        {feature:"sha512_su0", source:"AT_HWCAP", bit:"HWCAP_SHA512", level:"semantic"},
+        {feature:"asimdfhm_fmlal", source:"AT_HWCAP", bit:"HWCAP_ASIMDFHM", level:"semantic"},
+        {feature:"uscat_unaligned_atomic", source:"AT_HWCAP", bit:"HWCAP_USCAT", level:"semantic"},
+        {feature:"flagm2_axflag", source:"AT_HWCAP2", bit:"HWCAP2_FLAGM2", level:"semantic"},
+        {feature:"frint32z", source:"AT_HWCAP2", bit:"HWCAP2_FRINT", level:"semantic"},
+        {feature:"i8mm_smmla", source:"AT_HWCAP2", bit:"HWCAP2_I8MM", level:"semantic"},
+        {feature:"bf16_bfdot", source:"AT_HWCAP2", bit:"HWCAP2_BF16", level:"semantic"},
+        {feature:"bti", source:"AT_HWCAP2", bit:"HWCAP2_BTI", level:"execution"},
+        {feature:"afp_fpcr", source:"AT_HWCAP2", bit:"HWCAP2_AFP", level:"semantic"}
     ];
     def row_spec: {feature, source:.hwcap_source, bit:.hwcap_bit, level:.test_level};
     type == "object" and
@@ -562,7 +626,7 @@ if ! jq -e --argjson smp "$SMP" '
     fail "feature JSON failed strict captured-ABI validation; inspect $RAW_JSON"
 fi
 
-jq \
+"$JQ" \
     --arg memory "$MEM" \
     --arg qemu_path "$QEMU_REAL" \
     --arg qemu_version "$QEMU_VERSION" \
@@ -581,6 +645,10 @@ jq \
     --arg parser_path "$AWK_REAL" \
     --arg parser_sha256_before "$AWK_SHA256_BEFORE" \
     --arg parser_sha256_after "$AWK_SHA256_AFTER" \
+    --arg jq_path "$JQ_REAL" \
+    --arg jq_version "$JQ_VERSION" \
+    --arg jq_sha256_before "$JQ_SHA256_BEFORE" \
+    --arg jq_sha256_after "$JQ_SHA256_AFTER" \
     --arg kver_path "$KVER_FILE" \
     --arg kver_sha256_before "$KVER_SHA256_BEFORE" \
     --arg kver_sha256_after "$KVER_SHA256_AFTER" \
@@ -603,7 +671,13 @@ jq \
     --arg c_source_sha256_after "$C_SOURCE_SHA256_AFTER" \
     --arg asm_source_path "$ASM_SOURCE" \
     --arg asm_source_sha256_before "$ASM_SOURCE_SHA256_BEFORE" \
-    --arg asm_source_sha256_after "$ASM_SOURCE_SHA256_AFTER" '
+    --arg asm_source_sha256_after "$ASM_SOURCE_SHA256_AFTER" \
+    --arg crypto_asm_source_path "$CRYPTO_ASM_SOURCE" \
+    --arg crypto_asm_source_sha256_before "$CRYPTO_ASM_SOURCE_SHA256_BEFORE" \
+    --arg crypto_asm_source_sha256_after "$CRYPTO_ASM_SOURCE_SHA256_AFTER" \
+    --arg advanced_asm_source_path "$ADVANCED_ASM_SOURCE" \
+    --arg advanced_asm_source_sha256_before "$ADVANCED_ASM_SOURCE_SHA256_BEFORE" \
+    --arg advanced_asm_source_sha256_after "$ADVANCED_ASM_SOURCE_SHA256_AFTER" '
     . + {
         run: {
             memory: $memory,
@@ -618,6 +692,8 @@ jq \
                    sha256_before: $lsof_sha256_before, sha256_after: $lsof_sha256_after},
             parser: {path: $parser_path,
                      sha256_before: $parser_sha256_before, sha256_after: $parser_sha256_after},
+            jq: {path: $jq_path, version: $jq_version,
+                 sha256_before: $jq_sha256_before, sha256_after: $jq_sha256_after},
             safety: {
                 host_privilege_required: false,
                 explicit_disposable_overlay: true,
@@ -654,12 +730,18 @@ jq \
                             sha256_after: $c_source_sha256_after},
             instruction_source: {path: $asm_source_path,
                                  sha256_before: $asm_source_sha256_before,
-                                 sha256_after: $asm_source_sha256_after}
+                                 sha256_after: $asm_source_sha256_after},
+            crypto_instruction_source: {path: $crypto_asm_source_path,
+                                        sha256_before: $crypto_asm_source_sha256_before,
+                                        sha256_after: $crypto_asm_source_sha256_after},
+            advanced_instruction_source: {path: $advanced_asm_source_path,
+                                          sha256_before: $advanced_asm_source_sha256_before,
+                                          sha256_after: $advanced_asm_source_sha256_after}
         }
     }
 ' "$RAW_JSON" > "$FINAL_TMP"
 
-if ! jq -e '
+if ! "$JQ" -e '
     .run.safety == {
         host_privilege_required: false,
         explicit_disposable_overlay: true,
@@ -680,19 +762,22 @@ if ! jq -e '
 ' "$FINAL_TMP" >/dev/null; then
     fail "final feature evidence failed safety validation"
 fi
-if ! jq -e --argjson expected_argv "$QEMU_ARGV_JSON" '
+if ! "$JQ" -e --argjson expected_argv "$QEMU_ARGV_JSON" '
     (keys | sort) == (["dczid_el0", "hwcap", "hwcap2", "inputs",
                        "online_cpu_count", "run", "schema_version", "tests"] | sort) and
-    (.run | keys | sort) == (["lsof", "memory", "parser", "qemu", "qemu_img",
+    (.run | keys | sort) == (["jq", "lsof", "memory", "parser", "qemu", "qemu_img",
                               "safety", "timeout"] | sort) and
-    (.inputs | keys | sort) == (["driver_source", "initrd", "instruction_source",
-                                 "kernel", "kernel_version", "rootfs"] | sort) and
+    (.inputs | keys | sort) == (["advanced_instruction_source",
+                                 "crypto_instruction_source", "driver_source",
+                                 "initrd", "instruction_source", "kernel",
+                                 "kernel_version", "rootfs"] | sort) and
     .run.qemu.argv == $expected_argv and
     .run.qemu.sha256_before == .run.qemu.sha256_after and
     .run.qemu_img.sha256_before == .run.qemu_img.sha256_after and
     .run.timeout.sha256_before == .run.timeout.sha256_after and
     .run.lsof.sha256_before == .run.lsof.sha256_after and
     .run.parser.sha256_before == .run.parser.sha256_after and
+    .run.jq.sha256_before == .run.jq.sha256_after and
     all(.inputs[]; .sha256_before == .sha256_after)
 ' "$FINAL_TMP" >/dev/null; then
     fail "final feature evidence failed repeated-hash validation"
