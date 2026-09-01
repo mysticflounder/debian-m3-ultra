@@ -56,8 +56,9 @@ The current guest reports Apple TSO, showing that some host feature state is
 already visible. It also reports MIDR `0x610f0000` for every vCPU, matching
 QEMU's deliberate synthetic Apple identity. There is no source-controlled
 evidence bundle containing the complete host/guest feature fingerprints, QEMU
-version manifest, instruction-validation suite, or guest benchmark result yet;
-the current machine-local manifests remain under ignored `out/` paths.
+version manifest, or guest benchmark result yet. The machine-local manifests,
+including the first instruction-behavior slice, remain under ignored `out/`
+paths.
 
 Upstream QEMU's HVF host model currently queries:
 
@@ -97,6 +98,47 @@ PMU; it is not a patch target until PMU behavior establishes a demonstrated
 QEMU gap. SVE/SME registers were recorded as `not_read` because those features
 are absent, never inferred as zero. These are verified QEMU-guest results,
 not bare-metal observations.
+
+## Verified behavior slices (M3 Ultra)
+
+### PMU behavior
+
+The guest-only PMU collector is `scripts/pmu-probe-vm.sh`, using
+`scripts/arm64-pmu-behavior.c`. Its runs use an explicit disposable overlay,
+read-only source, no network, no firmware, and no host devices. In
+`out/pmu-probe-smp1-irqchipon.JqyF1W/evidence.json`, `armv8_pmuv3` is
+registered in sysfs, but cycles and all eight other hardware events are
+unavailable because `perf_event_open` returns `ENOENT`; the positive-cycles
+gate is false. In
+`out/pmu-probe-smp1-irqchipoff.FbyweY/evidence.json`, no `armv8_pmuv3` sysfs
+device is present, the kernel log reports a failed PMU probe, all nine events
+return `ENOENT`, and the gate is false.
+
+QEMU v11.1.1 `hvf.c` shows that `kernel-irqchip=on` selects Apple-OS
+cycles-only PMU emulation with PMUVer 1. `off` intentionally reports PMUVer 0,
+despite an inaccurate Windows-oriented userspace cycle counter; PMCEID0/1 are
+zero in that userspace path. The raw DFR0/PMU distinction is consequently
+classified conservatively as `unavailable`, with reason `hvf-gap` in the
+runtime vPMU. This does not demonstrate a QEMU host-passthrough
+patch. A focused direct EL1 PMU-register diagnostic and upstream report remain
+appropriate.
+
+### Advertised-feature first slice
+
+The first slice uses `scripts/feature-probe-vm.sh`,
+`scripts/arm64-feature-behavior.c`, and `scripts/arm64-feature-tests.S`.
+The 14 advertised checks split into seven semantic checks — `fp_asimd`,
+`crc32`, `pmull`, `lse_atomic`, `flagm_cfinv`, `dit`, and `dc_zva` — and seven
+execution-only checks — `lrcpc_ldapr`, `ilrcpc_ldapur`, `sb`,
+`paca_roundtrip`, `pacg`, `dc_cvap`, and `dc_cvadp`.
+
+All 14 checks passed at 1 vCPU in
+`out/feature-probe-smp1.xCza5u/evidence.json`. All 448 checks (14 per vCPU)
+passed at 32 vCPUs in `out/feature-probe-smp32.jhdO3F/evidence.json`; the
+results are homogeneous across vCPUs.
+
+**This is a first slice only. It does not close the full
+every-advertised-feature gate; AES/SHA and other advertised features remain.**
 
 ## Safety and ABI rules
 
@@ -210,7 +252,8 @@ for all configured vCPUs.
   investigation, not a patch request.
 
 Exit gate: the full 1/8/16/24/32 matrix passed the raw-EL1 consistency,
-safety, and host-comparison checks. PMU behavioral tests remain future work.
+safety, and host-comparison checks. PMU behavior is classified in the verified
+slice above; the full every-advertised-feature behavioral gate remains open.
 
 ### 4. Build the host/guest gap matrix
 
@@ -373,8 +416,13 @@ P/E-core identity, m1n1, or a bare-metal Debian installation.
   vCPUs.
 - [ ] Complete matched host/guest benchmark runs and retain distributions.
 - [x] Produce the first classified host/guest gap matrix.
-- [ ] Classify the raw DFR0/PMU distinction with independent PMU behavior
-  tests before considering any QEMU patch.
+- [x] Run and classify the guest-only PMU behavior slice; record the raw
+  DFR0/PMU distinction as `unavailable` (`hvf-gap`, runtime vPMU) with no
+  demonstrated host-passthrough patch.
+- [x] Run the first advertised-feature behavior slice: 14/14 checks at 1 vCPU
+  and 448/448 checks at 32 vCPUs, homogeneous.
+- [ ] Complete the full every-advertised-feature behavioral gate, including
+  AES/SHA and the remaining advertised features.
 - [ ] Send the measured baseline and proposed first patch boundary to the QEMU
   Apple Silicon HVF maintainer and `qemu-devel`.
 

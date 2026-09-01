@@ -145,6 +145,41 @@ Current QEMU deliberately exposes a homogeneous synthetic Apple MIDR
 (`0x610f0000`) instead of physical P/E-core identities. The probes measure the
 architectural feature contract separately from that known identity policy.
 
+### Guest feature and PMU behavior evidence
+
+The first instruction-behavior slice uses `scripts/feature-probe-vm.sh` with
+`scripts/arm64-feature-behavior.c` and `scripts/arm64-feature-tests.S`. It
+tests 14 advertised capabilities: the semantic checks are `fp_asimd`, `crc32`,
+`pmull`, `lse_atomic`, `flagm_cfinv`, `dit`, and `dc_zva`; the execution-only
+checks are `lrcpc_ldapr`, `ilrcpc_ldapur`, `sb`, `paca_roundtrip`, `pacg`,
+`dc_cvap`, and `dc_cvadp`. All 14 passed at 1 vCPU in
+`out/feature-probe-smp1.xCza5u/evidence.json`; all 448 checks (14 per vCPU)
+passed at 32 vCPUs in `out/feature-probe-smp32.jhdO3F/evidence.json`, with a
+homogeneous result across vCPUs.
+
+**This is a first slice only. It does not close the full
+every-advertised-feature gate. AES/SHA and other advertised features remain.**
+
+The guest-only PMU behavior collector is `scripts/pmu-probe-vm.sh`, using
+`scripts/arm64-pmu-behavior.c`. Each run uses an explicit disposable overlay,
+read-only source, no network, no firmware, and no host devices. With
+`kernel-irqchip=on`, `out/pmu-probe-smp1-irqchipon.JqyF1W/evidence.json` shows
+the `armv8_pmuv3` sysfs device registered, but cycles and all eight other
+hardware events unavailable because `perf_event_open` returned `ENOENT`; the
+positive-cycles gate is false. With `kernel-irqchip=off`,
+`out/pmu-probe-smp1-irqchipoff.FbyweY/evidence.json` shows no `armv8_pmuv3`
+sysfs device, the kernel log reports that probing the PMU failed, all nine
+events again return `ENOENT`, and the gate is false.
+
+Reading QEMU v11.1.1 `hvf.c` alongside these runs establishes that `on` uses
+Apple-OS cycles-only PMU emulation with PMUVer 1, while `off` intentionally
+reports PMUVer 0 despite an inaccurate Windows-oriented userspace cycle
+counter; PMCEID0/1 are zero in that userspace path. The raw DFR0/PMU
+distinction is therefore conservatively `unavailable` (reason: `hvf-gap` in
+the runtime vPMU), not a demonstrated QEMU host-passthrough patch. A
+focused direct EL1 PMU-register diagnostic and upstream report remain
+appropriate.
+
 ### `scripts/make-builder-vm.sh`
 Runs inside a **privileged** container. Builds a self-contained builder VM:
 `vmroot.ext4` (Debian sid + the asahi kernel + every `linux-asahi` build dependency

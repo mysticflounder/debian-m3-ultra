@@ -135,14 +135,56 @@ The root backing image is opened through that overlay; the build disk and
 source share are read-only. No firmware, NVRAM, boot policy, raw physical
 disk, or host system volume is passed through or intentionally modified.
 
+## PMU behavior (verified)
+
+The guest-only PMU behavior collector is `scripts/pmu-probe-vm.sh`, using
+`scripts/arm64-pmu-behavior.c`. It collects only guest perf behavior. Each run
+uses an explicit disposable overlay and read-only source, with networking
+disabled and no firmware or host devices attached.
+
+With `kernel-irqchip=on`,
+`out/pmu-probe-smp1-irqchipon.JqyF1W/evidence.json` records a registered
+`armv8_pmuv3` sysfs device. Cycles and all eight other hardware events are
+unavailable: every `perf_event_open` returns `ENOENT`, and the positive-cycles
+gate is false. With `kernel-irqchip=off`,
+`out/pmu-probe-smp1-irqchipoff.FbyweY/evidence.json` records no
+`armv8_pmuv3` sysfs device; the kernel log says that probing the PMU failed,
+all nine events return `ENOENT`, and the positive-cycles gate is false.
+
+The QEMU v11.1.1 `hvf.c` source explains the distinction: `on` selects
+Apple-OS cycles-only PMU emulation with PMUVer 1, while `off` intentionally
+reports PMUVer 0 despite an inaccurate Windows-oriented userspace cycle
+counter. PMCEID0/1 are zero in that userspace path. Classify the raw DFR0/PMU
+distinction conservatively as `unavailable`, reason `hvf-gap` in the runtime
+vPMU. This is not a demonstrated QEMU host-passthrough patch; a focused direct EL1
+PMU-register diagnostic and upstream report remain appropriate.
+
+## Advertised-feature behavior first slice (verified, incomplete)
+
+The first slice uses `scripts/feature-probe-vm.sh`,
+`scripts/arm64-feature-behavior.c`, and `scripts/arm64-feature-tests.S`. It
+covers 14 advertised checks. The seven semantic checks are `fp_asimd`,
+`crc32`, `pmull`, `lse_atomic`, `flagm_cfinv`, `dit`, and `dc_zva`. The seven
+execution-only checks are `lrcpc_ldapr`, `ilrcpc_ldapur`, `sb`,
+`paca_roundtrip`, `pacg`, `dc_cvap`, and `dc_cvadp`.
+
+At 1 vCPU, all 14 checks passed in
+`out/feature-probe-smp1.xCza5u/evidence.json`. At 32 vCPUs, all 448 checks
+(14 per vCPU) passed in `out/feature-probe-smp32.jhdO3F/evidence.json`; the
+results were homogeneous across vCPUs.
+
+**This is a first slice only and does not close the full
+every-advertised-feature gate. AES/SHA and other advertised features remain.**
+
 ## Remaining work
 
-The verified EL1 result closes the observation gate; it does not by itself
-justify a QEMU patch. Future work is to test PMU behavior, execute the
-advertised instruction/state suite, and classify any mismatch that survives
-those tests. M5 Max remains the secondary target and must repeat the same
-inventory and evidence process independently. The m1n1/T6032 bare-metal
-roadmap remains deferred and is outside this QEMU workstream.
+The verified EL1 and PMU results close their observation/classification slice;
+they do not by themselves justify a QEMU patch. Future work is to complete the
+advertised instruction/state suite, including AES/SHA and the remaining
+features, and classify any mismatch that survives those tests. M5 Max remains
+the secondary target and must repeat the same inventory and evidence process
+independently. The m1n1/T6032 bare-metal roadmap remains deferred and is
+outside this QEMU workstream.
 
 ## Primary sources
 
@@ -151,4 +193,5 @@ roadmap remains deferred and is outside this QEMU workstream.
 - [QEMU AArch64 CPU finalization](https://gitlab.com/qemu-project/qemu/-/blob/v11.1.1/target/arm/cpu64.c)
 - [Linux arm64 CPU-feature-register ABI](https://www.kernel.org/doc/html/latest/arch/arm64/cpu-feature-registers.html)
 - [Linux arm64 CPU-feature emulation](https://github.com/torvalds/linux/blob/master/arch/arm64/kernel/cpufeature.c)
+- [Linux armv8 PMUv3 implementation](https://github.com/torvalds/linux/blob/v6.12/drivers/perf/arm_pmuv3.c)
 - [Linux CPU identification sysfs ABI](https://github.com/torvalds/linux/blob/master/Documentation/ABI/testing/sysfs-devices-system-cpu)
