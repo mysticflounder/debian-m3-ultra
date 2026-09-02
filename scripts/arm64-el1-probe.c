@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Guest-only, read-only arm64 EL1 system-register probe.
+ * Guest-local arm64 EL1 system-register diagnostic probe.
  *
  * The module takes a CPU-hotplug read lock, synchronously samples every
  * online CPU with work_on_cpu(), and only then emits the collected values.
@@ -10,6 +10,7 @@
 #include <linux/cpu.h>
 #include <linux/errno.h>
 #include <linux/init.h>
+#include <linux/irqflags.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/preempt.h>
@@ -17,6 +18,7 @@
 #include <linux/smp.h>
 #include <linux/workqueue.h>
 
+#include <asm/barrier.h>
 #include <asm/sysreg.h>
 
 #ifndef CONFIG_ARM64
@@ -32,10 +34,20 @@
 #define SYS_ID_AA64SMFR0_EL1	sys_reg(3, 0, 0, 4, 5)
 #endif
 
-#define PROBE_SCHEMA_VERSION	1U
+#ifndef SYS_CSSELR_EL1
+#define SYS_CSSELR_EL1	sys_reg(3, 2, 0, 0, 0)
+#endif
+
+#ifndef SYS_CCSIDR_EL1
+#define SYS_CCSIDR_EL1	sys_reg(3, 1, 0, 0, 0)
+#endif
+
+#define PROBE_SCHEMA_VERSION	2U
 #define ID_AA64PFR0_SVE_SHIFT	32
 #define ID_AA64PFR1_SME_SHIFT	24
 #define ID_AA64_FEATURE_MASK	0xfULL
+#define PROBE_CACHE_LEVEL_COUNT	7U
+#define PROBE_CACHE_SAMPLE_COUNT	(PROBE_CACHE_LEVEL_COUNT * 2U)
 
 enum probe_register {
 	PROBE_MPIDR_EL1,
@@ -61,11 +73,26 @@ struct register_sample {
 	bool was_read;
 };
 
+struct cache_sample {
+	unsigned int level;
+	unsigned int ctype;
+	unsigned int ind;
+	u64 selector;
+	u64 value;
+	bool was_read;
+};
+
 struct cpu_sample {
 	unsigned int cpu;
 	unsigned int observed_cpu;
 	bool was_read;
 	struct register_sample registers[PROBE_REGISTER_COUNT];
+	u64 cache_selector_before;
+	u64 cache_selector_after;
+	unsigned int cache_sample_count;
+	unsigned int cache_samples_read;
+	bool cache_selector_restored;
+	struct cache_sample cache_samples[PROBE_CACHE_SAMPLE_COUNT];
 };
 
 static const char *const register_names[PROBE_REGISTER_COUNT] = {
@@ -91,11 +118,37 @@ static const char *const register_names[PROBE_REGISTER_COUNT] = {
 	(sample)->registers[(index)].was_read = true; \
 } while (0)
 
+static void sample_cache_register(struct cpu_sample *sample,
+					  unsigned int level, unsigned int ctype,
+					  unsigned int ind)
+{
+	struct cache_sample *cache;
+
+	if (sample->cache_sample_count >= PROBE_CACHE_SAMPLE_COUNT)
+		return;
+
+	cache = &sample->cache_samples[sample->cache_sample_count++];
+	cache->level = level;
+	cache->ctype = ctype;
+	cache->ind = ind;
+	cache->selector = ((u64)(level - 1) << 1) | ind;
+	write_sysreg_s(cache->selector, SYS_CSSELR_EL1);
+	isb();
+	cache->value = read_sysreg_s(SYS_CCSIDR_EL1);
+	cache->was_read = true;
+	++sample->cache_samples_read;
+}
+
 static long collect_cpu_registers(void *argument)
 {
 	struct cpu_sample *sample = argument;
 	u64 pfr0;
 	u64 pfr1;
+	u64 clidr;
+	u64 selector_before;
+	u64 selector_after;
+	unsigned long irq_flags;
+	unsigned int level;
 
 	preempt_disable();
 	sample->observed_cpu = smp_processor_id();
@@ -118,9 +171,10 @@ static long collect_cpu_registers(void *argument)
 	SAMPLE_SYSREG(sample, PROBE_ID_AA64MMFR0_EL1,
 		      SYS_ID_AA64MMFR0_EL1);
 	SAMPLE_SYSREG(sample, PROBE_ID_AA64MMFR1_EL1,
-		      SYS_ID_AA64MMFR1_EL1);
+			      SYS_ID_AA64MMFR1_EL1);
 	SAMPLE_SYSREG(sample, PROBE_ID_AA64MMFR2_EL1,
-		      SYS_ID_AA64MMFR2_EL1);
+			      SYS_ID_AA64MMFR2_EL1);
+	clidr = sample->registers[PROBE_CLIDR_EL1].value;
 
 	pfr0 = sample->registers[PROBE_ID_AA64PFR0_EL1].value;
 	if (((pfr0 >> ID_AA64PFR0_SVE_SHIFT) & ID_AA64_FEATURE_MASK) != 0)
@@ -132,7 +186,40 @@ static long collect_cpu_registers(void *argument)
 		SAMPLE_SYSREG(sample, PROBE_ID_AA64SMFR0_EL1,
 			      SYS_ID_AA64SMFR0_EL1);
 
-	sample->was_read = true;
+	/* CSSELR is per-PE state; keep interrupts from observing our selectors. */
+	local_irq_save(irq_flags);
+	selector_before = read_sysreg_s(SYS_CSSELR_EL1);
+	sample->cache_selector_before = selector_before;
+	for (level = 1; level <= PROBE_CACHE_LEVEL_COUNT; ++level) {
+		unsigned int ctype = (clidr >> (3 * (level - 1))) & 7;
+
+		switch (ctype) {
+		case 1: /* instruction-only */
+			sample_cache_register(sample, level, ctype, 1);
+			break;
+		case 2: /* data-only */
+			sample_cache_register(sample, level, ctype, 0);
+			break;
+		case 3: /* separate instruction and data */
+			sample_cache_register(sample, level, ctype, 0);
+			sample_cache_register(sample, level, ctype, 1);
+			break;
+		case 4: /* unified */
+			sample_cache_register(sample, level, ctype, 0);
+			break;
+		default:
+			break;
+		}
+	}
+	write_sysreg_s(selector_before, SYS_CSSELR_EL1);
+	isb();
+	selector_after = read_sysreg_s(SYS_CSSELR_EL1);
+	sample->cache_selector_after = selector_after;
+	sample->cache_selector_restored = selector_after == selector_before;
+	local_irq_restore(irq_flags);
+
+	sample->was_read = sample->cache_selector_restored &&
+		(sample->cache_samples_read == sample->cache_sample_count);
 	preempt_enable();
 	return 0;
 }
@@ -162,6 +249,24 @@ static void emit_samples(const struct cpu_sample *samples,
 				sample->cpu, register_names[reg],
 				value->was_read ? "read" : "not_read",
 				(unsigned long long)value->value);
+		}
+		pr_info("EL1_PROBE_CACHE_SELECTOR cpu=%u before=0x%016llx "
+			"after=0x%016llx restored=%s\n", sample->cpu,
+			(unsigned long long)sample->cache_selector_before,
+			(unsigned long long)sample->cache_selector_after,
+			sample->cache_selector_restored ? "yes" : "no");
+		for (reg = 0; reg < sample->cache_sample_count; ++reg) {
+			const struct cache_sample *cache = &sample->cache_samples[reg];
+			const char *cache_type = cache->ind == 1 ? "instruction" :
+				"data_or_unified";
+
+			pr_info("EL1_PROBE_CACHE cpu=%u level=%u ctype=%u "
+				"cache_type=%s ind=%u selector=%llu status=%s "
+				"value=0x%016llx\n", sample->cpu, cache->level,
+				cache->ctype, cache_type, cache->ind,
+				(unsigned long long)cache->selector,
+				cache->was_read ? "read" : "not_read",
+				(unsigned long long)cache->value);
 		}
 	}
 

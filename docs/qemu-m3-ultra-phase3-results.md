@@ -130,10 +130,34 @@ behavioral tests.
 support. This is an absence/unavailability result, not evidence of a missing
 QEMU passthrough field.
 
-These EL1 runs write only project evidence and a disposable qcow2 overlay.
-The root backing image is opened through that overlay; the build disk and
-source share are read-only. No firmware, NVRAM, boot policy, raw physical
-disk, or host system volume is passed through or intentionally modified.
+A schema-2 follow-up also sampled `CCSIDR_EL1` through transient, per-vCPU
+`CSSELR_EL1` selections. The selector was restored and read back before the
+module re-enabled interrupts. At both 1 and 32 vCPUs, every guest cache sample
+matched the public-HVF configuration exactly:
+
+- L1 data/unified: `0x00000000700fe03a` (64 KiB, 8-way, 64-byte line);
+- L1 instruction: `0x00000000203fe01a` (128 KiB, 4-way, 64-byte line); and
+- L2 unified: `0x0000000070ffe07b` (4 MiB, 16-way, 128-byte line).
+
+The 32-vCPU evidence contains 96 cache rows and reports a homogeneous cache
+contract. Its comparison classifies all three architectural cache entries as
+exact, with no mismatch or unavailable row. Evidence is retained at
+`out/el1-probe-smp1.DbP3LL/` and `out/el1-probe-smp32.LgYQkT/`.
+
+This closes the apparent cache-observation gap. QEMU's HVF host-feature
+construction does not explicitly copy the public configuration's CTR, CLIDR,
+DCZID, or CCSIDR fields into its host snapshot, but instantiated HVF vCPUs
+already expose the same values at runtime. A cache-import patch is therefore
+not justified by current evidence; first trace and document which values HVF
+provides natively versus which QEMU virtualizes.
+
+These EL1 runs make host/storage writes only to project evidence and a
+disposable qcow2 overlay. The cache probe transiently changes only the guest
+vCPU's `CSSELR_EL1`, with interrupts excluded, then restores and verifies the
+original selector before returning. The root backing image is opened through
+the overlay; the build disk and source share are read-only. No firmware,
+NVRAM, boot policy, raw physical disk, or host system volume is passed through
+or intentionally modified.
 
 ## PMU behavior (verified)
 
@@ -198,15 +222,41 @@ not captured; memory remains a single-thread workload; and this slice covers
 only integer and memory behavior. Every guest used a disposable overlay,
 read-only source, no network, no firmware, and no host devices.
 
+### Targeted 24-vCPU diagnosis
+
+The original severe 24-vCPU result did not reproduce at the same magnitude.
+In `out/benchmark-guest-smp24.Zk03NU/evidence.json`, the 24-thread integer
+median was 31.22 Gops with a tight 30.30--32.21 Gops range, versus the original
+25.70 Gops median and 24.62--34.21 Gops range. A 16-thread control in that same
+24-vCPU guest had a 23.65 Gops median.
+
+The topology discriminator in
+`out/benchmark-guest-smp32.8GUd6z/evidence.json` then ran 24 and 32 active
+threads inside one 32-vCPU guest. Its medians were 27.60 and 31.64 Gops, both
+substantially more variable and slower than the retained original 32-thread
+median of 41.02 Gops. The variability therefore moved across vCPU counts and
+launches; current evidence does not establish a stable defect specific to the
+24-vCPU CPU model.
+
+These runs support focusing further diagnosis on host/guest scheduling,
+placement, load, or frequency/thermal conditions. macOS does not expose usable
+non-root thermal telemetry here (`pmset -g therm` is unavailable and
+`powermetrics` requires root), so the present evidence cannot choose among
+those causes. Do not expand the generic benchmark suite for this issue. Any
+further performance work must be a minimal discriminating experiment with host
+scheduler/load telemetry.
+
 ## Remaining work
 
-The EL1, PMU, and complete 35-row advertised-feature results close their
-respective observation/classification slices; they do not by themselves
-justify a QEMU patch. Remaining work is to expand the controlled performance
-suite, explain or eliminate the 24-vCPU variance, set a numerical performance
-gate, follow up any future mismatch, validate M5 Max independently, and
-coordinate upstream. The m1n1/T6032 bare-metal roadmap remains deferred and is
-outside this QEMU workstream.
+The EL1, cache, PMU, and complete 35-row advertised-feature results close their
+respective observation/classification slices; they do not justify a QEMU
+feature or cache patch. Remaining work is to trace the native-HVF versus
+QEMU-emulated register boundary, add missing cache/DC-ZVA behavioral coverage,
+classify any demonstrated mismatch, validate M5 Max independently, and
+coordinate the resulting model semantics upstream. Performance diagnosis is
+now a separate scheduler/environment lane, not a prerequisite for constructing
+the faithful architectural CPU contract. The m1n1/T6032 bare-metal roadmap
+remains deferred and is outside this QEMU workstream.
 
 ## Primary sources
 

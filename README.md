@@ -120,9 +120,11 @@ refuse symlinked output targets.
 
 `scripts/el1-probe-vm.sh` is the raw EL1 follow-up. It boots the same Debian
 builder as a disposable QEMU/HVF guest, builds and loads a short-lived kernel
-module there, and records `MPIDR_EL1`, `CLIDR_EL1`, and the ID registers Linux
-sanitizes from EL0. It is a QEMU-only evidence tool; it does not support or
-attempt bare-metal boot:
+module there, and records `MPIDR_EL1`, `CLIDR_EL1`, the ID registers Linux
+sanitizes from EL0, and each CLIDR-described `CCSIDR_EL1` cache entry. Cache
+collection uses transient per-vCPU `CSSELR_EL1` selections with interrupt
+exclusion and verified selector restoration. It is a QEMU-only evidence tool;
+it does not support or attempt bare-metal boot:
 
 ```bash
 ./scripts/el1-probe-vm.sh
@@ -136,14 +138,17 @@ the host/raw-EL1 comparison for every result. EL1 manifests and comparisons
 are written under `out/el1-probe-*`. The base rootfs is
 opened through an explicit disposable qcow2 overlay, while the build disk and
 source share are read-only; the runner also refuses a concurrent VM using the
-builder image. The only writes are project output files and the temporary
-overlay used by the guest. No firmware, NVRAM, boot policy, raw physical disk,
-or host system volume is passed through or intentionally modified; no host
-privilege is used.
+builder image. The only storage writes are project output files and the
+temporary overlay used by the guest; schema-2 cache collection also makes and
+verifies a transient guest-vCPU selector change. No firmware, NVRAM, boot
+policy, raw physical disk, or host system volume is passed through or
+intentionally modified; no host privilege is used.
 
 Current QEMU deliberately exposes a homogeneous synthetic Apple MIDR
 (`0x610f0000`) instead of physical P/E-core identities. The probes measure the
 architectural feature contract separately from that known identity policy.
+The schema-2 1- and 32-vCPU cache runs matched all three public-HVF CCSIDR
+values exactly; the 32-vCPU run reported a homogeneous 96-row cache contract.
 
 ### Guest feature and PMU behavior evidence
 
@@ -244,6 +249,16 @@ pass. Host GCC 16.1 and guest GCC 16.2 differ; CPU affinity and thermal state
 were not controlled; host load during guest runs was not captured; the memory
 workload remains single-threaded; and the 24-thread results have substantial
 variance. Disk and network are intentionally outside this CPU-only benchmark.
+
+Targeted diagnosis did not reproduce the original 24-vCPU slowdown at the
+same severity. `out/benchmark-guest-smp24.Zk03NU/evidence.json` produced a
+stable 31.22 Gops 24-thread median, while the 32-vCPU control in
+`out/benchmark-guest-smp32.8GUd6z/evidence.json` showed variable 24- and
+32-thread medians of 27.60 and 31.64 Gops. This supports an
+environment-sensitive classification and does not establish a stable
+24-vCPU-model defect. Further work on this symptom is limited to
+scheduler/load telemetry and minimal controls; it is not a reason to expand
+the generic performance suite.
 
 ## Contributing upstream
 

@@ -72,9 +72,13 @@ Upstream QEMU's HVF host model currently queries:
 
 The public vCPU-configuration API also exposes `CTR_EL0`, `CLIDR_EL1`,
 `DCZID_EL0`, and per-cache `CCSIDR_EL1` values. Current QEMU host probing does
-not consume those APIs. Newer SDK system-register enums include additional
-architectural ID registers, but enum availability alone does not prove that
-the feature-configuration API or a particular runtime can supply them.
+not consume those APIs in its explicit host-feature snapshot. Schema-2 raw
+EL1 evidence now establishes that instantiated HVF vCPUs nevertheless expose
+the same CTR, CLIDR, DCZID, and all three CLIDR-described CCSIDR values. Do not
+infer a runtime passthrough gap from the host-snapshot code alone. Newer SDK
+system-register enums include additional architectural ID registers, but enum
+availability alone does not prove that the feature-configuration API or a
+particular runtime can supply them.
 
 The first complete 1, 8, 16, 24, and 32-vCPU matrix completed on 2026-08-31.
 Every vCPU and configured count exposed the same Linux-visible register,
@@ -98,6 +102,18 @@ PMU; it is not a patch target until PMU behavior establishes a demonstrated
 QEMU gap. SVE/SME registers were recorded as `not_read` because those features
 are absent, never inferred as zero. These are verified QEMU-guest results,
 not bare-metal observations.
+
+The schema-2 cache follow-up sampled and restored `CSSELR_EL1` on every vCPU.
+At 1 and 32 vCPUs, guest `CCSIDR_EL1` matched the host configuration exactly
+for L1 data/unified (`0x700fe03a`), L1 instruction (`0x203fe01a`), and L2
+unified (`0x70ffe07b`). All 96 cache rows in the 32-vCPU run were homogeneous.
+Those values describe HVF's one safe homogeneous cache contract, not the
+different physical P- and E-core cache geometries reported by macOS.
+Specifically, macOS reports 24 performance cores with 192 KiB L1I, 128 KiB
+L1D, and 16 MiB L2 groups, plus 8 efficiency cores with 128 KiB L1I, 64 KiB
+L1D, and 4 MiB L2 groups. HVF's homogeneous CCSIDR sizes numerically match the
+efficiency-core group. This is an API-supplied conservative contract, not
+evidence that a vCPU is pinned to an efficiency core.
 
 ## Verified behavior slices (M3 Ultra)
 
@@ -142,8 +158,10 @@ hashes for all eight protected inputs.
 ## Safety and ABI rules
 
 - Host inventory tools require neither root nor a VM disk write. Guest-side
-  collectors may write only their disposable overlay and project evidence;
-  they must never open a host physical device or system volume.
+  collectors may make persistent writes only to their disposable overlay and
+  project evidence; transient diagnostic register state must be restored and
+  verified before return. They must never open a host physical device or
+  system volume.
 - Run guest probes with an explicit disposable overlay and read-only source
   drives. Never pass firmware, NVRAM, boot policy, or raw physical storage.
 - Never infer an absent register as zero; record `unavailable`, the API error,
@@ -163,7 +181,8 @@ hashes for all eight protected inputs.
 ## Deliverables
 
 1. A read-only macOS HVF feature and cache-register collector.
-2. A read-only Linux arm64 ID-register and HWCAP collector.
+2. A guest-local Linux arm64 ID/cache-register and HWCAP collector that
+   restores transient selector state before returning.
 3. A deterministic JSON schema and comparison tool that classifies every
    difference as passed through, virtualized, masked, unavailable, or wrong.
 4. Positive and negative instruction tests for every guest-visible optional
@@ -243,6 +262,8 @@ for all configured vCPUs.
   guest; no bare-metal or firmware path is permitted for this gate.
 - Capture `MPIDR_EL1`, `CLIDR_EL1`, and the ID registers sanitized by the EL0
   ABI, with explicit `not_read` status for absent SVE/SME support.
+- Capture each CLIDR-described `CCSIDR_EL1` value, with interrupts disabled
+  around the per-PE `CSSELR_EL1` selection and verified selector restoration.
 - Require unique topology-encoded MPIDRs and a homogeneous non-MPIDR register
   contract across the selected vCPU counts.
 - Compare the raw values with the host HVF configuration view. Record the
@@ -250,10 +271,11 @@ for all configured vCPUs.
   (`0x...5006` host versus `0x...5106` guest) as a virtualization/API
   investigation, not a patch request.
 
-Exit gate: the full 1/8/16/24/32 matrix passed the raw-EL1 consistency, safety,
-and host-comparison checks; PMU behavior is classified above; and the complete
-35-row advertised-feature behavior gate passed for the recorded 1- and
-32-vCPU runs.
+Exit gate: the full schema-1 1/8/16/24/32 matrix passed the original raw-EL1
+consistency, safety, and host-comparison checks; schema-2 cache evidence passed
+at 1 and 32 vCPUs with exact values and a homogeneous 96-row maximum-vCPU
+contract; PMU behavior is classified above; and the complete 35-row
+advertised-feature behavior gate passed for the recorded 1- and 32-vCPU runs.
 
 ### 4. Build the host/guest gap matrix
 
@@ -270,10 +292,11 @@ Classify every field with the five-value deliverable vocabulary:
 Record `qemu-gap`, `hvf-gap`, or `unsafe` as a separate reason rather than as a
 second classification vocabulary.
 
-Initial questions include:
+Current dispositions and remaining questions include:
 
-- whether QEMU should use HVF's `CTR_EL0`, `CLIDR_EL1`, `DCZID_EL0`, and
-  `CCSIDR_EL1` data, and how those values interact with virtual topology;
+- instantiated HVF vCPUs already expose HVF's `CTR_EL0`, `CLIDR_EL1`,
+  `DCZID_EL0`, and `CCSIDR_EL1` values exactly; trace and document why before
+  changing QEMU's separate host-feature snapshot;
 - whether newer PFR2, ISAR2, MMFR3, and MMFR4 values are available through a
   usable pre-vCPU feature API on either target;
 - whether PMU, SVE, and SME state survives reset and migration consistently;
@@ -313,8 +336,8 @@ Proposed patch sequence:
 1. add host-gated feature-probe and normalization tests;
 2. refactor the HVF host snapshot only as needed to represent missing public
    data;
-3. pass through safe cache/instruction-semantics fields demonstrated by the gap
-   matrix;
+3. pass through cache or instruction-semantics fields only if the gap matrix
+   demonstrates a runtime mismatch; the current M3 Ultra cache rows are exact;
 4. add runtime-gated newer ID registers only when Apple exposes a usable API;
 5. add consistency checks and fail-closed diagnostics; and
 6. document the homogeneous host model and migration restrictions.
@@ -335,12 +358,15 @@ Test 1, 8, 16, 24, and 32 vCPUs. For each count:
   bounded SMP and memory stress;
 - exercise idle/WFI long enough to catch host-spin regressions;
 - run the instruction suite and Linux CPU-feature selftests; and
-- run matched CPU-only integer, floating-point, vector, crypto, compression,
-  atomic, memory, syscall, and kernel-build workloads.
+- run a broader matched CPU-only workload suite during release qualification,
+  after architectural correctness and stability are established.
 
 Report performance distributions, not a single best run. Separate instruction
 throughput from scheduler placement, guest OS overhead, virtio I/O, and thermal
 effects. Disk and network results do not determine CPU-passthrough success.
+When a concrete anomaly has already been identified, use only the smallest
+reproduction and control needed to isolate it; do not expand the generic suite
+in place of diagnosis.
 
 Exit gate: all advertised features are correct, all vCPU counts are stable,
 and controlled CPU-only workloads meet the agreed performance threshold or
@@ -417,8 +443,14 @@ P/E-core identity, m1n1, or a bare-metal Debian installation.
 - [x] Run the initial matched integer/memory microbenchmark at 1, 8, 16, 24,
   and 32 vCPUs and retain seven-sample distributions plus a normalized
   descriptive comparison.
-- [ ] Complete the broader controlled performance suite, resolve the variable
-  24-vCPU result, and establish the numerical performance gate.
+- [x] Re-run the variable 24-vCPU case with bounded controls; the original
+  severe drop did not reproduce consistently and variability also appeared at
+  32 vCPUs. This supports an environment-sensitive classification and does not
+  establish a stable CPU-model defect.
+- [ ] Add only the targeted scheduler/load telemetry needed to isolate future
+  performance anomalies; retain the broader suite for release qualification.
+- [x] Capture and compare raw CCSIDR values at 1 and 32 vCPUs; all three cache
+  entries match public HVF exactly and the 32-vCPU contract is homogeneous.
 - [x] Produce the first classified host/guest gap matrix.
 - [x] Run and classify the guest-only PMU behavior slice; record the raw
   DFR0/PMU distinction as `unavailable` (`hvf-gap`, runtime vPMU) with no
