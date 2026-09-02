@@ -368,6 +368,30 @@ When a concrete anomaly has already been identified, use only the smallest
 reproduction and control needed to isolate it; do not expand the generic suite
 in place of diagnosis.
 
+For scheduler diagnosis, compare the fixed integer work against summed CPU
+time over the same workload boundaries, not wall time alone. Native runs record
+worker and process CPU seconds. Guest runs additionally snapshot the same-user
+QEMU process and its stable `CPU N/HVF` thread set at each boundary, separating
+vCPU CPU seconds from QEMU management-thread CPU seconds. Report wall
+throughput, work per CPU-second, and scheduler residency together. These
+measurements can distinguish descheduling from execution efficiency, but a
+CPU-second does not normalize Apple performance/efficiency core placement or
+frequency.
+
+Clock reads and serial marker receipt are sequential rather than atomic. Treat
+summed worker/vCPU time as the primary execution measure, retain process time
+as the management-overhead cross-check, and record endpoint sampling
+uncertainty instead of claiming identical nanosecond boundaries.
+
+The first schema-2 24-thread diagnostic used one measured interval to validate
+the method, not to establish a performance distribution. Native worker
+residency was 98.73%; host-side QEMU vCPU occupancy was 99.00%, with a stable
+24-thread HVF set and no counter-skew clamp. QEMU delivered 99.01% of native
+integer work per CPU-second and 99.33% of native wall throughput in that
+interval. This rules out host descheduling as the cause of that sample, while
+leaving episodic scheduler placement as a hypothesis to test only when the
+slow behavior recurs.
+
 Exit gate: all advertised features are correct, all vCPU counts are stable,
 and controlled CPU-only workloads meet the agreed performance threshold or
 have an understood, actionable exception.
@@ -447,8 +471,9 @@ P/E-core identity, m1n1, or a bare-metal Debian installation.
   severe drop did not reproduce consistently and variability also appeared at
   32 vCPUs. This supports an environment-sensitive classification and does not
   establish a stable CPU-model defect.
-- [ ] Add only the targeted scheduler/load telemetry needed to isolate future
-  performance anomalies; retain the broader suite for release qualification.
+- [x] Add only the targeted scheduler/load telemetry needed to isolate future
+  performance anomalies; first add workload-boundary native and host-side QEMU
+  CPU-time accounting, then retain the broader suite for release qualification.
 - [x] Capture and compare raw CCSIDR values at 1 and 32 vCPUs; all three cache
   entries match public HVF exactly and the 32-vCPU contract is homogeneous.
 - [x] Produce the first classified host/guest gap matrix.

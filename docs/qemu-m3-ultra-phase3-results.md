@@ -238,6 +238,36 @@ median of 41.02 Gops. The variability therefore moved across vCPU counts and
 launches; current evidence does not establish a stable defect specific to the
 24-vCPU CPU model.
 
+### Schema-2 CPU accounting: first matched 24-thread interval
+
+Schema 2 records host CPU-seconds observations for every warmup and measured
+integer/memory interval. The observer uses non-privileged macOS process and
+thread counters, requires a same-user QEMU PID/start identity, and accepts a
+vCPU only when its `CPU N/HVF` thread name and stable TID are verified. The
+first matched 24-thread fixed-work interval is retained in
+`out/benchmark-host.uaie26/evidence.json` and
+`out/benchmark-guest-smp24.Yg7LS7/evidence.json`:
+
+| Measurement | Host | Guest |
+|---|---:|---:|
+| Fixed integer work | 38.4 Gops | 38.4 Gops |
+| Wall time | 1.037573 s | 1.044559542 s |
+| Worker CPU time | 24.584667 s | 24.837596487 s |
+| Scheduler residency | 0.987266559 | 0.990752381 |
+| Gops per CPU-second | 1.561949161 | 1.546043315 |
+
+The guest wall-throughput ratio is `0.9933115`; QEMU vCPU efficiency relative
+to native worker CPU is `0.9901199`. In the guest's QEMU window
+(1.044986146 s), the observer measured 24 stable vCPU threads using
+24.829989 s of vCPU CPU time (occupancy `0.990044585`) and
+0.024641667 s of management CPU time. Sampling uncertainty was
+`0.000038396 s`; no counter-skew clamp was needed.
+
+This single sample diagnoses this interval and shows no host stolen-cycle
+anomaly, but it cannot rule out episodic scheduler effects. The measurement
+requires no privileged or device access. Its classification remains
+`descriptive_only`, not a performance gate.
+
 These runs support focusing further diagnosis on host/guest scheduling,
 placement, load, or frequency/thermal conditions. macOS does not expose usable
 non-root thermal telemetry here (`pmset -g therm` is unavailable and

@@ -110,50 +110,136 @@ validate_sample()
 {
     local sample="$1"
     local expected_threads="$2"
+    local expected_sample_id="$3"
 
     [[ $sample != *$'\n'* ]] || return 1
-    printf '%s\n' "$sample" | "$JQ" -e \
-        --argjson expected_threads "$expected_threads" '
+    printf '%s\n' "$sample" | "$JQ" -s -e \
+        --argjson expected_threads "$expected_threads" \
+        --arg expected_sample_id "$expected_sample_id" '
+        def absolute: if . < 0 then -. else . end;
+        def nearly_equal($left; $right):
+          (($left - $right) | absolute) <=
+            (1e-7 * (($right | absolute) + 1));
+        def positive_finite: type == "number" and isfinite and . > 0;
+        length == 1 and (.[0] |
         type == "object" and
         (keys == [
           "checksum",
           "int_gops",
           "int_iterations_per_thread",
           "int_operations_per_iteration",
+          "int_process_cpu_seconds",
+          "int_process_gops_per_cpu_second",
+          "int_process_scheduler_residency",
           "int_seconds",
+          "int_worker_cpu_seconds",
+          "int_worker_gops_per_cpu_second",
+          "int_worker_scheduler_residency",
           "memory_bytes",
           "memory_gib_s",
           "memory_passes",
+          "memory_process_cpu_seconds",
+          "memory_process_gib_per_cpu_second",
+          "memory_process_scheduler_residency",
           "memory_seconds",
-          "threads"
+          "sample_id",
+          "threads",
+          "timing_version"
         ]) and
-        (.threads | type == "number") and
-        (.int_iterations_per_thread | type == "number") and
-        (.int_operations_per_iteration | type == "number") and
-        (.int_seconds | type == "number") and
-        (.int_gops | type == "number") and
-        (.memory_bytes | type == "number") and
-        (.memory_passes | type == "number") and
-        (.memory_seconds | type == "number") and
-        (.memory_gib_s | type == "number") and
+        .timing_version == 2 and
+        .sample_id == $expected_sample_id and
+        (.sample_id | test("^[A-Za-z0-9_.:-]{1,64}$")) and
         (.checksum | type == "string") and
         .threads == $expected_threads and
         .int_iterations_per_thread == 400000000 and
         .int_operations_per_iteration == 4 and
         .memory_bytes == 268435456 and
         .memory_passes == 8 and
-        .int_seconds > 0 and .int_gops > 0 and
-        .memory_seconds > 0 and .memory_gib_s > 0 and
-        (.int_seconds | isfinite) and (.int_gops | isfinite) and
-        (.memory_seconds | isfinite) and (.memory_gib_s | isfinite) and
-        (.checksum | test("^[0-9a-f]{16}$"))
+        (.int_seconds | positive_finite) and
+        (.int_gops | positive_finite) and
+        (.int_worker_cpu_seconds | positive_finite) and
+        (.int_process_cpu_seconds | positive_finite) and
+        (.int_worker_scheduler_residency | positive_finite) and
+        (.int_process_scheduler_residency | positive_finite) and
+        (.int_worker_gops_per_cpu_second | positive_finite) and
+        (.int_process_gops_per_cpu_second | positive_finite) and
+        (.memory_seconds | positive_finite) and
+        (.memory_gib_s | positive_finite) and
+        (.memory_process_cpu_seconds | positive_finite) and
+        (.memory_process_scheduler_residency | positive_finite) and
+        (.memory_process_gib_per_cpu_second | positive_finite) and
+        .int_worker_cpu_seconds <= (.int_process_cpu_seconds + 0.001) and
+        .int_worker_scheduler_residency <= 1.01 and
+        .int_process_scheduler_residency <= 1.05 and
+        .memory_process_scheduler_residency <= 1.05 and
+        nearly_equal(.int_gops;
+          (400000000 * $expected_threads * 4 / .int_seconds / 1e9)) and
+        nearly_equal(.int_worker_scheduler_residency;
+          (.int_worker_cpu_seconds / (.int_seconds * $expected_threads))) and
+        nearly_equal(.int_process_scheduler_residency;
+          (.int_process_cpu_seconds / (.int_seconds * $expected_threads))) and
+        nearly_equal(.int_worker_gops_per_cpu_second;
+          (400000000 * $expected_threads * 4 /
+            .int_worker_cpu_seconds / 1e9)) and
+        nearly_equal(.int_process_gops_per_cpu_second;
+          (400000000 * $expected_threads * 4 /
+            .int_process_cpu_seconds / 1e9)) and
+        nearly_equal(.memory_gib_s;
+          (268435456 * 8 / .memory_seconds / 1073741824)) and
+        nearly_equal(.memory_process_scheduler_residency;
+          (.memory_process_cpu_seconds / .memory_seconds)) and
+        nearly_equal(.memory_process_gib_per_cpu_second;
+          (268435456 * 8 / .memory_process_cpu_seconds / 1073741824)) and
+        (.checksum | test("^[0-9a-f]{16}$")))
         ' >/dev/null
+}
+
+validate_timing_markers()
+{
+    local expected_count="$1"
+    local line
+    local sample_id=''
+    local state=0
+    local completed=0
+    local begin_pattern='^BENCH_WORK_BEGIN[[:space:]]sample_id=([A-Za-z0-9_.:-]+)[[:space:]]workload=integer$'
+
+    while IFS= read -r line || [[ -n $line ]]; do
+        case "$state" in
+            0)
+                [[ $line =~ $begin_pattern ]] || return 1
+                sample_id=${BASH_REMATCH[1]}
+                ((completed < ${#ALL_SAMPLE_IDS[@]})) || return 1
+                [[ $sample_id == "${ALL_SAMPLE_IDS[$completed]}" ]] || return 1
+                state=1
+                ;;
+            1)
+                [[ $line == "BENCH_WORK_END sample_id=$sample_id workload=integer status=ok" ]] ||
+                    return 1
+                state=2
+                ;;
+            2)
+                [[ $line == "BENCH_WORK_BEGIN sample_id=$sample_id workload=memory" ]] ||
+                    return 1
+                state=3
+                ;;
+            3)
+                [[ $line == "BENCH_WORK_END sample_id=$sample_id workload=memory status=ok" ]] ||
+                    return 1
+                ((++completed))
+                state=0
+                ;;
+        esac
+    done < "$TIMING_MARKERS"
+
+    ((state == 0 && completed == expected_count &&
+      completed == ${#ALL_SAMPLE_IDS[@]}))
 }
 
 RUN_DIR=''
 OUT_DIR=''
 BENCHMARK=''
 SAMPLES_NDJSON=''
+TIMING_MARKERS=''
 EVIDENCE_TMP=''
 
 cleanup()
@@ -341,24 +427,40 @@ validate_load_value "$PRE_LOAD_5"
 validate_load_value "$PRE_LOAD_15"
 
 SAMPLES_NDJSON="$RUN_DIR/samples.ndjson"
+TIMING_MARKERS="$RUN_DIR/timing-markers.log"
 : > "$SAMPLES_NDJSON"
+: > "$TIMING_MARKERS"
+ALL_SAMPLE_IDS=()
 for thread_value in "${THREADS[@]}"; do
-    for ((run = 0; run < WARMUPS_VALUE; ++run)); do
-        if ! sample="$("$BENCHMARK" --json "$thread_value")"; then
+    for ((run = 1; run <= WARMUPS_VALUE; ++run)); do
+        sample_id="t${thread_value}-w${run}"
+        ALL_SAMPLE_IDS+=("$sample_id")
+        if ! sample="$("$BENCHMARK" --json --timing-v2 "$sample_id" \
+            "$thread_value" 2>> "$TIMING_MARKERS")"; then
             die "warmup failed for $thread_value threads"
         fi
-        validate_sample "$sample" "$thread_value" ||
+        validate_sample "$sample" "$thread_value" "$sample_id" ||
             die "warmup returned invalid JSON for $thread_value threads"
     done
-    for ((run = 0; run < REPETITIONS_VALUE; ++run)); do
-        if ! sample="$("$BENCHMARK" --json "$thread_value")"; then
+    for ((run = 1; run <= REPETITIONS_VALUE; ++run)); do
+        sample_id="t${thread_value}-r${run}"
+        ALL_SAMPLE_IDS+=("$sample_id")
+        if ! sample="$("$BENCHMARK" --json --timing-v2 "$sample_id" \
+            "$thread_value" 2>> "$TIMING_MARKERS")"; then
             die "measured run failed for $thread_value threads"
         fi
-        validate_sample "$sample" "$thread_value" ||
+        validate_sample "$sample" "$thread_value" "$sample_id" ||
             die "measured run returned invalid JSON for $thread_value threads"
         printf '%s\n' "$sample" >> "$SAMPLES_NDJSON"
     done
 done
+EXPECTED_INVOCATION_COUNT=$((${#THREADS[@]} *
+    (WARMUPS_VALUE + REPETITIONS_VALUE)))
+validate_timing_markers "$EXPECTED_INVOCATION_COUNT" ||
+    die "benchmark timing marker log is malformed or incomplete"
+if ! TIMING_MARKERS_HASH="$(hash_file "$TIMING_MARKERS")"; then
+    die "cannot hash benchmark timing markers"
+fi
 
 if ! POST_LOAD_RAW="$("$SYSCTL" -n vm.loadavg)"; then
     die "cannot capture post-run load averages"
@@ -425,7 +527,7 @@ if ! COMPILE_ARGV_JSON="$("$JQ" -cn --args '$ARGS.positional' -- \
     die "cannot encode compiler argv"
 fi
 if ! BENCHMARK_ARGV_JSON="$("$JQ" -cn --args '$ARGS.positional' -- \
-    "$BENCHMARK" --json '<threads>')"; then
+    "$BENCHMARK" --json --timing-v2 '<sample_id>' '<threads>')"; then
     die "cannot encode benchmark argv template"
 fi
 if ! THREADS_JSON="$("$JQ" -cn --args '$ARGS.positional | map(tonumber)' -- \
@@ -456,6 +558,8 @@ EVIDENCE="$RUN_DIR/evidence.json"
     --arg shasum_hash "$SHASUM_HASH_BEFORE" \
     --arg benchmark_path "$BENCHMARK" \
     --arg benchmark_hash "$BINARY_HASH_BEFORE" \
+    --arg timing_markers_path "$TIMING_MARKERS" \
+    --arg timing_markers_hash "$TIMING_MARKERS_HASH" \
     --arg pre_timestamp "$PRE_TIMESTAMP" \
     --arg post_timestamp "$POST_TIMESTAMP" \
     --arg source_hash_after "$SOURCE_HASH_AFTER" \
@@ -474,6 +578,7 @@ EVIDENCE="$RUN_DIR/evidence.json"
     --argjson thread_counts "$THREADS_JSON" \
     --argjson warmups "$WARMUPS_VALUE" \
     --argjson repetitions "$REPETITIONS_VALUE" \
+    --argjson timing_invocation_count "$EXPECTED_INVOCATION_COUNT" \
     --argjson pre_load_1 "$PRE_LOAD_1" \
     --argjson pre_load_5 "$PRE_LOAD_5" \
     --argjson pre_load_15 "$PRE_LOAD_15" \
@@ -497,7 +602,7 @@ EVIDENCE="$RUN_DIR/evidence.json"
           max: $values[-1]
         };
     {
-      schema_version: 1,
+      schema_version: 2,
       role: "host",
       host: {
         operating_system: {
@@ -537,6 +642,27 @@ EVIDENCE="$RUN_DIR/evidence.json"
       },
       benchmark: {
         argv_template: $benchmark_argv,
+        timing: {
+          version: 2,
+          sample_id_format: "t<threads>-w<warmup-ordinal> or t<threads>-r<repetition-ordinal>",
+          integer_worker_cpu_source: "sum of each worker thread CPU clock over its integer loop",
+          process_cpu_source: "getrusage(RUSAGE_SELF) user plus system CPU time deltas",
+          wall_clock_source: "CLOCK_MONOTONIC",
+          derived_formulas: {
+            int_worker_scheduler_residency: "int_worker_cpu_seconds / (int_seconds * threads)",
+            int_process_scheduler_residency: "int_process_cpu_seconds / (int_seconds * threads)",
+            memory_process_scheduler_residency: "memory_process_cpu_seconds / memory_seconds",
+            int_worker_gops_per_cpu_second: "integer operations / int_worker_cpu_seconds / 1e9",
+            int_process_gops_per_cpu_second: "integer operations / int_process_cpu_seconds / 1e9",
+            memory_process_gib_per_cpu_second: "memory bytes times passes / memory_process_cpu_seconds / 2^30"
+          },
+          marker_log: {
+            path: $timing_markers_path,
+            sha256: $timing_markers_hash,
+            invocation_count: $timing_invocation_count,
+            marker_count: ($timing_invocation_count * 4)
+          }
+        },
         parameters: {
           thread_counts: $thread_counts,
           warmups_per_thread: $warmups,
@@ -553,8 +679,28 @@ EVIDENCE="$RUN_DIR/evidence.json"
           | group_by(.threads)
           | map({
               threads: .[0].threads,
+              int_seconds: (map(.int_seconds) | distribution),
               int_gops: (map(.int_gops) | distribution),
-              memory_gib_s: (map(.memory_gib_s) | distribution)
+              int_worker_cpu_seconds:
+                (map(.int_worker_cpu_seconds) | distribution),
+              int_process_cpu_seconds:
+                (map(.int_process_cpu_seconds) | distribution),
+              int_worker_scheduler_residency:
+                (map(.int_worker_scheduler_residency) | distribution),
+              int_process_scheduler_residency:
+                (map(.int_process_scheduler_residency) | distribution),
+              int_worker_gops_per_cpu_second:
+                (map(.int_worker_gops_per_cpu_second) | distribution),
+              int_process_gops_per_cpu_second:
+                (map(.int_process_gops_per_cpu_second) | distribution),
+              memory_seconds: (map(.memory_seconds) | distribution),
+              memory_gib_s: (map(.memory_gib_s) | distribution),
+              memory_process_cpu_seconds:
+                (map(.memory_process_cpu_seconds) | distribution),
+              memory_process_scheduler_residency:
+                (map(.memory_process_scheduler_residency) | distribution),
+              memory_process_gib_per_cpu_second:
+                (map(.memory_process_gib_per_cpu_second) | distribution)
             })
         )
       },
@@ -601,16 +747,165 @@ EVIDENCE="$RUN_DIR/evidence.json"
 EXPECTED_SAMPLE_COUNT=$((${#THREADS[@]} * REPETITIONS_VALUE))
 "$JQ" -e \
     --argjson expected_sample_count "$EXPECTED_SAMPLE_COUNT" \
-    --argjson expected_distribution_count "${#THREADS[@]}" \
+    --argjson thread_counts "$THREADS_JSON" \
+    --argjson expected_warmups "$WARMUPS_VALUE" \
     --argjson expected_repetitions "$REPETITIONS_VALUE" '
-    .schema_version == 1 and .role == "host" and
+    def absolute: if . < 0 then -. else . end;
+    def nearly_equal($left; $right):
+      (($left - $right) | absolute) <=
+        (1e-7 * (($right | absolute) + 1));
+    def positive_finite: type == "number" and isfinite and . > 0;
+    def distribution:
+      sort as $values
+      | ($values | length) as $count
+      | {
+          count: $count,
+          min: $values[0],
+          median: (
+            if ($count % 2) == 1 then
+              $values[(($count / 2) | floor)]
+            else
+              (($values[($count / 2) - 1] + $values[$count / 2]) / 2)
+            end
+          ),
+          mean: (($values | add) / $count),
+          max: $values[-1]
+        };
+    def valid_sample:
+      (keys == [
+        "checksum",
+        "int_gops",
+        "int_iterations_per_thread",
+        "int_operations_per_iteration",
+        "int_process_cpu_seconds",
+        "int_process_gops_per_cpu_second",
+        "int_process_scheduler_residency",
+        "int_seconds",
+        "int_worker_cpu_seconds",
+        "int_worker_gops_per_cpu_second",
+        "int_worker_scheduler_residency",
+        "memory_bytes",
+        "memory_gib_s",
+        "memory_passes",
+        "memory_process_cpu_seconds",
+        "memory_process_gib_per_cpu_second",
+        "memory_process_scheduler_residency",
+        "memory_seconds",
+        "sample_id",
+        "threads",
+        "timing_version"
+      ]) and
+      .timing_version == 2 and
+      (.sample_id | test("^[A-Za-z0-9_.:-]{1,64}$")) and
+      .int_iterations_per_thread == 400000000 and
+      .int_operations_per_iteration == 4 and
+      .memory_bytes == 268435456 and .memory_passes == 8 and
+      ([.int_seconds, .int_gops, .int_worker_cpu_seconds,
+        .int_process_cpu_seconds, .int_worker_scheduler_residency,
+        .int_process_scheduler_residency,
+        .int_worker_gops_per_cpu_second,
+        .int_process_gops_per_cpu_second, .memory_seconds, .memory_gib_s,
+        .memory_process_cpu_seconds, .memory_process_scheduler_residency,
+        .memory_process_gib_per_cpu_second]
+        | all(.[]; positive_finite)) and
+      .int_worker_cpu_seconds <= (.int_process_cpu_seconds + 0.001) and
+      .int_worker_scheduler_residency <= 1.01 and
+      .int_process_scheduler_residency <= 1.05 and
+      .memory_process_scheduler_residency <= 1.05 and
+      nearly_equal(.int_gops;
+        (400000000 * .threads * 4 / .int_seconds / 1e9)) and
+      nearly_equal(.int_worker_scheduler_residency;
+        (.int_worker_cpu_seconds / (.int_seconds * .threads))) and
+      nearly_equal(.int_process_scheduler_residency;
+        (.int_process_cpu_seconds / (.int_seconds * .threads))) and
+      nearly_equal(.int_worker_gops_per_cpu_second;
+        (400000000 * .threads * 4 / .int_worker_cpu_seconds / 1e9)) and
+      nearly_equal(.int_process_gops_per_cpu_second;
+        (400000000 * .threads * 4 / .int_process_cpu_seconds / 1e9)) and
+      nearly_equal(.memory_gib_s;
+        (268435456 * 8 / .memory_seconds / 1073741824)) and
+      nearly_equal(.memory_process_scheduler_residency;
+        (.memory_process_cpu_seconds / .memory_seconds)) and
+      nearly_equal(.memory_process_gib_per_cpu_second;
+        (268435456 * 8 / .memory_process_cpu_seconds / 1073741824)) and
+      (.checksum | type == "string" and test("^[0-9a-f]{16}$"));
+    (keys == [
+      "benchmark", "compilation", "compiler", "host", "integrity",
+      "role", "schema_version", "source", "thermal_load_notes", "tools"
+    ]) and
+    .schema_version == 2 and .role == "host" and
+    (.benchmark | keys == [
+      "argv_template", "distributions", "parameters", "sample_order",
+      "samples", "timing"
+    ]) and
+    .benchmark.timing.version == 2 and
+    (.benchmark.timing | keys == [
+      "derived_formulas", "integer_worker_cpu_source", "marker_log",
+      "process_cpu_source", "sample_id_format", "version",
+      "wall_clock_source"
+    ]) and
+    (.benchmark.timing.marker_log | keys == [
+      "invocation_count", "marker_count", "path", "sha256"
+    ]) and
+    .benchmark.timing.marker_log.invocation_count ==
+      (($thread_counts | length) * ($expected_warmups + $expected_repetitions)) and
+    .benchmark.timing.marker_log.marker_count ==
+      (.benchmark.timing.marker_log.invocation_count * 4) and
+    (.benchmark.timing.marker_log.sha256 |
+      test("^[0-9a-fA-F]{64}$")) and
+    .benchmark.argv_template == [
+      .compilation.benchmark_path, "--json", "--timing-v2",
+      "<sample_id>", "<threads>"
+    ] and
+    .benchmark.parameters.thread_counts == $thread_counts and
+    .benchmark.parameters.warmups_per_thread == $expected_warmups and
+    .benchmark.parameters.repetitions_per_thread == $expected_repetitions and
     (.benchmark.samples | length) == $expected_sample_count and
-    (.benchmark.distributions | length) == $expected_distribution_count and
-    all(.benchmark.distributions[];
-      .int_gops.count == $expected_repetitions and
-      .memory_gib_s.count == $expected_repetitions) and
-    .integrity.all_protected_hashes_match == true
+    [.benchmark.samples[].threads] ==
+      [$thread_counts[] as $thread |
+        range(1; $expected_repetitions + 1) | $thread] and
+    [.benchmark.samples[].sample_id] ==
+      [$thread_counts[] as $thread |
+        range(1; $expected_repetitions + 1) |
+        "t\($thread)-r\(.)"] and
+    all(.benchmark.samples[]; valid_sample) and
+    .benchmark.distributions == (
+      .benchmark.samples
+      | group_by(.threads)
+      | map({
+          threads: .[0].threads,
+          int_seconds: (map(.int_seconds) | distribution),
+          int_gops: (map(.int_gops) | distribution),
+          int_worker_cpu_seconds:
+            (map(.int_worker_cpu_seconds) | distribution),
+          int_process_cpu_seconds:
+            (map(.int_process_cpu_seconds) | distribution),
+          int_worker_scheduler_residency:
+            (map(.int_worker_scheduler_residency) | distribution),
+          int_process_scheduler_residency:
+            (map(.int_process_scheduler_residency) | distribution),
+          int_worker_gops_per_cpu_second:
+            (map(.int_worker_gops_per_cpu_second) | distribution),
+          int_process_gops_per_cpu_second:
+            (map(.int_process_gops_per_cpu_second) | distribution),
+          memory_seconds: (map(.memory_seconds) | distribution),
+          memory_gib_s: (map(.memory_gib_s) | distribution),
+          memory_process_cpu_seconds:
+            (map(.memory_process_cpu_seconds) | distribution),
+          memory_process_scheduler_residency:
+            (map(.memory_process_scheduler_residency) | distribution),
+          memory_process_gib_per_cpu_second:
+            (map(.memory_process_gib_per_cpu_second) | distribution)
+        })
+    ) and
+    .integrity.all_protected_hashes_match == true and
+    .integrity.source_sha256.before == .integrity.source_sha256.after and
+    .integrity.compiler_sha256.before == .integrity.compiler_sha256.after and
+    .integrity.jq_sha256.before == .integrity.jq_sha256.after and
+    .integrity.shasum_sha256.before == .integrity.shasum_sha256.after and
+    .integrity.benchmark_sha256.before == .integrity.benchmark_sha256.after
     ' "$EVIDENCE_TMP" >/dev/null
+"$CHMOD" 600 "$TIMING_MARKERS"
 "$CHMOD" 600 "$EVIDENCE_TMP"
 "$MV" "$EVIDENCE_TMP" "$EVIDENCE"
 

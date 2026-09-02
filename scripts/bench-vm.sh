@@ -21,6 +21,9 @@ LSOF="/usr/sbin/lsof"
 AWK="/usr/bin/awk"
 JQ="/usr/bin/jq"
 REALPATH="/bin/realpath"
+TAIL="/usr/bin/tail"
+CLANG="/usr/bin/clang"
+CPU_OBSERVER_SOURCE="$HERE/scripts/qemu-hvf-cpu-observer.c"
 SMP="${SMP:-8}"
 MEM="${MEM:-16G}"
 THREAD_COUNTS_RAW="${THREAD_COUNTS:-1,$SMP}"
@@ -49,6 +52,11 @@ LOCK_TOKEN=""
 HASHES_READY=false
 LAUNCH_STARTED=false
 INPUTS_VERIFIED=false
+OBSERVER_PID=""
+TAIL_PID=""
+TAIL_FIFO=""
+ACCOUNTING_JSON=""
+ACCOUNTING_STATUS=0
 
 fail() {
     echo "guest benchmark: $*" >&2
@@ -116,6 +124,14 @@ verify_protected_inputs() {
     AWK_SHA256_AFTER="$(sha256_file "$AWK_REAL")" || return 1
     JQ_SHA256_AFTER="$(sha256_file "$JQ_REAL")" || return 1
     REALPATH_SHA256_AFTER="$(sha256_file "$REALPATH_REAL")" || return 1
+    CPU_OBSERVER_SHA256_AFTER="$(sha256_file "$CPU_OBSERVER_SOURCE")" || return 1
+    CLANG_SHA256_AFTER="$(sha256_file "$CLANG_REAL")" || return 1
+    TAIL_SHA256_AFTER="$(sha256_file "$TAIL_REAL")" || return 1
+    if [ -n "$OBSERVER_BINARY_SHA256_BEFORE" ]; then
+        OBSERVER_BINARY_SHA256_AFTER="$(sha256_file "$OBSERVER_BINARY")" || return 1
+    else
+        OBSERVER_BINARY_SHA256_AFTER=""
+    fi
 
     [ "$KVER_SHA256_BEFORE" = "$KVER_SHA256_AFTER" ] &&
         [ "$KERNEL_SHA256_BEFORE" = "$KERNEL_SHA256_AFTER" ] &&
@@ -128,7 +144,12 @@ verify_protected_inputs() {
         [ "$LSOF_SHA256_BEFORE" = "$LSOF_SHA256_AFTER" ] &&
         [ "$AWK_SHA256_BEFORE" = "$AWK_SHA256_AFTER" ] &&
         [ "$JQ_SHA256_BEFORE" = "$JQ_SHA256_AFTER" ] &&
-        [ "$REALPATH_SHA256_BEFORE" = "$REALPATH_SHA256_AFTER" ]
+        [ "$REALPATH_SHA256_BEFORE" = "$REALPATH_SHA256_AFTER" ] &&
+        [ "$CPU_OBSERVER_SHA256_BEFORE" = "$CPU_OBSERVER_SHA256_AFTER" ] &&
+        [ "$CLANG_SHA256_BEFORE" = "$CLANG_SHA256_AFTER" ] &&
+        [ "$TAIL_SHA256_BEFORE" = "$TAIL_SHA256_AFTER" ] &&
+        { [ -z "$OBSERVER_BINARY_SHA256_BEFORE" ] ||
+          [ "$OBSERVER_BINARY_SHA256_BEFORE" = "$OBSERVER_BINARY_SHA256_AFTER" ]; }
 }
 
 lsof_openers() {
@@ -305,6 +326,17 @@ cleanup() {
     fi
     exec 9>&- 9<&- 2>/dev/null || true
 
+    if [ -n "$TAIL_PID" ]; then
+        /bin/kill -TERM "$TAIL_PID" 2>/dev/null || true
+        wait "$TAIL_PID" 2>/dev/null || true
+        TAIL_PID=""
+    fi
+    if [ -n "$OBSERVER_PID" ]; then
+        /bin/kill -TERM "$OBSERVER_PID" 2>/dev/null || true
+        wait "$OBSERVER_PID" 2>/dev/null || true
+        OBSERVER_PID=""
+    fi
+
     if [ -n "$QPID" ]; then
         echo "guest benchmark: process state is uncertain; retaining lock and all run artifacts" >&2
         return 1
@@ -327,6 +359,16 @@ cleanup() {
             cleanup_status=1
         fi
     fi
+    for accounting_fifo in "$TAIL_FIFO"; do
+        if [ -n "$accounting_fifo" ] && { [ -e "$accounting_fifo" ] || [ -L "$accounting_fifo" ]; }; then
+            if [ -p "$accounting_fifo" ] && [ ! -L "$accounting_fifo" ]; then
+                /bin/rm -f -- "$accounting_fifo" || cleanup_status=1
+            else
+                echo "guest benchmark: refusing a replaced accounting FIFO" >&2
+                cleanup_status=1
+            fi
+        fi
+    done
     if [ -n "$GUEST_BODY" ] && { [ -e "$GUEST_BODY" ] || [ -L "$GUEST_BODY" ]; }; then
         if [ -f "$GUEST_BODY" ] && [ ! -L "$GUEST_BODY" ]; then
             /bin/rm -f -- "$GUEST_BODY" || cleanup_status=1
@@ -479,7 +521,7 @@ fi
 /bin/mkdir -p "$OUT"
 [ "$(cd "$OUT" && pwd -P)" = "$OUT" ] || fail "output root is not canonical: $OUT"
 
-for tool in "$QEMU" "$QEMU_IMG" "$TIMEOUT" "$LSOF" "$AWK" "$JQ" "$REALPATH"; do
+for tool in "$QEMU" "$QEMU_IMG" "$TIMEOUT" "$LSOF" "$AWK" "$JQ" "$REALPATH" "$TAIL" "$CLANG"; do
     [ -x "$tool" ] || fail "missing pinned executable: $tool"
     [ ! -u "$tool" ] && [ ! -g "$tool" ] || fail "refusing setuid/setgid executable: $tool"
 done
@@ -490,7 +532,9 @@ TIMEOUT_REAL="$("$REALPATH" "$TIMEOUT")"
 LSOF_REAL="$("$REALPATH" "$LSOF")"
 AWK_REAL="$("$REALPATH" "$AWK")"
 JQ_REAL="$("$REALPATH" "$JQ")"
-for tool in "$QEMU_REAL" "$QEMU_IMG_REAL" "$TIMEOUT_REAL" "$LSOF_REAL" "$AWK_REAL" "$JQ_REAL" "$REALPATH_REAL"; do
+TAIL_REAL="$("$REALPATH" "$TAIL")"
+CLANG_REAL="$("$REALPATH" "$CLANG")"
+for tool in "$QEMU_REAL" "$QEMU_IMG_REAL" "$TIMEOUT_REAL" "$LSOF_REAL" "$AWK_REAL" "$JQ_REAL" "$REALPATH_REAL" "$TAIL_REAL" "$CLANG_REAL"; do
     [ -f "$tool" ] && [ -x "$tool" ] && [ ! -L "$tool" ] || fail "pinned executable resolves unsafely: $tool"
 done
 QEMU="$QEMU_REAL"
@@ -500,6 +544,10 @@ LSOF="$LSOF_REAL"
 AWK="$AWK_REAL"
 JQ="$JQ_REAL"
 REALPATH="$REALPATH_REAL"
+TAIL="$TAIL_REAL"
+CLANG="$CLANG_REAL"
+
+require_safe_input "$CPU_OBSERVER_SOURCE"
 
 require_safe_input "$KVER_FILE"
 KVER_SHA256_SELECTED="$(sha256_file "$KVER_FILE")" || fail "could not hash KVER"
@@ -509,10 +557,10 @@ case "$KVER" in
 esac
 KERNEL="$OUT/Image-$KVER"
 INITRD="$OUT/initrd.img-$KVER"
-for input in "$KERNEL" "$INITRD" "$ROOTFS" "$BENCH_SOURCE"; do
+for input in "$KERNEL" "$INITRD" "$ROOTFS" "$BENCH_SOURCE" "$CPU_OBSERVER_SOURCE"; do
     require_safe_input "$input"
 done
-INPUT_LIST=("$KVER_FILE" "$KERNEL" "$INITRD" "$ROOTFS" "$BENCH_SOURCE")
+INPUT_LIST=("$KVER_FILE" "$KERNEL" "$INITRD" "$ROOTFS" "$BENCH_SOURCE" "$CPU_OBSERVER_SOURCE")
 for ((left = 0; left < ${#INPUT_LIST[@]}; left++)); do
     for ((right = left + 1; right < ${#INPUT_LIST[@]}; right++)); do
         [ ! "${INPUT_LIST[$left]}" -ef "${INPUT_LIST[$right]}" ] || fail "protected inputs resolve to the same file"
@@ -554,10 +602,12 @@ LOG="$RUN_DIR/serial.log"
 CONSOLE="$RUN_DIR/console.txt"
 RAW_SAMPLES="$RUN_DIR/guest-samples.jsonl"
 RAW_METADATA="$RUN_DIR/.guest-metadata.json"
+RAW_ACCOUNTING="$RUN_DIR/qemu-cpu-accounting.jsonl"
 FINAL_JSON="$RUN_DIR/evidence.json"
 ROOT_OVERLAY="$RUN_DIR/root.qcow2"
 SERIAL_FIFO="$RUN_DIR/serial.in"
 QEMU_PID_FILE="$RUN_DIR/.qemu.pid"
+TAIL_FIFO="$RUN_DIR/.serial-tail.fifo"
 # macOS measures this in 512-byte blocks: cap a runaway log/overlay at 1 GiB.
 ulimit -f 2097152
 ulimit -n 256
@@ -574,11 +624,16 @@ TIMEOUT_SHA256_BEFORE="$(sha256_file "$TIMEOUT_REAL")"
 LSOF_SHA256_BEFORE="$(sha256_file "$LSOF_REAL")"
 AWK_SHA256_BEFORE="$(sha256_file "$AWK_REAL")"
 JQ_SHA256_BEFORE="$(sha256_file "$JQ_REAL")"
-REALPATH_SHA256_BEFORE="$(sha256_file "$REALPATH_REAL")"
+    REALPATH_SHA256_BEFORE="$(sha256_file "$REALPATH_REAL")"
+CPU_OBSERVER_SHA256_BEFORE="$(sha256_file "$CPU_OBSERVER_SOURCE")"
+CLANG_SHA256_BEFORE="$(sha256_file "$CLANG_REAL")"
+TAIL_SHA256_BEFORE="$(sha256_file "$TAIL_REAL")"
 [ "$KVER_SHA256_SELECTED" = "$KVER_SHA256_BEFORE" ] || fail "KVER changed while selecting kernel inputs"
 STAGED_SOURCE_SHA256_BEFORE="$(sha256_file "$SOURCE_SHARE/bench.c")"
 [ "$STAGED_SOURCE_SHA256_BEFORE" = "$BENCH_SOURCE_SHA256_BEFORE" ] ||
     fail "staged source differs from protected input"
+OBSERVER_BINARY="$RUN_DIR/qemu-hvf-cpu-observer"
+OBSERVER_BINARY_SHA256_BEFORE=""
 HASHES_READY=true
 LAUNCH_STARTED=true
 
@@ -661,14 +716,20 @@ IFS=,
 for threads in $THREAD_COUNTS; do
     warmup=0
     while [ "$warmup" -lt "$WARMUPS" ]; do
-        ./bench --json "$threads" >/dev/null
         warmup=$((warmup + 1))
+        sample_id="t${threads}-w${warmup}"
+        echo "BENCH_SAMPLE_BEGIN sample_id=$sample_id phase=warmup"
+        ./bench --json --timing-v2 "$sample_id" "$threads" >/dev/null
+        echo "BENCH_SAMPLE_END sample_id=$sample_id phase=warmup"
     done
     echo "BENCH_GUEST_THREAD_WARMUPS_COMPLETE threads=$threads"
     repetition=0
     while [ "$repetition" -lt "$REPETITIONS" ]; do
-        ./bench --json "$threads" >> "$SAMPLE_FILE"
         repetition=$((repetition + 1))
+        sample_id="t${threads}-r${repetition}"
+        echo "BENCH_SAMPLE_BEGIN sample_id=$sample_id phase=measured"
+        ./bench --json --timing-v2 "$sample_id" "$threads" >> "$SAMPLE_FILE"
+        echo "BENCH_SAMPLE_END sample_id=$sample_id phase=measured"
     done
 done
 IFS=$OLD_IFS
@@ -773,16 +834,28 @@ if [ "$PREFLIGHT_ONLY" = 1 ]; then
     exit 0
 fi
 
+if ! "$CLANG" -O2 -Wall -Wextra -Werror -std=c11 \
+    "$CPU_OBSERVER_SOURCE" -o "$OBSERVER_BINARY"; then
+    fail "could not compile the QEMU CPU observer"
+fi
+/bin/chmod 700 "$OBSERVER_BINARY"
+OBSERVER_BINARY_SHA256_BEFORE="$(sha256_file "$OBSERVER_BINARY")" ||
+    fail "could not hash the compiled QEMU CPU observer"
+
 FINAL_TMP="$(mktemp "$RUN_DIR/.evidence.XXXXXX")"
 : > "$LOG"
 : > "$CONSOLE"
 : > "$RAW_SAMPLES"
 : > "$RAW_METADATA"
+: > "$RAW_ACCOUNTING"
 : > "$QEMU_PID_FILE"
 /usr/bin/mkfifo -m 600 "$SERIAL_FIFO"
+/usr/bin/mkfifo -m 600 "$TAIL_FIFO"
 
 exec 9<> "$SERIAL_FIFO"
 echo "booting isolated guest benchmark: ${SMP} vCPUs, ${MEM} RAM -> $RUN_DIR"
+"$TAIL" -n 0 -f "$LOG" > "$TAIL_FIFO" &
+TAIL_PID=$!
 (
     sleep 30
     printf 'stty -echo\n' >&9
@@ -818,6 +891,8 @@ case "$QEMU_CHILD_PID" in
 esac
 QEMU_CHILD_VERIFIED=true
 verified_qemu_child_of_wrapper || fail "captured QEMU pid is not owned by the timeout wrapper"
+"$OBSERVER_BINARY" "$QEMU_CHILD_PID" "$SMP" < "$TAIL_FIFO" > "$RAW_ACCOUNTING" 2> "$RUN_DIR/qemu-cpu-observer.stderr" &
+OBSERVER_PID=$!
 wait "$QPID"
 QEMU_STATUS=$?
 set -e
@@ -830,10 +905,21 @@ clear_qemu_process_state
 QEMU_PID_FILE=""
 wait "$FEED_PID" 2>/dev/null || true
 FEED_PID=""
+if [ -n "$TAIL_PID" ]; then
+    /bin/kill -TERM "$TAIL_PID" 2>/dev/null || true
+    wait "$TAIL_PID" 2>/dev/null || true
+    TAIL_PID=""
+fi
+set +e
+wait "$OBSERVER_PID"
+ACCOUNTING_STATUS=$?
+set -e
+OBSERVER_PID=""
 exec 9>&- 9<&-
 [ -p "$SERIAL_FIFO" ] && [ ! -L "$SERIAL_FIFO" ] || fail "serial FIFO was replaced before cleanup"
 /bin/rm -f -- "$SERIAL_FIFO"
 SERIAL_FIFO=""
+[ "$ACCOUNTING_STATUS" -eq 0 ] || fail "QEMU CPU observer failed; inspect $RUN_DIR/qemu-cpu-observer.stderr"
 
 ROOT_OPENERS="$(lsof_openers "$ROOTFS")" || fail "could not verify rootfs openers after shutdown"
 [ -z "$ROOT_OPENERS" ] || fail "rootfs remains open after shutdown by pid(s): $ROOT_OPENERS"
@@ -971,17 +1057,31 @@ if [ "$("$AWK" 'NF { count++ } END { print count + 0 }' "$RAW_SAMPLES")" -ne "$E
 fi
 if ! "$JQ" -s -e \
     --argjson expected_threads "$THREAD_COUNTS_JSON" \
+    --argjson warmups "$WARMUPS" \
     --argjson repetitions "$REPETITIONS" '
     def positive_finite: type == "number" and isfinite and . > 0;
+    def absolute: if . < 0 then -. else . end;
+    def nearly_equal($left; $right):
+      (($left - $right) | absolute) <= (1e-7 * (($right | absolute) + 1));
     . as $samples |
     ($samples | length) == ($repetitions * ($expected_threads | length)) and
-    ([$expected_threads[] as $threads | range(0; $repetitions) | $threads]) as $expected_order |
-    ([$samples[].threads] == $expected_order) and
+    ([$expected_threads[] as $threads | range(0; $repetitions) |
+      {threads: $threads, sample_id: ("t" + ($threads | tostring) +
+                                      "-r" + ((. + 1) | tostring))}]) as $expected_order |
+    ([$samples[] | {threads: .threads, sample_id: .sample_id}] == $expected_order) and
     all($samples[];
         type == "object" and
         (keys | sort) == (["checksum", "int_gops", "int_iterations_per_thread",
                            "int_operations_per_iteration", "int_seconds", "memory_bytes",
-                           "memory_gib_s", "memory_passes", "memory_seconds", "threads"] | sort) and
+                           "memory_gib_s", "memory_passes", "memory_process_cpu_seconds",
+                           "memory_process_gib_per_cpu_second",
+                           "memory_process_scheduler_residency", "memory_seconds",
+                           "sample_id", "timing_version", "threads",
+                           "int_process_cpu_seconds", "int_process_gops_per_cpu_second",
+                           "int_process_scheduler_residency", "int_worker_cpu_seconds",
+                           "int_worker_gops_per_cpu_second",
+                           "int_worker_scheduler_residency"] | sort) and
+        .timing_version == 2 and
         (.threads | type == "number" and . == floor) and
         (.threads as $threads | ($expected_threads | index($threads)) != null) and
         .int_iterations_per_thread == 400000000 and
@@ -992,11 +1092,113 @@ if ! "$JQ" -s -e \
         .memory_passes == 8 and
         (.memory_seconds | positive_finite) and
         (.memory_gib_s | positive_finite) and
+        (.int_worker_cpu_seconds | positive_finite) and
+        (.int_process_cpu_seconds | positive_finite) and
+        (.int_worker_scheduler_residency | positive_finite) and
+        (.int_process_scheduler_residency | positive_finite) and
+        (.int_worker_gops_per_cpu_second | positive_finite) and
+        (.int_process_gops_per_cpu_second | positive_finite) and
+        (.memory_process_cpu_seconds | positive_finite) and
+        (.memory_process_scheduler_residency | positive_finite) and
+        (.memory_process_gib_per_cpu_second | positive_finite) and
+        .int_worker_cpu_seconds <= (.int_process_cpu_seconds + 0.001) and
+        .int_worker_scheduler_residency <= 1.01 and
+        .int_process_scheduler_residency <= 1.05 and
+        .memory_process_scheduler_residency <= 1.05 and
+        nearly_equal(.int_gops; (400000000 * .threads * 4 / .int_seconds / 1e9)) and
+        nearly_equal(.int_worker_scheduler_residency;
+          (.int_worker_cpu_seconds / (.int_seconds * .threads))) and
+        nearly_equal(.int_process_scheduler_residency;
+          (.int_process_cpu_seconds / (.int_seconds * .threads))) and
+        nearly_equal(.int_worker_gops_per_cpu_second;
+          (400000000 * .threads * 4 / .int_worker_cpu_seconds / 1e9)) and
+        nearly_equal(.int_process_gops_per_cpu_second;
+          (400000000 * .threads * 4 / .int_process_cpu_seconds / 1e9)) and
+        nearly_equal(.memory_gib_s;
+          (268435456 * 8 / .memory_seconds / 1073741824)) and
+        nearly_equal(.memory_process_scheduler_residency;
+          (.memory_process_cpu_seconds / .memory_seconds)) and
+        nearly_equal(.memory_process_gib_per_cpu_second;
+          (268435456 * 8 / .memory_process_cpu_seconds / 1073741824)) and
         (.checksum | type == "string" and test("^[0-9a-f]{16}$"))) and
     all($expected_threads[];
         . as $threads | ([$samples[] | select(.threads == $threads)] | length) == $repetitions)
 ' "$RAW_SAMPLES" >/dev/null; then
     fail "guest samples failed strict schema, value, or cardinality validation"
+fi
+
+if ! "$AWK" -v thread_counts="$THREAD_COUNTS_CSV" -v warmups="$WARMUPS" \
+    -v repetitions="$REPETITIONS" '
+    BEGIN {
+        thread_total = split(thread_counts, threads, ",")
+        expected = 0
+        for (t = 1; t <= thread_total; t++) {
+            for (n = 1; n <= warmups; n++) {
+                expected++
+                begin[expected] = "BENCH_SAMPLE_BEGIN sample_id=t" threads[t] "-w" n " phase=warmup"
+                finish[expected] = "BENCH_SAMPLE_END sample_id=t" threads[t] "-w" n " phase=warmup"
+            }
+            for (n = 1; n <= repetitions; n++) {
+                expected++
+                begin[expected] = "BENCH_SAMPLE_BEGIN sample_id=t" threads[t] "-r" n " phase=measured"
+                finish[expected] = "BENCH_SAMPLE_END sample_id=t" threads[t] "-r" n " phase=measured"
+            }
+        }
+        position = 1
+        open = 0
+    }
+    $0 == begin[position] && open == 0 { open = 1; next }
+    $0 == finish[position] && open == 1 { open = 0; position++; next }
+    /^BENCH_SAMPLE_(BEGIN|END) / { exit 60 }
+    END { if (open != 0 || position != expected + 1) exit 61 }
+' "$CONSOLE" >/dev/null; then
+    fail "guest shell sample markers were missing, duplicated, or out of order"
+fi
+
+EXPECTED_ACCOUNTING_COUNT=$(( 2 * (WARMUPS + REPETITIONS) * ${#UNIQUE_THREADS[@]} ))
+if [ "$("$AWK" 'NF { count++ } END { print count + 0 }' "$RAW_ACCOUNTING")" \
+    -ne "$EXPECTED_ACCOUNTING_COUNT" ]; then
+    fail "QEMU CPU observer emitted the wrong number of interval observations"
+fi
+if ! "$JQ" -s -e \
+    --argjson expected_threads "$THREAD_COUNTS_JSON" \
+    --argjson warmups "$WARMUPS" --argjson repetitions "$REPETITIONS" \
+    --argjson smp "$SMP" '
+    def expected_samples:
+      [$expected_threads[] as $threads |
+       (range(1; ($warmups + 1)) | {sample_id: ("t" + ($threads|tostring) + "-w" + (.|tostring)), phase:"warmup"}),
+       (range(1; ($repetitions + 1)) | {sample_id: ("t" + ($threads|tostring) + "-r" + (.|tostring)), phase:"measured"})] |
+      [.[] | {sample_id: .sample_id, workload: "integer"},
+             {sample_id: .sample_id, workload: "memory"}];
+    . as $rows | (expected_samples) as $expected |
+    ($rows | length) == ($expected | length) and
+    ([$rows[] | {sample_id, workload}] == $expected) and
+    all($rows[];
+      type == "object" and
+      (keys | sort) == (["accounting_status", "boundary_source",
+        "host_wall_seconds", "qemu_management_cpu_seconds",
+        "qemu_process_cpu_seconds", "qemu_vcpu_cpu_seconds",
+        "sample_id", "sampling_uncertainty_seconds",
+        "counter_skew_clamped_seconds", "vcpu_thread_count",
+        "vcpu_thread_set_stable", "workload"] | sort) and
+      .accounting_status == "ok" and .boundary_source == "serial-marker-receipt" and
+      .vcpu_thread_count == $smp and .vcpu_thread_set_stable == true and
+      (.host_wall_seconds | type == "number" and isfinite and . > 0) and
+      (.qemu_process_cpu_seconds | type == "number" and isfinite and . > 0) and
+      (.qemu_vcpu_cpu_seconds | type == "number" and isfinite and . > 0) and
+      (.qemu_management_cpu_seconds | type == "number" and isfinite and . >= 0) and
+      (.sampling_uncertainty_seconds | type == "number" and isfinite and . >= 0) and
+      (.counter_skew_clamped_seconds | type == "number" and isfinite and . >= 0) and
+      .counter_skew_clamped_seconds <=
+        (2 * $smp * .sampling_uncertainty_seconds) and
+      .qemu_vcpu_cpu_seconds <=
+        ($smp * (1.01 * .host_wall_seconds +
+                 2 * .sampling_uncertainty_seconds) + 1e-9) and
+      ((.qemu_process_cpu_seconds - .qemu_vcpu_cpu_seconds -
+        .qemu_management_cpu_seconds + .counter_skew_clamped_seconds) | fabs)
+        < 0.000001)
+' "$RAW_ACCOUNTING" >/dev/null; then
+    fail "QEMU CPU observer observations failed strict schema, order, or formula validation"
 fi
 
 KERNEL_SIZE="$(file_size "$KERNEL")"
@@ -1005,6 +1207,7 @@ ROOTFS_SIZE="$(file_size "$ROOTFS")"
 if ! "$JQ" -n \
     --slurpfile metadata "$RAW_METADATA" \
     --slurpfile samples "$RAW_SAMPLES" \
+    --slurpfile accounting "$RAW_ACCOUNTING" \
     --argjson thread_counts "$THREAD_COUNTS_JSON" \
     --argjson smp "$SMP" \
     --arg memory "$MEM" \
@@ -1025,7 +1228,17 @@ if ! "$JQ" -n \
     --arg initrd_path "$INITRD" --arg initrd_before "$INITRD_SHA256_BEFORE" --arg initrd_after "$INITRD_SHA256_AFTER" --argjson initrd_size "$INITRD_SIZE" \
     --arg rootfs_path "$ROOTFS" --arg rootfs_before "$ROOTFS_SHA256_BEFORE" --arg rootfs_after "$ROOTFS_SHA256_AFTER" --argjson rootfs_size "$ROOTFS_SIZE" \
     --arg source_path "$BENCH_SOURCE" --arg source_before "$BENCH_SOURCE_SHA256_BEFORE" --arg source_after "$BENCH_SOURCE_SHA256_AFTER" \
-    --arg staged_source_before "$STAGED_SOURCE_SHA256_BEFORE" --arg staged_source_after "$STAGED_SOURCE_SHA256_AFTER" '
+    --arg staged_source_before "$STAGED_SOURCE_SHA256_BEFORE" --arg staged_source_after "$STAGED_SOURCE_SHA256_AFTER" \
+    --arg observer_source_path "$CPU_OBSERVER_SOURCE" \
+    --arg observer_source_before "$CPU_OBSERVER_SHA256_BEFORE" \
+    --arg observer_source_after "$CPU_OBSERVER_SHA256_AFTER" \
+    --arg clang_path "$CLANG_REAL" --arg clang_before "$CLANG_SHA256_BEFORE" \
+    --arg clang_after "$CLANG_SHA256_AFTER" \
+    --arg tail_path "$TAIL_REAL" --arg tail_before "$TAIL_SHA256_BEFORE" \
+    --arg tail_after "$TAIL_SHA256_AFTER" \
+    --arg observer_binary_path "$OBSERVER_BINARY" \
+    --arg observer_binary_before "$OBSERVER_BINARY_SHA256_BEFORE" \
+    --arg observer_binary_after "$OBSERVER_BINARY_SHA256_AFTER" '
     def stats($field):
         map(.[$field]) | sort as $values |
         ($values | length) as $count |
@@ -1042,10 +1255,27 @@ if ! "$JQ" -n \
         };
     ($samples) as $sample_rows |
     {
-        schema_version: 1,
+        schema_version: 2,
         role: "guest",
         metadata: $metadata[0],
         samples: $sample_rows,
+        cpu_accounting: {
+            observer: {
+                source_path: $observer_source_path,
+                source_sha256_before: $observer_source_before,
+                source_sha256_after: $observer_source_after,
+                compiler_path: $clang_path,
+                compiler_sha256_before: $clang_before,
+                compiler_sha256_after: $clang_after,
+                tail_path: $tail_path,
+                tail_sha256_before: $tail_before,
+                tail_sha256_after: $tail_after,
+                binary_path: $observer_binary_path,
+                binary_sha256_before: $observer_binary_before,
+                binary_sha256_after: $observer_binary_after
+            },
+            observations: $accounting
+        },
         distributions: [
             $thread_counts[] as $threads |
             ($sample_rows | map(select(.threads == $threads))) as $rows |
@@ -1053,8 +1283,17 @@ if ! "$JQ" -n \
                 threads: $threads,
                 int_seconds: ($rows | stats("int_seconds")),
                 int_gops: ($rows | stats("int_gops")),
+                int_worker_cpu_seconds: ($rows | stats("int_worker_cpu_seconds")),
+                int_process_cpu_seconds: ($rows | stats("int_process_cpu_seconds")),
+                int_worker_scheduler_residency: ($rows | stats("int_worker_scheduler_residency")),
+                int_process_scheduler_residency: ($rows | stats("int_process_scheduler_residency")),
+                int_worker_gops_per_cpu_second: ($rows | stats("int_worker_gops_per_cpu_second")),
+                int_process_gops_per_cpu_second: ($rows | stats("int_process_gops_per_cpu_second")),
                 memory_seconds: ($rows | stats("memory_seconds")),
-                memory_gib_s: ($rows | stats("memory_gib_s"))
+                memory_gib_s: ($rows | stats("memory_gib_s")),
+                memory_process_cpu_seconds: ($rows | stats("memory_process_cpu_seconds")),
+                memory_process_scheduler_residency: ($rows | stats("memory_process_scheduler_residency")),
+                memory_process_gib_per_cpu_second: ($rows | stats("memory_process_gib_per_cpu_second"))
             }
         ],
         benchmark: {
@@ -1064,6 +1303,7 @@ if ! "$JQ" -n \
             warmups: $warmups,
             repetitions: $repetitions,
             sample_order: "thread_counts order, then repetition order; warmups omitted",
+            accounting_sample_order: "thread_counts order, warmup then measured, each integer then memory",
             int_iterations_per_thread: 400000000,
             int_operations_per_iteration: 4,
             memory_bytes: 268435456,
@@ -1071,7 +1311,7 @@ if ! "$JQ" -n \
             compile_flags: ["-O2", "-pthread", "-Wall", "-Wextra", "-Werror", "-std=gnu11"],
             compile_argv: ["/usr/bin/gcc", "-O2", "-pthread", "-Wall", "-Wextra", "-Werror",
                            "-std=gnu11", "bench.c", "-o", "bench"],
-            argv_template: ["./bench", "--json", "<threads>"]
+            argv_template: ["./bench", "--json", "--timing-v2", "<sample_id>", "<threads>"]
         },
         inputs: {
             kernel_version: {path: $kver_path, sha256_before: $kver_before, sha256_after: $kver_after},
@@ -1093,7 +1333,17 @@ if ! "$JQ" -n \
             lsof: {path: $lsof_path, sha256_before: $lsof_before, sha256_after: $lsof_after},
             parser: {path: $awk_path, sha256_before: $awk_before, sha256_after: $awk_after},
             jq: {path: $jq_path, version: $jq_version, sha256_before: $jq_before, sha256_after: $jq_after},
-            realpath: {path: $realpath_path, sha256_before: $realpath_before, sha256_after: $realpath_after}
+            realpath: {path: $realpath_path, sha256_before: $realpath_before, sha256_after: $realpath_after},
+            clang: {path: $clang_path, sha256_before: $clang_before, sha256_after: $clang_after},
+            tail: {path: $tail_path, sha256_before: $tail_before, sha256_after: $tail_after},
+            cpu_observer: {
+                source_path: $observer_source_path,
+                source_sha256_before: $observer_source_before,
+                source_sha256_after: $observer_source_after,
+                binary_path: $observer_binary_path,
+                binary_sha256_before: $observer_binary_before,
+                binary_sha256_after: $observer_binary_after
+            }
         },
         safety: {
             host_privilege_required: false,
@@ -1133,10 +1383,12 @@ if ! "$JQ" -e \
     --slurpfile expected_samples "$RAW_SAMPLES" \
     --argjson expected_argv "$QEMU_ARGV_JSON" \
     --argjson expected_threads "$THREAD_COUNTS_JSON" \
+    --argjson warmups "$WARMUPS" \
     --argjson repetitions "$REPETITIONS" '
-    (keys | sort) == (["benchmark", "distributions", "inputs", "metadata", "role", "run",
-                       "safety", "samples", "schema_version"] | sort) and
-    .schema_version == 1 and .role == "guest" and
+    (keys | sort) == (["benchmark", "cpu_accounting", "distributions", "inputs",
+                       "metadata", "role", "run", "safety", "samples",
+                       "schema_version"] | sort) and
+    .schema_version == 2 and .role == "guest" and
     .samples == $expected_samples and
     .metadata.compiler_path == "/usr/bin/gcc" and
     .metadata.compiler_family == "gcc" and
@@ -1144,12 +1396,16 @@ if ! "$JQ" -e \
     .benchmark.thread_counts == $expected_threads and
     .benchmark.repetitions == $repetitions and
     .benchmark.sample_order == "thread_counts order, then repetition order; warmups omitted" and
-    (.run | keys | sort) == (["jq", "lsof", "parser", "qemu", "qemu_img", "realpath", "timeout"] | sort) and
+    (.run | keys | sort) == (["clang", "cpu_observer", "jq", "lsof", "parser",
+                               "qemu", "qemu_img", "realpath", "tail", "timeout"] | sort) and
     (.run.qemu | keys | sort) == (["argv", "path", "sha256_after", "sha256_before", "version"] | sort) and
     (.run.qemu_img | keys | sort) == (["path", "sha256_after", "sha256_before", "version"] | sort) and
     (.run.timeout | keys | sort) == (["path", "seconds", "sha256_after", "sha256_before"] | sort) and
-    all([.run.lsof, .run.parser, .run.realpath][];
+    all([.run.lsof, .run.parser, .run.realpath, .run.clang, .run.tail][];
         (keys | sort) == (["path", "sha256_after", "sha256_before"] | sort)) and
+    (.run.cpu_observer | (keys | sort) ==
+       (["binary_path", "binary_sha256_after", "binary_sha256_before",
+         "source_path", "source_sha256_after", "source_sha256_before"] | sort)) and
     (.run.jq | keys | sort) == (["path", "sha256_after", "sha256_before", "version"] | sort) and
     .run.qemu.argv == $expected_argv and
     .safety == {
@@ -1185,14 +1441,36 @@ if ! "$JQ" -e \
     .inputs.benchmark_source.staged_copy_sha256_before ==
         .inputs.benchmark_source.staged_copy_sha256_after and
     all([.run.qemu, .run.qemu_img, .run.timeout, .run.lsof, .run.parser, .run.jq,
-         .run.realpath][];
+         .run.realpath, .run.clang, .run.tail][];
         .sha256_before == .sha256_after) and
+    all([.cpu_accounting.observer.source_sha256_before ==
+         .cpu_accounting.observer.source_sha256_after,
+         .cpu_accounting.observer.compiler_sha256_before ==
+         .cpu_accounting.observer.compiler_sha256_after,
+         .cpu_accounting.observer.tail_sha256_before ==
+         .cpu_accounting.observer.tail_sha256_after,
+         .cpu_accounting.observer.binary_sha256_before ==
+         .cpu_accounting.observer.binary_sha256_after][]; .) and
+    (.cpu_accounting.observations | length) ==
+      (2 * ($warmups + $repetitions) * ($expected_threads | length)) and
     (.distributions | type) == "array" and
     (.distributions | map(.threads)) == $expected_threads and
     all(.distributions[];
-        (keys | sort) == (["int_gops", "int_seconds", "memory_gib_s",
-                           "memory_seconds", "threads"] | sort) and
-        all([.int_seconds, .int_gops, .memory_seconds, .memory_gib_s][];
+        (keys | sort) == (["int_gops", "int_process_cpu_seconds",
+                           "int_process_gops_per_cpu_second",
+                           "int_process_scheduler_residency", "int_seconds",
+                           "int_worker_cpu_seconds", "int_worker_scheduler_residency",
+                           "int_worker_gops_per_cpu_second",
+                           "memory_gib_s", "memory_process_cpu_seconds",
+                           "memory_process_gib_per_cpu_second",
+                           "memory_process_scheduler_residency", "memory_seconds",
+                           "threads"] | sort) and
+        all([.int_seconds, .int_gops, .memory_seconds, .memory_gib_s,
+             .int_worker_cpu_seconds, .int_process_cpu_seconds,
+             .int_worker_scheduler_residency, .int_process_scheduler_residency,
+             .int_worker_gops_per_cpu_second, .int_process_gops_per_cpu_second,
+             .memory_process_cpu_seconds, .memory_process_scheduler_residency,
+             .memory_process_gib_per_cpu_second][];
             type == "object" and
             (keys | sort) == (["count", "max", "mean", "median", "min"] | sort) and
             .count == $repetitions and

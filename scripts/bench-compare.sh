@@ -60,6 +60,15 @@ validate_regular_input()
         die "$label size is outside 1..10485760 bytes: $path"
 }
 
+validate_single_json_document()
+{
+    local path="$1"
+    local label="$2"
+
+    "$JQ" -s -e 'length == 1' "$path" >/dev/null ||
+        die "$label must contain exactly one top-level JSON document: $path"
+}
+
 validate_host()
 {
     local path="$1"
@@ -69,10 +78,15 @@ validate_host()
         def sha256: type == "string" and test("^[0-9a-f]{64}$");
         def positive_finite:
             type == "number" and isfinite and . > 0;
+        def absolute_nonempty_path:
+            type == "string" and length > 1 and startswith("/");
         def absolute: if . < 0 then -. else . end;
         def nearly_equal($left; $right):
             (($left - $right) | absolute) <=
                 (1e-12 * (($right | absolute) + 1));
+        def timing_nearly_equal($left; $right):
+            (($left - $right) | absolute) <=
+                (1e-7 * (($right | absolute) + 1));
         def stat:
             type == "object" and
             exact_keys(["count", "min", "median", "mean", "max"]) and
@@ -83,7 +97,7 @@ validate_host()
             (.max | positive_finite) and
             .min <= .median and .median <= .max and
             .min <= .mean and .mean <= .max;
-        def sample:
+        def sample_v1:
             type == "object" and
             exact_keys([
                 "threads", "int_iterations_per_thread",
@@ -99,6 +113,62 @@ validate_host()
             (.int_gops | positive_finite) and
             (.memory_seconds | positive_finite) and
             (.memory_gib_s | positive_finite) and
+            (.checksum | type == "string" and test("^[0-9a-f]{16}$"));
+        def sample_v2:
+            type == "object" and
+            exact_keys([
+                "checksum", "int_gops", "int_iterations_per_thread",
+                "int_operations_per_iteration", "int_process_cpu_seconds",
+                "int_process_gops_per_cpu_second",
+                "int_process_scheduler_residency", "int_seconds",
+                "int_worker_cpu_seconds", "int_worker_gops_per_cpu_second",
+                "int_worker_scheduler_residency", "memory_bytes",
+                "memory_gib_s", "memory_passes",
+                "memory_process_cpu_seconds",
+                "memory_process_gib_per_cpu_second",
+                "memory_process_scheduler_residency", "memory_seconds",
+                "sample_id", "threads", "timing_version"
+            ]) and
+            .timing_version == 2 and
+            (.sample_id | type == "string" and
+                test("^[A-Za-z0-9_.:-]{1,64}$")) and
+            (.threads | type == "number" and floor == . and . > 0) and
+            .int_iterations_per_thread == 400000000 and
+            .int_operations_per_iteration == 4 and
+            .memory_bytes == 268435456 and .memory_passes == 8 and
+            all([
+                .int_seconds, .int_gops, .int_worker_cpu_seconds,
+                .int_process_cpu_seconds, .int_worker_scheduler_residency,
+                .int_process_scheduler_residency,
+                .int_worker_gops_per_cpu_second,
+                .int_process_gops_per_cpu_second, .memory_seconds,
+                .memory_gib_s, .memory_process_cpu_seconds,
+                .memory_process_scheduler_residency,
+                .memory_process_gib_per_cpu_second
+            ][]; positive_finite) and
+            .int_worker_cpu_seconds <= (.int_process_cpu_seconds + 0.001) and
+            .int_worker_scheduler_residency <= 1.01 and
+            .int_process_scheduler_residency <= 1.05 and
+            .memory_process_scheduler_residency <= 1.05 and
+            timing_nearly_equal(.int_gops;
+                (400000000 * .threads * 4 / .int_seconds / 1e9)) and
+            timing_nearly_equal(.int_worker_scheduler_residency;
+                (.int_worker_cpu_seconds / (.int_seconds * .threads))) and
+            timing_nearly_equal(.int_process_scheduler_residency;
+                (.int_process_cpu_seconds / (.int_seconds * .threads))) and
+            timing_nearly_equal(.int_worker_gops_per_cpu_second;
+                (400000000 * .threads * 4 /
+                    .int_worker_cpu_seconds / 1e9)) and
+            timing_nearly_equal(.int_process_gops_per_cpu_second;
+                (400000000 * .threads * 4 /
+                    .int_process_cpu_seconds / 1e9)) and
+            timing_nearly_equal(.memory_gib_s;
+                (268435456 * 8 / .memory_seconds / 1073741824)) and
+            timing_nearly_equal(.memory_process_scheduler_residency;
+                (.memory_process_cpu_seconds / .memory_seconds)) and
+            timing_nearly_equal(.memory_process_gib_per_cpu_second;
+                (268435456 * 8 /
+                    .memory_process_cpu_seconds / 1073741824)) and
             (.checksum | type == "string" and test("^[0-9a-f]{16}$"));
         def distribution_matches($samples; $metrics):
             . as $distribution |
@@ -126,9 +196,9 @@ validate_host()
             "schema_version", "role", "host", "source", "compiler", "tools",
             "compilation", "benchmark", "thermal_load_notes", "integrity"
         ]) and
-        .schema_version == 1 and .role == "host" and
+        (.schema_version == 1 or .schema_version == 2) and .role == "host" and
         (.source | exact_keys(["path", "sha256"])) and
-        (.source.path | type == "string" and length > 0) and
+        (.source.path | absolute_nonempty_path) and
         (.source.sha256 | sha256) and
         (.compiler | exact_keys(["path", "version", "numeric_version", "sha256"])) and
         .compiler.path == "/opt/homebrew/bin/gcc-16" and
@@ -136,6 +206,7 @@ validate_host()
         (.compiler.version | type == "string" and test("GCC 16[.]1[.]0"; "i")) and
         (.compiler.sha256 | sha256) and
         (.compilation | exact_keys(["argv", "benchmark_path", "benchmark_sha256"])) and
+        (.compilation.benchmark_path | absolute_nonempty_path) and
         (.compilation.benchmark_sha256 | sha256) and
         (.compilation.argv | type == "array" and length == 10) and
         .compilation.argv[0] == .compiler.path and
@@ -144,9 +215,6 @@ validate_host()
         .compilation.argv[7] == "-o" and
         .compilation.argv[8] == .compilation.benchmark_path and
         .compilation.argv[9] == .source.path and
-        (.benchmark | exact_keys([
-            "argv_template", "parameters", "sample_order", "samples", "distributions"
-        ])) and
         (.benchmark.parameters | exact_keys([
             "thread_counts", "warmups_per_thread", "repetitions_per_thread",
             "int_iterations_per_thread", "int_operations_per_iteration",
@@ -159,12 +227,9 @@ validate_host()
         .benchmark.parameters.int_operations_per_iteration == 4 and
         .benchmark.parameters.memory_bytes == 268435456 and
         .benchmark.parameters.memory_passes == 8 and
-        .benchmark.argv_template ==
-            [.compilation.benchmark_path, "--json", "<threads>"] and
         .benchmark.sample_order ==
             "thread_counts order, then repetition order; warmups omitted" and
         (.benchmark.samples | type == "array" and length == 35) and
-        all(.benchmark.samples[]; sample) and
         ([.benchmark.samples[].threads] ==
             ([1, 8, 16, 24, 32] as $threads |
              [range(0; 35) | $threads[(. / 7 | floor)]])) and
@@ -172,12 +237,95 @@ validate_host()
             length == 7 and (map(.checksum) | unique | length) == 1) and
         (.benchmark.distributions | type == "array" and length == 5) and
         [.benchmark.distributions[].threads] == [1, 8, 16, 24, 32] and
-        all(.benchmark.distributions[];
-            exact_keys(["threads", "int_gops", "memory_gib_s"]) and
-            distribution_matches($root.benchmark.samples; ["int_gops", "memory_gib_s"])) and
+        (if .schema_version == 1 then
+            (.benchmark | exact_keys([
+                "argv_template", "parameters", "sample_order", "samples",
+                "distributions"
+            ])) and
+            .benchmark.argv_template ==
+                [.compilation.benchmark_path, "--json", "<threads>"] and
+            all(.benchmark.samples[]; sample_v1) and
+            all(.benchmark.distributions[];
+                exact_keys(["threads", "int_gops", "memory_gib_s"]) and
+                distribution_matches($root.benchmark.samples;
+                    ["int_gops", "memory_gib_s"]))
+        else
+            (.benchmark | exact_keys([
+                "argv_template", "parameters", "sample_order", "samples",
+                "distributions", "timing"
+            ])) and
+            .benchmark.argv_template == [
+                .compilation.benchmark_path, "--json", "--timing-v2",
+                "<sample_id>", "<threads>"
+            ] and
+            (.benchmark.timing | exact_keys([
+                "version", "sample_id_format", "integer_worker_cpu_source",
+                "process_cpu_source", "wall_clock_source",
+                "derived_formulas", "marker_log"
+            ])) and
+            .benchmark.timing.version == 2 and
+            .benchmark.timing.sample_id_format ==
+                "t<threads>-w<warmup-ordinal> or t<threads>-r<repetition-ordinal>" and
+            .benchmark.timing.integer_worker_cpu_source ==
+                "sum of each worker thread CPU clock over its integer loop" and
+            .benchmark.timing.process_cpu_source ==
+                "getrusage(RUSAGE_SELF) user plus system CPU time deltas" and
+            .benchmark.timing.wall_clock_source == "CLOCK_MONOTONIC" and
+            .benchmark.timing.derived_formulas == {
+                int_worker_scheduler_residency:
+                    "int_worker_cpu_seconds / (int_seconds * threads)",
+                int_process_scheduler_residency:
+                    "int_process_cpu_seconds / (int_seconds * threads)",
+                memory_process_scheduler_residency:
+                    "memory_process_cpu_seconds / memory_seconds",
+                int_worker_gops_per_cpu_second:
+                    "integer operations / int_worker_cpu_seconds / 1e9",
+                int_process_gops_per_cpu_second:
+                    "integer operations / int_process_cpu_seconds / 1e9",
+                memory_process_gib_per_cpu_second:
+                    "memory bytes times passes / memory_process_cpu_seconds / 2^30"
+            } and
+            (.benchmark.timing.marker_log | exact_keys([
+                "path", "sha256", "invocation_count", "marker_count"
+            ])) and
+            (.benchmark.timing.marker_log.path |
+                type == "string" and startswith("/")) and
+            (.benchmark.timing.marker_log.sha256 | sha256) and
+            .benchmark.timing.marker_log.invocation_count == 40 and
+            .benchmark.timing.marker_log.marker_count == 160 and
+            all(.benchmark.samples[]; sample_v2) and
+            [.benchmark.samples[].sample_id] ==
+                [[1, 8, 16, 24, 32][] as $threads | range(1; 8) |
+                    "t\($threads)-r\(.)"] and
+            all(.benchmark.distributions[];
+                exact_keys([
+                    "threads", "int_seconds", "int_gops",
+                    "int_worker_cpu_seconds", "int_process_cpu_seconds",
+                    "int_worker_scheduler_residency",
+                    "int_process_scheduler_residency",
+                    "int_worker_gops_per_cpu_second",
+                    "int_process_gops_per_cpu_second", "memory_seconds",
+                    "memory_gib_s", "memory_process_cpu_seconds",
+                    "memory_process_scheduler_residency",
+                    "memory_process_gib_per_cpu_second"
+                ]) and
+                distribution_matches($root.benchmark.samples; [
+                    "int_seconds", "int_gops", "int_worker_cpu_seconds",
+                    "int_process_cpu_seconds",
+                    "int_worker_scheduler_residency",
+                    "int_process_scheduler_residency",
+                    "int_worker_gops_per_cpu_second",
+                    "int_process_gops_per_cpu_second", "memory_seconds",
+                    "memory_gib_s", "memory_process_cpu_seconds",
+                    "memory_process_scheduler_residency",
+                    "memory_process_gib_per_cpu_second"
+                ]))
+        end) and
         (.tools | exact_keys(["jq", "shasum"])) and
         (.tools.jq | exact_keys(["path", "version", "sha256"])) and
         (.tools.shasum | exact_keys(["path", "version", "sha256"])) and
+        (.tools.jq.path | absolute_nonempty_path) and
+        (.tools.shasum.path | absolute_nonempty_path) and
         (.tools.jq.sha256 | sha256) and (.tools.shasum.sha256 | sha256) and
         (.integrity | exact_keys([
             "source_sha256", "compiler_sha256", "jq_sha256", "shasum_sha256",
@@ -208,7 +356,7 @@ validate_host()
     ' "$path" >/dev/null || die "host evidence failed strict validation: $path"
 }
 
-validate_guest()
+validate_guest_v1()
 {
     local path="$1"
     local expected_smp="$2"
@@ -218,6 +366,8 @@ validate_guest()
         def sha256: type == "string" and test("^[0-9a-f]{64}$");
         def positive_finite:
             type == "number" and isfinite and . > 0;
+        def absolute_nonempty_path:
+            type == "string" and length > 1 and startswith("/");
         def absolute: if . < 0 then -. else . end;
         def nearly_equal($left; $right):
             (($left - $right) | absolute) <=
@@ -359,6 +509,7 @@ validate_guest()
         ])) and
         (.run.qemu |
             exact_keys(["path", "version", "argv", "sha256_before", "sha256_after"]) and
+            (.path | absolute_nonempty_path) and
             (.argv | type == "array" and length > 0) and
             (.argv | index("-no-user-config") != null) and
             (.argv | index("-nodefaults") != null) and
@@ -389,12 +540,15 @@ validate_guest()
             run_hashes_unchanged) and
         all([.run.qemu_img, .run.jq][];
             exact_keys(["path", "version", "sha256_before", "sha256_after"]) and
+            (.path | absolute_nonempty_path) and
             run_hashes_unchanged) and
         (.run.timeout |
             exact_keys(["path", "seconds", "sha256_before", "sha256_after"]) and
+            (.path | absolute_nonempty_path) and
             .seconds == 1800 and run_hashes_unchanged) and
         all([.run.lsof, .run.parser, .run.realpath][];
             exact_keys(["path", "sha256_before", "sha256_after"]) and
+            (.path | absolute_nonempty_path) and
             run_hashes_unchanged) and
         (.safety | exact_keys([
             "host_privilege_required", "explicit_disposable_overlay",
@@ -442,6 +596,319 @@ validate_guest()
         .safety.serial_fifo_removed_after_shutdown == true
     ' "$path" >/dev/null ||
         die "guest SMP $expected_smp evidence failed strict validation: $path"
+}
+
+validate_guest_v2()
+{
+    local path="$1"
+    local expected_smp="$2"
+
+    "$JQ" -e --argjson expected_smp "$expected_smp" '
+        def exact_keys($wanted): (keys | sort) == ($wanted | sort);
+        def sha256: type == "string" and test("^[0-9a-f]{64}$");
+        def positive_finite: type == "number" and isfinite and . > 0;
+        def nonnegative_finite: type == "number" and isfinite and . >= 0;
+        def absolute_nonempty_path:
+            type == "string" and length > 1 and startswith("/");
+        def absolute: if . < 0 then -. else . end;
+        def timing_nearly_equal($left; $right):
+            (($left - $right) | absolute) <=
+                (1e-7 * (($right | absolute) + 1));
+        def stat:
+            type == "object" and
+            exact_keys(["count", "min", "median", "mean", "max"]) and
+            .count == 7 and
+            all([.min, .median, .mean, .max][]; positive_finite) and
+            .min <= .median and .median <= .max and
+            .min <= .mean and .mean <= .max;
+        def expected_threads:
+            if $expected_smp == 1 then [1] else [1, $expected_smp] end;
+        def sample_v2:
+            type == "object" and
+            exact_keys([
+                "checksum", "int_gops", "int_iterations_per_thread",
+                "int_operations_per_iteration", "int_process_cpu_seconds",
+                "int_process_gops_per_cpu_second",
+                "int_process_scheduler_residency", "int_seconds",
+                "int_worker_cpu_seconds", "int_worker_gops_per_cpu_second",
+                "int_worker_scheduler_residency", "memory_bytes",
+                "memory_gib_s", "memory_passes",
+                "memory_process_cpu_seconds",
+                "memory_process_gib_per_cpu_second",
+                "memory_process_scheduler_residency", "memory_seconds",
+                "sample_id", "threads", "timing_version"
+            ]) and
+            .timing_version == 2 and
+            (.sample_id | test("^[A-Za-z0-9_.:-]{1,64}$")) and
+            (.threads | type == "number" and floor == . and . > 0) and
+            .int_iterations_per_thread == 400000000 and
+            .int_operations_per_iteration == 4 and
+            .memory_bytes == 268435456 and .memory_passes == 8 and
+            all([
+                .int_seconds, .int_gops, .int_worker_cpu_seconds,
+                .int_process_cpu_seconds, .int_worker_scheduler_residency,
+                .int_process_scheduler_residency,
+                .int_worker_gops_per_cpu_second,
+                .int_process_gops_per_cpu_second, .memory_seconds,
+                .memory_gib_s, .memory_process_cpu_seconds,
+                .memory_process_scheduler_residency,
+                .memory_process_gib_per_cpu_second
+            ][]; positive_finite) and
+            .int_worker_cpu_seconds <= (.int_process_cpu_seconds + 0.001) and
+            .int_worker_scheduler_residency <= 1.01 and
+            .int_process_scheduler_residency <= 1.05 and
+            .memory_process_scheduler_residency <= 1.05 and
+            timing_nearly_equal(.int_gops;
+                (400000000 * .threads * 4 / .int_seconds / 1e9)) and
+            timing_nearly_equal(.int_worker_scheduler_residency;
+                (.int_worker_cpu_seconds / (.int_seconds * .threads))) and
+            timing_nearly_equal(.int_process_scheduler_residency;
+                (.int_process_cpu_seconds / (.int_seconds * .threads))) and
+            timing_nearly_equal(.int_worker_gops_per_cpu_second;
+                (400000000 * .threads * 4 /
+                    .int_worker_cpu_seconds / 1e9)) and
+            timing_nearly_equal(.int_process_gops_per_cpu_second;
+                (400000000 * .threads * 4 /
+                    .int_process_cpu_seconds / 1e9)) and
+            timing_nearly_equal(.memory_gib_s;
+                (268435456 * 8 / .memory_seconds / 1073741824)) and
+            timing_nearly_equal(.memory_process_scheduler_residency;
+                (.memory_process_cpu_seconds / .memory_seconds)) and
+            timing_nearly_equal(.memory_process_gib_per_cpu_second;
+                (268435456 * 8 /
+                    .memory_process_cpu_seconds / 1073741824)) and
+            (.checksum | type == "string" and test("^[0-9a-f]{16}$"));
+        def distribution_matches($samples; $metrics):
+            . as $distribution |
+            ($samples | map(select(.threads == $distribution.threads))) as $rows |
+            all($metrics[];
+                . as $metric |
+                ($rows | map(.[$metric])) as $values |
+                ($values | sort) as $sorted |
+                ($distribution[$metric] | stat) and
+                $distribution[$metric].min == $sorted[0] and
+                $distribution[$metric].median == $sorted[3] and
+                (($distribution[$metric].mean - ($values | add / length)) |
+                    absolute) < 1e-12 and
+                $distribution[$metric].max == $sorted[6]);
+        def expected_observations:
+            [expected_threads[] as $threads |
+             ((range(1; 2) | "t\($threads)-w\(.)"),
+              (range(1; 8) | "t\($threads)-r\(.)")) as $sample_id |
+             {sample_id: $sample_id, workload: "integer"},
+             {sample_id: $sample_id, workload: "memory"}];
+
+        . as $root |
+        type == "object" and
+        exact_keys([
+            "benchmark", "cpu_accounting", "distributions", "inputs",
+            "metadata", "role", "run", "safety", "samples",
+            "schema_version"
+        ]) and
+        .schema_version == 2 and .role == "guest" and
+        (.benchmark | exact_keys([
+            "smp", "memory", "thread_counts", "warmups", "repetitions",
+            "sample_order", "accounting_sample_order",
+            "int_iterations_per_thread", "int_operations_per_iteration",
+            "memory_bytes", "memory_passes", "compile_flags",
+            "compile_argv", "argv_template"
+        ])) and
+        .benchmark.smp == $expected_smp and .benchmark.memory == "8G" and
+        .benchmark.thread_counts == expected_threads and
+        .benchmark.warmups == 1 and .benchmark.repetitions == 7 and
+        .benchmark.sample_order ==
+            "thread_counts order, then repetition order; warmups omitted" and
+        .benchmark.accounting_sample_order ==
+            "thread_counts order, warmup then measured, each integer then memory" and
+        .benchmark.int_iterations_per_thread == 400000000 and
+        .benchmark.int_operations_per_iteration == 4 and
+        .benchmark.memory_bytes == 268435456 and
+        .benchmark.memory_passes == 8 and
+        .benchmark.compile_flags ==
+            ["-O2", "-pthread", "-Wall", "-Wextra", "-Werror", "-std=gnu11"] and
+        .benchmark.compile_argv == [
+            "/usr/bin/gcc", "-O2", "-pthread", "-Wall", "-Wextra",
+            "-Werror", "-std=gnu11", "bench.c", "-o", "bench"
+        ] and
+        .benchmark.argv_template == [
+            "./bench", "--json", "--timing-v2", "<sample_id>", "<threads>"
+        ] and
+        (.samples | length) == ((expected_threads | length) * 7) and
+        all(.samples[]; sample_v2) and
+        [.samples[] | {threads, sample_id}] ==
+            [expected_threads[] as $threads | range(1; 8) |
+                {threads: $threads, sample_id: "t\($threads)-r\(.)"}] and
+        all(.samples | group_by(.threads)[];
+            length == 7 and (map(.checksum) | unique | length) == 1) and
+        (.distributions | length) == (expected_threads | length) and
+        [.distributions[].threads] == expected_threads and
+        all(.distributions[];
+            exact_keys([
+                "threads", "int_seconds", "int_gops",
+                "int_worker_cpu_seconds", "int_process_cpu_seconds",
+                "int_worker_scheduler_residency",
+                "int_process_scheduler_residency",
+                "int_worker_gops_per_cpu_second",
+                "int_process_gops_per_cpu_second", "memory_seconds",
+                "memory_gib_s", "memory_process_cpu_seconds",
+                "memory_process_scheduler_residency",
+                "memory_process_gib_per_cpu_second"
+            ]) and
+            distribution_matches($root.samples; [
+                "int_seconds", "int_gops", "int_worker_cpu_seconds",
+                "int_process_cpu_seconds", "int_worker_scheduler_residency",
+                "int_process_scheduler_residency",
+                "int_worker_gops_per_cpu_second",
+                "int_process_gops_per_cpu_second", "memory_seconds",
+                "memory_gib_s", "memory_process_cpu_seconds",
+                "memory_process_scheduler_residency",
+                "memory_process_gib_per_cpu_second"
+            ])) and
+        (.cpu_accounting | exact_keys(["observer", "observations"])) and
+        (.cpu_accounting.observer | exact_keys([
+            "source_path", "source_sha256_before", "source_sha256_after",
+            "compiler_path", "compiler_sha256_before",
+            "compiler_sha256_after", "tail_path", "tail_sha256_before",
+            "tail_sha256_after", "binary_path", "binary_sha256_before",
+            "binary_sha256_after"
+        ])) and
+        all([
+            .cpu_accounting.observer.source_sha256_before,
+            .cpu_accounting.observer.source_sha256_after,
+            .cpu_accounting.observer.compiler_sha256_before,
+            .cpu_accounting.observer.compiler_sha256_after,
+            .cpu_accounting.observer.tail_sha256_before,
+            .cpu_accounting.observer.tail_sha256_after,
+            .cpu_accounting.observer.binary_sha256_before,
+            .cpu_accounting.observer.binary_sha256_after
+        ][]; sha256) and
+        .cpu_accounting.observer.source_sha256_before ==
+            .cpu_accounting.observer.source_sha256_after and
+        .cpu_accounting.observer.compiler_sha256_before ==
+            .cpu_accounting.observer.compiler_sha256_after and
+        .cpu_accounting.observer.tail_sha256_before ==
+            .cpu_accounting.observer.tail_sha256_after and
+        .cpu_accounting.observer.binary_sha256_before ==
+            .cpu_accounting.observer.binary_sha256_after and
+        all([
+            .cpu_accounting.observer.source_path,
+            .cpu_accounting.observer.compiler_path,
+            .cpu_accounting.observer.tail_path,
+            .cpu_accounting.observer.binary_path
+        ][]; absolute_nonempty_path) and
+        ([.cpu_accounting.observations[] | {sample_id, workload}] ==
+            expected_observations) and
+        all(.cpu_accounting.observations[];
+            type == "object" and
+            exact_keys([
+                "accounting_status", "boundary_source", "host_wall_seconds",
+                "qemu_management_cpu_seconds", "qemu_process_cpu_seconds",
+                "qemu_vcpu_cpu_seconds", "sample_id",
+                "sampling_uncertainty_seconds",
+                "counter_skew_clamped_seconds", "vcpu_thread_count",
+                "vcpu_thread_set_stable", "workload"
+            ]) and
+            .accounting_status == "ok" and
+            .boundary_source == "serial-marker-receipt" and
+            .vcpu_thread_count == $expected_smp and
+            .vcpu_thread_set_stable == true and
+            (.host_wall_seconds | positive_finite) and
+            (.qemu_process_cpu_seconds | nonnegative_finite) and
+            (.qemu_vcpu_cpu_seconds | nonnegative_finite) and
+            (.qemu_management_cpu_seconds | nonnegative_finite) and
+            (.sampling_uncertainty_seconds | nonnegative_finite) and
+            (.counter_skew_clamped_seconds | nonnegative_finite) and
+            .counter_skew_clamped_seconds <=
+                (2 * $expected_smp * .sampling_uncertainty_seconds) and
+            .qemu_vcpu_cpu_seconds <=
+                ($expected_smp *
+                 (1.01 * .host_wall_seconds +
+                  2 * .sampling_uncertainty_seconds) + 1e-9) and
+            ((.qemu_process_cpu_seconds - .qemu_vcpu_cpu_seconds -
+              .qemu_management_cpu_seconds +
+              .counter_skew_clamped_seconds) | absolute) < 0.000001) and
+        all(.cpu_accounting.observations[] |
+            select(.sample_id | test("-r[1-7]$")) |
+            select(.workload == "integer");
+            .qemu_vcpu_cpu_seconds > 0) and
+        (.run | exact_keys([
+            "clang", "cpu_observer", "jq", "lsof", "parser", "qemu",
+            "qemu_img", "realpath", "tail", "timeout"
+        ])) and
+        all([.run.clang, .run.tail][];
+            exact_keys(["path", "sha256_before", "sha256_after"]) and
+            (.path | absolute_nonempty_path) and
+            (.sha256_before | sha256) and
+            .sha256_before == .sha256_after) and
+        (.run.cpu_observer | exact_keys([
+            "source_path", "source_sha256_before", "source_sha256_after",
+            "binary_path", "binary_sha256_before", "binary_sha256_after"
+        ])) and
+        (.run.cpu_observer.source_sha256_before | sha256) and
+        (.run.cpu_observer.binary_sha256_before | sha256) and
+        (.run.cpu_observer.source_path | absolute_nonempty_path) and
+        (.run.cpu_observer.binary_path | absolute_nonempty_path) and
+        .run.cpu_observer.source_sha256_before ==
+            .run.cpu_observer.source_sha256_after and
+        .run.cpu_observer.binary_sha256_before ==
+            .run.cpu_observer.binary_sha256_after and
+        .cpu_accounting.observer.source_path == .run.cpu_observer.source_path and
+        .cpu_accounting.observer.source_sha256_before ==
+            .run.cpu_observer.source_sha256_before and
+        .cpu_accounting.observer.compiler_path == .run.clang.path and
+        .cpu_accounting.observer.compiler_sha256_before ==
+            .run.clang.sha256_before and
+        .cpu_accounting.observer.tail_path == .run.tail.path and
+        .cpu_accounting.observer.tail_sha256_before ==
+            .run.tail.sha256_before and
+        .cpu_accounting.observer.binary_path == .run.cpu_observer.binary_path and
+        .cpu_accounting.observer.binary_sha256_before ==
+            .run.cpu_observer.binary_sha256_before
+    ' "$path" >/dev/null ||
+        die "guest SMP $expected_smp schema-2 evidence failed strict validation: $path"
+
+    validate_guest_v1 <("$JQ" '
+        {
+            schema_version: 1,
+            role: .role,
+            metadata: .metadata,
+            samples: [.samples[] | {
+                threads, int_iterations_per_thread,
+                int_operations_per_iteration, int_seconds, int_gops,
+                memory_bytes, memory_passes, memory_seconds, memory_gib_s,
+                checksum
+            }],
+            distributions: [.distributions[] | {
+                threads, int_seconds, int_gops, memory_seconds, memory_gib_s
+            }],
+            benchmark: (.benchmark |
+                del(.accounting_sample_order) |
+                .argv_template = ["./bench", "--json", "<threads>"]),
+            inputs: .inputs,
+            run: (.run | {
+                qemu, qemu_img, timeout, lsof, parser, jq, realpath
+            }),
+            safety: .safety
+        }
+    ' "$path") "$expected_smp"
+}
+
+validate_guest()
+{
+    local path="$1"
+    local expected_smp="$2"
+    local schema_version
+
+    schema_version="$("$JQ" -er '
+        .schema_version |
+        select(type == "number" and (. == 1 or . == 2))
+    ' "$path")" ||
+        die "guest SMP $expected_smp has an unsupported schema version: $path"
+    case "$schema_version" in
+        1) validate_guest_v1 "$path" "$expected_smp" ;;
+        2) validate_guest_v2 "$path" "$expected_smp" ;;
+        *) die "guest SMP $expected_smp has an unsupported schema version: $path" ;;
+    esac
 }
 
 validate_cross_contract()
@@ -546,6 +1013,7 @@ for ((i = 0; i < 6; i++)); do
     INPUT_PATHS[$i]="$canonical"
     INPUT_SHA256_BEFORE[$i]="$(hash_file "$canonical")" ||
         die "could not hash $label: $canonical"
+    validate_single_json_document "$canonical" "$label"
 done
 
 for ((i = 0; i < 6; i++)); do
@@ -658,9 +1126,72 @@ EVIDENCE_TMP="$("$MKTEMP" "$RUN_DIR/.evidence.json.XXXXXX")" ||
             sha256_after: $sha256,
             role: $role
         } + (if $smp == null then {} else {smp: $smp} end);
+    def cpu_sample_row($host; $guest; $guest_sample):
+        ($guest_sample.sample_id |
+            capture("-r(?<ordinal>[1-7])$").ordinal | tonumber) as $ordinal |
+        ($host.benchmark.samples |
+            map(select(.threads == $guest_sample.threads and
+                       .sample_id == $guest_sample.sample_id))[0]) as $host_sample |
+        ($guest.cpu_accounting.observations |
+            map(select(.sample_id == $guest_sample.sample_id and
+                       .workload == "integer"))[0]) as $observation |
+        (400000000 * $guest_sample.threads * 4 / 1e9) as $fixed_work_gop |
+        {
+            guest_smp: $guest.benchmark.smp,
+            threads: $guest_sample.threads,
+            sample_ordinal: $ordinal,
+            sample_id: $guest_sample.sample_id,
+            fixed_integer_work_gop: $fixed_work_gop,
+            host_native: {
+                worker_cpu_seconds: $host_sample.int_worker_cpu_seconds,
+                worker_gops_per_cpu_second:
+                    $host_sample.int_worker_gops_per_cpu_second,
+                worker_scheduler_residency:
+                    $host_sample.int_worker_scheduler_residency
+            },
+            guest_native: {
+                worker_cpu_seconds: $guest_sample.int_worker_cpu_seconds,
+                worker_gops_per_cpu_second:
+                    $guest_sample.int_worker_gops_per_cpu_second,
+                worker_scheduler_residency:
+                    $guest_sample.int_worker_scheduler_residency
+            },
+            guest_qemu: {
+                host_wall_seconds: $observation.host_wall_seconds,
+                qemu_process_cpu_seconds:
+                    $observation.qemu_process_cpu_seconds,
+                qemu_vcpu_cpu_seconds: $observation.qemu_vcpu_cpu_seconds,
+                qemu_management_cpu_seconds:
+                    $observation.qemu_management_cpu_seconds,
+                counter_skew_clamped_seconds:
+                    $observation.counter_skew_clamped_seconds,
+                sampling_uncertainty_seconds:
+                    $observation.sampling_uncertainty_seconds,
+                vcpu_thread_count: $observation.vcpu_thread_count,
+                cpu_conservation_residual_seconds:
+                    ($observation.qemu_process_cpu_seconds -
+                     $observation.qemu_vcpu_cpu_seconds -
+                     $observation.qemu_management_cpu_seconds +
+                     $observation.counter_skew_clamped_seconds),
+                fixed_work_gops_per_qemu_vcpu_cpu_second:
+                    ($fixed_work_gop / $observation.qemu_vcpu_cpu_seconds),
+                qemu_vcpu_occupancy:
+                    ($observation.qemu_vcpu_cpu_seconds /
+                     ($observation.host_wall_seconds *
+                      $observation.vcpu_thread_count))
+            },
+            guest_to_host_worker_cpu_efficiency_ratio:
+                ($guest_sample.int_worker_gops_per_cpu_second /
+                 $host_sample.int_worker_gops_per_cpu_second),
+            guest_to_host_worker_residency_ratio:
+                ($guest_sample.int_worker_scheduler_residency /
+                 $host_sample.int_worker_scheduler_residency)
+        };
 
     $host[0] as $h |
     [$guest1[0], $guest8[0], $guest16[0], $guest24[0], $guest32[0]] as $guests |
+    ($h.schema_version == 2 and
+        all($guests[]; .schema_version == 2)) as $cpu_available |
     [
         evidence_input($guest1_path; $guest1_sha256; "guest"; 1),
         evidence_input($guest8_path; $guest8_sha256; "guest"; 8),
@@ -669,7 +1200,7 @@ EVIDENCE_TMP="$("$MKTEMP" "$RUN_DIR/.evidence.json.XXXXXX")" ||
         evidence_input($guest32_path; $guest32_sha256; "guest"; 32)
     ] as $guest_inputs |
     {
-        schema_version: 1,
+        schema_version: 2,
         result: "descriptive_only",
         input_evidence: {
             host: evidence_input($host_path; $host_sha256; "host"; null),
@@ -720,6 +1251,32 @@ EVIDENCE_TMP="$("$MKTEMP" "$RUN_DIR/.evidence.json.XXXXXX")" ||
             [$guests[] as $guest |
              $guest.distributions[] as $distribution |
              comparison_row($h; $guest; $distribution)],
+        cpu_accounting: (({
+            status: (if $cpu_available then "available" else "unavailable" end),
+            input_schema_versions: {
+                host: $h.schema_version,
+                guests: [$guests[] | {
+                    smp: .benchmark.smp,
+                    schema_version: .schema_version
+                }]
+            }
+        }) +
+        (if $cpu_available then {
+            join_contract: {
+                host_guest_sample_key: ["threads", "sample_ordinal"],
+                sample_id_pattern: "t<threads>-r<sample_ordinal>",
+                qemu_observation_key: ["sample_id", "workload"],
+                qemu_boundary_source: "serial-marker-receipt",
+                workload: "integer"
+            },
+            sample_comparisons: [
+                $guests[] as $guest |
+                $guest.samples[] as $guest_sample |
+                cpu_sample_row($h; $guest; $guest_sample)
+            ]
+        } else {
+            reason: "CPU accounting requires schema version 2 for the host and all guest inputs."
+        } end)),
         method_notes: [
             "Ratios are descriptive; no hard gate is applied because a numerical threshold has not been agreed.",
             "Compiler patch versions differ: host GCC 16.1.0 and guest GCC 16.2.0.",
@@ -736,6 +1293,16 @@ EVIDENCE_TMP="$("$MKTEMP" "$RUN_DIR/.evidence.json.XXXXXX")" ||
     def exact_keys($wanted): (keys | sort) == ($wanted | sort);
     def sha256: type == "string" and test("^[0-9a-f]{64}$");
     def positive_finite: type == "number" and isfinite and . > 0;
+    def nonnegative_finite: type == "number" and isfinite and . >= 0;
+    def absolute_nonempty_path:
+        type == "string" and length > 1 and startswith("/");
+    def absolute: if . < 0 then -. else . end;
+    def nearly_equal($left; $right):
+        (($left - $right) | absolute) <=
+            (1e-12 * (($right | absolute) + 1));
+    def timing_nearly_equal($left; $right):
+        (($left - $right) | absolute) <=
+            (1e-7 * (($right | absolute) + 1));
     def evidence_hashes:
         (.sha256_before | sha256) and (.sha256_after | sha256) and
         .sha256_before == .sha256_after;
@@ -752,23 +1319,101 @@ EVIDENCE_TMP="$("$MKTEMP" "$RUN_DIR/.evidence.json.XXXXXX")" ||
         ((.guest_to_host_ratio - (.guest_median / .host_median)) > -1e-12) and
         ((.delta_percent - ((.guest_to_host_ratio - 1) * 100)) < 1e-10) and
         ((.delta_percent - ((.guest_to_host_ratio - 1) * 100)) > -1e-10);
+    def native_cpu:
+        type == "object" and
+        exact_keys([
+            "worker_cpu_seconds", "worker_gops_per_cpu_second",
+            "worker_scheduler_residency"
+        ]) and
+        all([.worker_cpu_seconds, .worker_gops_per_cpu_second,
+             .worker_scheduler_residency][]; positive_finite) and
+        .worker_scheduler_residency <= 1.01;
+    def cpu_sample:
+        type == "object" and
+        exact_keys([
+            "guest_smp", "threads", "sample_ordinal", "sample_id",
+            "fixed_integer_work_gop", "host_native", "guest_native",
+            "guest_qemu", "guest_to_host_worker_cpu_efficiency_ratio",
+            "guest_to_host_worker_residency_ratio"
+        ]) and
+        (.guest_smp | type == "number" and floor == . and . > 0) and
+        (.threads | type == "number" and floor == . and . > 0) and
+        (.sample_ordinal | type == "number" and floor == . and
+            . >= 1 and . <= 7) and
+        .sample_id == "t\(.threads)-r\(.sample_ordinal)" and
+        (.fixed_integer_work_gop | positive_finite) and
+        nearly_equal(.fixed_integer_work_gop; (1.6 * .threads)) and
+        (.host_native | native_cpu) and (.guest_native | native_cpu) and
+        timing_nearly_equal(.host_native.worker_gops_per_cpu_second;
+            (.fixed_integer_work_gop /
+             .host_native.worker_cpu_seconds)) and
+        timing_nearly_equal(.guest_native.worker_gops_per_cpu_second;
+            (.fixed_integer_work_gop /
+             .guest_native.worker_cpu_seconds)) and
+        (.guest_to_host_worker_cpu_efficiency_ratio | positive_finite) and
+        (.guest_to_host_worker_residency_ratio | positive_finite) and
+        nearly_equal(.guest_to_host_worker_cpu_efficiency_ratio;
+            (.guest_native.worker_gops_per_cpu_second /
+             .host_native.worker_gops_per_cpu_second)) and
+        nearly_equal(.guest_to_host_worker_residency_ratio;
+            (.guest_native.worker_scheduler_residency /
+             .host_native.worker_scheduler_residency)) and
+        (.guest_qemu | type == "object" and exact_keys([
+            "host_wall_seconds", "qemu_process_cpu_seconds",
+            "qemu_vcpu_cpu_seconds", "qemu_management_cpu_seconds",
+            "counter_skew_clamped_seconds", "sampling_uncertainty_seconds",
+            "vcpu_thread_count", "cpu_conservation_residual_seconds",
+            "fixed_work_gops_per_qemu_vcpu_cpu_second",
+            "qemu_vcpu_occupancy"
+        ])) and
+        (.guest_qemu.host_wall_seconds | positive_finite) and
+        (.guest_qemu.qemu_process_cpu_seconds | nonnegative_finite) and
+        (.guest_qemu.qemu_vcpu_cpu_seconds | positive_finite) and
+        (.guest_qemu.qemu_management_cpu_seconds | nonnegative_finite) and
+        (.guest_qemu.counter_skew_clamped_seconds | nonnegative_finite) and
+        (.guest_qemu.sampling_uncertainty_seconds | nonnegative_finite) and
+        .guest_qemu.vcpu_thread_count == .guest_smp and
+        .guest_qemu.counter_skew_clamped_seconds <=
+            (2 * .guest_smp * .guest_qemu.sampling_uncertainty_seconds) and
+        .guest_qemu.qemu_vcpu_cpu_seconds <=
+            (.guest_smp *
+             (1.01 * .guest_qemu.host_wall_seconds +
+              2 * .guest_qemu.sampling_uncertainty_seconds) + 1e-9) and
+        (.guest_qemu.cpu_conservation_residual_seconds |
+            type == "number" and isfinite and absolute < 0.000001) and
+        nearly_equal(.guest_qemu.cpu_conservation_residual_seconds;
+            (.guest_qemu.qemu_process_cpu_seconds -
+             .guest_qemu.qemu_vcpu_cpu_seconds -
+             .guest_qemu.qemu_management_cpu_seconds +
+             .guest_qemu.counter_skew_clamped_seconds)) and
+        (.guest_qemu.fixed_work_gops_per_qemu_vcpu_cpu_second |
+            positive_finite) and
+        nearly_equal(
+            .guest_qemu.fixed_work_gops_per_qemu_vcpu_cpu_second;
+            (.fixed_integer_work_gop /
+             .guest_qemu.qemu_vcpu_cpu_seconds)) and
+        (.guest_qemu.qemu_vcpu_occupancy | positive_finite) and
+        nearly_equal(.guest_qemu.qemu_vcpu_occupancy;
+            (.guest_qemu.qemu_vcpu_cpu_seconds /
+             (.guest_qemu.host_wall_seconds *
+              .guest_qemu.vcpu_thread_count)));
 
     type == "object" and
     exact_keys([
         "schema_version", "result", "input_evidence", "generator_tools",
-        "benchmark_contract", "comparisons", "method_notes"
+        "benchmark_contract", "comparisons", "cpu_accounting", "method_notes"
     ]) and
-    .schema_version == 1 and
+    .schema_version == 2 and
     .result == "descriptive_only" and
     (.input_evidence | exact_keys(["host", "guests"])) and
     (.input_evidence.host |
         exact_keys(["path", "sha256_before", "sha256_after", "role"]) and
-        .role == "host" and (.path | type == "string" and startswith("/")) and
+        .role == "host" and (.path | absolute_nonempty_path) and
         evidence_hashes) and
     (.input_evidence.guests | type == "array" and length == 5) and
     all(.input_evidence.guests[];
         exact_keys(["path", "sha256_before", "sha256_after", "role", "smp"]) and
-        .role == "guest" and (.path | type == "string" and startswith("/")) and
+        .role == "guest" and (.path | absolute_nonempty_path) and
         evidence_hashes) and
     (.input_evidence.guests | map(.smp)) == [1, 8, 16, 24, 32] and
     ([.input_evidence.host.path] + [.input_evidence.guests[].path] |
@@ -776,7 +1421,7 @@ EVIDENCE_TMP="$("$MKTEMP" "$RUN_DIR/.evidence.json.XXXXXX")" ||
     (.generator_tools | exact_keys(["jq", "shasum", "realpath"])) and
     all(.generator_tools[];
         exact_keys(["path", "sha256_before", "sha256_after"]) and
-        (.path | type == "string" and startswith("/")) and evidence_hashes) and
+        (.path | absolute_nonempty_path) and evidence_hashes) and
     (.benchmark_contract | exact_keys([
         "host_thread_counts", "guest_smp_order", "guest_thread_counts",
         "warmups", "repetitions", "source_sha256", "constants",
@@ -826,6 +1471,47 @@ EVIDENCE_TMP="$("$MKTEMP" "$RUN_DIR/.evidence.json.XXXXXX")" ||
              elif .threads == 1 then "single_thread_at_smp"
              else "full_utilization" end) and
         (.int_gops | metric) and (.memory_gib_s | metric)) and
+    (.cpu_accounting.input_schema_versions |
+        exact_keys(["host", "guests"])) and
+    (.cpu_accounting.input_schema_versions.host == 1 or
+        .cpu_accounting.input_schema_versions.host == 2) and
+    (.cpu_accounting.input_schema_versions.guests |
+        type == "array" and length == 5) and
+    (.cpu_accounting.input_schema_versions.guests | map(.smp)) ==
+        [1, 8, 16, 24, 32] and
+    all(.cpu_accounting.input_schema_versions.guests[];
+        exact_keys(["smp", "schema_version"]) and
+        (.schema_version == 1 or .schema_version == 2)) and
+    (if (.cpu_accounting.input_schema_versions.host == 2 and
+         all(.cpu_accounting.input_schema_versions.guests[];
+             .schema_version == 2)) then
+        (.cpu_accounting | exact_keys([
+            "status", "input_schema_versions", "join_contract",
+            "sample_comparisons"
+        ])) and
+        .cpu_accounting.status == "available" and
+        .cpu_accounting.join_contract == {
+            host_guest_sample_key: ["threads", "sample_ordinal"],
+            sample_id_pattern: "t<threads>-r<sample_ordinal>",
+            qemu_observation_key: ["sample_id", "workload"],
+            qemu_boundary_source: "serial-marker-receipt",
+            workload: "integer"
+        } and
+        (.cpu_accounting.sample_comparisons | length) == 63 and
+        [.cpu_accounting.sample_comparisons[] |
+            [.guest_smp, .threads, .sample_ordinal]] ==
+            [[[1, 1], [8, 1], [8, 8], [16, 1], [16, 16],
+              [24, 1], [24, 24], [32, 1], [32, 32]][] as $pair |
+             range(1; 8) | [$pair[0], $pair[1], .]] and
+        all(.cpu_accounting.sample_comparisons[]; cpu_sample)
+    else
+        (.cpu_accounting | exact_keys([
+            "status", "reason", "input_schema_versions"
+        ])) and
+        .cpu_accounting.status == "unavailable" and
+        .cpu_accounting.reason ==
+            "CPU accounting requires schema version 2 for the host and all guest inputs."
+    end) and
     (.method_notes | type == "array" and length == 6) and
     all(.method_notes[]; type == "string" and length > 0) and
     (tostring |
