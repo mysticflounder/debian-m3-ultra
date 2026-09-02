@@ -1,9 +1,9 @@
-From 235ced0f63315cadafa1d82b21cf6843ef94e2d9 Mon Sep 17 00:00:00 2001
+From bcc559e53b6af4a989a7cb6b103e4f9faf3f2bd6 Mon Sep 17 00:00:00 2001
 From: Adam McKenna <adam@flounder.net>
 Date: Wed, 2 Sep 2026 09:12:04 -0700
-Subject: [PATCH] hvf/arm: Fix PMINTENCLR_EL1 clear semantics
+Subject: [PATCH] target/arm/hvf: Fix PMINTENCLR_EL1 clear semantics
 
-The userspace-irqchip PMU sysreg handler implements a write to
+The HVF kernel-irqchip=off PMU compatibility path implements writes to
 PMINTENCLR_EL1 as a set operation. This is the inverse of the
 architectural write-one-to-clear behavior and differs from the generic
 Arm PMU handler in cpregs-pmu.c.
@@ -12,6 +12,11 @@ Preserve the existing counter synchronization, mask the value to
 implemented counters, clear the requested interrupt enable bits, and
 update the PMU interrupt line.
 
+Reproduced with a one-vCPU AArch64 guest under HVF. Before this change,
+writing cycle-counter bit 31 to PMINTENCLR_EL1 changed the register from
+0 to 0x80000000. With this change, the register remains 0.
+
+Fixes: e6fd3192edb8 ("hvf: arm: Properly disable PMU")
 Signed-off-by: Adam McKenna <adam@flounder.net>
 
 diff --git a/target/arm/hvf/hvf.c b/target/arm/hvf/hvf.c

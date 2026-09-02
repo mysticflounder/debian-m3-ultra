@@ -189,7 +189,7 @@ independent correctness bug in that irqchip-off compatibility path. QEMU
 the `PMINTENCLR_EL1` clear alias. The patch in
 `patches/qemu/0001-hvf-arm-fix-pmintenclr-semantics.patch` instead masks and
 clears the requested bits and updates the virtual interrupt line. The same
-probe passed on fork commit `235ced0f63315cadafa1d82b21cf6843ef94e2d9`,
+probe passed on fork commit `bcc559e53b6af4a989a7cb6b103e4f9faf3f2bd6`,
 based on QEMU 11.1.50 master, leaving the bit at `0` and restoring guest PMU
 state. See `docs/qemu-hvf-pmintenclr.md` for the exact evidence and safety
 boundary. This fixes a virtual PMU semantic defect; it does not make host PMU

@@ -1,8 +1,8 @@
 # QEMU/HVF `PMINTENCLR_EL1` regression
 
 Status: reproduced on QEMU 11.1.1 and fixed in QEMU fork commit
-`235ced0f63315cadafa1d82b21cf6843ef94e2d9` on the M3 Ultra host. The commit is
-based on upstream master `ef1e8668b9f3ab6d6e7826806db1de5326f9df7d`
+`bcc559e53b6af4a989a7cb6b103e4f9faf3f2bd6` on the M3 Ultra host. The commit is
+based on upstream master `a925240509d1b4b656cc480f1cc79ba4d7c8bc08`
 (QEMU 11.1.50).
 
 ## Scope
@@ -81,7 +81,7 @@ QEMU_EXPECT_VERSION= \
 | Build | Evidence | Before | After | Result | State restored |
 |---|---|---:|---:|---|---|
 | QEMU 11.1.1 | `out/pmintenclr-probe.92g8zm/evidence.json` | `0x0` | `0x80000000` | fail | no; VM discarded |
-| fork commit `235ced0f6331` | `out/pmintenclr-probe.fU5ssY/evidence.json` | `0x0` | `0x0` | pass | yes |
+| fork commit `bcc559e53b6a` | `out/pmintenclr-probe.tJWBJx/evidence.json` | `0x0` | `0x0` | pass | yes |
 
 Both evidence manifests report PMUVer 0, clear initial overflow state,
 unchanged protected content hashes and build-disk metadata, removed overlays,

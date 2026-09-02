@@ -190,9 +190,9 @@ the bit (`0x0000000080000000`). Source inspection found the corresponding
 `|= val` operation in `target/arm/hvf/hvf.c`. The focused patch at
 `patches/qemu/0001-hvf-arm-fix-pmintenclr-semantics.patch` replaces it with a
 masked clear and virtual interrupt-line update. QEMU fork commit
-`235ced0f63315cadafa1d82b21cf6843ef94e2d9`, based on upstream master
-`ef1e8668b9f3ab6d6e7826806db1de5326f9df7d`, leaves the bit clear in
-`out/pmintenclr-probe.fU5ssY/evidence.json` and reports `pass` with guest PMU
+`bcc559e53b6af4a989a7cb6b103e4f9faf3f2bd6`, based on upstream master
+`a925240509d1b4b656cc480f1cc79ba4d7c8bc08`, leaves the bit clear in
+`out/pmintenclr-probe.tJWBJx/evidence.json` and reports `pass` with guest PMU
 state restored. Both runs used one vCPU, no
 network, firmware, monitor, or host devices, immutable inputs, and a removed
 disposable root overlay. This result fixes PMINTENCLR semantics only; it does
