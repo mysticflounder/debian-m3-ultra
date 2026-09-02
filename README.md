@@ -181,9 +181,19 @@ Apple-OS cycles-only PMU emulation with PMUVer 1, while `off` intentionally
 reports PMUVer 0 despite an inaccurate Windows-oriented userspace cycle
 counter; PMCEID0/1 are zero in that userspace path. The raw DFR0/PMU
 distinction is therefore conservatively `unavailable` (reason: `hvf-gap` in
-the runtime vPMU), not a demonstrated QEMU host-passthrough patch. A
-focused direct EL1 PMU-register diagnostic and upstream report remain
-appropriate.
+the runtime vPMU), not a demonstrated QEMU host-passthrough patch.
+
+The focused EL1 regression probe in `scripts/pmintenclr-probe-vm.sh` found an
+independent correctness bug in that irqchip-off compatibility path. QEMU
+11.1.1 changed cycle-interrupt enable bit 31 from `0` to `1` after a write to
+the `PMINTENCLR_EL1` clear alias. The patch in
+`patches/qemu/0001-hvf-arm-fix-pmintenclr-semantics.patch` instead masks and
+clears the requested bits and updates the virtual interrupt line. The same
+probe passed on fork commit `962fdae8518913a9c1fbbf93d20c3ac307611394`,
+based on QEMU 11.1.50 master, leaving the bit at `0` and restoring guest PMU
+state. See `docs/qemu-hvf-pmintenclr.md` for the exact evidence and safety
+boundary. This fixes a virtual PMU semantic defect; it does not make host PMU
+events available to the guest.
 
 ### `scripts/make-builder-vm.sh`
 Runs inside a **privileged** container. Builds a self-contained builder VM:

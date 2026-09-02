@@ -303,6 +303,16 @@ Current dispositions and remaining questions include:
   and
 - whether all vCPUs see the same safe feature set at every configured count.
 
+The irqchip-off compatibility PMU also had an independent
+`PMINTENCLR_EL1` write-one-to-clear defect: QEMU 11.1.1 set cycle-interrupt bit
+31 when the guest wrote that bit to the clear alias. The bounded EL1 probe in
+`scripts/pmintenclr-probe-vm.sh` reproduced the transition from `0` to
+`0x80000000`. The reviewable patch in
+`patches/qemu/0001-hvf-arm-fix-pmintenclr-semantics.patch` passed the same
+probe on QEMU 11.1.50, leaving the bit clear. Keep this fix separate from host
+CPU-feature passthrough; it corrects existing virtual PMU semantics and does
+not expose host PMU events.
+
 Exit gate: every observed mismatch has exactly one classification and an
 evidence-backed disposition.
 
@@ -480,6 +490,8 @@ P/E-core identity, m1n1, or a bare-metal Debian installation.
 - [x] Run and classify the guest-only PMU behavior slice; record the raw
   DFR0/PMU distinction as `unavailable` (`hvf-gap`, runtime vPMU) with no
   demonstrated host-passthrough patch.
+- [x] Reproduce the irqchip-off `PMINTENCLR_EL1` clear-semantics defect on
+  QEMU 11.1.1 and validate the focused fix on a patched QEMU 11.1.50 build.
 - [x] Run the complete advertised-feature behavior gate: 35/35 rows at 1 vCPU
   and 1,120/1,120 rows at 32 vCPUs, homogeneous; 26 rows are semantic and 9
   are execution-only checks.
