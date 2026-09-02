@@ -3,11 +3,15 @@
 Test rig for Debian on Apple M3. Host is a Mac Studio (Mac15,14, M3 Ultra,
 `t6032`/`j575d`).
 
-The active workstream is completing and validating QEMU's Apple Silicon
-`-cpu host` passthrough model. See the
-[QEMU Apple host-CPU passthrough plan](docs/qemu-apple-host-cpu-passthrough.md).
-The [m1n1 T6032 plan](docs/m1n1-t6032-bringup.md) is retained as a deferred
-bare-metal roadmap.
+The immediate priority is a persistent, headless Debian test VM with a writable
+root filesystem, unprivileged networking, SSH access, and an NFSv4 client. See
+the [persistent test VM plan](docs/persistent-test-vm.md). The measured M3 Ultra
+CPU work remains preserved in the
+[QEMU Apple host-CPU passthrough plan](docs/qemu-apple-host-cpu-passthrough.md),
+but upstream QEMU coordination does not gate the VM: required fixes may land in
+the project fork first. Independent M5 Max validation is later P2 work. The
+[m1n1 T6032 plan](docs/m1n1-t6032-bringup.md) remains a deferred bare-metal
+roadmap.
 
 ## What this proves and what it cannot prove
 
@@ -61,7 +65,8 @@ docker run --rm --privileged --platform linux/arm64 \
   m3build:deps bash /scripts/make-rootfs.sh
 ```
 
-Environment: `R` (rootfs dir), `OUT`, `IMG_SIZE` (default `6G`), `SUITE` (default `sid`).
+Environment: `R` (`/build/rootfs` or `/build/rootfs-*`), `OUT` (`/build/out`
+or `/build/out-*`), `IMG_SIZE` (default `6G`), `SUITE` (default `sid`).
 
 It needs `--privileged` because it mounts `/proc`, `/sys` and `/dev` into the chroot
 so that `update-initramfs` works.
@@ -78,6 +83,36 @@ Boots the exported kernel in QEMU with HVF.
 
 Environment: `QEMU`, `SMP` (default 8), `MEM` (default `8G`).
 Login is `root` / `root`, with autologin on `ttyAMA0`.
+
+### `scripts/test-vm.sh` (persistent VM)
+
+The persistent-VM interface provides `init`, `run`, and `info` subcommands. Its
+default disk is the standalone `out/testvm-root.qcow2`; it is not a mutable
+backing-file chain. Initialize it once, boot it, then run the idempotent
+provisioner once inside the guest:
+
+```bash
+./scripts/test-vm.sh init
+./scripts/test-vm.sh run
+
+# In the guest after the first boot:
+mkdir -p /mnt/m3-scripts
+mount -o ro /dev/vdb1 /mnt/m3-scripts
+bash /mnt/m3-scripts/test-vm-provision.sh
+```
+
+Later boots need only `./scripts/test-vm.sh run`. `info` shows the resolved
+configuration without launching QEMU.
+
+This path is deliberately headless and unprivileged. It directly supplies the
+kernel and initramfs and must not attach firmware, NVRAM, Apple boot-policy
+state, a physical device, a raw host disk, or the Mac's system volume.
+
+The 2026-09-02 two-boot test passed writable-root persistence, idempotent
+provisioning, DHCP/DNS/HTTPS, and host SSH through `127.0.0.1:22022`. The sole
+open P0 acceptance item is an NFSv4 mount: TCP port 2049 is reachable, but the
+test server requires a reserved source port that libslirp NAT does not
+preserve. See the [results and remaining options](docs/persistent-test-vm.md).
 
 ### CPU passthrough evidence
 

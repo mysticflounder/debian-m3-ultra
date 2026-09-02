@@ -1,5 +1,26 @@
 # QEMU Apple Host-CPU Passthrough Plan
 
+## Project priority order
+
+The project now prioritizes a usable persistent test environment over further
+CPU-model expansion:
+
+- **P0:** bring up the [persistent headless test VM](persistent-test-vm.md) with
+  a standalone writable root disk, unprivileged networking, loopback-only SSH,
+  and NFSv4 client access; then prove state survives a clean reboot.
+- **P1:** continue M3 Ultra QEMU/HVF CPU correctness and stability from the
+  completed evidence below. Focused QEMU or component fixes may be merged into
+  the project fork before upstream acceptance.
+- **P2:** inventory and validate M5 Max independently. M5 results are not a
+  prerequisite for the P0 VM and must not be projected onto M3 Ultra.
+- **Deferred:** retain m1n1/T6032 as the separate bare-metal roadmap; do not
+  attach firmware, NVRAM, boot-policy state, or physical devices while pursuing
+  the VM milestones.
+
+Upstream QEMU coordination remains useful, but sending or landing an upstream
+series is not on the critical path to the persistent VM. The numbered CPU work
+below records technical dependencies, not current execution priority.
+
 ## Objective
 
 Make QEMU's AArch64 `-cpu host` path on Apple Silicon expose every
@@ -12,8 +33,8 @@ enabling hardware acceleration is not the goal. Apple device emulation,
 bare-metal boot, and installation on the internal SSD are not part of this
 workstream.
 
-The primary target is the M3 Ultra host. M5 Max is the secondary target and
-must be inventoried and validated independently. The existing
+The primary CPU target is the M3 Ultra host. M5 Max is later P2 work and must
+be inventoried and validated independently. The existing
 [`m1n1-t6032-bringup.md`](m1n1-t6032-bringup.md) remains a deferred bare-metal
 roadmap and is not the implementation plan for this project.
 
@@ -406,7 +427,7 @@ Exit gate: all advertised features are correct, all vCPU counts are stable,
 and controlled CPU-only workloads meet the agreed performance threshold or
 have an understood, actionable exception.
 
-### 8. Repeat independently on M5 Max
+### 8. P2: repeat independently on M5 Max
 
 - Run the read-only M5 inventory before making chip-specific claims.
 - Capture the same host and guest JSON schema, instruction tests, vCPU-count
@@ -418,7 +439,7 @@ have an understood, actionable exception.
 Exit gate: M5 Max passes the same contract without M3 register or topology
 assumptions.
 
-### 9. Submit and maintain upstream
+### 9. Coordinate upstream without blocking fork delivery
 
 - Develop against current QEMU master and follow `qemu-devel` email submission
   rules, DCO, `scripts/checkpatch.pl`, and `scripts/get_maintainer.pl`.
@@ -429,8 +450,10 @@ assumptions.
 - Keep the local harness able to test released QEMU and the patched development
   build with the same evidence format.
 
-Exit gate: the fixes and tests are accepted upstream or maintainers have given
-a concrete alternative direction reflected in this plan.
+Exit gate for this coordination lane: reviewable fixes and evidence have been
+sent upstream, and maintainer feedback is reflected in this plan. Neither
+upstream acceptance nor this gate blocks use of validated fork-local fixes in
+the persistent VM.
 
 ## Evidence bundle
 
@@ -447,23 +470,54 @@ Each run ID contains:
 
 ## Definition of done
 
-The active CPU-passthrough milestone is complete when:
+The M3 Ultra CPU-passthrough lane is complete when:
 
 - every system-wide-safe architectural feature available through public HVF is
   correctly represented in the Debian guest;
 - every advertised optional instruction or state component has a passing
   behavioral test;
 - unavailable Apple APIs and intentional QEMU normalization are documented;
-- M3 Ultra and M5 Max expose internally consistent homogeneous vCPU models;
+- M3 Ultra exposes an internally consistent homogeneous vCPU model;
 - the supported vCPU-count matrix survives repeated boot, stress, hotplug,
   idle, and state-management tests;
 - controlled CPU-only workloads meet the agreed performance target; and
-- the required QEMU changes and regression tests have been accepted upstream.
+- any required fork-local QEMU changes have regression tests and pass the M3
+  validation contract.
+
+M5 Max has its own later P2 completion gate. Upstream acceptance is a release
+and maintenance goal, not a prerequisite for either the P0 persistent VM or
+the fork-local M3 milestone.
 
 Completion does not require Apple-device emulation, a real Apple MIDR, physical
 P/E-core identity, m1n1, or a bare-metal Debian installation.
 
-## Immediate first sprint
+## Current P0 sprint: persistent headless VM
+
+- [x] Implement `scripts/test-vm.sh init|run|info` around a standalone
+  `out/testvm-root.qcow2`.
+- [x] Attach `scripts/test-vm-provision.sh` read-only and provision DHCP/DNS,
+  SSH, and the NFSv4 client without exposing a writable host directory.
+- [x] Use unprivileged QEMU user-mode networking and bind guest SSH only at
+  `127.0.0.1:22022`.
+- [x] Pass and record the two-boot writable-root, identity, DNS/HTTPS, and
+  host-to-guest SSH acceptance gates. Provisioner idempotence also passed.
+- [ ] Complete the sole remaining P0 gate: mount, read, and cleanly unmount
+  `10.0.0.229:/tank/nfs` over NFSv4.0. TCP/2049 is reachable, but the secure
+  export requires a reserved source port that libslirp NAT does not preserve.
+- [x] Verify the exact launch remains headless and attaches no firmware,
+  NVRAM, Apple boot-policy state, raw physical disk, system volume, or host
+  device.
+
+The 2026-09-02 run completed two clean boots with the fork's QEMU 11.1.50,
+8 vCPUs, 8 GiB RAM, direct kernel/initrd boot, HVF `-cpu host`, a read/write
+ext4 root on `/dev/vda`, slirp IPv4/IPv6, loopback SSH port 22022, and the
+read-only scripts disk. The root sentinel, machine ID, and SSH host key all
+persisted; DHCP/DNS/HTTPS, SSH, and provisioner idempotence passed.
+
+See [`persistent-test-vm.md`](persistent-test-vm.md) for the launcher contract
+and acceptance evidence, including the two unchosen NFS networking options.
+
+## Completed and queued CPU work
 
 - [x] Add and validate the read-only macOS HVF feature collector.
 - [x] Add and statically validate the read-only Linux arm64 register collector.
@@ -498,7 +552,8 @@ P/E-core identity, m1n1, or a bare-metal Debian installation.
 - [x] Cover AES/SHA and the remaining advertised features in the complete
   behavior gate.
 - [ ] Send the measured baseline and proposed first patch boundary to the QEMU
-  Apple Silicon HVF maintainer and `qemu-devel`.
+  Apple Silicon HVF maintainer and `qemu-devel`. This is a non-blocking P1
+  coordination task; fork-local VM work proceeds independently.
 
 ## Primary references
 
