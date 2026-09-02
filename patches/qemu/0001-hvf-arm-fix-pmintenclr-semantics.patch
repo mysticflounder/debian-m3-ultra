@@ -1,4 +1,4 @@
-From 962fdae8518913a9c1fbbf93d20c3ac307611394 Mon Sep 17 00:00:00 2001
+From 235ced0f63315cadafa1d82b21cf6843ef94e2d9 Mon Sep 17 00:00:00 2001
 From: Adam McKenna <adam@flounder.net>
 Date: Wed, 2 Sep 2026 09:12:04 -0700
 Subject: [PATCH] hvf/arm: Fix PMINTENCLR_EL1 clear semantics
@@ -8,28 +8,25 @@ PMINTENCLR_EL1 as a set operation. This is the inverse of the
 architectural write-one-to-clear behavior and differs from the generic
 Arm PMU handler in cpregs-pmu.c.
 
-Mask the value to implemented counters, clear the requested interrupt
-enable bits, and update the PMU interrupt line. PMINTENCLR does not
-change counter state, so it does not need the counter synchronization
-performed by pmu_op_start() and pmu_op_finish().
+Preserve the existing counter synchronization, mask the value to
+implemented counters, clear the requested interrupt enable bits, and
+update the PMU interrupt line.
 
 Signed-off-by: Adam McKenna <adam@flounder.net>
 
 diff --git a/target/arm/hvf/hvf.c b/target/arm/hvf/hvf.c
-index da3ec521fc..25ca75c941 100644
+index da3ec521fc..6af953f9ad 100644
 --- a/target/arm/hvf/hvf.c
 +++ b/target/arm/hvf/hvf.c
-@@ -2005,9 +2005,8 @@ static int hvf_sysreg_write(CPUState *cpu, uint32_t reg, uint64_t val)
-             env->cp15.c9_pmcnten &= ~(val & pmu_counter_mask(env));
+@@ -2006,7 +2006,8 @@ static int hvf_sysreg_write(CPUState *cpu, uint32_t reg, uint64_t val)
              return 0;
          case SYSREG_PMINTENCLR_EL1:
--            pmu_op_start(env);
+             pmu_op_start(env);
 -            env->cp15.c9_pminten |= val;
--            pmu_op_finish(env);
 +            env->cp15.c9_pminten &= ~(val & pmu_counter_mask(env));
 +            pmu_update_irq(env);
+             pmu_op_finish(env);
              return 0;
          case SYSREG_PMOVSCLR_EL0:
-             pmu_op_start(env);
 -- 
 2.55.0

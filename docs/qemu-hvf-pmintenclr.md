@@ -1,7 +1,7 @@
 # QEMU/HVF `PMINTENCLR_EL1` regression
 
 Status: reproduced on QEMU 11.1.1 and fixed in QEMU fork commit
-`962fdae8518913a9c1fbbf93d20c3ac307611394` on the M3 Ultra host. The commit is
+`235ced0f63315cadafa1d82b21cf6843ef94e2d9` on the M3 Ultra host. The commit is
 based on upstream master `ef1e8668b9f3ab6d6e7826806db1de5326f9df7d`
 (QEMU 11.1.50).
 
@@ -24,15 +24,19 @@ env->cp15.c9_pminten |= val;
 
 That implements write-one-to-set behavior for a write-one-to-clear register.
 QEMU's generic Arm PMU implementation instead masks the value to implemented
-counters, clears those bits, and updates the PMU interrupt line.
+counters, clears those bits, and updates the PMU interrupt line. The HVF path's
+existing `pmu_op_start()` and `pmu_op_finish()` calls are retained because they
+materialize time-derived counter state and maintain overflow scheduling.
 
 The proposed patch is
 `patches/qemu/0001-hvf-arm-fix-pmintenclr-semantics.patch`. It changes only
 this handler:
 
 ```c
+pmu_op_start(env);
 env->cp15.c9_pminten &= ~(val & pmu_counter_mask(env));
 pmu_update_irq(env);
+pmu_op_finish(env);
 ```
 
 QEMU's `scripts/checkpatch.pl` reports zero errors and zero warnings, and the
@@ -77,7 +81,7 @@ QEMU_EXPECT_VERSION= \
 | Build | Evidence | Before | After | Result | State restored |
 |---|---|---:|---:|---|---|
 | QEMU 11.1.1 | `out/pmintenclr-probe.92g8zm/evidence.json` | `0x0` | `0x80000000` | fail | no; VM discarded |
-| fork commit `962fdae85189` | `out/pmintenclr-probe.yGWmV0/evidence.json` | `0x0` | `0x0` | pass | yes |
+| fork commit `235ced0f6331` | `out/pmintenclr-probe.fU5ssY/evidence.json` | `0x0` | `0x0` | pass | yes |
 
 Both evidence manifests report PMUVer 0, clear initial overflow state,
 unchanged protected content hashes and build-disk metadata, removed overlays,
