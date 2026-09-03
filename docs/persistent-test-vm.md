@@ -54,6 +54,9 @@ is:
   directly under `out/`; they must be set together. These explicit overrides
   allow a cloned disk to be tested without changing `out/KVER` or the default
   Asahi artifacts.
+- `TEST_VM_QMP_SOCKET` optionally creates a QEMU Machine Protocol Unix socket
+  directly under `out/`. `scripts/test-vm-console.sh` uses this private local
+  control channel to verify state and request a clean guest power-down.
 
 `scripts/test-vm-provision.sh` is the guest-side provisioning helper. The
 launcher attaches it read-only; it may change the guest root filesystem, but
@@ -214,6 +217,32 @@ cp -p -n out/vmlinuz-VERSION out/Image-VERSION
 The `file` check must identify an ARM64 boot executable `Image`; do not copy a
 compressed kernel under the `Image-` name. Shut the guest down cleanly, check
 the qcow2 image again, and then use the generic-kernel launch command above.
+
+### Daily console control
+
+The stock-kernel VM can run independently of the terminal that started it:
+
+```bash
+./scripts/test-vm-console.sh start
+./scripts/test-vm-console.sh status
+./scripts/test-vm-console.sh console
+./scripts/test-vm-console.sh stop
+```
+
+`connect` is an alias for `console`. The controller starts the existing
+launcher inside a detached tmux session, so the launcher's lock and QEMU's
+exclusive qcow2 lock remain held for the VM's complete lifetime. It creates a
+Unix QMP socket at `out/.testvm-debian-qmp.sock`; `stop` sends QEMU's
+`system_powerdown` request over QMP and waits for a guest-originated `SHUTDOWN`
+event before asking QEMU itself to exit. If `stop` is interrupted after that
+event, running `stop` again completes the held QEMU exit. The controller does
+not fall back to killing QEMU if shutdown fails.
+
+From outside tmux, leave the console with `Ctrl-B d`. From an existing tmux
+client, the controller switches to the VM session; use `Ctrl-B L` to return to
+the previous session. Either action leaves the VM running. `Ctrl-A X` remains
+QEMU's immediate-exit sequence and should be reserved for recovery because it
+does not perform an orderly guest shutdown.
 
 ## Safety boundary
 

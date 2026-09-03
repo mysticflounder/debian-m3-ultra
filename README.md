@@ -114,6 +114,20 @@ TEST_VM_INITRD=out/initrd.img-7.1.12+deb14-arm64 \
 ./scripts/test-vm.sh run
 ```
 
+For normal use, the console controller keeps that VM in a detached tmux
+session and uses QEMU's local QMP control socket for a graceful stop command:
+
+```bash
+./scripts/test-vm-console.sh start
+./scripts/test-vm-console.sh status
+./scripts/test-vm-console.sh console   # `connect` is an alias
+./scripts/test-vm-console.sh stop
+```
+
+When connecting from outside tmux, detach with `Ctrl-B d`. When connecting
+from an existing tmux client, return to the previous session with `Ctrl-B L`.
+Detaching or switching sessions leaves the VM running.
+
 `TEST_VM_DISK` must name a qcow2 image directly under `out/`.
 `TEST_VM_KERNEL` and `TEST_VM_INITRD` must be set together and must likewise
 name regular, non-symlink `Image-VERSION` and `initrd.img-VERSION` files

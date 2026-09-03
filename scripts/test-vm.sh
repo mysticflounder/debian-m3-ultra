@@ -13,6 +13,8 @@ BASE_ROOTFS="$OUT/rootfs.ext4"
 VM_DISK="${TEST_VM_DISK:-$OUT/testvm-root.qcow2}"
 KERNEL_OVERRIDE="${TEST_VM_KERNEL:-}"
 INITRD_OVERRIDE="${TEST_VM_INITRD:-}"
+QMP_OVERRIDE="${TEST_VM_QMP_SOCKET:-}"
+NO_SHUTDOWN="${TEST_VM_NO_SHUTDOWN:-0}"
 LOCK_DIR="$OUT/.test-vm.lock"
 SCRIPTS_DIR="$HERE/scripts"
 PROJECT_QEMU="$OUT/qemu-fork-pmintenclr-build/qemu-system-aarch64"
@@ -40,7 +42,8 @@ Environment: QEMU, QEMU_IMG, SMP (default 8), MEM (default 8G),
              TEST_VM_DISK (qcow2 directly under out/),
              TEST_VM_KERNEL and TEST_VM_INITRD (must be set together;
              matching Image-VERSION and initrd.img-VERSION files directly
-             under out/)
+             under out/), TEST_VM_QMP_SOCKET (optional QMP Unix socket
+             directly under out/), TEST_VM_NO_SHUTDOWN (0 or 1; requires QMP)
 
 After boot, provision once (the operation is safe to repeat):
   mkdir -p /mnt/m3-scripts
@@ -94,6 +97,11 @@ if [ -n "$KERNEL_OVERRIDE" ] || [ -n "$INITRD_OVERRIDE" ]; then
         fail "TEST_VM_KERNEL and TEST_VM_INITRD must be set together"
 fi
 
+case "$NO_SHUTDOWN" in
+    0|1) ;;
+    *) fail "TEST_VM_NO_SHUTDOWN must be 0 or 1" ;;
+esac
+
 VM_DISK="$(normalize_project_path "$VM_DISK")"
 validate_out_path "VM disk" "$VM_DISK"
 case "$(basename "$VM_DISK")" in
@@ -101,6 +109,19 @@ case "$(basename "$VM_DISK")" in
     *.qcow2) ;;
     *) fail "VM disk must have a .qcow2 name: $VM_DISK" ;;
 esac
+
+QMP_SOCKET=""
+if [ -n "$QMP_OVERRIDE" ]; then
+    QMP_SOCKET="$(normalize_project_path "$QMP_OVERRIDE")"
+    validate_out_path "QMP socket" "$QMP_SOCKET"
+    case "$(basename "$QMP_SOCKET")" in
+        *','*|*'\'*) fail "QMP socket name must not contain a comma or backslash: $QMP_SOCKET" ;;
+        *.sock) ;;
+        *) fail "QMP socket must have a .sock name: $QMP_SOCKET" ;;
+    esac
+fi
+[ "$NO_SHUTDOWN" -eq 0 ] || [ -n "$QMP_SOCKET" ] ||
+    fail "TEST_VM_NO_SHUTDOWN=1 requires TEST_VM_QMP_SOCKET"
 
 case "$SSH_PORT" in
     ""|*[!0-9]*) fail "SSH_PORT must be an integer from 1 through 65535" ;;
@@ -254,6 +275,16 @@ if [ "$COMMAND" = "info" ]; then
     echo "disk:    $VM_DISK"
     echo "network: user-mode NAT with virtio-net-pci"
     echo "ssh:     127.0.0.1:$SSH_PORT -> guest port 22"
+    if [ -n "$QMP_SOCKET" ]; then
+        echo "qmp:     $QMP_SOCKET"
+    else
+        echo "qmp:     disabled"
+    fi
+    if [ "$NO_SHUTDOWN" -eq 0 ]; then
+        echo "exit on guest shutdown: yes"
+    else
+        echo "exit on guest shutdown: no"
+    fi
     image_info "$VM_DISK"
     exit 0
 fi
@@ -310,6 +341,20 @@ ARGS=(
     -device virtio-net-pci,netdev=net0
     -nographic
 )
+
+if [ -n "$QMP_SOCKET" ]; then
+    [ ! -e "$QMP_SOCKET" ] && [ ! -L "$QMP_SOCKET" ] ||
+        fail "QMP socket path already exists: $QMP_SOCKET"
+    ARGS+=(
+        -qmp "unix:$QMP_SOCKET,server=on,wait=off"
+    )
+fi
+
+if [ "$NO_SHUTDOWN" -eq 1 ]; then
+    ARGS+=(
+        -no-shutdown
+    )
+fi
 
 cat <<EOF
 ==> persistent test VM: ${SMP} vCPUs, ${MEM} RAM
