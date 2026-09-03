@@ -128,6 +128,17 @@ When connecting from outside tmux, detach with `Ctrl-B d`. When connecting
 from an existing tmux client, return to the previous session with `Ctrl-B L`.
 Detaching or switching sessions leaves the VM running.
 
+SSH is key-only. The stock-kernel persistent disk used by the console
+controller authorizes the host's `~/.ssh/id_ed25519` key, so connect with:
+
+```bash
+ssh -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 -p 22022 root@127.0.0.1
+```
+
+Lowercase `-p` selects the SSH port. For a rebuilt image, use the serial
+console to install a public key in `/root/.ssh/authorized_keys` before relying
+on SSH; password and keyboard-interactive authentication remain disabled.
+
 `TEST_VM_DISK` must name a qcow2 image directly under `out/`.
 `TEST_VM_KERNEL` and `TEST_VM_INITRD` must be set together and must likewise
 name regular, non-symlink `Image-VERSION` and `initrd.img-VERSION` files

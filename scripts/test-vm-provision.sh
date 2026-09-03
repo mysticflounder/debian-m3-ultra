@@ -89,13 +89,14 @@ echo "==> configure persistent DNS and SSH"
 systemctl enable systemd-resolved.service ssh.service
 ln -sfn ../run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
-# The host forwarding rule is bound to 127.0.0.1.  Password login is enabled
-# for this local test appliance so the root/root image credentials remain
-# usable until the operator installs an SSH public key.
+# The host forwarding rule is bound to 127.0.0.1.  Keep SSH key-only even on
+# this local test appliance; the serial console is the bootstrap and recovery
+# path when an authorized key has not been installed yet.
 install -d -m 0755 /etc/ssh/sshd_config.d
 cat > /etc/ssh/sshd_config.d/90-m3-test-vm.conf <<'EOF'
-PermitRootLogin yes
-PasswordAuthentication yes
+PermitRootLogin prohibit-password
+PasswordAuthentication no
+KbdInteractiveAuthentication no
 EOF
 
 ssh-keygen -A
@@ -106,4 +107,5 @@ if systemd_is_running; then
 fi
 
 echo "==> provisioning complete"
-echo "    SSH is enabled; nfs-common and minimal diagnostic tools are installed."
+echo "    SSH key authentication is enabled; password authentication is disabled."
+echo "    nfs-common and minimal diagnostic tools are installed."

@@ -52,6 +52,9 @@ After boot, provision once (the operation is safe to repeat):
 
 Then connect from the host with:
   ssh -p $SSH_PORT root@127.0.0.1
+
+SSH password authentication is disabled. Install a public key through the
+serial console before relying on SSH.
 EOF
 }
 

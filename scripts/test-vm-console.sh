@@ -267,8 +267,18 @@ start_vm() {
     require_command jq
     validate_artifacts
     if session_running; then
-        echo "VM is already running in tmux session $SESSION"
-        return
+        [ -S "$QMP_SOCKET" ] ||
+            fail "tmux session exists, but the QMP socket is unavailable"
+        qmp_request query-status status ||
+            fail "tmux session exists, but QMP did not return VM status"
+        if qmp_reports_running; then
+            echo "VM is already running in tmux session $SESSION"
+            return
+        fi
+        if qmp_reports_shutdown; then
+            fail "guest is shut down but QEMU is still held; run: $0 stop"
+        fi
+        fail "tmux session exists, but the VM is not in a startable state"
     fi
     prepare_qmp_socket
     if [ -n "${QEMU:-}" ]; then
@@ -287,7 +297,7 @@ start_vm() {
             qmp_reports_running; then
             echo "VM started in tmux session $SESSION"
             echo "console: $0 console"
-            echo "ssh:     ssh -p $SSH_PORT_VALUE root@127.0.0.1"
+            echo "ssh:     ssh -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 -p $SSH_PORT_VALUE root@127.0.0.1"
             return
         fi
         if ! session_running; then
@@ -393,7 +403,7 @@ show_status() {
             qmp_reports_running; then
             echo "VM is running in tmux session $SESSION"
             echo "console: $0 console"
-            echo "ssh:     ssh -p $SSH_PORT_VALUE root@127.0.0.1"
+            echo "ssh:     ssh -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 -p $SSH_PORT_VALUE root@127.0.0.1"
             return
         fi
         if qmp_reports_shutdown; then

@@ -74,6 +74,24 @@ bash /mnt/m3-scripts/test-vm-provision.sh
 The helper is idempotent; the second-boot rerun passed. Normal later boots do
 not require rerunning it.
 
+SSH is deliberately key-only. On a new image, bootstrap the host public key
+through the serial console before relying on the port forward:
+
+```bash
+# Copy ~/.ssh/id_ed25519.pub on the host, then run this in the guest console.
+install -d -m 0700 /root/.ssh
+cat >> /root/.ssh/authorized_keys  # paste the public key, then press Ctrl-D
+chmod 0600 /root/.ssh/authorized_keys
+chown -R root:root /root/.ssh
+```
+
+Test a fresh
+`ssh -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 -p 22022 root@127.0.0.1`
+session before detaching from the serial console. The provisioner sets
+`PermitRootLogin prohibit-password`, `PasswordAuthentication no`, and
+`KbdInteractiveAuthentication no`; rerunning it therefore cannot silently
+restore password access.
+
 The default disk is `out/testvm-root.qcow2`. A launcher may expose explicit
 environment overrides such as `QEMU`, `SMP`, and `MEM`, but the resolved values
 must be visible through `info`. A caller-provided disk path must still be a
@@ -92,7 +110,8 @@ user-mode network stack, with both slirp IPv4 and IPv6 enabled:
 This gives the guest a DHCP-configured private address, outbound connectivity,
 and host access to SSH at `127.0.0.1:22022`, without TAP setup, root privileges,
 bridging, or a vmnet entitlement. The SSH listener must not bind all host
-interfaces by default.
+interfaces by default. Lowercase `ssh -p` selects the forwarded port; uppercase
+`-P` does not select the port for OpenSSH `ssh`.
 
 The guest received `10.0.2.15` by DHCP. DNS, an HTTPS request returning HTTP/2
 200, and host SSH all succeeded. TCP connection to `10.0.0.229:2049` also
