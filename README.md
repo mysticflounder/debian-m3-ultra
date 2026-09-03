@@ -154,7 +154,9 @@ The 2026-09-02 Asahi-kernel two-boot test passed writable-root persistence, idem
 provisioning, DHCP/DNS/HTTPS, and host SSH through `127.0.0.1:22022`. The sole
 open P0 acceptance item is an NFSv4 mount: TCP port 2049 is reachable, but the
 test server requires a reserved source port that libslirp NAT does not
-preserve. See the [results and remaining options](docs/persistent-test-vm.md).
+preserve. Once a network-policy fix has been selected and applied, run
+`./scripts/test-vm-nfs.sh`. See the
+[results and remaining options](docs/persistent-test-vm.md).
 
 On 2026-09-02 the cloned persistent disk also completed two clean boots with
 Debian's stock `7.1.12+deb14-arm64` kernel under HVF `-cpu host`. The 4K-page

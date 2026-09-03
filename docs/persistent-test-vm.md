@@ -132,6 +132,28 @@ Two possible next paths remain open, without a choice yet:
   address at the server. `vmnet-shared` remains NAT and does not supply the
   direct LAN identity needed by that alternative.
 
+The failure was reproduced again on 2026-09-03 with a bounded
+`ro,vers=4.0,proto=tcp` mount: `mount.nfs4` returned `Operation not permitted`
+and nothing remained mounted. The fork build has no `vmnet` backend. Homebrew
+QEMU 11.1.1 exposes both `vmnet-shared` and `vmnet-bridged`, but initializing
+either as the current user fails with `general failure (possibly not enough
+privileges)`. Its signature contains the Hypervisor entitlement but not
+`com.apple.vm.networking`; Apple documents that networking entitlement as
+[restricted to virtualization developers](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.vm.networking).
+
+After the selected network-policy fix, run the fail-closed acceptance gate:
+
+```bash
+./scripts/test-vm-nfs.sh
+```
+
+It runs inside a private guest mount namespace, creates a one-run mount
+directory, and requests NFSv4.0 read-only with bounded retry behavior. It
+verifies the resulting source/type/options, reads and hashes `pdz.html` under
+deadlines, and unmounts anything the run mounted on both success and later
+validation failure. SSH must already have the VM host key in `known_hosts`;
+the script will not accept a new host key automatically.
+
 ## Recorded two-boot result
 
 Both boots used the launcher-selected
