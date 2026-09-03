@@ -104,15 +104,39 @@ bash /mnt/m3-scripts/test-vm-provision.sh
 Later boots need only `./scripts/test-vm.sh run`. `info` shows the resolved
 configuration without launching QEMU.
 
+The validated stock-Debian-kernel clone uses Debian's generic 4K-page arm64
+kernel instead of `linux-image-asahi`:
+
+```bash
+TEST_VM_DISK=out/testvm-debian-root.qcow2 \
+TEST_VM_KERNEL=out/Image-7.1.12+deb14-arm64 \
+TEST_VM_INITRD=out/initrd.img-7.1.12+deb14-arm64 \
+./scripts/test-vm.sh run
+```
+
+`TEST_VM_DISK` must name a qcow2 image directly under `out/`.
+`TEST_VM_KERNEL` and `TEST_VM_INITRD` must be set together and must likewise
+name regular, non-symlink `Image-VERSION` and `initrd.img-VERSION` files
+directly under `out/`. Omitting all three overrides retains the original
+Asahi-kernel VM as a fallback. The complete creation and export procedure is
+in the [persistent-VM runbook](docs/persistent-test-vm.md#reproducing-the-stock-kernel-profile).
+
 This path is deliberately headless and unprivileged. It directly supplies the
 kernel and initramfs and must not attach firmware, NVRAM, Apple boot-policy
 state, a physical device, a raw host disk, or the Mac's system volume.
 
-The 2026-09-02 two-boot test passed writable-root persistence, idempotent
+The 2026-09-02 Asahi-kernel two-boot test passed writable-root persistence, idempotent
 provisioning, DHCP/DNS/HTTPS, and host SSH through `127.0.0.1:22022`. The sole
 open P0 acceptance item is an NFSv4 mount: TCP port 2049 is reachable, but the
 test server requires a reserved source port that libslirp NAT does not
 preserve. See the [results and remaining options](docs/persistent-test-vm.md).
+
+On 2026-09-02 the cloned persistent disk also completed two clean boots with
+Debian's stock `7.1.12+deb14-arm64` kernel under HVF `-cpu host`. The 4K-page
+kernel reached a healthy multi-user system with persistent storage, outbound
+networking, host SSH, and the NFS client intact. Asahi remains necessary only
+for the separately deferred bare-metal Apple-machine path, not for QEMU's
+standardized `virt` board.
 
 ### CPU passthrough evidence
 

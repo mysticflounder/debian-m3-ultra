@@ -13,6 +13,11 @@ provisioning, network, SSH, and reboot-persistence gates passed. `nfs-common`
 and `mount.nfs4` are installed and the NFS server's TCP port is reachable, but
 the mount itself is the sole incomplete P0 acceptance item.
 
+The same day, a standalone clone at `out/testvm-debian-root.qcow2` was migrated
+to Debian's stock `linux-image-arm64` package and completed two more clean
+boots. This is now the validated generic-kernel profile; the original disk and
+Asahi kernel/initramfs remain unchanged as a fallback.
+
 This operational milestone takes priority over further upstream coordination.
 If it exposes a QEMU or component bug, a focused fix may be merged into this
 project's fork and used immediately; upstream review can proceed independently.
@@ -44,6 +49,11 @@ is:
 - `scripts/test-vm.sh info` reports the resolved QEMU, kernel, initramfs, disk,
   CPU, memory, networking, and SSH-forward configuration without starting the
   guest.
+- `TEST_VM_DISK` selects a qcow2 image directly under `out/`.
+  `TEST_VM_KERNEL` and `TEST_VM_INITRD` select a matching external boot pair
+  directly under `out/`; they must be set together. These explicit overrides
+  allow a cloned disk to be tested without changing `out/KVER` or the default
+  Asahi artifacts.
 
 `scripts/test-vm-provision.sh` is the guest-side provisioning helper. The
 launcher attaches it read-only; it may change the guest root filesystem, but
@@ -122,6 +132,88 @@ reachability succeeded; only the actual NFSv4.0 mount remains incomplete.
 
 The launcher did not use QEMU `-snapshot`. Probe and benchmark launchers remain
 disposable by design and do not satisfy the persistence gate.
+
+## Stock Debian kernel result
+
+The generic-kernel profile is:
+
+```bash
+TEST_VM_DISK=out/testvm-debian-root.qcow2 \
+TEST_VM_KERNEL=out/Image-7.1.12+deb14-arm64 \
+TEST_VM_INITRD=out/initrd.img-7.1.12+deb14-arm64 \
+./scripts/test-vm.sh run
+```
+
+The clone contains the matching `linux-image`, `linux-modules`, and `linux-base`
+packages for `7.1.12+deb14-arm64`. Its initramfs was regenerated after
+installing `e2fsprogs`; it contains `virtio_blk`, ext4, and `fsck.ext4`.
+The exported `vmlinuz` is already an uncompressed ARM64 `Image` with 4K pages.
+
+Both stock-kernel boots reached `systemctl is-system-running = running` with
+`/dev/vda` mounted read/write as ext4. Boot 2 retained the boot-1 sentinel,
+machine ID `d787e1e0488a47cdae92859fc0658024`, and SSH host identity. DHCP assigned
+`10.0.2.15`; DNS, HTTPS, and host-to-guest SSH on the loopback forward passed.
+`mount.nfs4` remained installed and TCP/2049 remained reachable. The known
+libslirp reserved-source-port limitation is unchanged and is not kernel-related.
+
+This confirms that the QEMU `virt` VM does not require an Asahi kernel. QEMU
+provides standardized virtual devices; Asahi's Apple SoC and board support is
+needed for the separately deferred bare-metal path.
+
+### Reproducing the stock-kernel profile
+
+The migration deliberately works on a standalone clone. With all VMs powered
+off, create it without overwriting an existing target:
+
+```bash
+test ! -e out/testvm-debian-root.qcow2
+test ! -e out/testvm-debian-root.qcow2.tmp
+/opt/homebrew/bin/qemu-img convert -p -f qcow2 -O qcow2 \
+  out/testvm-root.qcow2 out/testvm-debian-root.qcow2.tmp
+mv -n out/testvm-debian-root.qcow2.tmp out/testvm-debian-root.qcow2
+/opt/homebrew/bin/qemu-img check out/testvm-debian-root.qcow2
+```
+
+Boot that clone once with the existing Asahi artifacts and a separate SSH
+forward:
+
+```bash
+TEST_VM_DISK=out/testvm-debian-root.qcow2 \
+TEST_VM_KERNEL=out/Image-7.1.10+deb14-asahi \
+TEST_VM_INITRD=out/initrd.img-7.1.10+deb14-asahi \
+SSH_PORT=22023 \
+./scripts/test-vm.sh run
+```
+
+Inside the clone, install Debian's generic kernel and regenerate its initramfs
+with an ext4 checker present:
+
+```bash
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y --no-install-recommends linux-image-arm64 e2fsprogs
+kver="$(basename "$(readlink -f /vmlinuz)")"
+kver="${kver#vmlinuz-}"
+printf 'VERSION=%s\n' "$kver"
+update-initramfs -u -k "$kver"
+```
+
+While that bootstrap boot remains running, export the matching pair from the
+host. Replace `VERSION` with the value of `kver` printed in the guest:
+
+```bash
+test ! -e out/vmlinuz-VERSION
+test ! -e out/initrd.img-VERSION
+test ! -e out/Image-VERSION
+scp -P 22023 root@127.0.0.1:/boot/vmlinuz-VERSION out/vmlinuz-VERSION
+scp -P 22023 root@127.0.0.1:/boot/initrd.img-VERSION out/initrd.img-VERSION
+file out/vmlinuz-VERSION
+cp -p -n out/vmlinuz-VERSION out/Image-VERSION
+```
+
+The `file` check must identify an ARM64 boot executable `Image`; do not copy a
+compressed kernel under the `Image-` name. Shut the guest down cleanly, check
+the qcow2 image again, and then use the generic-kernel launch command above.
 
 ## Safety boundary
 

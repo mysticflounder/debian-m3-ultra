@@ -10,7 +10,9 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$HERE/out"
 BASE_ROOTFS="$OUT/rootfs.ext4"
-VM_DISK="$OUT/testvm-root.qcow2"
+VM_DISK="${TEST_VM_DISK:-$OUT/testvm-root.qcow2}"
+KERNEL_OVERRIDE="${TEST_VM_KERNEL:-}"
+INITRD_OVERRIDE="${TEST_VM_INITRD:-}"
 LOCK_DIR="$OUT/.test-vm.lock"
 SCRIPTS_DIR="$HERE/scripts"
 PROJECT_QEMU="$OUT/qemu-fork-pmintenclr-build/qemu-system-aarch64"
@@ -34,7 +36,11 @@ usage: ./scripts/test-vm.sh init|run|info
   info  show the persistent disk metadata and launch configuration
 
 Environment: QEMU, QEMU_IMG, SMP (default 8), MEM (default 8G),
-             SSH_PORT (default 22022; forwarded on 127.0.0.1 only)
+             SSH_PORT (default 22022; forwarded on 127.0.0.1 only),
+             TEST_VM_DISK (qcow2 directly under out/),
+             TEST_VM_KERNEL and TEST_VM_INITRD (must be set together;
+             matching Image-VERSION and initrd.img-VERSION files directly
+             under out/)
 
 After boot, provision once (the operation is safe to repeat):
   mkdir -p /mnt/m3-scripts
@@ -51,6 +57,24 @@ fail() {
     exit 1
 }
 
+normalize_project_path() {
+    case "$1" in
+        /*) printf '%s\n' "$1" ;;
+        *) printf '%s\n' "$HERE/$1" ;;
+    esac
+}
+
+validate_out_path() {
+    local label="$1"
+    local path="$2"
+    local parent
+
+    parent="$(cd "$(dirname "$path")" 2>/dev/null && pwd -P)" ||
+        fail "$label parent directory does not exist: $path"
+    [ "$parent" = "$OUT" ] ||
+        fail "$label must be directly under $OUT: $path"
+}
+
 COMMAND="${1:-}"
 case "$COMMAND" in
     init|run|info) ;;
@@ -64,6 +88,19 @@ case "$COMMAND" in
         ;;
 esac
 [ "$#" -le 1 ] || { usage >&2; exit 2; }
+
+if [ -n "$KERNEL_OVERRIDE" ] || [ -n "$INITRD_OVERRIDE" ]; then
+    [ -n "$KERNEL_OVERRIDE" ] && [ -n "$INITRD_OVERRIDE" ] ||
+        fail "TEST_VM_KERNEL and TEST_VM_INITRD must be set together"
+fi
+
+VM_DISK="$(normalize_project_path "$VM_DISK")"
+validate_out_path "VM disk" "$VM_DISK"
+case "$(basename "$VM_DISK")" in
+    *','*|*'\'*) fail "VM disk name must not contain a comma or backslash: $VM_DISK" ;;
+    *.qcow2) ;;
+    *) fail "VM disk must have a .qcow2 name: $VM_DISK" ;;
+esac
 
 case "$SSH_PORT" in
     ""|*[!0-9]*) fail "SSH_PORT must be an integer from 1 through 65535" ;;
@@ -164,15 +201,38 @@ validate_qcow2() {
 }
 
 load_boot_artifacts() {
-    [ -x "$QEMU" ] || fail "QEMU is not executable: $QEMU"
-    [ -f "$OUT/KVER" ] || fail "missing $OUT/KVER; build or copy the rootfs artifacts first"
+    local kernel_name
+    local initrd_name
+    local override_version
 
-    KVER="$(cat "$OUT/KVER")"
-    case "$KVER" in
-        ""|*/*) fail "invalid kernel version in $OUT/KVER" ;;
-    esac
-    KERNEL="$OUT/Image-$KVER"
-    INITRD="$OUT/initrd.img-$KVER"
+    [ -x "$QEMU" ] || fail "QEMU is not executable: $QEMU"
+
+    if [ -n "$KERNEL_OVERRIDE" ] || [ -n "$INITRD_OVERRIDE" ]; then
+        KERNEL="$(normalize_project_path "$KERNEL_OVERRIDE")"
+        INITRD="$(normalize_project_path "$INITRD_OVERRIDE")"
+        validate_out_path "kernel" "$KERNEL"
+        validate_out_path "initrd" "$INITRD"
+        kernel_name="$(basename "$KERNEL")"
+        initrd_name="$(basename "$INITRD")"
+        case "$kernel_name" in
+            Image-*) override_version="${kernel_name#Image-}" ;;
+            vmlinuz-*) override_version="${kernel_name#vmlinuz-}" ;;
+            *) fail "override kernel name must be Image-VERSION or vmlinuz-VERSION: $KERNEL" ;;
+        esac
+        [ -n "$override_version" ] ||
+            fail "override kernel filename has an empty version: $KERNEL"
+        [ "$initrd_name" = "initrd.img-$override_version" ] ||
+            fail "override kernel and initrd filenames do not have the same version"
+    else
+        [ -f "$OUT/KVER" ] ||
+            fail "missing $OUT/KVER; build or copy the rootfs artifacts first"
+        KVER="$(cat "$OUT/KVER")"
+        case "$KVER" in
+            ""|*/*) fail "invalid kernel version in $OUT/KVER" ;;
+        esac
+        KERNEL="$OUT/Image-$KVER"
+        INITRD="$OUT/initrd.img-$KVER"
+    fi
     [ ! -L "$KERNEL" ] && [ -f "$KERNEL" ] || \
         fail "kernel must be a regular, non-symlink file: $KERNEL"
     [ ! -L "$INITRD" ] && [ -f "$INITRD" ] || \
