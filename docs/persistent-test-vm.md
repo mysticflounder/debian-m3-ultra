@@ -9,9 +9,9 @@ No X server, display device, or graphical console is required.
 
 On 2026-09-02 the launcher created standalone `out/testvm-root.qcow2` from
 `out/rootfs.ext4` and completed two clean boots. The writable root,
-provisioning, network, SSH, and reboot-persistence gates passed. `nfs-common`
-and `mount.nfs4` are installed and the NFS server's TCP port is reachable, but
-the mount itself is the sole incomplete P0 acceptance item.
+provisioning, network, SSH, and reboot-persistence gates passed. On 2026-09-03
+a second virtio NIC backed by `vmnet-bridged` gave the guest a LAN address, and
+the NFS mount/read/hash/unmount gate passed. P0 is complete.
 
 The same day, a standalone clone at `out/testvm-debian-root.qcow2` was migrated
 to Debian's stock `linux-image-arm64` package and completed two more clean
@@ -28,12 +28,12 @@ project's fork and used immediately; upstream review can proceed independently.
   known bootable raw rootfs, with no backing or external data file.
 - [x] Provision DHCP/DNS, `openssh-server`, and `nfs-common`; rerunning the
   provisioner on boot 2 succeeded.
-- [x] Provide a repeatable serial-only launcher with unprivileged user-mode
-  networking and loopback-only SSH forwarding.
+- [x] Provide a repeatable serial-only launcher with a bridged LAN/NFS NIC and
+  a separate user-mode NIC for loopback-only management SSH.
 - [x] Complete two clean boots and verify writable-root state, guest identity,
   SSH identity, DNS, HTTPS, and host-to-guest SSH persist or remain usable.
-- [ ] Mount and read the selected read-only NFSv4.0 export, then unmount it
-  cleanly. TCP reachability has passed; source-port policy still blocks mount.
+- [x] Mount and read the selected read-only NFSv4.0 export, then unmount it
+  cleanly through the bridged NIC.
 
 ## Launcher contract
 
@@ -57,6 +57,19 @@ is:
 - `TEST_VM_QMP_SOCKET` optionally creates a QEMU Machine Protocol Unix socket
   directly under `out/`. `scripts/test-vm-console.sh` uses this private local
   control channel to verify state and request a clean guest power-down.
+- `VMNET_IFNAME` selects the physical bridge interface and defaults to `en0`.
+  With the default `VMNET_USE_SUDO=1`, startup authorizes vmnet creation with
+  `sudo`, passes `-run-with user=UID:GID`, and transfers the QMP socket back to
+  the invoking user. QEMU opens its fixed startup resources while privileged,
+  then long-running guest execution and disk I/O occur as the invoking user.
+  The console controller requests authorization; before a non-interactive
+  direct `scripts/test-vm.sh run`, authorize once with `sudo -v`.
+
+Recreate the vmnet-enabled fork build with:
+
+```bash
+./scripts/build-qemu-vmnet.sh
+```
 
 `scripts/test-vm-provision.sh` is the guest-side provisioning helper. The
 launcher attaches it read-only; it may change the guest root filesystem, but
@@ -99,60 +112,44 @@ regular project image, never an automatically inferred physical device.
 
 ## Network and NFS contract
 
-The validated default network is a virtio NIC backed by QEMU's unprivileged
-user-mode network stack, with both slirp IPv4 and IPv6 enabled:
+The validated network has two virtio NICs with fixed MAC addresses:
 
 ```text
--netdev user,id=net0,ipv4=on,ipv6=on,hostfwd=tcp:127.0.0.1:22022-:22
--device virtio-net-pci,netdev=net0
+-netdev user,id=mgmt,ipv4=on,ipv6=on,hostfwd=tcp:127.0.0.1:22022-:22
+-device virtio-net-pci,netdev=mgmt,mac=52:54:00:12:34:56
+-netdev vmnet-bridged,id=lan,ifname=en0
+-device virtio-net-pci,netdev=lan,mac=52:54:00:12:34:57
 ```
 
-This gives the guest a DHCP-configured private address, outbound connectivity,
-and host access to SSH at `127.0.0.1:22022`, without TAP setup, root privileges,
-bridging, or a vmnet entitlement. The SSH listener must not bind all host
-interfaces by default. Lowercase `ssh -p` selects the forwarded port; uppercase
+The first NIC remains a stable management path: private DHCP, outbound access,
+and host SSH at `127.0.0.1:22022`. The second NIC is bridged to the physical LAN
+for NFS and other protocols that require an independent LAN identity. The SSH
+forward remains loopback-only. Lowercase `ssh -p` selects its port; uppercase
 `-P` does not select the port for OpenSSH `ssh`.
 
-The guest received `10.0.2.15` by DHCP. DNS, an HTTPS request returning HTTP/2
-200, and host SSH all succeeded. TCP connection to `10.0.0.229:2049` also
-succeeded.
+The management NIC received `10.0.2.15`; the bridged NIC received
+`10.0.0.98/24`. The route to `10.0.0.229` uses the bridged NIC directly. DNS,
+HTTPS, host SSH, and TCP connection to NFS port 2049 all succeed.
 
-The remaining NFS gate uses the read-only NFSv4.0 export
-`10.0.0.229:/tank/nfs`. Its mount currently fails with `EPERM`: the server
-requires a secure/reserved client source port, while libslirp NAT does not
-preserve that reserved source port. Mounting the same export from the host with
-`resvport` succeeds, isolating the failure from server reachability and export
-availability.
+The NFS gate uses the read-only NFSv4.0 export `10.0.0.229:/tank/nfs`. It failed
+with `EPERM` over libslirp because the server requires a secure/reserved client
+source port and NAT did not preserve it. The separate QEMU build at
+`out/qemu-fork-vmnet-build/qemu-system-aarch64` enables `vmnet.framework`; QEMU
+creates the bridge during a short root window and then drops to the invoking
+UID/GID. No server policy change was needed.
 
-Two possible next paths remain open, without a choice yet:
-
-- narrowly allow non-reserved source ports server-side for this test export;
-  or
-- build and sign QEMU's `vmnet-bridged` backend and authorize the guest's LAN
-  address at the server. `vmnet-shared` remains NAT and does not supply the
-  direct LAN identity needed by that alternative.
-
-The failure was reproduced again on 2026-09-03 with a bounded
-`ro,vers=4.0,proto=tcp` mount: `mount.nfs4` returned `Operation not permitted`
-and nothing remained mounted. The fork build has no `vmnet` backend. Homebrew
-QEMU 11.1.1 exposes both `vmnet-shared` and `vmnet-bridged`, but initializing
-either as the current user fails with `general failure (possibly not enough
-privileges)`. Its signature contains the Hypervisor entitlement but not
-`com.apple.vm.networking`; Apple documents that networking entitlement as
-[restricted to virtualization developers](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.vm.networking).
-
-After the selected network-policy fix, run the fail-closed acceptance gate:
+Run the fail-closed acceptance gate with:
 
 ```bash
 ./scripts/test-vm-nfs.sh
 ```
 
 It runs inside a private guest mount namespace, creates a one-run mount
-directory, and requests NFSv4.0 read-only with bounded retry behavior. It
-verifies the resulting source/type/options, reads and hashes `pdz.html` under
-deadlines, and unmounts anything the run mounted on both success and later
-validation failure. SSH must already have the VM host key in `known_hosts`;
-the script will not accept a new host key automatically.
+directory, and requests NFSv4.0 read-only with `resvport` and bounded retry
+behavior. It verifies the resulting source/type/options, reads and hashes
+`pdz.html` under deadlines, and unmounts anything the run mounted on both
+success and later validation failure. SSH must already have the VM host key in
+`known_hosts`; the script will not accept a new host key automatically.
 
 ## Recorded two-boot result
 
@@ -171,8 +168,8 @@ boot 2, all three persistent identities matched boot 1:
   `SHA256:GmLXWdNFQiMX0nTWzPlGjHCK3a4gEIVoovvclbFFc0w`.
 
 The provisioner was safely rerun on boot 2. DHCP `10.0.2.15`, DNS, HTTPS
-HTTP/2 200, and host SSH succeeded. NFS package/tool installation and TCP/2049
-reachability succeeded; only the actual NFSv4.0 mount remains incomplete.
+HTTP/2 200, and host SSH succeeded. The later bridged-NIC acceptance run
+mounted the NFSv4.0 export, read and hashed `pdz.html`, and unmounted cleanly.
 
 The launcher did not use QEMU `-snapshot`. Probe and benchmark launchers remain
 disposable by design and do not satisfy the persistence gate.
@@ -197,8 +194,9 @@ Both stock-kernel boots reached `systemctl is-system-running = running` with
 `/dev/vda` mounted read/write as ext4. Boot 2 retained the boot-1 sentinel,
 machine ID `d787e1e0488a47cdae92859fc0658024`, and SSH host identity. DHCP assigned
 `10.0.2.15`; DNS, HTTPS, and host-to-guest SSH on the loopback forward passed.
-`mount.nfs4` remained installed and TCP/2049 remained reachable. The known
-libslirp reserved-source-port limitation is unchanged and is not kernel-related.
+`mount.nfs4` remained installed and TCP/2049 remained reachable. Bridging the
+second NIC resolved libslirp's reserved-source-port limitation without a
+kernel or server-policy change.
 
 This confirms that the QEMU `virt` VM does not require an Asahi kernel. QEMU
 provides standardized virtual devices; Asahi's Apple SoC and board support is
@@ -297,9 +295,11 @@ Apple machine and must not receive:
 - a writable host directory merely to transfer the provisioning helper.
 
 Direct kernel/initramfs boot, a project-owned qcow2 disk, a read-only helper
-attachment, the emulated virtio devices, and user-mode networking are the whole
-machine boundary. `init` must fail closed rather than replace an existing disk,
-and `run` must fail clearly if required project artifacts are absent.
+attachment, emulated virtio devices, loopback-only management NAT, and one
+vmnet bridge are the whole machine boundary. QEMU's short root startup opens
+only those fixed resources and creates vmnet; it drops to the invoking user
+before guest execution. `init` must fail closed rather than replace an existing
+disk, and `run` must fail clearly if required project artifacts are absent.
 
 ## Later work
 

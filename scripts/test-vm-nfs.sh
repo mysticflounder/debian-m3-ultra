@@ -114,7 +114,7 @@ esac
 echo "==> mounting $source_path read-only over NFSv4.0"
 mount_attempted=1
 if ! timeout --kill-after=5s 20s mount -t nfs4 \
-    -o ro,soft,timeo=50,retrans=2,vers=4.0,proto=tcp \
+    -o ro,resvport,soft,timeo=50,retrans=2,vers=4.0,proto=tcp \
     "$source_path" "$mount_dir"; then
     fail "NFS mount failed"
 fi
@@ -130,6 +130,8 @@ case "$mount_fstype" in
     nfs|nfs4) ;;
     *) fail "unexpected filesystem type: $mount_fstype" ;;
 esac
+# Linux accepts resvport above but does not expose that implicit transport
+# choice in findmnt.  The server's secure-port policy is the effective check.
 for required_option in ro soft timeo=50 retrans=2 vers=4.0 proto=tcp; do
     case ",$mount_options," in
         *,"$required_option",*) ;;

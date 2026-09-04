@@ -15,6 +15,8 @@ LOCK_DIR="$OUT/.test-vm.lock"
 SSH_PORT_VALUE="${SSH_PORT:-22022}"
 SMP_VALUE="${SMP:-8}"
 MEM_VALUE="${MEM:-8G}"
+VMNET_IFNAME_VALUE="${VMNET_IFNAME:-en0}"
+VMNET_USE_SUDO_VALUE="${VMNET_USE_SUDO:-1}"
 QMP_RESPONSE=""
 LOCK_OWNER=""
 QMP_STREAM_DIR=""
@@ -22,6 +24,7 @@ QMP_STREAM_FIFO=""
 QMP_STREAM_OUTPUT=""
 QMP_STREAM_PID=""
 QMP_STREAM_FD_OPEN=0
+START_CLEANUP_NEEDED=0
 
 usage() {
     cat <<'EOF'
@@ -36,7 +39,8 @@ Leave the console without stopping the VM:
   outside tmux: Ctrl-B d
   inside tmux:  Ctrl-B L (return to the previous tmux session)
 
-Environment: TEST_VM_STOCK_KVER, SSH_PORT, SMP, MEM, QEMU, QEMU_IMG
+Environment: TEST_VM_STOCK_KVER, SSH_PORT, SMP, MEM, VMNET_IFNAME,
+             VMNET_USE_SUDO, QEMU, QEMU_IMG
 EOF
 }
 
@@ -46,6 +50,9 @@ fail() {
 }
 
 cleanup_qmp_stream() {
+    if [ "$START_CLEANUP_NEEDED" -eq 1 ] && session_running; then
+        tmux kill-session -t "=$SESSION" 2>/dev/null || true
+    fi
     if [ "$QMP_STREAM_FD_OPEN" -eq 1 ]; then
         exec 9>&-
         QMP_STREAM_FD_OPEN=0
@@ -74,6 +81,25 @@ trap cleanup_qmp_stream EXIT
 
 require_command() {
     command -v "$1" >/dev/null 2>&1 || fail "required command not found: $1"
+}
+
+normalize_qmp_socket_owner() {
+    local current_gid
+    local current_uid
+    local socket_uid
+
+    [ -S "$QMP_SOCKET" ] || return 1
+    current_uid="$(id -u)"
+    current_gid="$(id -g)"
+    socket_uid="$(stat -f '%u' "$QMP_SOCKET")" ||
+        fail "could not inspect QMP socket owner: $QMP_SOCKET"
+    if [ "$socket_uid" != "$current_uid" ]; then
+        [ "$VMNET_USE_SUDO_VALUE" -eq 1 ] ||
+            fail "QMP socket is not owned by the current user: $QMP_SOCKET"
+        sudo -n chown "$current_uid:$current_gid" "$QMP_SOCKET" ||
+            fail "could not transfer QMP socket ownership: $QMP_SOCKET"
+    fi
+    chmod 0600 "$QMP_SOCKET" || fail "could not secure QMP socket: $QMP_SOCKET"
 }
 
 session_running() {
@@ -260,11 +286,17 @@ start_vm() {
         "SSH_PORT=$SSH_PORT_VALUE"
         "SMP=$SMP_VALUE"
         "MEM=$MEM_VALUE"
+        "VMNET_IFNAME=$VMNET_IFNAME_VALUE"
+        "VMNET_USE_SUDO=$VMNET_USE_SUDO_VALUE"
     )
 
     require_command tmux
     require_command nc
     require_command jq
+    case "$VMNET_USE_SUDO_VALUE" in
+        0|1) ;;
+        *) fail "VMNET_USE_SUDO must be 0 or 1" ;;
+    esac
     validate_artifacts
     if session_running; then
         [ -S "$QMP_SOCKET" ] ||
@@ -280,6 +312,10 @@ start_vm() {
         fi
         fail "tmux session exists, but the VM is not in a startable state"
     fi
+    if [ "$VMNET_USE_SUDO_VALUE" -eq 1 ]; then
+        require_command sudo
+        sudo -v || fail "sudo authorization is required for vmnet bridging"
+    fi
     prepare_qmp_socket
     if [ -n "${QEMU:-}" ]; then
         env_args+=("QEMU=$QEMU")
@@ -291,13 +327,18 @@ start_vm() {
     printf -v quoted '%q ' env "${env_args[@]}" "$LAUNCHER" run
     run_command="umask 077; exec $quoted"
     tmux new-session -d -s "$SESSION" -c "$HERE" "$run_command"
+    START_CLEANUP_NEEDED=1
 
     while [ "$attempts" -lt 100 ]; do
+        if [ -S "$QMP_SOCKET" ]; then
+            normalize_qmp_socket_owner
+        fi
         if [ -S "$QMP_SOCKET" ] && qmp_request query-status status &&
             qmp_reports_running; then
             echo "VM started in tmux session $SESSION"
             echo "console: $0 console"
             echo "ssh:     ssh -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 -p $SSH_PORT_VALUE root@127.0.0.1"
+            START_CLEANUP_NEEDED=0
             return
         fi
         if ! session_running; then

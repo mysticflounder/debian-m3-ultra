@@ -17,7 +17,7 @@ QMP_OVERRIDE="${TEST_VM_QMP_SOCKET:-}"
 NO_SHUTDOWN="${TEST_VM_NO_SHUTDOWN:-0}"
 LOCK_DIR="$OUT/.test-vm.lock"
 SCRIPTS_DIR="$HERE/scripts"
-PROJECT_QEMU="$OUT/qemu-fork-pmintenclr-build/qemu-system-aarch64"
+PROJECT_QEMU="$OUT/qemu-fork-vmnet-build/qemu-system-aarch64"
 if [ -x "$PROJECT_QEMU" ]; then
     DEFAULT_QEMU="$PROJECT_QEMU"
 else
@@ -28,6 +28,10 @@ QEMU_IMG="${QEMU_IMG:-/opt/homebrew/bin/qemu-img}"
 SMP="${SMP:-8}"
 MEM="${MEM:-8G}"
 SSH_PORT="${SSH_PORT:-22022}"
+VMNET_IFNAME="${VMNET_IFNAME:-en0}"
+VMNET_USE_SUDO="${VMNET_USE_SUDO:-1}"
+MGMT_MAC="52:54:00:12:34:56"
+BRIDGE_MAC="52:54:00:12:34:57"
 
 usage() {
     cat <<EOF
@@ -39,6 +43,8 @@ usage: ./scripts/test-vm.sh init|run|info
 
 Environment: QEMU, QEMU_IMG, SMP (default 8), MEM (default 8G),
              SSH_PORT (default 22022; forwarded on 127.0.0.1 only),
+             VMNET_IFNAME (default en0; physical interface for bridged LAN),
+             VMNET_USE_SUDO (default 1; initialize vmnet as root, then drop),
              TEST_VM_DISK (qcow2 directly under out/),
              TEST_VM_KERNEL and TEST_VM_INITRD (must be set together;
              matching Image-VERSION and initrd.img-VERSION files directly
@@ -105,6 +111,11 @@ case "$NO_SHUTDOWN" in
     *) fail "TEST_VM_NO_SHUTDOWN must be 0 or 1" ;;
 esac
 
+case "$VMNET_USE_SUDO" in
+    0|1) ;;
+    *) fail "VMNET_USE_SUDO must be 0 or 1" ;;
+esac
+
 VM_DISK="$(normalize_project_path "$VM_DISK")"
 validate_out_path "VM disk" "$VM_DISK"
 case "$(basename "$VM_DISK")" in
@@ -126,6 +137,12 @@ fi
 [ "$NO_SHUTDOWN" -eq 0 ] || [ -n "$QMP_SOCKET" ] ||
     fail "TEST_VM_NO_SHUTDOWN=1 requires TEST_VM_QMP_SOCKET"
 
+case "$VMNET_IFNAME" in
+    ""|*[!A-Za-z0-9._-]*)
+        fail "VMNET_IFNAME contains unsupported characters: $VMNET_IFNAME"
+        ;;
+esac
+
 case "$SSH_PORT" in
     ""|*[!0-9]*) fail "SSH_PORT must be an integer from 1 through 65535" ;;
 esac
@@ -141,8 +158,16 @@ QEMU_PID=""
 release_lock() {
     local owner
 
-    if [ -n "$QEMU_PID" ] && kill -0 "$QEMU_PID" 2>/dev/null; then
-        kill -TERM "$QEMU_PID" 2>/dev/null || true
+    if [ -n "$QEMU_PID" ]; then
+        if [ "$VMNET_USE_SUDO" -eq 1 ]; then
+            if sudo -n kill -0 "$QEMU_PID" 2>/dev/null; then
+                sudo -n kill -TERM "$QEMU_PID" 2>/dev/null || true
+            elif kill -0 "$QEMU_PID" 2>/dev/null; then
+                kill -TERM "$QEMU_PID" 2>/dev/null || true
+            fi
+        elif kill -0 "$QEMU_PID" 2>/dev/null; then
+            kill -TERM "$QEMU_PID" 2>/dev/null || true
+        fi
         wait "$QEMU_PID" 2>/dev/null || true
     fi
     if [ "$LOCK_HELD" -eq 1 ] && [ ! -L "$LOCK_DIR" ] && [ -d "$LOCK_DIR" ]; then
@@ -159,8 +184,13 @@ release_lock() {
 trap release_lock EXIT
 
 forward_signal() {
-    if [ -n "$QEMU_PID" ] && kill -0 "$QEMU_PID" 2>/dev/null; then
-        kill -"$1" "$QEMU_PID" 2>/dev/null || true
+    if [ -n "$QEMU_PID" ]; then
+        if [ "$VMNET_USE_SUDO" -eq 1 ]; then
+            sudo -n kill -"$1" "$QEMU_PID" 2>/dev/null ||
+                kill -"$1" "$QEMU_PID" 2>/dev/null || true
+        elif kill -0 "$QEMU_PID" 2>/dev/null; then
+            kill -"$1" "$QEMU_PID" 2>/dev/null || true
+        fi
     fi
 }
 trap 'forward_signal HUP' HUP
@@ -276,8 +306,14 @@ if [ "$COMMAND" = "info" ]; then
     echo "kernel:  $KERNEL"
     echo "initrd:  $INITRD"
     echo "disk:    $VM_DISK"
-    echo "network: user-mode NAT with virtio-net-pci"
-    echo "ssh:     127.0.0.1:$SSH_PORT -> guest port 22"
+    echo "network: bridged LAN on $VMNET_IFNAME ($BRIDGE_MAC)"
+    echo "manage:  loopback-only user-mode NAT ($MGMT_MAC)"
+    if [ "$VMNET_USE_SUDO" -eq 1 ]; then
+        echo "privilege: root for vmnet initialization, then $(id -u):$(id -g)"
+    else
+        echo "privilege: direct (requires an authorized vmnet entitlement)"
+    fi
+    echo "ssh:     127.0.0.1:$SSH_PORT -> management NIC port 22"
     if [ -n "$QMP_SOCKET" ]; then
         echo "qmp:     $QMP_SOCKET"
     else
@@ -329,6 +365,11 @@ load_boot_artifacts
 acquire_lock
 validate_qcow2
 
+/sbin/ifconfig "$VMNET_IFNAME" >/dev/null 2>&1 ||
+    fail "vmnet bridge interface is unavailable: $VMNET_IFNAME"
+"$QEMU" -M none -netdev help 2>&1 | grep -qx 'vmnet-bridged' ||
+    fail "QEMU does not provide the vmnet-bridged backend: $QEMU"
+
 ARGS=(
     -M virt,highmem=on
     -accel hvf
@@ -340,10 +381,27 @@ ARGS=(
     -append "root=/dev/vda rootfstype=ext4 rw console=ttyAMA0 systemd.unit=multi-user.target"
     -drive "if=virtio,file=$VM_DISK,format=qcow2,cache=none"
     -drive "if=virtio,file=fat:ro:$SCRIPTS_DIR,format=raw,readonly=on"
-    -netdev "user,id=net0,ipv4=on,ipv6=on,hostfwd=tcp:127.0.0.1:$SSH_PORT-:22"
-    -device virtio-net-pci,netdev=net0
+    -netdev "user,id=mgmt,ipv4=on,ipv6=on,hostfwd=tcp:127.0.0.1:$SSH_PORT-:22"
+    -device "virtio-net-pci,netdev=mgmt,mac=$MGMT_MAC"
+    -netdev "vmnet-bridged,id=lan,ifname=$VMNET_IFNAME"
+    -device "virtio-net-pci,netdev=lan,mac=$BRIDGE_MAC"
     -nographic
 )
+
+QEMU_COMMAND=("$QEMU")
+if [ "$VMNET_USE_SUDO" -eq 1 ]; then
+    [ "$(id -u)" -ne 0 ] ||
+        fail "run the launcher as the target user, not as root"
+    command -v sudo >/dev/null 2>&1 || fail "sudo is required for vmnet"
+    if ! sudo -n true 2>/dev/null; then
+        [ -t 0 ] || fail "vmnet authorization is unavailable; run sudo -v first"
+        sudo -v || fail "sudo authorization is required for vmnet"
+    fi
+    QEMU_COMMAND=(sudo -n "$QEMU")
+    ARGS+=(
+        -run-with "user=$(id -u):$(id -g)"
+    )
+fi
 
 if [ -n "$QMP_SOCKET" ]; then
     [ ! -e "$QMP_SOCKET" ] && [ ! -L "$QMP_SOCKET" ] ||
@@ -362,6 +420,7 @@ fi
 cat <<EOF
 ==> persistent test VM: ${SMP} vCPUs, ${MEM} RAM
     disk: $VM_DISK
+    lan:  bridged on $VMNET_IFNAME ($BRIDGE_MAC)
     ssh:  ssh -p $SSH_PORT root@127.0.0.1
     exit: shut down the guest, or press Ctrl-A X
 EOF
@@ -370,8 +429,26 @@ EOF
 # lifetime.  The explicit stdin redirection preserves the interactive serial
 # console for the asynchronous child.  QEMU also takes its native exclusive
 # write lock on the qcow2 file.
-"$QEMU" "${ARGS[@]}" <&0 &
+"${QEMU_COMMAND[@]}" "${ARGS[@]}" <&0 &
 QEMU_PID=$!
+if [ -n "$QMP_SOCKET" ] && [ "$VMNET_USE_SUDO" -eq 1 ]; then
+    QMP_OWNER_READY=0
+    QMP_ATTEMPTS=0
+    while [ "$QMP_ATTEMPTS" -lt 100 ]; do
+        if [ -S "$QMP_SOCKET" ]; then
+            sudo -n chown "$(id -u):$(id -g)" "$QMP_SOCKET" ||
+                fail "could not transfer QMP socket ownership: $QMP_SOCKET"
+            chmod 0600 "$QMP_SOCKET" ||
+                fail "could not secure QMP socket: $QMP_SOCKET"
+            QMP_OWNER_READY=1
+            break
+        fi
+        sleep 0.1
+        QMP_ATTEMPTS=$((QMP_ATTEMPTS + 1))
+    done
+    [ "$QMP_OWNER_READY" -eq 1 ] ||
+        fail "QEMU did not create its QMP socket within 10 seconds"
+fi
 QEMU_STATUS=0
 while :; do
     set +e

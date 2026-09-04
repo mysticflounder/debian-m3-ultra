@@ -3,10 +3,11 @@
 Test rig for Debian on Apple M3. Host is a Mac Studio (Mac15,14, M3 Ultra,
 `t6032`/`j575d`).
 
-The immediate priority is a persistent, headless Debian test VM with a writable
-root filesystem, unprivileged networking, SSH access, and an NFSv4 client. See
-the [persistent test VM plan](docs/persistent-test-vm.md). The measured M3 Ultra
-CPU work remains preserved in the
+The P0 foundation is a persistent, headless Debian test VM with a writable
+root filesystem, bridged LAN/NFS access, loopback-only management SSH, and an
+NFSv4 client; its acceptance gate now passes. See the
+[persistent test VM plan](docs/persistent-test-vm.md). Active work can now
+return to the measured M3 Ultra CPU plan in the
 [QEMU Apple host-CPU passthrough plan](docs/qemu-apple-host-cpu-passthrough.md),
 but upstream QEMU coordination does not gate the VM: required fixes may land in
 the project fork first. Independent M5 Max validation is later P2 work. The
@@ -128,6 +129,18 @@ When connecting from outside tmux, detach with `Ctrl-B d`. When connecting
 from an existing tmux client, return to the previous session with `Ctrl-B L`.
 Detaching or switching sessions leaves the VM running.
 
+Startup may request `sudo` so QEMU can create the `vmnet-bridged` interface on
+`VMNET_IFNAME` (default `en0`). QEMU immediately drops back to the invoking
+user; the launcher transfers its local QMP socket to that user as well.
+When invoking `scripts/test-vm.sh run` directly without a terminal, run
+`sudo -v` first.
+
+Build the required QEMU fork profile with:
+
+```bash
+./scripts/build-qemu-vmnet.sh
+```
+
 SSH is key-only. The stock-kernel persistent disk used by the console
 controller authorizes the host's `~/.ssh/id_ed25519` key, so connect with:
 
@@ -146,17 +159,19 @@ directly under `out/`. Omitting all three overrides retains the original
 Asahi-kernel VM as a fallback. The complete creation and export procedure is
 in the [persistent-VM runbook](docs/persistent-test-vm.md#reproducing-the-stock-kernel-profile).
 
-This path is deliberately headless and unprivileged. It directly supplies the
-kernel and initramfs and must not attach firmware, NVRAM, Apple boot-policy
-state, a physical device, a raw host disk, or the Mac's system volume.
+This path is deliberately headless. QEMU has a short privileged startup window
+to open its fixed project resources and initialize vmnet, then runs as the
+invoking user. It directly supplies the kernel and initramfs and must not
+attach firmware, NVRAM, Apple boot-policy state, a physical device, a raw host
+disk, or the Mac's system volume.
 
-The 2026-09-02 Asahi-kernel two-boot test passed writable-root persistence, idempotent
-provisioning, DHCP/DNS/HTTPS, and host SSH through `127.0.0.1:22022`. The sole
-open P0 acceptance item is an NFSv4 mount: TCP port 2049 is reachable, but the
-test server requires a reserved source port that libslirp NAT does not
-preserve. Once a network-policy fix has been selected and applied, run
-`./scripts/test-vm-nfs.sh`. See the
-[results and remaining options](docs/persistent-test-vm.md).
+The 2026-09-02 Asahi-kernel two-boot test passed writable-root persistence,
+idempotent provisioning, DHCP/DNS/HTTPS, and host SSH through
+`127.0.0.1:22022`. On 2026-09-03 a second virtio NIC bridged to `en0` gave the
+stock-kernel guest LAN address `10.0.0.98`; the read-only NFSv4.0
+mount/read/hash/unmount gate then passed. P0 is complete. Run the gate again
+with `./scripts/test-vm-nfs.sh`; see the
+[persistent-VM results](docs/persistent-test-vm.md).
 
 On 2026-09-02 the cloned persistent disk also completed two clean boots with
 Debian's stock `7.1.12+deb14-arm64` kernel under HVF `-cpu host`. The 4K-page

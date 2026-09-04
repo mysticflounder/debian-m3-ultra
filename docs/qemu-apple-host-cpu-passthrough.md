@@ -5,9 +5,10 @@
 The project now prioritizes a usable persistent test environment over further
 CPU-model expansion:
 
-- **P0:** bring up the [persistent headless test VM](persistent-test-vm.md) with
-  a standalone writable root disk, unprivileged networking, loopback-only SSH,
-  and NFSv4 client access; then prove state survives a clean reboot.
+- **P0 (complete):** bring up the
+  [persistent headless test VM](persistent-test-vm.md) with a standalone
+  writable root disk, bridged NFS access, loopback-only management SSH, and
+  state that survives a clean reboot.
 - **P1:** continue M3 Ultra QEMU/HVF CPU correctness and stability from the
   completed evidence below. Focused QEMU or component fixes may be merged into
   the project fork before upstream acceptance.
@@ -497,13 +498,12 @@ P/E-core identity, m1n1, or a bare-metal Debian installation.
   `out/testvm-root.qcow2`.
 - [x] Attach `scripts/test-vm-provision.sh` read-only and provision DHCP/DNS,
   SSH, and the NFSv4 client without exposing a writable host directory.
-- [x] Use unprivileged QEMU user-mode networking and bind guest SSH only at
-  `127.0.0.1:22022`.
+- [x] Keep management SSH on user-mode networking bound only at
+  `127.0.0.1:22022`, and add a second virtio NIC bridged to `en0` for LAN/NFS.
 - [x] Pass and record the two-boot writable-root, identity, DNS/HTTPS, and
   host-to-guest SSH acceptance gates. Provisioner idempotence also passed.
-- [ ] Complete the sole remaining P0 gate: mount, read, and cleanly unmount
-  `10.0.0.229:/tank/nfs` over NFSv4.0. TCP/2049 is reachable, but the secure
-  export requires a reserved source port that libslirp NAT does not preserve.
+- [x] Mount, read, hash, and cleanly unmount `10.0.0.229:/tank/nfs` over
+  NFSv4.0 through the bridged NIC, preserving the secure reserved source port.
 - [x] Verify the exact launch remains headless and attaches no firmware,
   NVRAM, Apple boot-policy state, raw physical disk, system volume, or host
   device.
@@ -514,8 +514,12 @@ ext4 root on `/dev/vda`, slirp IPv4/IPv6, loopback SSH port 22022, and the
 read-only scripts disk. The root sentinel, machine ID, and SSH host key all
 persisted; DHCP/DNS/HTTPS, SSH, and provisioner idempotence passed.
 
+On 2026-09-03 the stock-kernel profile added the bridged NIC, received
+`10.0.0.98/24`, and passed `scripts/test-vm-nfs.sh` end to end. The bridge is
+created through a short `sudo` window; QEMU then runs as the invoking user.
+
 See [`persistent-test-vm.md`](persistent-test-vm.md) for the launcher contract
-and acceptance evidence, including the two unchosen NFS networking options.
+and the complete persistence, bridge, and NFS acceptance evidence.
 
 ## Completed and queued CPU work
 
