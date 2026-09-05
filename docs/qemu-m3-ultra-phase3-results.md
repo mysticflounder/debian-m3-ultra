@@ -241,6 +241,28 @@ This gate proves clean shutdown and process relaunch with persisted overlay
 state. It does not claim an in-process guest reboot/reset, PSCI CPU on/off, or
 QEMU state save/restore; those remain separate lifecycle gates.
 
+## In-process guest reboot/reset (verified)
+
+`scripts/reboot-vm.sh` exercised a guest-requested PSCI system reset at 1, 8,
+16, 24, and 32 vCPUs. Each count used one QEMU process and one disposable
+overlay. The host armed the reset only after recording a QMP-log boundary,
+then required exactly one subsequent QMP `RESET` event with `guest=true` and
+`reason=guest-reset`.
+
+All five counts passed. The QEMU PID, process start time, command, UID, and
+private QMP socket identity were unchanged across each reset; QMP remained
+responsive after the event. The second boot reported the exact configured CPU
+count, a new Linux boot ID, and the sentinel written before reset. It then
+requested a clean shutdown. The 1-vCPU smoke manifest is
+`out/reboot-matrix.cCLHOE/manifest.json`; the 8/16/24/32-vCPU matrix is
+`out/reboot-matrix.g39ZKt/manifest.json`.
+
+The private QMP socket existed only inside a mode-0700 run directory and was
+removed after use. Networking, display, firmware/pflash, build drives, raw
+host disks, and host devices were not exposed. All protected input hashes and
+filesystem identities remained stable, and every disposable overlay and
+runtime control was removed.
+
 ## Matched integer/memory benchmark (verified, descriptive)
 
 The host runner retained seven measured samples at 1, 8, 16, 24, and 32
@@ -325,16 +347,16 @@ scheduler/load telemetry.
 The EL1, cache, PMU, and complete 35-row advertised-feature results close their
 respective observation/classification slices; they do not justify a QEMU
 feature or cache patch. Remaining work is to trace the native-HVF versus
-QEMU-emulated register boundary, complete the in-process reboot/reset, guest
-PSCI CPU on/off, same-configuration save/restore, idle/WFI, stress, and
-Linux-selftest stability matrix, classify any demonstrated mismatch, validate
-M5 Max independently, and coordinate the resulting model semantics upstream.
-The clean shutdown/relaunch gate is complete. QMP vCPU device hotplug is
-excluded because Arm `virt` does not advertise hotpluggable CPUs in this QEMU
-baseline. Performance diagnosis is now a separate scheduler/environment lane,
-not a prerequisite for constructing the faithful architectural CPU contract.
-The m1n1/T6032 bare-metal roadmap remains deferred and is outside this QEMU
-workstream.
+QEMU-emulated register boundary, complete guest PSCI CPU on/off,
+same-configuration save/restore, idle/WFI, stress, and Linux-selftest stability
+coverage, classify any demonstrated mismatch, validate M5 Max independently,
+and coordinate the resulting model semantics upstream. The clean
+shutdown/relaunch and in-process guest-reboot gates are complete. QMP vCPU
+device hotplug is excluded because Arm `virt` does not advertise hotpluggable
+CPUs in this QEMU baseline. Performance diagnosis is now a separate
+scheduler/environment lane, not a prerequisite for constructing the faithful
+architectural CPU contract. The m1n1/T6032 bare-metal roadmap remains deferred
+and is outside this QEMU workstream.
 
 ## Primary sources
 

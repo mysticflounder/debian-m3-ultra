@@ -397,9 +397,8 @@ The advertised-feature portion is complete across the full count matrix:
 35/35 rows at 1 vCPU, 280/280 at 8, 560/560 at 16, 840/840 at 24, and
 1,120/1,120 at 32 (2,835/2,835 total). All 35 advertised rows, including DC
 ZVA, DC CVAP, and DC CVADP, passed on every tested vCPU. The remaining Phase 7
-work is the in-process reboot/reset, PSCI CPU on/off, same-configuration
-save/restore, idle/WFI, stress, and Linux-selftest coverage listed above, plus
-release qualification.
+work is PSCI CPU on/off, same-configuration save/restore, idle/WFI, stress, and
+Linux-selftest coverage listed above, plus release qualification.
 
 The clean shutdown/relaunch gate is also complete. Two separate QEMU processes
 used the same disposable overlay at each of 1/8/16/24/32 vCPUs; all 10 launches
@@ -408,6 +407,16 @@ second launch verified a sentinel written by the first. The 1-vCPU smoke
 manifest is `out/lifecycle-matrix.l6bzHl/manifest.json`, and the remaining
 matrix is `out/lifecycle-matrix.VfycDn/manifest.json`. This is deliberately
 classified as a relaunch test, not as proof of in-process reboot/reset.
+
+The in-process guest-reboot gate is complete as a separate test. At every
+1/8/16/24/32-vCPU count, one QEMU process survived a guest PSCI system reset;
+the recorded PID, process start time, command, UID, and private QMP socket
+identity were unchanged. Each run observed exactly one post-boundary QMP
+`RESET` event with `guest=true` and `reason=guest-reset`, retained QMP
+responsiveness, changed Linux boot ID, preserved the sentinel, and reported the
+exact CPU count on both boots. The 1-vCPU smoke manifest is
+`out/reboot-matrix.cCLHOE/manifest.json`, and the remaining matrix is
+`out/reboot-matrix.g39ZKt/manifest.json`.
 
 QMP vCPU device hotplug is not a valid Arm `virt` gate in this QEMU baseline:
 the machine does not advertise hotpluggable CPUs, so
@@ -580,6 +589,9 @@ and the complete persistence, bridge, and NFS acceptance evidence.
 - [x] Run two clean QEMU launches against one disposable overlay at each of
   1/8/16/24/32 vCPUs; all 10 launches reported the exact CPU count, preserved
   the sentinel across relaunch, and passed the protected-input safety gates.
+- [x] Run a guest-requested in-process reboot at each of 1/8/16/24/32 vCPUs;
+  the same verified QEMU process survived, QMP reported one guest reset, Linux
+  boot IDs changed, sentinels persisted, and CPU counts remained exact.
 - [x] Cover AES/SHA and the remaining advertised features in the complete
   behavior gate.
 - [ ] Send the measured baseline and proposed first patch boundary to the QEMU
