@@ -393,6 +393,13 @@ Test 1, 8, 16, 24, and 32 vCPUs. For each count:
 - run a broader matched CPU-only workload suite during release qualification,
   after architectural correctness and stability are established.
 
+The advertised-feature portion is complete across the full count matrix:
+35/35 rows at 1 vCPU, 280/280 at 8, 560/560 at 16, 840/840 at 24, and
+1,120/1,120 at 32 (2,835/2,835 total). All 35 advertised rows, including DC
+ZVA, DC CVAP, and DC CVADP, passed on every tested vCPU. The remaining Phase 7
+work is the lifecycle, idle/WFI, stress, and Linux-selftest stability coverage
+listed above, plus release qualification.
+
 Report performance distributions, not a single best run. Separate instruction
 throughput from scheduler placement, guest OS overhead, virtio I/O, and thermal
 effects. Disk and network results do not determine CPU-passthrough success.
@@ -550,9 +557,9 @@ and the complete persistence, bridge, and NFS acceptance evidence.
   demonstrated host-passthrough patch.
 - [x] Reproduce the irqchip-off `PMINTENCLR_EL1` clear-semantics defect on
   QEMU 11.1.1 and validate the focused fix on a patched QEMU 11.1.50 build.
-- [x] Run the complete advertised-feature behavior gate: 35/35 rows at 1 vCPU
-  and 1,120/1,120 rows at 32 vCPUs, homogeneous; 26 rows are semantic and 9
-  are execution-only checks.
+- [x] Run the complete advertised-feature behavior gate across 1/8/16/24/32
+  vCPUs: 2,835/2,835 per-vCPU rows passed homogeneously; 26 rows are semantic
+  and 9 are execution-only checks.
 - [x] Cover AES/SHA and the remaining advertised features in the complete
   behavior gate.
 - [ ] Send the measured baseline and proposed first patch boundary to the QEMU

@@ -206,11 +206,21 @@ advertised ABI rows per CPU: 26 semantic checks and 9 execution-only checks.
 `evtstrm_wfe` and `bti` remain execution-only checks: they verify instruction
 execution, not event-stream configuration or BTI enforcement semantics.
 
-At 1 vCPU, all 35 rows passed in
-`out/feature-probe-smp1.k7ifKG/evidence.json`. At 32 vCPUs, all 1,120 rows
-(35 per vCPU) passed in `out/feature-probe-smp32.85xa8v/evidence.json`; the
-results were homogeneous across vCPUs. Each evidence manifest records the
-eight protected input artifacts and their before/after hashes.
+The complete 1/8/16/24/32-vCPU matrix passed all 2,835 per-vCPU rows:
+
+| vCPUs | Passing rows | Evidence |
+|---:|---:|---|
+| 1 | 35/35 | `out/feature-probe-smp1.k7ifKG/evidence.json` |
+| 8 | 280/280 | `out/feature-probe-smp8.7jUjXx/evidence.json` |
+| 16 | 560/560 | `out/feature-probe-smp16.eW1qJw/evidence.json` |
+| 24 | 840/840 | `out/feature-probe-smp24.4nQfHV/evidence.json` |
+| 32 | 1,120/1,120 | `out/feature-probe-smp32.85xa8v/evidence.json` |
+
+The results were homogeneous across vCPUs at every count. In particular,
+`dc_zva`, `dc_cvap`, and `dc_cvadp` executed successfully on every tested
+vCPU. Each evidence manifest records the eight protected input artifacts and
+their before/after hashes; all protected inputs were unchanged and every
+disposable overlay and source-staging directory was removed after shutdown.
 
 ## Matched integer/memory benchmark (verified, descriptive)
 
@@ -296,12 +306,13 @@ scheduler/load telemetry.
 The EL1, cache, PMU, and complete 35-row advertised-feature results close their
 respective observation/classification slices; they do not justify a QEMU
 feature or cache patch. Remaining work is to trace the native-HVF versus
-QEMU-emulated register boundary, add missing cache/DC-ZVA behavioral coverage,
-classify any demonstrated mismatch, validate M5 Max independently, and
-coordinate the resulting model semantics upstream. Performance diagnosis is
-now a separate scheduler/environment lane, not a prerequisite for constructing
-the faithful architectural CPU contract. The m1n1/T6032 bare-metal roadmap
-remains deferred and is outside this QEMU workstream.
+QEMU-emulated register boundary, complete the boot/reboot, hotplug,
+save/restore, idle/WFI, stress, and Linux-selftest stability matrix, classify
+any demonstrated mismatch, validate M5 Max independently, and coordinate the
+resulting model semantics upstream. Performance diagnosis is now a separate
+scheduler/environment lane, not a prerequisite for constructing the faithful
+architectural CPU contract. The m1n1/T6032 bare-metal roadmap remains deferred
+and is outside this QEMU workstream.
 
 ## Primary sources
 
