@@ -386,8 +386,8 @@ and preserves existing guests unless an intentional ABI change is approved.
 Test 1, 8, 16, 24, and 32 vCPUs. For each count:
 
 - compare the host and guest feature fingerprints;
-- boot, reboot, hotplug permitted CPUs, save/restore if supported, and run
-  bounded SMP and memory stress;
+- boot and reboot, exercise guest PSCI CPU on/off for pre-created vCPUs, test
+  same-configuration save/restore, and run bounded SMP and memory stress;
 - exercise idle/WFI long enough to catch host-spin regressions;
 - run the instruction suite and Linux CPU-feature selftests; and
 - run a broader matched CPU-only workload suite during release qualification,
@@ -399,6 +399,14 @@ The advertised-feature portion is complete across the full count matrix:
 ZVA, DC CVAP, and DC CVADP, passed on every tested vCPU. The remaining Phase 7
 work is the lifecycle, idle/WFI, stress, and Linux-selftest stability coverage
 listed above, plus release qualification.
+
+QMP vCPU device hotplug is not a valid Arm `virt` gate in this QEMU baseline:
+the machine does not advertise hotpluggable CPUs, so
+`query-hotpluggable-cpus` and CPU `device_add` are unsupported. Guest PSCI
+CPU on/off remains testable because all configured vCPUs are created at
+startup. HVF also supplies the reset and pre-load synchronization hooks needed
+to test reboot/reset and same-configuration save/restore. Cross-host migration
+of `-cpu host` is not a portability goal.
 
 Report performance distributions, not a single best run. Separate instruction
 throughput from scheduler placement, guest OS overhead, virtio I/O, and thermal

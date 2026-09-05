@@ -306,10 +306,12 @@ scheduler/load telemetry.
 The EL1, cache, PMU, and complete 35-row advertised-feature results close their
 respective observation/classification slices; they do not justify a QEMU
 feature or cache patch. Remaining work is to trace the native-HVF versus
-QEMU-emulated register boundary, complete the boot/reboot, hotplug,
-save/restore, idle/WFI, stress, and Linux-selftest stability matrix, classify
-any demonstrated mismatch, validate M5 Max independently, and coordinate the
-resulting model semantics upstream. Performance diagnosis is now a separate
+QEMU-emulated register boundary, complete the boot/reboot, guest PSCI CPU
+on/off, same-configuration save/restore, idle/WFI, stress, and Linux-selftest
+stability matrix, classify any demonstrated mismatch, validate M5 Max
+independently, and coordinate the resulting model semantics upstream. QMP vCPU
+device hotplug is excluded because Arm `virt` does not advertise hotpluggable
+CPUs in this QEMU baseline. Performance diagnosis is now a separate
 scheduler/environment lane, not a prerequisite for constructing the faithful
 architectural CPU contract. The m1n1/T6032 bare-metal roadmap remains deferred
 and is outside this QEMU workstream.
