@@ -397,8 +397,17 @@ The advertised-feature portion is complete across the full count matrix:
 35/35 rows at 1 vCPU, 280/280 at 8, 560/560 at 16, 840/840 at 24, and
 1,120/1,120 at 32 (2,835/2,835 total). All 35 advertised rows, including DC
 ZVA, DC CVAP, and DC CVADP, passed on every tested vCPU. The remaining Phase 7
-work is the lifecycle, idle/WFI, stress, and Linux-selftest stability coverage
-listed above, plus release qualification.
+work is the in-process reboot/reset, PSCI CPU on/off, same-configuration
+save/restore, idle/WFI, stress, and Linux-selftest coverage listed above, plus
+release qualification.
+
+The clean shutdown/relaunch gate is also complete. Two separate QEMU processes
+used the same disposable overlay at each of 1/8/16/24/32 vCPUs; all 10 launches
+reported the exact online CPU count, both launches shut down cleanly, and the
+second launch verified a sentinel written by the first. The 1-vCPU smoke
+manifest is `out/lifecycle-matrix.l6bzHl/manifest.json`, and the remaining
+matrix is `out/lifecycle-matrix.VfycDn/manifest.json`. This is deliberately
+classified as a relaunch test, not as proof of in-process reboot/reset.
 
 QMP vCPU device hotplug is not a valid Arm `virt` gate in this QEMU baseline:
 the machine does not advertise hotpluggable CPUs, so
@@ -568,6 +577,9 @@ and the complete persistence, bridge, and NFS acceptance evidence.
 - [x] Run the complete advertised-feature behavior gate across 1/8/16/24/32
   vCPUs: 2,835/2,835 per-vCPU rows passed homogeneously; 26 rows are semantic
   and 9 are execution-only checks.
+- [x] Run two clean QEMU launches against one disposable overlay at each of
+  1/8/16/24/32 vCPUs; all 10 launches reported the exact CPU count, preserved
+  the sentinel across relaunch, and passed the protected-input safety gates.
 - [x] Cover AES/SHA and the remaining advertised features in the complete
   behavior gate.
 - [ ] Send the measured baseline and proposed first patch boundary to the QEMU

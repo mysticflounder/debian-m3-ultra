@@ -222,6 +222,25 @@ vCPU. Each evidence manifest records the eight protected input artifacts and
 their before/after hashes; all protected inputs were unchanged and every
 disposable overlay and source-staging directory was removed after shutdown.
 
+## Clean relaunch lifecycle (verified)
+
+`scripts/lifecycle-vm.sh` performed two separate QEMU launches against the
+same disposable qcow2 overlay at each of 1, 8, 16, 24, and 32 vCPUs. The first
+launch wrote and verified a per-run sentinel, requested a clean shutdown, and
+exited QEMU. The second launch observed the exact configured online CPU count,
+verified that the sentinel survived, and also shut down cleanly.
+
+All 10 launches passed. The 1-vCPU smoke result is in
+`out/lifecycle-matrix.l6bzHl/manifest.json`; the 8/16/24/32-vCPU matrix is in
+`out/lifecycle-matrix.VfycDn/manifest.json`. Both manifests report that all
+protected hashes and filesystem identities remained stable and that every
+disposable overlay was removed. The QEMU command lines disabled networking,
+monitor/QMP, display, firmware/pflash, build drives, and host devices.
+
+This gate proves clean shutdown and process relaunch with persisted overlay
+state. It does not claim an in-process guest reboot/reset, PSCI CPU on/off, or
+QEMU state save/restore; those remain separate lifecycle gates.
+
 ## Matched integer/memory benchmark (verified, descriptive)
 
 The host runner retained seven measured samples at 1, 8, 16, 24, and 32
@@ -306,15 +325,16 @@ scheduler/load telemetry.
 The EL1, cache, PMU, and complete 35-row advertised-feature results close their
 respective observation/classification slices; they do not justify a QEMU
 feature or cache patch. Remaining work is to trace the native-HVF versus
-QEMU-emulated register boundary, complete the boot/reboot, guest PSCI CPU
-on/off, same-configuration save/restore, idle/WFI, stress, and Linux-selftest
-stability matrix, classify any demonstrated mismatch, validate M5 Max
-independently, and coordinate the resulting model semantics upstream. QMP vCPU
-device hotplug is excluded because Arm `virt` does not advertise hotpluggable
-CPUs in this QEMU baseline. Performance diagnosis is now a separate
-scheduler/environment lane, not a prerequisite for constructing the faithful
-architectural CPU contract. The m1n1/T6032 bare-metal roadmap remains deferred
-and is outside this QEMU workstream.
+QEMU-emulated register boundary, complete the in-process reboot/reset, guest
+PSCI CPU on/off, same-configuration save/restore, idle/WFI, stress, and
+Linux-selftest stability matrix, classify any demonstrated mismatch, validate
+M5 Max independently, and coordinate the resulting model semantics upstream.
+The clean shutdown/relaunch gate is complete. QMP vCPU device hotplug is
+excluded because Arm `virt` does not advertise hotpluggable CPUs in this QEMU
+baseline. Performance diagnosis is now a separate scheduler/environment lane,
+not a prerequisite for constructing the faithful architectural CPU contract.
+The m1n1/T6032 bare-metal roadmap remains deferred and is outside this QEMU
+workstream.
 
 ## Primary sources
 
