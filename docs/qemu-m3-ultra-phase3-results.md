@@ -389,6 +389,10 @@ streams identical. See [selftest results](qemu-m3-ultra-selftest-results.md)
 for the matching Asahi-builder source, unchanged input hashes, and the two
 corrected build-header integration issues. Broader arm64 ABI selftests remain
 open; skips are not feature-support evidence.
+The one-vCPU unprivileged `ptrace` ABI smoke subsequently passed all 11
+TLS/debug register-set checks without skips or failures. See
+[ABI results](qemu-m3-ultra-abi-results.md) for source pins and bounded scope;
+`syscall-abi` and broader CPU-count coverage remain next.
 
 ## Primary sources
 

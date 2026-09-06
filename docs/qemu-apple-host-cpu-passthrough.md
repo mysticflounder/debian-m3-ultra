@@ -426,6 +426,9 @@ All 81 per-CPU TAP streams are identical. See
 [selftest results](qemu-m3-ultra-selftest-results.md) for the build fixes,
 evidence, and limits. Broader arm64 ABI tests remain next; skips are not
 feature-support evidence, and this does not close the full Linux-selftest gate.
+The one-vCPU unprivileged `ptrace` ABI smoke now passes all 11 TLS/debug
+register-set checks with no skips. See [ABI results](qemu-m3-ultra-abi-results.md).
+The matching `syscall-abi` test is next; multi-vCPU ABI coverage remains open.
 
 Guest PSCI CPU off/on is now validated on the patched fork: all 76 secondary
 cycles passed across 8/16/24/32 vCPUs, plus a 1-vCPU control. This work
