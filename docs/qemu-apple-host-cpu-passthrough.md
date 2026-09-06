@@ -397,7 +397,7 @@ The advertised-feature portion is complete across the full count matrix:
 35/35 rows at 1 vCPU, 280/280 at 8, 560/560 at 16, 840/840 at 24, and
 1,120/1,120 at 32 (2,835/2,835 total). All 35 advertised rows, including DC
 ZVA, DC CVAP, and DC CVADP, passed on every tested vCPU. The remaining Phase 7
-work is idle/WFI, stress, and
+work is stress and
 Linux-selftest coverage listed above, plus release qualification.
 
 The bounded same-process, same-configuration save/restore gate also passes
@@ -407,8 +407,16 @@ post-restore per-CPU workload checks plus timer functionality checks. See
 [save/restore results](qemu-m3-ultra-save-restore-results.md) for evidence,
 the corrected serial-reader race, and scope limits: Asahi builder kernel,
 one snapshot cycle per count, and no claim about already-armed timers or
-cross-process/cross-host resume. Next is bounded idle/WFI wakeup and host
-CPU-time accounting, followed by SMP/memory stress and Linux selftests.
+cross-process/cross-host resume.
+
+The bounded idle/timer-wakeup gate also passes at 1/8/16/24/32 vCPUs:
+243 verified wakeups, positive Linux idle counters on every CPU, and stable
+host thread CPU accounting. At 32 vCPUs, vCPU threads consumed 0.272845
+CPU-seconds over a 31.002195-second window (0.008801 host cores on average).
+See [idle results](qemu-m3-ultra-idle-results.md) for scope and evidence.
+This is timed guest-idle behavior with HVF's kernel interrupt controller,
+not direct WFI-instruction counting or physical power-state validation.
+Next is bounded SMP/memory stress, followed by Linux CPU-feature selftests.
 
 Guest PSCI CPU off/on is now validated on the patched fork: all 76 secondary
 cycles passed across 8/16/24/32 vCPUs, plus a 1-vCPU control. This work

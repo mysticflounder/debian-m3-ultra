@@ -1,13 +1,14 @@
 /* Read timing-v2 workload markers and account for a same-user QEMU process.
  *
  * Usage: qemu-hvf-cpu-observer <qemu-pid> <smp>
- * Input: BENCH_WORK_BEGIN sample_id=<id> workload=<integer|memory>
- *        BENCH_WORK_END sample_id=<id> workload=<integer|memory> status=ok
+ * Input: BENCH_WORK_BEGIN sample_id=<id> workload=<integer|memory|idle>
+ *        BENCH_WORK_END sample_id=<id> workload=<integer|memory|idle> status=ok
  *
- * One compact JSON object is written for each completed interval.  The
- * observer deliberately treats serial marker receipt as the interval
- * boundary.  Each object records that boundary source and the endpoint
- * sampling uncertainty.  No privileged API is used.
+ * One compact JSON object is written for each completed interval.  Integer
+ * and memory intervals use serial marker receipt as their boundary; idle
+ * intervals use the host handshake and acknowledge a successful BEGIN on
+ * stderr.  Each object records that boundary source and endpoint sampling
+ * uncertainty.  No privileged API is used.
  */
 #define _DARWIN_C_SOURCE
 
@@ -288,10 +289,17 @@ static int parse_marker(const char *line, bool *begin, char *sample_id,
         *begin = false;
     }
     if (!valid_sample_id(sample_id) ||
-        (strcmp(workload, "integer") != 0 && strcmp(workload, "memory") != 0)) {
+        (strcmp(workload, "integer") != 0 && strcmp(workload, "memory") != 0 &&
+         strcmp(workload, "idle") != 0)) {
         return -1;
     }
     return 0;
+}
+
+static const char *boundary_source(const char *workload)
+{
+    return strcmp(workload, "idle") == 0 ? "observer-handshake" :
+                                             "serial-marker-receipt";
 }
 
 static int delta(uint64_t end, uint64_t start, uint64_t *result)
@@ -338,8 +346,9 @@ static void print_unavailable(const char *sample_id, const char *workload,
            "\"vcpu_thread_count\":%d,\"vcpu_thread_set_stable\":false,"
            "\"accounting_status\":\"%s\",\"sampling_uncertainty_seconds\":null,"
            "\"counter_skew_clamped_seconds\":null,"
-           "\"boundary_source\":\"serial-marker-receipt\"}\n",
-           sample_id, workload, wall, target_smp, status);
+           "\"boundary_source\":\"%s\"}\n",
+           sample_id, workload, wall, target_smp, status,
+           boundary_source(workload));
     fflush(stdout);
 }
 
@@ -401,11 +410,11 @@ static int print_interval(const char *sample_id, const char *workload,
            "\"vcpu_thread_count\":%d,\"vcpu_thread_set_stable\":true,"
            "\"accounting_status\":\"ok\",\"sampling_uncertainty_seconds\":%.9f,"
            "\"counter_skew_clamped_seconds\":%.9f,"
-           "\"boundary_source\":\"serial-marker-receipt\"}\n",
+           "\"boundary_source\":\"%s\"}\n",
            sample_id, workload, wall,
            (double)process_total / 1e9, (double)vcpu_total / 1e9,
            (double)management_total / 1e9, target_smp, uncertainty,
-           counter_skew);
+           counter_skew, boundary_source(workload));
     fflush(stdout);
     return 0;
 }
@@ -477,6 +486,13 @@ int main(int argc, char **argv)
         if (is_begin) {
             if (active || take_snapshot(&begin_snapshot) != 0) {
                 fprintf(stderr, "invalid begin boundary or QEMU snapshot\n");
+                return 2;
+            }
+            if (strcmp(workload, "idle") == 0 &&
+                (fprintf(stderr,
+                         "OBSERVER_BEGIN sample_id=%s workload=idle\n",
+                         sample_id) < 0 || fflush(stderr) != 0)) {
+                fprintf(stderr, "could not acknowledge idle begin boundary\n");
                 return 2;
             }
             strcpy(active_id, sample_id);
