@@ -397,8 +397,14 @@ The advertised-feature portion is complete across the full count matrix:
 35/35 rows at 1 vCPU, 280/280 at 8, 560/560 at 16, 840/840 at 24, and
 1,120/1,120 at 32 (2,835/2,835 total). All 35 advertised rows, including DC
 ZVA, DC CVAP, and DC CVADP, passed on every tested vCPU. The remaining Phase 7
-work is PSCI CPU on/off, same-configuration save/restore, idle/WFI, stress, and
+work is same-configuration save/restore, idle/WFI, stress, and
 Linux-selftest coverage listed above, plus release qualification.
+
+Guest PSCI CPU off/on is now validated on the patched fork: all 76 secondary
+cycles passed across 8/16/24/32 vCPUs, plus a 1-vCPU control. This work
+reproduced and fixed an Arm HVF CPU power-state defect. See
+[PSCI results](qemu-m3-ultra-psci-results.md) for the patch, failed controls,
+passing matrix, and Asahi builder-kernel scope.
 
 The clean shutdown/relaunch gate is also complete. Two separate QEMU processes
 used the same disposable overlay at each of 1/8/16/24/32 vCPUs; all 10 launches

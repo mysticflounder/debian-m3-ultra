@@ -344,11 +344,16 @@ scheduler/load telemetry.
 
 ## Remaining work
 
+Guest PSCI off/on now passes on the patched fork: 76 secondary CPU cycles
+across 8/16/24/32 vCPUs and a 1-vCPU control. The tests exposed an Arm HVF
+power-state defect; the fix and evidence are recorded in
+[PSCI results](qemu-m3-ultra-psci-results.md).
+
 The EL1, cache, PMU, and complete 35-row advertised-feature results close their
 respective observation/classification slices; they do not justify a QEMU
 feature or cache patch. Remaining work is to trace the native-HVF versus
-QEMU-emulated register boundary, complete guest PSCI CPU on/off,
-same-configuration save/restore, idle/WFI, stress, and Linux-selftest stability
+QEMU-emulated register boundary, complete same-configuration save/restore,
+idle/WFI, stress, and Linux-selftest stability
 coverage, classify any demonstrated mismatch, validate M5 Max independently,
 and coordinate the resulting model semantics upstream. The clean
 shutdown/relaunch and in-process guest-reboot gates are complete. QMP vCPU
