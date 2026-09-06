@@ -397,8 +397,7 @@ The advertised-feature portion is complete across the full count matrix:
 35/35 rows at 1 vCPU, 280/280 at 8, 560/560 at 16, 840/840 at 24, and
 1,120/1,120 at 32 (2,835/2,835 total). All 35 advertised rows, including DC
 ZVA, DC CVAP, and DC CVADP, passed on every tested vCPU. The remaining Phase 7
-work is stress and
-Linux-selftest coverage listed above, plus release qualification.
+work is Linux-selftest coverage listed above, plus release qualification.
 
 The bounded same-process, same-configuration save/restore gate also passes
 at 1/8/16/24/32 vCPUs. All five runs restored RAM and disk after deliberate
@@ -416,7 +415,12 @@ CPU-seconds over a 31.002195-second window (0.008801 host cores on average).
 See [idle results](qemu-m3-ultra-idle-results.md) for scope and evidence.
 This is timed guest-idle behavior with HVF's kernel interrupt controller,
 not direct WFI-instruction counting or physical power-state validation.
-Next is bounded SMP/memory stress, followed by Linux CPU-feature selftests.
+
+The bounded SMP/memory gate also passes at 1/8/16/24/32 vCPUs: 648 worker
+passes and 6,480,000 checked atomic increments, with up to 512 MiB of test
+memory. See [stress results](qemu-m3-ultra-stress-results.md) for the
+barrier-separated cross-CPU checks, evidence, and bounded Asahi-builder scope.
+No new QEMU patch was needed. Next is Linux CPU-feature selftest coverage.
 
 Guest PSCI CPU off/on is now validated on the patched fork: all 76 secondary
 cycles passed across 8/16/24/32 vCPUs, plus a 1-vCPU control. This work

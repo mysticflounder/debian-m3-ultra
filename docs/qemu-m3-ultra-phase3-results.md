@@ -352,7 +352,7 @@ power-state defect; the fix and evidence are recorded in
 The EL1, cache, PMU, and complete 35-row advertised-feature results close their
 respective observation/classification slices; they do not justify a QEMU
 feature or cache patch. Remaining work is to trace the native-HVF versus
-QEMU-emulated register boundary, complete stress and Linux-selftest stability
+QEMU-emulated register boundary, complete Linux-selftest stability
 coverage, classify any demonstrated mismatch, validate M5 Max independently,
 and coordinate the resulting model semantics upstream. The clean
 shutdown/relaunch and in-process guest-reboot gates are complete. QMP vCPU
@@ -375,6 +375,13 @@ guest used 0.272845 vCPU-thread CPU-seconds during a 31.002195-second observed
 window. See [idle results](qemu-m3-ultra-idle-results.md) for exact accounting,
 the Asahi-builder/kernel-interrupt-controller scope, and the distinction
 between guest idle behavior and direct WFI or physical sleep-state evidence.
+
+The bounded SMP/memory stress gate passes across 1/8/16/24/32 vCPUs:
+648 worker passes and 6,480,000 checked atomic increments, with up to 512 MiB
+of test memory. All disposable guests shut down cleanly, overlays were
+removed, and protected input hashes stayed unchanged. See
+[stress results](qemu-m3-ultra-stress-results.md) for evidence and scope;
+this is not long-duration qualification or a stock-kernel result.
 
 ## Primary sources
 
