@@ -1,6 +1,7 @@
 # M3 Ultra Linux CPU-feature selftests
 
-The one-vCPU HWCAP smoke passed; broader validation remains in progress.
+The HWCAP matrix passed at 1/8/16/24/32 vCPUs; broader arm64 ABI validation
+remains in progress.
 This gate begins with Linux's arm64 HWCAP selftest,
 not the entire kernel selftest suite. It complements the project's existing
 35-row instruction tests; it does not replace them.
@@ -46,9 +47,34 @@ was removed, and protected input identities and hashes matched before/after.
 No QEMU patch was needed. This used builder kernel `7.1.10+deb14-asahi`,
 not the persistent VM's stock Debian kernel.
 
-The 8/16/24/32-vCPU matrix and broader arm64 ABI selftests remain unvalidated.
-Next: run this same HWCAP test at those counts, then select the additional
-arm64 ABI tests. Do not mark the full Linux-selftest roadmap item complete.
+On 2026-09-06, the remaining 8/16/24/32-vCPU matrix passed using the same
+unmodified harness and source. Combined with the smoke:
+
+| vCPUs | Planned checks | Passed | Skipped | Failed |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 228 | 98 | 130 | 0 |
+| 8 | 1,824 | 784 | 1,040 | 0 |
+| 16 | 3,648 | 1,568 | 2,080 | 0 |
+| 24 | 5,472 | 2,352 | 3,120 | 0 |
+| 32 | 7,296 | 3,136 | 4,160 | 0 |
+| Total | 18,468 | 7,938 | 10,530 | 0 |
+
+All 81 per-CPU TAP streams are byte-for-byte identical, with SHA-256
+`b3f4a523e0210f711395a9360923b72431dbc776a3e3a2392db826e1ae4fafed`.
+Every CPU reported 98 passes and 130 skips; aggregate totals do not conceal
+differences between CPUs. The repeated checks are not distinct CPU features.
+
+Matrix evidence: `out/selftest-matrix.KTg4FV/manifest.json`. Each sibling
+`smp-N/` directory retains per-CPU TAP and summary files, serial/QMP logs,
+and protected-input before/after hashes. All four guests answered fresh
+nonces, retained QEMU identity, shut down cleanly, and had their overlays
+removed. Protected input identities and hashes were unchanged in every run.
+No new QEMU or harness fix was needed for this matrix.
+
+This completes the bounded HWCAP matrix, not the entire Linux-selftest
+roadmap item. Broader arm64 ABI tests remain next. This is one invocation
+per configured CPU, not long-duration stability qualification, stock-kernel
+validation, bare-metal driver coverage, or evidence that skipped features work.
 
 ### Build integration and fixtures
 
@@ -76,6 +102,7 @@ The original shasum and OpenSSL baselines agree on both complete disk images.
 /bin/bash scripts/test-kselftest-fixtures.sh
 /bin/bash scripts/test-selftest-fixtures.sh
 SMP_LIST=1 /bin/bash scripts/selftest-vm.sh
+SMP_LIST="8 16 24 32" /bin/bash scripts/selftest-vm.sh
 ```
 
 Protected-image hashing occurs outside the guest launch deadline and includes

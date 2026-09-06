@@ -383,11 +383,12 @@ removed, and protected input hashes stayed unchanged. See
 [stress results](qemu-m3-ultra-stress-results.md) for evidence and scope;
 this is not long-duration qualification or a stock-kernel result.
 
-The Linux HWCAP selftest's one-vCPU smoke also passes: 98 checks passed,
-130 skipped, zero failed. See [selftest results](qemu-m3-ultra-selftest-results.md)
+The Linux HWCAP selftest matrix also passes across 1/8/16/24/32 vCPUs:
+7,938 checks passed, 10,530 skipped, zero failed, with all 81 per-CPU TAP
+streams identical. See [selftest results](qemu-m3-ultra-selftest-results.md)
 for the matching Asahi-builder source, unchanged input hashes, and the two
-corrected build-header integration issues. Multi-vCPU HWCAP coverage and
-broader arm64 ABI selftests remain open; skips are not feature-support evidence.
+corrected build-header integration issues. Broader arm64 ABI selftests remain
+open; skips are not feature-support evidence.
 
 ## Primary sources
 
