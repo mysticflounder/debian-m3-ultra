@@ -397,8 +397,18 @@ The advertised-feature portion is complete across the full count matrix:
 35/35 rows at 1 vCPU, 280/280 at 8, 560/560 at 16, 840/840 at 24, and
 1,120/1,120 at 32 (2,835/2,835 total). All 35 advertised rows, including DC
 ZVA, DC CVAP, and DC CVADP, passed on every tested vCPU. The remaining Phase 7
-work is same-configuration save/restore, idle/WFI, stress, and
+work is idle/WFI, stress, and
 Linux-selftest coverage listed above, plus release qualification.
+
+The bounded same-process, same-configuration save/restore gate also passes
+at 1/8/16/24/32 vCPUs. All five runs restored RAM and disk after deliberate
+mutation, retained guest and QEMU process identities, and passed 81 total
+post-restore per-CPU workload checks plus timer functionality checks. See
+[save/restore results](qemu-m3-ultra-save-restore-results.md) for evidence,
+the corrected serial-reader race, and scope limits: Asahi builder kernel,
+one snapshot cycle per count, and no claim about already-armed timers or
+cross-process/cross-host resume. Next is bounded idle/WFI wakeup and host
+CPU-time accounting, followed by SMP/memory stress and Linux selftests.
 
 Guest PSCI CPU off/on is now validated on the patched fork: all 76 secondary
 cycles passed across 8/16/24/32 vCPUs, plus a 1-vCPU control. This work

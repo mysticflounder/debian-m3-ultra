@@ -352,8 +352,7 @@ power-state defect; the fix and evidence are recorded in
 The EL1, cache, PMU, and complete 35-row advertised-feature results close their
 respective observation/classification slices; they do not justify a QEMU
 feature or cache patch. Remaining work is to trace the native-HVF versus
-QEMU-emulated register boundary, complete same-configuration save/restore,
-idle/WFI, stress, and Linux-selftest stability
+QEMU-emulated register boundary, complete idle/WFI, stress, and Linux-selftest stability
 coverage, classify any demonstrated mismatch, validate M5 Max independently,
 and coordinate the resulting model semantics upstream. The clean
 shutdown/relaunch and in-process guest-reboot gates are complete. QMP vCPU
@@ -362,6 +361,13 @@ CPUs in this QEMU baseline. Performance diagnosis is now a separate
 scheduler/environment lane, not a prerequisite for constructing the faithful
 architectural CPU contract. The m1n1/T6032 bare-metal roadmap remains deferred
 and is outside this QEMU workstream.
+
+The bounded same-process save/restore gate now passes across 1/8/16/24/32
+vCPUs, including RAM/disk rollback, unchanged process identity, 81 per-CPU
+workload checks, post-load timer functionality, and clean shutdown. See
+[save/restore results](qemu-m3-ultra-save-restore-results.md) for evidence and
+limits; this does not establish already-armed timer preservation, exhaustive
+architectural state restoration, or migration portability.
 
 ## Primary sources
 
