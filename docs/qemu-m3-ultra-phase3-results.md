@@ -383,6 +383,12 @@ removed, and protected input hashes stayed unchanged. See
 [stress results](qemu-m3-ultra-stress-results.md) for evidence and scope;
 this is not long-duration qualification or a stock-kernel result.
 
+The Linux HWCAP selftest's one-vCPU smoke also passes: 98 checks passed,
+130 skipped, zero failed. See [selftest results](qemu-m3-ultra-selftest-results.md)
+for the matching Asahi-builder source, unchanged input hashes, and the two
+corrected build-header integration issues. Multi-vCPU HWCAP coverage and
+broader arm64 ABI selftests remain open; skips are not feature-support evidence.
+
 ## Primary sources
 
 - [QEMU 11.1.1 HVF Arm host construction](https://gitlab.com/qemu-project/qemu/-/blob/v11.1.1/target/arm/hvf/hvf.c)

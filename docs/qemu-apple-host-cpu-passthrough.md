@@ -420,7 +420,11 @@ The bounded SMP/memory gate also passes at 1/8/16/24/32 vCPUs: 648 worker
 passes and 6,480,000 checked atomic increments, with up to 512 MiB of test
 memory. See [stress results](qemu-m3-ultra-stress-results.md) for the
 barrier-separated cross-CPU checks, evidence, and bounded Asahi-builder scope.
-No new QEMU patch was needed. Next is Linux CPU-feature selftest coverage.
+No new QEMU patch was needed. Linux CPU-feature selftest coverage has started:
+the one-vCPU HWCAP smoke passed 98 checks, with 130 skips and no failures.
+See [selftest results](qemu-m3-ultra-selftest-results.md) for the build fixes
+and evidence. The 8/16/24/32-vCPU HWCAP matrix and broader arm64 ABI tests
+remain next; this does not close the full Linux-selftest gate.
 
 Guest PSCI CPU off/on is now validated on the patched fork: all 76 secondary
 cycles passed across 8/16/24/32 vCPUs, plus a 1-vCPU control. This work
