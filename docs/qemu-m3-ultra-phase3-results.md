@@ -392,7 +392,9 @@ open; skips are not feature-support evidence.
 The one-vCPU unprivileged `ptrace` ABI smoke subsequently passed all 11
 TLS/debug register-set checks without skips or failures. See
 [ABI results](qemu-m3-ultra-abi-results.md) for source pins and bounded scope;
-`syscall-abi` and broader CPU-count coverage remain next.
+the matching one-vCPU `syscall-abi` smoke also passed both baseline
+GPR/FPSIMD checks without skips or failures. Broader CPU-count coverage
+and the separate `tpidr2` build remain open.
 
 ## Primary sources
 

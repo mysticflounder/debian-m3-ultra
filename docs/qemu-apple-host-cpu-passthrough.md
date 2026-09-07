@@ -428,7 +428,9 @@ evidence, and limits. Broader arm64 ABI tests remain next; skips are not
 feature-support evidence, and this does not close the full Linux-selftest gate.
 The one-vCPU unprivileged `ptrace` ABI smoke now passes all 11 TLS/debug
 register-set checks with no skips. See [ABI results](qemu-m3-ultra-abi-results.md).
-The matching `syscall-abi` test is next; multi-vCPU ABI coverage remains open.
+The matching one-vCPU `syscall-abi` test also passes both baseline
+`getpid()`/`sched_yield()` GPR/FPSIMD checks with no skips or failures.
+Multi-vCPU ABI coverage and the separate `tpidr2` build remain open.
 
 Guest PSCI CPU off/on is now validated on the patched fork: all 76 secondary
 cycles passed across 8/16/24/32 vCPUs, plus a 1-vCPU control. This work
