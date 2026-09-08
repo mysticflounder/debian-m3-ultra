@@ -2,6 +2,8 @@
 
 The one-vCPU `ptrace` ABI smoke passed all 11 checks on 2026-09-06;
 the matching `syscall-abi` smoke subsequently passed both baseline checks.
+On 2026-09-07, the combined 1/8/16/24/32-vCPU matrix passed all 1,053
+checks across 81 guest-CPU placements, without skips or failures.
 Broader ABI validation remains open. The completed HWCAP
 matrix is recorded separately in [HWCAP results](qemu-m3-ultra-selftest-results.md).
 
@@ -98,6 +100,63 @@ names, dynamic/maximum plans, unreachable plans, skip/failure rejection,
 truncation, CRLF, exact markers, and identity/nonce drift. The existing 22
 ptrace and 15 shared TAP fixtures were also rerun successfully (75 total).
 
+## Multi-vCPU ABI matrix
+
+Both tests passed on every guest CPU at all five VM sizes:
+
+| vCPUs | Ptrace checks passed | Syscall checks passed | Total passed |
+| ---: | ---: | ---: | ---: |
+| 1 | 11 | 2 | 13 |
+| 8 | 88 | 16 | 104 |
+| 16 | 176 | 32 | 208 |
+| 24 | 264 | 48 | 312 |
+| 32 | 352 | 64 | 416 |
+| Total | 891 | 162 | 1,053 |
+
+Every row has zero skips and zero failures. All 162 CPU/test TAP streams
+were complete: 81 ptrace invocations with 11 checks each and 81 syscall-ABI
+invocations with the two FPSIMD baseline checks each. The per-test plan,
+pass, skip, and failure counts agreed across CPUs within each VM size;
+inspection of the completed manifests also confirmed agreement across sizes.
+
+Evidence:
+
+- One-vCPU combined control: `out/abi-matrix.HzKkni/manifest.json`.
+- 8/16/24/32-vCPU matrix: `out/abi-matrix.BQFt63/manifest.json`.
+- Each `run-N/` contains per-CPU/test TAP and JSON summaries, launch arguments,
+  raw serial output, QMP events, and count-specific evidence.
+
+One VM size ran at a time, with ptrace followed by syscall-ABI sequentially
+on every guest CPU. Sources were compiled once per guest, with the same pins
+and unprivileged execution used by the single-test smokes above. The guest
+checks its exact online CPU count/map before mounting the read-only source
+disk. Each test is pinned to its target guest CPU and bounded by 30 seconds
+plus two-second termination grace. Each QEMU launch uses 2 GiB RAM and a
+420-second deadline, no network, and a disposable root overlay.
+
+The exact requested sizes and CPU/test pairs were verified independently
+against the manifests. All runs retained QEMU process and QMP socket
+identity, answered the fresh nonce, and recorded clean guest shutdowns.
+All protected input hashes/identities matched; all five overlays and the
+probe lock were removed. No QEMU change was needed. The persistent VM,
+host firmware, boot policy, and host devices were untouched.
+
+These are per-CPU affinity checks, not concurrent stress, host-core-type
+affinity/migration tests, complete CPU-state passthrough, or bare-metal
+driver validation. The kernel remains the Asahi builder kernel
+`7.1.10+deb14-asahi`, not the persistent VM's stock kernel. The syscall
+matrix exercised no optional SVE/SME cases; all limitations described above
+still apply.
+
+The new matrix suite passes 85 source-only fixtures, including strict CPU
+count parsing, exact ordered stream coverage, wrong/duplicate/foreign
+markers, final-marker failures, TAP extraction, and identity drift. The
+existing 22 ptrace, 38 syscall, and 15 shared TAP cases were also rerun
+successfully (160 fixture cases total). Integration review corrected
+inherited defaults, lifecycle guards, source-copy placement, and parser
+edge cases before any matrix VM was launched; no failed guest run was
+counted as a pass.
+
 ## Source inventory and harness validation
 
 The exact `ptrace` and `syscall-abi` sources were reviewed from the builder's
@@ -132,13 +191,17 @@ failure records despite a successful process exit, and separate skip counts.
 /bin/bash scripts/ptrace-abi-vm.sh
 /bin/bash scripts/test-syscall-abi-fixtures.sh
 /bin/bash scripts/syscall-abi-vm.sh
+/bin/bash scripts/test-abi-matrix-fixtures.sh
+/bin/bash scripts/abi-matrix-vm.sh  # one-vCPU control by default
+SMP_LIST='8 16 24 32' /bin/bash scripts/abi-matrix-vm.sh
 ```
 
 ## Next steps
 
-Extend the passed ptrace and syscall ABI tests to multi-vCPU coverage next.
-The separate `tpidr2` static/freestanding build remains open and must be
-reviewed independently; absent optional features must not count as support.
+Review and build the separate `tpidr2` static/freestanding test next;
+absent optional features must not count as support. The completed ptrace
+and syscall-ABI matrix does not close the broader Linux-selftest gate or
+the architectural register-exposure comparison work.
 
 Further execution will remain bounded and confined to disposable
 guest roots. The persistent VM, host firmware, boot policy, raw disks, and

@@ -393,8 +393,11 @@ The one-vCPU unprivileged `ptrace` ABI smoke subsequently passed all 11
 TLS/debug register-set checks without skips or failures. See
 [ABI results](qemu-m3-ultra-abi-results.md) for source pins and bounded scope;
 the matching one-vCPU `syscall-abi` smoke also passed both baseline
-GPR/FPSIMD checks without skips or failures. Broader CPU-count coverage
-and the separate `tpidr2` build remain open.
+GPR/FPSIMD checks without skips or failures. The combined ABI matrix then
+passed at 1/8/16/24/32 vCPUs: 1,053 checks across 81 guest-CPU placements,
+zero skips/failures, with all protected inputs unchanged. This validates
+sequential per-CPU affinity coverage only; the separate `tpidr2` build and
+broader architectural coverage remain open.
 
 ## Primary sources
 
