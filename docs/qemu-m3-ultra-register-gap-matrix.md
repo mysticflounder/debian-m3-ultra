@@ -2,16 +2,28 @@
 
 ## Result — 2026-09-08
 
-No new **wrong / qemu-gap** row is demonstrated by the available evidence.
-Do not add speculative cache or feature-register overrides. The next
-measurement is a raw EL1 register/cache capture using the current fork, not
-another performance benchmark.
+Follow-up: the [current-fork register matrix](qemu-m3-ultra-register-results.md)
+has now passed at 1/8/16/24/32 vCPUs, closing the provenance gap identified
+below for the existing register set. The audit and its completed follow-up
+are distinguished below; proposed steps 1–2 are complete.
 
-This audit queried an HVF configuration object and inspected local QEMU/SDK
-sources. It created no VM and changed no persistent VM, firmware, boot policy,
-or physical-device configuration.
+No new **wrong / qemu-gap** row is demonstrated by the available evidence.
+Do not add speculative cache or feature-register overrides. The current-fork
+capture is complete; the remaining measurement gap concerns newer ID
+registers and supported access paths, not another performance benchmark.
+
+The initial audit queried an HVF configuration object and inspected local
+QEMU/SDK sources without creating a VM. The follow-up used disposable VMs;
+neither stage changed the persistent VM, firmware, boot policy, or
+physical-device configuration.
 
 ## Evidence and its limits
+
+- Completed current-fork captures: `out/el1-fork.hYTSJR/manifest.json` (one
+  vCPU) and `out/el1-fork.1MDU6Z/manifest.json` (8/16/24/32), matched against
+  `out/el1-fork-host.wLfqPk/host.json`. Full provenance and results are in the
+  linked register-results document. These corroborate the historical values
+  below with actual current-fork guest observations.
 
 - Fresh host configuration: `out/register-audit.fqx4Ky/host.json`, macOS
   26.6.2 (25G83), SDK 26.5. All 14 feature-register queries and both cache
@@ -41,7 +53,7 @@ not to untested configurations or M5 Max.
 
 | Surface | Classification | Evidence-backed disposition |
 | --- | --- | --- |
-| Raw EL1 PFR0/1, DFR1, ISAR0/1, MMFR0/1/2 | passed-through (measured equality only) | Eight exact historical matches. Current source mixes raw synchronization with manual PFR0/ISAR0/MMFR0 writes, including a possible MMFR0 IPA clamp. Recheck on the current fork. |
+| Raw EL1 PFR0/1, DFR1, ISAR0/1, MMFR0/1/2 | passed-through (measured equality only) | Eight exact matches, now confirmed on the current fork. Current source mixes raw synchronization with manual PFR0/ISAR0/MMFR0 writes, including a possible MMFR0 IPA clamp. |
 | CTR, CLIDR, DCZID | passed-through | Three further exact matches: `0x9444c004`, `0x81000023`, `0x4`. No measured cache-description defect. |
 | CCSIDR | passed-through | L1 data `0x700fe03a`, L1 instruction `0x203fe01a`, L2 unified `0x70ffe07b`; all 96 SMP32 rows match. Exact values do not establish the servicing path. |
 | DFR0 with kernel irqchip enabled | virtualized | Host `0x10305006`, guest `0x10305106`: QEMU explicitly sets PMUVer to 1. This is not host event-counter passthrough. |
@@ -92,13 +104,13 @@ This strongly suggests native/HVF handling if current-fork reads succeed,
 but historical equality does not prove the current fork's runtime servicing
 path. Observe that boundary before proposing an import patch.
 
-## Next bounded work
+## Bounded work and status
 
-1. Use the existing disposable EL1 probe with the current fork, `-cpu host`
+1. **Complete:** use the disposable EL1 probe with the current fork, `-cpu host`
    and `kernel-irqchip=on`, initially one vCPU. Record binary hash, source
    revision/worktree state, guest kernel, launch options and a fresh host
    capture together. Keep networking off and backing images unchanged.
-2. Compare all register and cache rows with that matched host capture using
+2. **Complete:** compare all register and cache rows with that matched host capture using
    the existing strict comparator. If the single-vCPU gate passes, repeat
    across 8/16/24/32 vCPUs to check homogeneity.
 3. If servicing-path ambiguity matters to a proposed fix, design a separately
@@ -109,6 +121,8 @@ path. Observe that boundary before proposing an import patch.
    PMU questions separate from the default irqchip-on contract.
 
 The phase-4 classification gate is satisfied for the historical comparable
-rows; current-fork coverage and the cache servicing-path explanation remain
-open. Reset/migration and absent-feature validation are not closed by this
-audit.
+rows and now corroborated by the linked current-fork matrix. Successful
+current-fork cache reads support native/HVF servicing given the source trace,
+but do not constitute direct per-access instrumentation. Newer-register API
+coverage and broader reset/migration and absent-feature validation are not
+closed by these raw-register tests.

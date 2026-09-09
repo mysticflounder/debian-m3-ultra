@@ -337,11 +337,15 @@ not expose host PMU events.
 
 The [2026-09-08 register-exposure audit](qemu-m3-ultra-register-gap-matrix.md)
 records the source trace and evidence-backed classifications. A fresh HVF
-configuration capture matches the historical host values, but the complete
-raw EL1 matrix still has stock-QEMU provenance. Next: repeat that capture
-with the current fork, initially one vCPU, before expanding the matrix or
-proposing register overrides. No new incorrect passthrough row was established
-by the audit; the cache servicing path remains unproven.
+configuration capture matches the historical host values. The subsequent
+[current-fork raw EL1 matrix](qemu-m3-ultra-register-results.md) passed at
+1/8/16/24/32 vCPUs: 81 CPU samples, 1,215 register records (including 162
+explicit `not_read` records), and 243 exact cache comparisons. Protected
+inputs were unchanged and all disposable VMs were cleaned up. No new
+incorrect passthrough row or cache override is justified. Successful cache
+reads support native/HVF servicing given the source trace, without directly
+instrumenting each access. Next: investigate supported access to the newer
+ID registers; do not repeat performance tests to close this register gap.
 
 Exit gate: every observed mismatch has exactly one classification and an
 evidence-backed disposition.
