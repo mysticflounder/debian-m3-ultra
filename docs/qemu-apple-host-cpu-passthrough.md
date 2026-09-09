@@ -335,6 +335,14 @@ probe on QEMU 11.1.50, leaving the bit clear. Keep this fix separate from host
 CPU-feature passthrough; it corrects existing virtual PMU semantics and does
 not expose host PMU events.
 
+The [2026-09-08 register-exposure audit](qemu-m3-ultra-register-gap-matrix.md)
+records the source trace and evidence-backed classifications. A fresh HVF
+configuration capture matches the historical host values, but the complete
+raw EL1 matrix still has stock-QEMU provenance. Next: repeat that capture
+with the current fork, initially one vCPU, before expanding the matrix or
+proposing register overrides. No new incorrect passthrough row was established
+by the audit; the cache servicing path remains unproven.
+
 Exit gate: every observed mismatch has exactly one classification and an
 evidence-backed disposition.
 
