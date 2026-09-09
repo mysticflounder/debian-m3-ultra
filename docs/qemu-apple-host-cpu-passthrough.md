@@ -344,8 +344,16 @@ explicit `not_read` records), and 243 exact cache comparisons. Protected
 inputs were unchanged and all disposable VMs were cleaned up. No new
 incorrect passthrough row or cache override is justified. Successful cache
 reads support native/HVF servicing given the source trace, without directly
-instrumenting each access. Next: investigate supported access to the newer
-ID registers; do not repeat performance tests to close this register gap.
+instrumenting each access.
+
+The [newer-ID API investigation](qemu-m3-ultra-new-id-registers.md) then
+confirmed that SDK 26.5 lacks named queries for PFR2/ISAR2/MMFR3/MMFR4. An
+explicit experiment passing their architectural encodings to the vCPU getter
+on macOS 26.6.2 returned `HV_BAD_ARGUMENT` for all four; seven named controls
+succeeded. This is getter rejection, not a measured guest zero or physical
+feature absence. Next: a bounded guest EL1 capture of the four newer IDs,
+without changing advertised features; do not repeat performance tests to
+close this register gap.
 
 Exit gate: every observed mismatch has exactly one classification and an
 evidence-backed disposition.
