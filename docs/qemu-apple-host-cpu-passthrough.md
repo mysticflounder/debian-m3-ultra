@@ -433,7 +433,9 @@ The matching one-vCPU `syscall-abi` test also passes both baseline
 The combined ABI matrix now passes at 1/8/16/24/32 vCPUs: all 1,053 checks
 across 81 guest-CPU placements pass without skips or failures. This is
 sequential per-CPU affinity coverage, not concurrent stress or complete
-CPU-state passthrough. The separate `tpidr2` build remains open.
+CPU-state passthrough. The separate static/nolibc `tpidr2` build now succeeds;
+all five checks skip because the guest SME sysctl is absent. This is not
+TPIDR2 support evidence. Register-exposure comparison remains next.
 
 Guest PSCI CPU off/on is now validated on the patched fork: all 76 secondary
 cycles passed across 8/16/24/32 vCPUs, plus a 1-vCPU control. This work

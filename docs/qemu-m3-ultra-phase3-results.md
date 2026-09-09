@@ -396,8 +396,10 @@ the matching one-vCPU `syscall-abi` smoke also passed both baseline
 GPR/FPSIMD checks without skips or failures. The combined ABI matrix then
 passed at 1/8/16/24/32 vCPUs: 1,053 checks across 81 guest-CPU placements,
 zero skips/failures, with all protected inputs unchanged. This validates
-sequential per-CPU affinity coverage only; the separate `tpidr2` build and
-broader architectural coverage remain open.
+sequential per-CPU affinity coverage only. The separate static/nolibc
+`tpidr2` build succeeded, but all five checks skipped because the guest
+SME sysctl was absent; TPIDR2 execution and broader architectural coverage
+remain unvalidated.
 
 ## Primary sources
 

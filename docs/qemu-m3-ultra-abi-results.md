@@ -4,6 +4,8 @@ The one-vCPU `ptrace` ABI smoke passed all 11 checks on 2026-09-06;
 the matching `syscall-abi` smoke subsequently passed both baseline checks.
 On 2026-09-07, the combined 1/8/16/24/32-vCPU matrix passed all 1,053
 checks across 81 guest-CPU placements, without skips or failures.
+On 2026-09-08, the separate static/nolibc `tpidr2` build succeeded, but all
+five checks were skipped because the guest SME sysctl was absent.
 Broader ABI validation remains open. The completed HWCAP
 matrix is recorded separately in [HWCAP results](qemu-m3-ultra-selftest-results.md).
 
@@ -157,6 +159,58 @@ inherited defaults, lifecycle guards, source-copy placement, and parser
 edge cases before any matrix VM was launched; no failed guest run was
 counted as a pass.
 
+## TPIDR2 static/nolibc test
+
+The matching, unmodified `tpidr2.c` was built and run in a disposable
+one-vCPU guest. Its five planned checks all skipped:
+
+```text
+# SME support not present
+ok 1 # SKIP default_value
+ok 2 # SKIP write_read
+ok 3 # SKIP write_sleep_read
+ok 4 # SKIP write_fork_read
+ok 5 # SKIP write_clone_read
+# Totals: pass:0 fail:0 xfail:0 xpass:0 skip:5 error:0
+```
+
+Evidence: `out/tpidr2-abi.gNb1tg/manifest.json`, with `run/tpidr2.tap`,
+`run/summary.json`, and `run/serial.raw.log`. The manifest deliberately
+records `all_pass:false`, `abi_pass:false`, and `classification:"skipped"`.
+The harness completed successfully, but this is **not TPIDR2 ABI validation**.
+The guest independently reported `/proc/sys/abi/sme_default_vector_length`
+absent; this result concerns feature exposure in this guest/kernel, not a
+new claim about physical CPU capabilities. The register-access, sleep,
+fork, and clone branches were not exercised.
+
+Compilation follows the recorded upstream Makefile's freestanding/static
+nolibc flags, including `-nostdlib`, `-static`, `-ffreestanding`, and `-lgcc`,
+with the matching `tools/include/nolibc/nolibc.h`. The source, kselftest
+header, and Makefile SHA-256 values are pinned, and the complete source
+disk is protected by before/after hashes. The source remains unchanged:
+
+- `tpidr2.c`: `02f47fbe9090846d28fc5562a892194ab11820b6832b61d171fd1f16c12f5485`
+- `kselftest.h`: `b01a128468643494316bb8f998c80a1aacd4e686c5f13446c16e09928cf9355c`
+- `Makefile`: `8817dddeebcd8ba6f11d069f78dd4c0ef7b4d7c19f294b35b31cad56fa887664`
+
+The built ELF was checked with successful `readelf` invocations and had
+neither an interpreter nor a `NEEDED` dependency. It ran as UID/GID 65534
+with cleared groups, `no_new_privs`, CPU-0 affinity, and a 30-second timeout
+plus two-second kill grace. The VM retained the existing 2 GiB/420-second
+limits, read-only source disk, and no-network configuration. QEMU process
+and socket identities matched; the fresh nonce and clean guest shutdown
+were verified. Protected inputs were unchanged, and the overlay and lock
+were removed. No QEMU fix was needed; the persistent VM and firmware were
+untouched.
+
+The exact source exits zero even when all five tests skip. The host therefore
+requires complete TAP output, the five exact ordered labels, and either
+five passes or five skips, rejects mixed/failed/malformed output, and checks
+the outcome against the independently recorded SME sysctl probe. The skip
+parser is local to this harness; the shared mandatory-test TAP parser is
+unchanged. All 32 new source-only fixtures pass, along with the rerun shared
+TAP (15) and syscall-ABI (38) cases: 85 fixtures total this step.
+
 ## Source inventory and harness validation
 
 The exact `ptrace` and `syscall-abi` sources were reviewed from the builder's
@@ -194,14 +248,18 @@ failure records despite a successful process exit, and separate skip counts.
 /bin/bash scripts/test-abi-matrix-fixtures.sh
 /bin/bash scripts/abi-matrix-vm.sh  # one-vCPU control by default
 SMP_LIST='8 16 24 32' /bin/bash scripts/abi-matrix-vm.sh
+/bin/bash scripts/test-tpidr2-abi-fixtures.sh
+/bin/bash scripts/tpidr2-abi-vm.sh  # valid all-skip execution exits 0; inspect classification
 ```
 
 ## Next steps
 
-Review and build the separate `tpidr2` static/freestanding test next;
-absent optional features must not count as support. The completed ptrace
-and syscall-ABI matrix does not close the broader Linux-selftest gate or
-the architectural register-exposure comparison work.
+Continue the architectural register-exposure comparison: distinguish
+host/HVF-exposed state from QEMU's virtual CPU model and identify any
+remaining mismatches. TPIDR2 execution coverage remains unavailable in
+this guest configuration; repeating the same all-skip test at more CPU
+counts would not establish support. The completed ptrace/syscall matrix
+and the TPIDR2 skip do not close the broader Linux-selftest gate.
 
 Further execution will remain bounded and confined to disposable
 guest roots. The persistent VM, host firmware, boot policy, raw disks, and
