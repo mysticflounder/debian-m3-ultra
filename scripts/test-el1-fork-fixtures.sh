@@ -236,6 +236,19 @@ case "$pid" in ''|*[!0-9]*) echo 'launch wrapper pid is not numeric' >&2; exit 1
 [ "$(/bin/cat "$stub_args")" = 'alpha beta' ] || { echo 'launch wrapper did not exec stub arguments' >&2; exit 1; }
 tests=$((tests + 1))
 
+# An opt-in guest fault wins even if a misleading completion marker follows.
+# Run the exact marker waiter in a subshell: no VM or background job exists.
+for fault in 'Internal error: Oops - Undefined instruction' 'Kernel panic - not syncing: Fatal exception'; do
+    fault_log="$fixture_dir/new-id-fault-$tests.log"
+    printf '%s\n%s\n' "$fault" 'EL1_FORK_END token=fault-test' > "$fault_log"
+    if (NEW_IDS=1; CONTROL_STEPS=1; SERIAL_LOG="$fault_log";
+        el1_wait_marker 'EL1_FORK_END token=fault-test') >/dev/null 2>&1; then
+        echo 'accepted newer-ID guest fault as completed capture' >&2
+        exit 1
+    fi
+    tests=$((tests + 1))
+done
+
 /bin/bash -n "$RUNNER" "$0"
 echo "EL1 fork fixtures passed: $tests cases; parser, fail-closed markers, not_read rows, and launch-wrapper ownership checks passed"
 echo "fixture artifacts: $fixture_dir"

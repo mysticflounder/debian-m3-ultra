@@ -49,6 +49,13 @@
 #define PROBE_CACHE_LEVEL_COUNT	7U
 #define PROBE_CACHE_SAMPLE_COUNT	(PROBE_CACHE_LEVEL_COUNT * 2U)
 
+/* Opt-in only: an EL1 UNDEF is fatal to this disposable test guest. Do not
+ * invent an exception-table recovery path or convert a fault into zero.
+ */
+static bool new_ids;
+module_param(new_ids, bool, 0400);
+MODULE_PARM_DESC(new_ids, "Attempt four newer ID reads in a disposable guest");
+
 enum probe_register {
 	PROBE_MPIDR_EL1,
 	PROBE_CLIDR_EL1,
@@ -116,6 +123,21 @@ static const char *const register_names[PROBE_REGISTER_COUNT] = {
 #define SAMPLE_SYSREG(sample, index, encoding) do { \
 	(sample)->registers[(index)].value = read_sysreg_s(encoding); \
 	(sample)->registers[(index)].was_read = true; \
+} while (0)
+
+/* Emit the attempt before MRS, and a value only after it returns. Console
+ * logging is enabled by the opt-in guest harness so a fatal read retains
+ * its last-attempt marker. These records are separate from schema 2.
+ */
+#define SAMPLE_NEW_ID(cpu, name, encoding) do { \
+	u64 value; \
+	pr_info("EL1_PROBE_NEW_ID_ATTEMPT cpu=%u name=" name "\n", cpu); \
+	barrier(); \
+	value = read_sysreg_s(encoding); \
+	barrier(); \
+	pr_info("EL1_PROBE_NEW_ID_VALUE cpu=%u name=" name \
+		" status=read value=0x%016llx\n", cpu, \
+		(unsigned long long)value); \
 } while (0)
 
 static void sample_cache_register(struct cpu_sample *sample,
@@ -220,6 +242,16 @@ static long collect_cpu_registers(void *argument)
 
 	sample->was_read = sample->cache_selector_restored &&
 		(sample->cache_samples_read == sample->cache_sample_count);
+	if (new_ids) {
+		SAMPLE_NEW_ID(sample->observed_cpu, "ID_AA64PFR2_EL1",
+			      sys_reg(3, 0, 0, 4, 2));
+		SAMPLE_NEW_ID(sample->observed_cpu, "ID_AA64ISAR2_EL1",
+			      sys_reg(3, 0, 0, 6, 2));
+		SAMPLE_NEW_ID(sample->observed_cpu, "ID_AA64MMFR3_EL1",
+			      sys_reg(3, 0, 0, 7, 3));
+		SAMPLE_NEW_ID(sample->observed_cpu, "ID_AA64MMFR4_EL1",
+			      sys_reg(3, 0, 0, 7, 4));
+	}
 	preempt_enable();
 	return 0;
 }
@@ -295,7 +327,7 @@ static int __init arm64_el1_probe_init(void)
 	}
 	cpus_read_unlock();
 
-	/* No output precedes completion of the synchronous per-CPU reads. */
+	/* Schema-2 output follows all reads; opt-in attempt markers precede it. */
 	emit_samples(samples, cpu_count);
 	kfree(samples);
 	return 0;

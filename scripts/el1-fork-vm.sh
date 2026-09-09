@@ -18,6 +18,7 @@ EL1_REUSE_HASH="$(/usr/bin/shasum -a 256 "$EL1_REUSE")"
 QEMU="${QEMU:-$EL1_HERE/out/qemu-fork-pmintenclr-build/qemu-system-aarch64}"
 MEM="${MEM:-2G}"
 SMP_LIST="${SMP_LIST:-1}"
+NEW_IDS="${NEW_IDS:-0}"
 LAUNCH_TIMEOUT="${LAUNCH_TIMEOUT:-420}"
 HOST_JSON_INPUT="${HOST_JSON:-}"
 source "$EL1_DEFS"
@@ -25,12 +26,14 @@ RUN_DIR="$EL1_DEFS_DIR"
 HARNESS="$HERE/scripts/el1-fork-vm.sh"
 GUEST_SHELL="$HERE/scripts/arm64-el1-fork-guest.sh"
 PARSER="$HERE/scripts/el1-fork-parser.sh"
+NEW_ID_PARSER="$HERE/scripts/el1-new-id-parser.sh"
 COMPARATOR="$HERE/scripts/el1-probe-compare.sh"
 MODULE_SOURCE="$HERE/scripts/arm64-el1-probe.c"
 MODULE_MAKEFILE="$HERE/scripts/arm64-el1-probe.Makefile"
 BUILD_DISK="$OUT/build.ext4"
 OPENSSL=/usr/bin/openssl
 EL1_FORK_PARSER_SOURCE_ONLY=1 source "$PARSER"
+source "$NEW_ID_PARSER"
 
 fail() { echo "EL1 fork: $*" >&2; exit 1; }
 sha256_file() {
@@ -62,6 +65,9 @@ el1_complete_lines() {
 el1_wait_marker() {
     local wanted=$1 step line
     for ((step=0; step<CONTROL_STEPS; step++)); do
+        if [ "$NEW_IDS" = 1 ] && /usr/bin/grep -Eq 'Internal error:|Kernel panic - not syncing:' "$SERIAL_LOG"; then
+            fail "guest oops/panic during newer-ID capture; no completed result; see $SERIAL_LOG"
+        fi
         /usr/bin/grep -q '^EL1_FORK_GUEST_ERROR ' "$SERIAL_LOG" && fail "guest error; see $SERIAL_LOG"
         line="$(el1_complete_lines "$wanted")"
         if [ -n "$line" ]; then
@@ -106,6 +112,11 @@ run_one() {
       -drive "if=virtio,file=$BUILD_DISK,format=raw,readonly=on,cache=none"
       -drive "if=virtio,file=fat:ro:$HERE/scripts,format=raw,readonly=on"
       -nic none -display none -monitor none -serial stdio -qmp "unix:$QMP_SOCKET,server=on,wait=off" -nodefaults)
+    if [ "$NEW_IDS" = 1 ]; then
+        # Existing tracepoint identifies reads serviced by QEMU after HVF
+        # traps. Absence of a trace is not proof of physical passthrough.
+        ARGS+=(-trace "enable=hvf_sysreg_read,file=$count_dir/hvf-sysreg.trace")
+    fi
     "$JQ" -n --args '$ARGS.positional' -- "$QEMU" "${ARGS[@]}" > "$count_dir/qemu-argv.json"
     [ "$(/usr/bin/shasum -a 256 "$EL1_REUSE")" = "$EL1_REUSE_HASH" ] || fail "reboot library changed"
     /usr/bin/awk '$0 == "# Main program." {exit} {print}' "$EL1_REUSE" | /usr/bin/cmp -s - "$EL1_DEFS" || fail "extracted library changed"
@@ -126,7 +137,7 @@ run_one() {
     token="m3-el1-$smp-$$-$(/bin/date +%s)-$RANDOM"
     printf 'stty -echo\n' >&8
     printf "cat > /root/m3-el1.sh <<'M3_EL1_EOF'\n" >&8; /bin/cat "$GUEST_SHELL" >&8
-    printf '\nM3_EL1_EOF\n/bin/bash /root/m3-el1.sh %s %s\n' "$smp" "$token" >&8
+    printf '\nM3_EL1_EOF\n/bin/bash /root/m3-el1.sh %s %s %s\n' "$smp" "$token" "$NEW_IDS" >&8
     el1_wait_marker "EL1_FORK_READY token=$token smp=$smp"
     printf 'GO %s\n' "$token" >&8
     el1_wait_marker "EL1_FORK_END token=$token"
@@ -149,13 +160,22 @@ run_one() {
     final_snapshot="$(snapshot_protected)"; [ "$final_snapshot" = "$BASELINE_SNAPSHOT" ] || fail protected-inputs
     INPUTS_VERIFIED=true
     el1_extract_markers "$token" "$count_dir/markers.txt" || fail marker-boundary
-    parse_probe_json "$smp" "$count_dir/markers.txt" "$count_dir/raw.json" || fail parser
+    if [ "$NEW_IDS" = 1 ]; then
+        "$AWK" '/^EL1_PROBE_NEW_ID_/ {print}' "$count_dir/markers.txt" > "$count_dir/new-id-markers.txt"
+        "$AWK" '!/^EL1_PROBE_NEW_ID_/ {print}' "$count_dir/markers.txt" > "$count_dir/base-markers.txt"
+        parse_new_id_json "$smp" "$count_dir/new-id-markers.txt" "$count_dir/new-ids.json" || fail new-id-parser
+    else
+        /bin/cp "$count_dir/markers.txt" "$count_dir/base-markers.txt"
+        printf 'null\n' > "$count_dir/new-ids.json"
+    fi
+    parse_probe_json "$smp" "$count_dir/base-markers.txt" "$count_dir/raw.json" || fail parser
     validate_probe_json "$smp" "$count_dir/raw.json" || fail raw-schema
     "$JQ" --arg run "$count_dir" --arg collected "$(/bin/date -u '+%Y-%m-%dT%H:%M:%SZ')" --argjson uid "$(/usr/bin/id -u)" \
       --arg qemu "$QEMU" --arg version "$QEMU_VERSION" --arg sha "$QEMU_SHA256" --slurpfile argv "$count_dir/qemu-argv.json" \
       --arg pid "$CAPTURED_QEMU_PID" --arg start "$CAPTURED_QEMU_START" --arg socket "$socket_before" \
+      --slurpfile new_ids "$count_dir/new-ids.json" \
       --argjson before "$BASELINE_SNAPSHOT" --argjson after "$final_snapshot" '
-      . + {collected_at:$collected,run:{directory:$run,memory:"2G",
+      . + {collected_at:$collected,new_id_capture:$new_ids[0],run:{directory:$run,memory:"2G",
         qemu:{path:$qemu,version:$version,sha256:$sha,argv:$argv[0],pid:$pid,start:$start},
         qmp:{same_socket:true,socket_identity:$socket,clean_guest_shutdown:true},
         safety:{host_uid:$uid,host_privilege_required:false,explicit_disposable_overlay:true,root_backing_opened_via_overlay:true,
@@ -175,6 +195,7 @@ run_one() {
 
 main() {
     [ "$#" = 0 ] || fail arguments; [ "$(/usr/bin/id -u)" -ne 0 ] || fail host-root
+    case "$NEW_IDS" in 0|1) ;; *) fail "NEW_IDS must be 0 or 1";; esac
     [ "$MEM" = 2G ] || fail memory; case "$LAUNCH_TIMEOUT" in ''|*[!0-9]*|0*) fail timeout;; esac
     [ "$LAUNCH_TIMEOUT" -ge 60 ] && [ "$LAUNCH_TIMEOUT" -le 420 ] || fail timeout
     parse_counts "$SMP_LIST" || fail "SMP_LIST must contain unique supported counts"
@@ -192,8 +213,8 @@ main() {
     KERNEL="$OUT/Image-$KVER"; INITRD="$OUT/initrd.img-$KVER"
     [ -n "$HOST_JSON_INPUT" ] || fail "HOST_JSON must name a fresh host capture"
     HOST_JSON="$(/bin/realpath "$HOST_JSON_INPUT")"
-    PROTECTED_NAMES=(kver kernel initrd rootfs build_disk harness guest_shell module_source module_makefile parser comparator host_json reboot_library extracted_library qemu qemu_img timeout nc jq awk lsof ps openssl)
-    PROTECTED_PATHS=("$KVER_FILE" "$KERNEL" "$INITRD" "$ROOTFS" "$BUILD_DISK" "$HARNESS" "$GUEST_SHELL" "$MODULE_SOURCE" "$MODULE_MAKEFILE" "$PARSER" "$COMPARATOR" "$HOST_JSON" "$EL1_REUSE" "$EL1_DEFS" "$QEMU" "$QEMU_IMG" "$TIMEOUT" "$NC" "$JQ" "$AWK" "$LSOF" "$PS" "$OPENSSL")
+    PROTECTED_NAMES=(kver kernel initrd rootfs build_disk harness guest_shell module_source module_makefile parser new_id_parser comparator host_json reboot_library extracted_library qemu qemu_img timeout nc jq awk lsof ps openssl)
+    PROTECTED_PATHS=("$KVER_FILE" "$KERNEL" "$INITRD" "$ROOTFS" "$BUILD_DISK" "$HARNESS" "$GUEST_SHELL" "$MODULE_SOURCE" "$MODULE_MAKEFILE" "$PARSER" "$NEW_ID_PARSER" "$COMPARATOR" "$HOST_JSON" "$EL1_REUSE" "$EL1_DEFS" "$QEMU" "$QEMU_IMG" "$TIMEOUT" "$NC" "$JQ" "$AWK" "$LSOF" "$PS" "$OPENSSL")
     for input in "${PROTECTED_PATHS[@]}"; do require_safe_input "$input"; done
     "$JQ" -e '.schema_version==1 and .config.status=="ok" and (.feature_registers|length)==14 and all(.feature_registers[];.status=="ok")' "$HOST_JSON" >/dev/null || fail host-capture
     QEMU_VERSION="$("$QEMU" --version)"; QEMU_VERSION="${QEMU_VERSION%%$'\n'*}"
@@ -207,9 +228,10 @@ main() {
     for smp in "${requested_args[@]}"; do run_one "$smp"; done
     requested_json="$("$JQ" -n --args '$ARGS.positional|map(tonumber)' -- "${requested_args[@]}")"
     results_json="$("$JQ" -s '.' "$RUN_DIR"/smp-*/evidence.json)"
-    "$JQ" -n --arg run "$RUN_DIR" --arg host "$HOST_JSON" --arg host_sha "$(sha256_file "$HOST_JSON")" --argjson requested "$requested_json" --argjson results "$results_json" '
-      {schema_version:1,scope:"current-fork raw EL1 register/cache matrix",requested_smp:$requested,host:{path:$host,sha256:$host_sha},
+    "$JQ" -n --arg run "$RUN_DIR" --arg host "$HOST_JSON" --arg host_sha "$(sha256_file "$HOST_JSON")" --argjson requested "$requested_json" --argjson results "$results_json" --argjson new_ids "$NEW_IDS" '
+      {schema_version:1,scope:"current-fork raw EL1 register/cache matrix",new_ids_enabled:($new_ids==1),requested_smp:$requested,host:{path:$host,sha256:$host_sha},
        results:$results,run_directory:$run,all_pass:(($results|length)==($requested|length) and all($requested[];. as $s|any($results[];.requested_smp==$s and all(.consistency[];.==true)))
+         and all($results[]; if $new_ids==1 then .new_id_capture.all_reads_completed==true else .new_id_capture==null end)
          and ([$results[].cpus[].registers|del(.MPIDR_EL1)]|unique|length)==1 and ([$results[].cpus[].cache_registers.entries]|unique|length)==1)}
     ' > "$RUN_DIR/manifest.json"
     "$JQ" -e '.all_pass==true' "$RUN_DIR/manifest.json" >/dev/null || fail matrix

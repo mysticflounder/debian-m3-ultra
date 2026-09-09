@@ -1,8 +1,10 @@
 #!/bin/bash
 # Injected into a disposable guest; never executed on the host.
 set -euo pipefail
-[ "$#" = 2 ] || exit 2
+[ "$#" = 2 ] || [ "$#" = 3 ] || exit 2
 smp=$1; token=$2
+new_ids=${3:-0}
+case "$new_ids" in 0|1) ;; *) exit 2;; esac
 case "$smp" in 1|8|16|24|32) ;; *) exit 2;; esac
 case "$token" in ''|*[!A-Za-z0-9-]*) exit 2;; esac
 guest_fail() {
@@ -38,10 +40,19 @@ test -s "$work/arm64-el1-probe.ko"
 printf '\nEL1_FORK_READY token=%s smp=%s\n' "$token" "$smp"
 IFS= read -r command
 [ "$command" = "GO $token" ]
-# Suppress unsolicited console duplicates; emit exact kernel records once.
-dmesg -n 1
+# New-ID faults are fatal to this disposable guest. Retain live attempt
+# markers in serial; the bounded host runner rejects any incomplete capture.
+if [ "$new_ids" = 1 ]; then
+    sysctl -w kernel.panic_on_oops=1 kernel.panic=0
+    [ "$(sysctl -n kernel.panic_on_oops)" = 1 ]
+    [ "$(sysctl -n kernel.panic)" = 0 ]
+    dmesg -n 7
+else
+    # Suppress unsolicited console duplicates for the legacy capture.
+    dmesg -n 1
+fi
 dmesg -C
-insmod "$work/arm64-el1-probe.ko"
+insmod "$work/arm64-el1-probe.ko" new_ids="$new_ids"
 rmmod arm64_el1_probe
 dmesg > "$work/kernel.log"
 printf '\nEL1_FORK_BEGIN token=%s\n' "$token"

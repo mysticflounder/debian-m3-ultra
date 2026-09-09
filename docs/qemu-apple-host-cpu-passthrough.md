@@ -350,10 +350,14 @@ The [newer-ID API investigation](qemu-m3-ultra-new-id-registers.md) then
 confirmed that SDK 26.5 lacks named queries for PFR2/ISAR2/MMFR3/MMFR4. An
 explicit experiment passing their architectural encodings to the vCPU getter
 on macOS 26.6.2 returned `HV_BAD_ARGUMENT` for all four; seven named controls
-succeeded. This is getter rejection, not a measured guest zero or physical
-feature absence. Next: a bounded guest EL1 capture of the four newer IDs,
-without changing advertised features; do not repeat performance tests to
-close this register gap.
+succeeded. A subsequent one-vCPU guest EL1 capture measured successful zero
+reads for all four IDs, with the existing register/cache controls passing
+and all 24 protected inputs unchanged. The enabled QEMU read trace was empty
+and had no positive control, so the servicing layer remains unresolved;
+neither physical feature absence nor a QEMU fallback hit is established.
+Next: calibrate tracing with a known QEMU-serviced read, then attribute the
+newer-ID path. Keep CPU features unchanged; do not repeat performance tests
+to close this register gap.
 
 Exit gate: every observed mismatch has exactly one classification and an
 evidence-backed disposition.

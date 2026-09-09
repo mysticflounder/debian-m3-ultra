@@ -60,7 +60,7 @@ not to untested configurations or M5 Max.
 | EL0 PFR0/1, DFR0, ISAR0/1, MMFR0/1/2 | masked (Linux ABI layer) | Eight historical differences classified `linux-el0-sanitized`; do not attribute them to QEMU register loss. |
 | EL0 CLIDR | unavailable (access layer) | No comparable EL0 observation; use the raw EL1 capture. |
 | ZFR0 / SMFR0 and SVE / SME | unavailable for guest behavioral validation | Fresh HVF values are zero; historical EL1 probes mark these `not_read`, not zero. TPIDR2's five skips do not test TPIDR2 semantics or establish physical hardware absence. |
-| PFR2, ISAR2, MMFR3, MMFR4 | unavailable through selected named API; experimental getter rejected | SDK 26.5 supplies no named queries. The [runtime API experiment](qemu-m3-ultra-new-id-registers.md) returned `HV_BAD_ARGUMENT` for all four encodings, with seven named controls succeeding. Effective guest exposure remains unmeasured, not proven absent or wrong. |
+| PFR2, ISAR2, MMFR3, MMFR4 | host API gap; measured guest zero, servicing layer unresolved | SDK 26.5 has no named queries; the experimental getter rejected all four with `HV_BAD_ARGUMENT`. The [one-vCPU EL1 follow-up](qemu-m3-ultra-new-id-registers.md) successfully read zero for each. Its trace was empty without a positive control: neither QEMU fallback servicing nor physical feature absence is established. |
 | MIDR / MPIDR | virtualized (source-derived) | QEMU supplies Apple MIDR and guest affinity. Physical per-core identity passthrough is not established or required by the homogeneous model. |
 
 The historical EL0 report also has five exact observations: DFR1, CTR,
