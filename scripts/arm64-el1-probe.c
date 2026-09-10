@@ -129,16 +129,19 @@ static const char *const register_names[PROBE_REGISTER_COUNT] = {
  * logging is enabled by the opt-in guest harness so a fatal read retains
  * its last-attempt marker. These records are separate from schema 2.
  */
-#define SAMPLE_NEW_ID(cpu, name, encoding) do { \
+#define SAMPLE_TRACED_REG(cpu, tag, name, encoding) do { \
 	u64 value; \
-	pr_info("EL1_PROBE_NEW_ID_ATTEMPT cpu=%u name=" name "\n", cpu); \
+	pr_info("EL1_PROBE_" tag "_ATTEMPT cpu=%u name=" name "\n", cpu); \
 	barrier(); \
 	value = read_sysreg_s(encoding); \
 	barrier(); \
-	pr_info("EL1_PROBE_NEW_ID_VALUE cpu=%u name=" name \
+	pr_info("EL1_PROBE_" tag "_VALUE cpu=%u name=" name \
 		" status=read value=0x%016llx\n", cpu, \
 		(unsigned long long)value); \
 } while (0)
+
+#define SAMPLE_NEW_ID(cpu, name, encoding) \
+	SAMPLE_TRACED_REG(cpu, "NEW_ID", name, encoding)
 
 static void sample_cache_register(struct cpu_sample *sample,
 					  unsigned int level, unsigned int ctype,
@@ -243,6 +246,12 @@ static long collect_cpu_registers(void *argument)
 	sample->was_read = sample->cache_selector_restored &&
 		(sample->cache_samples_read == sample->cache_sample_count);
 	if (new_ids) {
+		/* Read-only debug OS-lock status: QEMU has an explicit handler,
+		 * unlike the newer IDs. A matching trace is required to show
+		 * that this particular read actually reached that handler.
+		 */
+		SAMPLE_TRACED_REG(sample->observed_cpu, "TRACE_CONTROL",
+				  "OSLSR_EL1", sys_reg(2, 0, 1, 1, 4));
 		SAMPLE_NEW_ID(sample->observed_cpu, "ID_AA64PFR2_EL1",
 			      sys_reg(3, 0, 0, 4, 2));
 		SAMPLE_NEW_ID(sample->observed_cpu, "ID_AA64ISAR2_EL1",

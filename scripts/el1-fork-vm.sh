@@ -27,6 +27,7 @@ HARNESS="$HERE/scripts/el1-fork-vm.sh"
 GUEST_SHELL="$HERE/scripts/arm64-el1-fork-guest.sh"
 PARSER="$HERE/scripts/el1-fork-parser.sh"
 NEW_ID_PARSER="$HERE/scripts/el1-new-id-parser.sh"
+TRACE_PARSER="$HERE/scripts/el1-trace-parser.sh"
 COMPARATOR="$HERE/scripts/el1-probe-compare.sh"
 MODULE_SOURCE="$HERE/scripts/arm64-el1-probe.c"
 MODULE_MAKEFILE="$HERE/scripts/arm64-el1-probe.Makefile"
@@ -34,6 +35,7 @@ BUILD_DISK="$OUT/build.ext4"
 OPENSSL=/usr/bin/openssl
 EL1_FORK_PARSER_SOURCE_ONLY=1 source "$PARSER"
 source "$NEW_ID_PARSER"
+source "$TRACE_PARSER"
 
 fail() { echo "EL1 fork: $*" >&2; exit 1; }
 sha256_file() {
@@ -91,6 +93,16 @@ el1_extract_markers() {
     ' "$SERIAL_LOG" > "$output"
 }
 
+el1_check_trace_state() {
+    local phase=$1 event request_id
+    for event in hvf_sysreg_read qmp_enter_query_status; do
+        request_id="trace-$phase-$event"
+        printf '{"execute":"trace-event-get-state","arguments":{"name":"%s"},"id":"%s"}\r\n' "$event" "$request_id" >&9
+        wait_for_qmp_response "$request_id"
+        validate_trace_state_json "$QMP_LOG" "$request_id" "$event" || fail "trace event not enabled: $event ($phase)"
+    done
+}
+
 run_one() {
     local smp=$1 count_dir token socket_before final_snapshot status=0 step
     count_dir="$RUN_DIR/smp-$smp"; /bin/mkdir -m 700 "$count_dir"
@@ -116,6 +128,7 @@ run_one() {
         # Existing tracepoint identifies reads serviced by QEMU after HVF
         # traps. Absence of a trace is not proof of physical passthrough.
         ARGS+=(-trace "enable=hvf_sysreg_read,file=$count_dir/hvf-sysreg.trace")
+        ARGS+=(-trace "enable=qmp_enter_query_status,file=$count_dir/hvf-sysreg.trace")
     fi
     "$JQ" -n --args '$ARGS.positional' -- "$QEMU" "${ARGS[@]}" > "$count_dir/qemu-argv.json"
     [ "$(/usr/bin/shasum -a 256 "$EL1_REUSE")" = "$EL1_REUSE_HASH" ] || fail "reboot library changed"
@@ -139,11 +152,17 @@ run_one() {
     printf "cat > /root/m3-el1.sh <<'M3_EL1_EOF'\n" >&8; /bin/cat "$GUEST_SHELL" >&8
     printf '\nM3_EL1_EOF\n/bin/bash /root/m3-el1.sh %s %s %s\n' "$smp" "$token" "$NEW_IDS" >&8
     el1_wait_marker "EL1_FORK_READY token=$token smp=$smp"
+    if [ "$NEW_IDS" = 1 ]; then
+        el1_check_trace_state before
+        qmp_send query-status trace-control-before; wait_for_qmp_response trace-control-before
+        qmp_running_response trace-control-before || fail trace-control-not-running
+    fi
     printf 'GO %s\n' "$token" >&8
     el1_wait_marker "EL1_FORK_END token=$token"
     el1_wait_marker "EL1_FORK_COMPLETE token=$token smp=$smp"
     qmp_send query-status post-probe; wait_for_qmp_response post-probe
     qmp_running_response post-probe || fail qmp-not-running
+    if [ "$NEW_IDS" = 1 ]; then el1_check_trace_state after; fi
     assess_captured_qemu || fail identity-after-probe
     [ "$(socket_identity "$QMP_SOCKET")" = "$socket_before" ] || fail socket-changed
     printf 'POWEROFF\n' >&8
@@ -162,11 +181,16 @@ run_one() {
     el1_extract_markers "$token" "$count_dir/markers.txt" || fail marker-boundary
     if [ "$NEW_IDS" = 1 ]; then
         "$AWK" '/^EL1_PROBE_NEW_ID_/ {print}' "$count_dir/markers.txt" > "$count_dir/new-id-markers.txt"
-        "$AWK" '!/^EL1_PROBE_NEW_ID_/ {print}' "$count_dir/markers.txt" > "$count_dir/base-markers.txt"
+        "$AWK" '/^EL1_PROBE_TRACE_CONTROL_/ {print}' "$count_dir/markers.txt" > "$count_dir/trace-control-markers.txt"
+        "$AWK" '!/^EL1_PROBE_(NEW_ID|TRACE_CONTROL)_/ {print}' "$count_dir/markers.txt" > "$count_dir/base-markers.txt"
         parse_new_id_json "$smp" "$count_dir/new-id-markers.txt" "$count_dir/new-ids.json" || fail new-id-parser
+        parse_trace_control_json "$smp" "$count_dir/trace-control-markers.txt" "$count_dir/trace-control.json" || fail trace-control-parser
+        [ -f "$count_dir/hvf-sysreg.trace" ] && [ ! -L "$count_dir/hvf-sysreg.trace" ] || fail trace-file
+        validate_trace_log "$count_dir/hvf-sysreg.trace" || fail trace-pipeline-control
     else
         /bin/cp "$count_dir/markers.txt" "$count_dir/base-markers.txt"
         printf 'null\n' > "$count_dir/new-ids.json"
+        printf 'null\n' > "$count_dir/trace-control.json"
     fi
     parse_probe_json "$smp" "$count_dir/base-markers.txt" "$count_dir/raw.json" || fail parser
     validate_probe_json "$smp" "$count_dir/raw.json" || fail raw-schema
@@ -174,8 +198,9 @@ run_one() {
       --arg qemu "$QEMU" --arg version "$QEMU_VERSION" --arg sha "$QEMU_SHA256" --slurpfile argv "$count_dir/qemu-argv.json" \
       --arg pid "$CAPTURED_QEMU_PID" --arg start "$CAPTURED_QEMU_START" --arg socket "$socket_before" \
       --slurpfile new_ids "$count_dir/new-ids.json" \
+      --slurpfile trace_control "$count_dir/trace-control.json" \
       --argjson before "$BASELINE_SNAPSHOT" --argjson after "$final_snapshot" '
-      . + {collected_at:$collected,new_id_capture:$new_ids[0],run:{directory:$run,memory:"2G",
+      . + {collected_at:$collected,new_id_capture:$new_ids[0],trace_control:$trace_control[0],run:{directory:$run,memory:"2G",
         qemu:{path:$qemu,version:$version,sha256:$sha,argv:$argv[0],pid:$pid,start:$start},
         qmp:{same_socket:true,socket_identity:$socket,clean_guest_shutdown:true},
         safety:{host_uid:$uid,host_privilege_required:false,explicit_disposable_overlay:true,root_backing_opened_via_overlay:true,
@@ -213,8 +238,8 @@ main() {
     KERNEL="$OUT/Image-$KVER"; INITRD="$OUT/initrd.img-$KVER"
     [ -n "$HOST_JSON_INPUT" ] || fail "HOST_JSON must name a fresh host capture"
     HOST_JSON="$(/bin/realpath "$HOST_JSON_INPUT")"
-    PROTECTED_NAMES=(kver kernel initrd rootfs build_disk harness guest_shell module_source module_makefile parser new_id_parser comparator host_json reboot_library extracted_library qemu qemu_img timeout nc jq awk lsof ps openssl)
-    PROTECTED_PATHS=("$KVER_FILE" "$KERNEL" "$INITRD" "$ROOTFS" "$BUILD_DISK" "$HARNESS" "$GUEST_SHELL" "$MODULE_SOURCE" "$MODULE_MAKEFILE" "$PARSER" "$NEW_ID_PARSER" "$COMPARATOR" "$HOST_JSON" "$EL1_REUSE" "$EL1_DEFS" "$QEMU" "$QEMU_IMG" "$TIMEOUT" "$NC" "$JQ" "$AWK" "$LSOF" "$PS" "$OPENSSL")
+    PROTECTED_NAMES=(kver kernel initrd rootfs build_disk harness guest_shell module_source module_makefile parser new_id_parser trace_parser comparator host_json reboot_library extracted_library qemu qemu_img timeout nc jq awk lsof ps openssl)
+    PROTECTED_PATHS=("$KVER_FILE" "$KERNEL" "$INITRD" "$ROOTFS" "$BUILD_DISK" "$HARNESS" "$GUEST_SHELL" "$MODULE_SOURCE" "$MODULE_MAKEFILE" "$PARSER" "$NEW_ID_PARSER" "$TRACE_PARSER" "$COMPARATOR" "$HOST_JSON" "$EL1_REUSE" "$EL1_DEFS" "$QEMU" "$QEMU_IMG" "$TIMEOUT" "$NC" "$JQ" "$AWK" "$LSOF" "$PS" "$OPENSSL")
     for input in "${PROTECTED_PATHS[@]}"; do require_safe_input "$input"; done
     "$JQ" -e '.schema_version==1 and .config.status=="ok" and (.feature_registers|length)==14 and all(.feature_registers[];.status=="ok")' "$HOST_JSON" >/dev/null || fail host-capture
     QEMU_VERSION="$("$QEMU" --version)"; QEMU_VERSION="${QEMU_VERSION%%$'\n'*}"

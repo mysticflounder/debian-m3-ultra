@@ -117,10 +117,18 @@ but does not establish that these reads took this QEMU path.
 Disposition: retain an API gap for the inspected named interfaces and record
 the experimental getter rejection, alongside the measured guest zeros. Do
 not infer a QEMU defect merely from the absent import, and do not fill fields
-using chip-name guesses. Next: calibrate tracing with a known QEMU-serviced
-read and verify event enablement, then attribute the newer-ID read path.
+using chip-name guesses. The bounded follow-up was to calibrate tracing with
+a known QEMU-serviced read and verify event enablement before attributing
+the newer-ID read path.
 Physical host values remain a separate requirement before any import patch;
 guest zero alone is not a safe host import source.
+
+Follow-up completed: the [calibrated trace](qemu-m3-ultra-trace-calibration.md)
+records the OSLSR control in QEMU's userspace handler, with both trace events
+enabled before/after, but none of the four newer-ID reads. All four again
+returned zero. This supports handling below QEMU's userspace sysreg handler
+rather than its RES0 fallback, while leaving HVF/kernel versus hardware
+behavior and physical host values unresolved.
 
 ## Guest follow-up protocol
 

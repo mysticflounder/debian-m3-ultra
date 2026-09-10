@@ -355,9 +355,15 @@ reads for all four IDs, with the existing register/cache controls passing
 and all 24 protected inputs unchanged. The enabled QEMU read trace was empty
 and had no positive control, so the servicing layer remains unresolved;
 neither physical feature absence nor a QEMU fallback hit is established.
-Next: calibrate tracing with a known QEMU-serviced read, then attribute the
-newer-ID path. Keep CPU features unchanged; do not repeat performance tests
-to close this register gap.
+The [calibrated follow-up](qemu-m3-ultra-trace-calibration.md) then recorded
+the OSLSR control through QEMU's sysreg handler and two QMP trace controls,
+with both events enabled before/after. None of the four newer-ID reads
+produced a sysreg trace; all again returned zero. This supports those reads
+bypassing QEMU's userspace handler/fallback in this configuration, not proof
+of physical feature absence. All 25 protected inputs remained unchanged.
+Next: audit public HVF controls and host feature evidence for the remaining
+ID-exposure gap. Keep CPU features unchanged; do not repeat performance tests
+or make speculative QEMU overrides to close this register gap.
 
 Exit gate: every observed mismatch has exactly one classification and an
 evidence-backed disposition.
