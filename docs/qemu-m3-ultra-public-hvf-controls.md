@@ -92,5 +92,29 @@ finite inputs, and FPCR.AH clear/set with readback. Save and restore both
 FPCR and FPSR; record raw result bits and establish discriminating expected
 vectors before interpreting a difference as RPRES behavior.
 This should test instruction behavior and the advertisement/behavior
-relationship, not elapsed performance. The present audit does not execute
-those instructions or establish their expected result patterns.
+relationship, not elapsed performance.
+
+### Host probe implementation — 2026-09-11 UTC
+
+`scripts/arm64-rpres-probe.c` now collects 28 scalar observations: seven
+positive finite FP32 inputs, two operations, and AH clear/set. It uses
+integer bit patterns and inline assembly, saves/restores FPCR and FPSR,
+records control readback and result/status bits, and calls libc only after
+restoration. It changes only the executing thread's temporary FP state,
+not host configuration, firmware, or QEMU feature settings.
+
+Host runs at `-O0` and `-O2` produced identical JSON and reported restored
+state. For input `1.0`, both operations returned `0x3f7f8000` with AH clear
+and `0x3f7ff000` with AH set. These are observations, not an independently
+validated oracle or a guest comparison. `scripts/test-rpres-probe.sh`
+passed ten checks (two valid captures, their equality, seven malformed
+result rejections); artifacts: `scratch/rpres-test.K8VUHf`.
+
+`scripts/validate-rpres-probe.jq` checks sample coverage, control readbacks,
+zero exception flags, raw result formatting and state restoration. It does
+not classify result precision. Restoration from a nonzero initial FP state
+has not yet been explicitly exercised by the test driver.
+
+Next: independently check expected vectors, then integrate the standalone
+probe with the audited disposable-overlay VM lifecycle and collect the same
+28 guest observations. No VM was launched for this implementation step.
