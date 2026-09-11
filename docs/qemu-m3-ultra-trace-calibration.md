@@ -43,9 +43,11 @@ and identities. QEMU exited zero after a clean guest-requested shutdown;
 the disposable overlay and runtime controls were removed. No persistent VM,
 host device, firmware or CPU-feature setting was changed.
 
-Next: audit public HVF controls and host feature evidence for the remaining
-ID-exposure gap. Do not infer raw host values from these guest zeros or make
-a speculative QEMU feature override. This is not a performance-test gap.
+Follow-up: the [public-control audit](qemu-m3-ultra-public-hvf-controls.md)
+found a macOS RPRES flag / guest ISAR2.RPRES advertisement mismatch, without
+a documented named override. Next is a controlled host/guest RPRES instruction
+probe. Do not infer raw host values from guest zeros or make a speculative
+QEMU feature override. This is not a performance-test gap.
 
 ## Scope and controls
 

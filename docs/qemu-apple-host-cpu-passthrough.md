@@ -361,9 +361,13 @@ with both events enabled before/after. None of the four newer-ID reads
 produced a sysreg trace; all again returned zero. This supports those reads
 bypassing QEMU's userspace handler/fallback in this configuration, not proof
 of physical feature absence. All 25 protected inputs remained unchanged.
-Next: audit public HVF controls and host feature evidence for the remaining
-ID-exposure gap. Keep CPU features unchanged; do not repeat performance tests
-or make speculative QEMU overrides to close this register gap.
+The [public-control and host-feature audit](qemu-m3-ultra-public-hvf-controls.md)
+found no documented named override in SDK 26.5, but identified a specific
+advertisement mismatch: macOS reports RPRES while guest ISAR2.RPRES is zero.
+Instruction behavior is not yet tested. Next: a matched host/guest scalar
+reciprocal-estimate probe with controlled, preserved FP state and expected
+result vectors. Keep CPU features unchanged; this is not a performance test
+or justification for a speculative QEMU override.
 
 Exit gate: every observed mismatch has exactly one classification and an
 evidence-backed disposition.

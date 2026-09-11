@@ -61,6 +61,7 @@ not to untested configurations or M5 Max.
 | EL0 CLIDR | unavailable (access layer) | No comparable EL0 observation; use the raw EL1 capture. |
 | ZFR0 / SMFR0 and SVE / SME | unavailable for guest behavioral validation | Fresh HVF values are zero; historical EL1 probes mark these `not_read`, not zero. TPIDR2's five skips do not test TPIDR2 semantics or establish physical hardware absence. |
 | PFR2, ISAR2, MMFR3, MMFR4 | host API gap; guest zero, no calibrated userspace sysreg trace | Named queries are absent and the experimental getter rejected all four. The [calibrated one-vCPU capture](qemu-m3-ultra-trace-calibration.md) again read four zeros: OSLSR and QMP trace controls worked, but no newer-ID read appeared in the userspace sysreg trace. This supports bypass of QEMU's RES0 fallback, not physical feature absence; HVF/kernel versus hardware handling remains unresolved. |
+| ISAR2.RPRES specifically | host/guest advertisement mismatch; instruction behavior untested | The [read-only host-feature audit](qemu-m3-ultra-public-hvf-controls.md) measured macOS `FEAT_RPRES=1` against guest RPRES `[7:4]=0`. This is not a raw host ISAR2 capture. Next: controlled matched reciprocal-estimate instruction results; no feature override yet. |
 | MIDR / MPIDR | virtualized (source-derived) | QEMU supplies Apple MIDR and guest affinity. Physical per-core identity passthrough is not established or required by the homogeneous model. |
 
 The historical EL0 report also has five exact observations: DFR1, CTR,
