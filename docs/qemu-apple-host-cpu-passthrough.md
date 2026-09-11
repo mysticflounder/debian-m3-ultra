@@ -364,10 +364,13 @@ of physical feature absence. All 25 protected inputs remained unchanged.
 The [public-control and host-feature audit](qemu-m3-ultra-public-hvf-controls.md)
 found no documented named override in SDK 26.5, but identified a specific
 advertisement mismatch: macOS reports RPRES while guest ISAR2.RPRES is zero.
-Instruction behavior is not yet tested. Next: a matched host/guest scalar
-reciprocal-estimate probe with controlled, preserved FP state and expected
-result vectors. Keep CPU features unchanged; this is not a performance test
-or justification for a speculative QEMU override.
+The [matched scalar reciprocal-estimate probe](qemu-m3-ultra-rpres-behavior.md)
+then matched all 28 host/guest results with controlled, restored FP state and
+a QEMU-derived reference. This is an advertisement gap with no behavior
+mismatch observed on the tested inputs, not proof of complete passthrough.
+Next: use that disposition in the remaining newer-ID gap analysis and find
+the next evidence-backed exposure issue. Keep CPU features unchanged; no
+speculative QEMU override is justified.
 
 Exit gate: every observed mismatch has exactly one classification and an
 evidence-backed disposition.

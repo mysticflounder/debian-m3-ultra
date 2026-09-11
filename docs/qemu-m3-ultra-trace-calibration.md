@@ -45,8 +45,9 @@ host device, firmware or CPU-feature setting was changed.
 
 Follow-up: the [public-control audit](qemu-m3-ultra-public-hvf-controls.md)
 found a macOS RPRES flag / guest ISAR2.RPRES advertisement mismatch, without
-a documented named override. Next is a controlled host/guest RPRES instruction
-probe. Do not infer raw host values from guest zeros or make a speculative
+a documented named override. The [controlled instruction follow-up](qemu-m3-ultra-rpres-behavior.md)
+matched all 28 sampled host/guest results; RPRES remains an advertisement gap.
+Do not infer raw host values from guest zeros or make a speculative
 QEMU feature override. This is not a performance-test gap.
 
 ## Scope and controls

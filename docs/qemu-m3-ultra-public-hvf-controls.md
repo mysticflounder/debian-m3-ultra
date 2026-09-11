@@ -112,9 +112,21 @@ result rejections); artifacts: `scratch/rpres-test.K8VUHf`.
 
 `scripts/validate-rpres-probe.jq` checks sample coverage, control readbacks,
 zero exception flags, raw result formatting and state restoration. It does
-not classify result precision. Restoration from a nonzero initial FP state
-has not yet been explicitly exercised by the test driver.
+not classify result precision.
 
-Next: independently check expected vectors, then integrate the standalone
-probe with the audited disposable-overlay VM lifecycle and collect the same
-28 guest observations. No VM was launched for this implementation step.
+Follow-up host validation added `scripts/rpres-state-fixture.c`: both `-O0`
+and `-O2` preserve FPCR `0x00400000` (non-default rounding) and FPSR `0x11`
+(pre-set sticky flags). The integer reference in `scripts/rpres-reference.c`
+matches all 28 host result bits. It is derived from the pinned QEMU
+`vfp_helper.c`, scoped to the seven fixed inputs, and is not an independent
+Arm-specification proof. The expanded suite passes 16 checks, including
+comparison equality, a deliberately changed result and multiple-document
+rejection. Latest host artifacts:
+`scratch/rpres-test.v4oaOs`, with compiler/OS/time records and verified source
+hashes. `scripts/compare-rpres-results.sh` compares complete validated captures
+without treating equality on these inputs as proof of full CPU passthrough.
+
+The [matched disposable-guest follow-up](qemu-m3-ultra-rpres-behavior.md)
+is now complete: all 28 results match the host. RPRES remains an advertisement
+gap, without a behavior mismatch observed for these inputs. See that report
+for the successful run, rejected first attempt and limits.
