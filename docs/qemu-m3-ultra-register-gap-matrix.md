@@ -17,6 +17,11 @@ QEMU/SDK sources without creating a VM. The follow-up used disposable VMs;
 neither stage changed the persistent VM, firmware, boot policy, or
 physical-device configuration.
 
+The [remaining newer-ID reconciliation](qemu-m3-ultra-remaining-id-disposition.md)
+accounts for the available public flags without establishing another positive
+mismatch beyond RPRES. Unknown newer fields stay unknown. The next bounded
+coverage candidate is CSSC scalar min/max, not a speculative register override.
+
 ## Evidence and its limits
 
 - Completed current-fork captures: `out/el1-fork.hYTSJR/manifest.json` (one

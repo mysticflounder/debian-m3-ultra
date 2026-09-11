@@ -368,9 +368,13 @@ The [matched scalar reciprocal-estimate probe](qemu-m3-ultra-rpres-behavior.md)
 then matched all 28 host/guest results with controlled, restored FP state and
 a QEMU-derived reference. This is an advertisement gap with no behavior
 mismatch observed on the tested inputs, not proof of complete passthrough.
-Next: use that disposition in the remaining newer-ID gap analysis and find
-the next evidence-backed exposure issue. Keep CPU features unchanged; no
-speculative QEMU override is justified.
+The [remaining-ID reconciliation](qemu-m3-ultra-remaining-id-disposition.md)
+finds no additional positive mismatch in the available public flags; PFR2
+and MMFR3/MMFR4 remain incomplete host evidence, not proven physical zeros.
+Next coverage candidate: matched CSSC scalar integer min/max observations,
+after verifying encodings and expected semantics, with isolated child
+processes and a positive control. This is not a demonstrated bug. Keep CPU
+features unchanged; no speculative QEMU override is justified.
 
 Exit gate: every observed mismatch has exactly one classification and an
 evidence-backed disposition.
@@ -387,12 +391,19 @@ For each advertised feature, execute a minimal positive test. Cover at least:
 - counter/timer and PMU behavior; and
 - cache-maintenance and DC ZVA semantics derived from CTR/DCZID.
 
-For every absent feature with a safe test encoding, verify that execution is
-rejected rather than silently misexecuted. Kernel selftests and existing QEMU
-tests should be reused before adding project-only versions.
+For each unadvertised feature with a safe test encoding, first establish its
+feature-specific expected behavior. Lack of advertisement alone does not
+imply an instruction must trap: RPRES changes the precision of existing
+instructions, and our unadvertised guest observations match the host.
+Compare host and guest under matched controls; classify faults, baseline
+semantics, and enhanced semantics separately. Require a fault only when the
+applicable instruction contract warrants it. Kernel selftests and existing
+QEMU tests should be reused before adding project-only versions.
 
 Exit gate: every guest-advertised optional feature has a passing behavioral
-test, and negative cases fail in the expected way.
+test, and unadvertised cases have an evidence-backed, feature-specific
+disposition. Do not label unexpected execution a regression without checking
+its results and applicable architectural contract.
 
 ### 6. Implement QEMU fixes in reviewable slices
 
