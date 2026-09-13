@@ -1,7 +1,10 @@
 #!/bin/bash
-# One disposable current-fork guest; reuse the audited reboot lifecycle helpers.
+# One disposable current-fork guest; PROBE_KIND=rpres (default) or cssc.
+# Reuse the audited reboot lifecycle helpers.
 set -euo pipefail
 umask 077
+PROBE_KIND="${PROBE_KIND:-rpres}"
+case "$PROBE_KIND" in rpres|cssc) ;; *) echo 'invalid PROBE_KIND' >&2; exit 2;; esac
 RPRES_HERE="$(cd "$(dirname "$0")/.." && pwd -P)"
 REUSE="$RPRES_HERE/scripts/reboot-vm.sh"
 [ ! -L "$RPRES_HERE/out" ] || exit 1
@@ -25,6 +28,10 @@ HARNESS="$HERE/scripts/rpres-probe-vm.sh"
 GUEST="$HERE/scripts/arm64-rpres-guest.sh"
 SOURCE="$HERE/scripts/arm64-rpres-probe.c"
 VALIDATOR="$HERE/scripts/validate-rpres-probe.jq"
+if [ "$PROBE_KIND" = cssc ]; then
+    SOURCE="$HERE/scripts/arm64-cssc-probe.c"
+    VALIDATOR="$HERE/scripts/validate-cssc-probe.jq"
+fi
 CONTROL_STEPS=2400
 OPENSSL=/usr/bin/openssl
 sha256_file() {
@@ -107,7 +114,7 @@ socket_before="$(socket_identity "$QMP_SOCKET")"
 wait_for_qmp_greeting; qmp_send qmp_capabilities capabilities; wait_for_qmp_response capabilities
 wait_for_marker_count "$AUTOLOGIN_MARKER" 1
 token="rpres-$$-$RANDOM"
-printf "stty -echo; mkdir -p /mnt/rpres-source; mount -o ro /dev/vdb1 /mnt/rpres-source && test \"\$(blockdev --getro /dev/vdb)\" = 1 && cp /mnt/rpres-source/arm64-rpres-probe.c /root/m3-rpres-probe.c && bash /mnt/rpres-source/arm64-rpres-guest.sh 1 %s\n" "$token" >&8
+printf "stty -echo; mkdir -p /mnt/rpres-source; mount -o ro /dev/vdb1 /mnt/rpres-source && test \"\$(blockdev --getro /dev/vdb)\" = 1 && cp /mnt/rpres-source/%s /root/m3-rpres-probe.c && bash /mnt/rpres-source/arm64-rpres-guest.sh 1 %s\n" "${SOURCE##*/}" "$token" >&8
 wait_prefix "M3_RPRES_READY token=$token "
 ready="$RPRES_LINE"
 printf 'GO %s\n' "$token" >&8
@@ -140,6 +147,6 @@ cmp "$RUN_DIR/protected-before.json" "$RUN_DIR/protected-after.json" || fail pro
 INPUTS_VERIFIED=true
 cleanup 0 || fail cleanup
 trap - EXIT INT TERM HUP
-"$JQ" -n --arg run "$RUN_DIR" --arg qemu_sha "$(sha256_file "$QEMU")" --arg collected "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
-    '{schema_version:1,run_directory:$run,collected_at:$collected,qemu_sha256:$qemu_sha,guest_capture:"guest.json",clean_guest_shutdown:true,protected_inputs_unchanged:true,overlay_removed:true}' > "$RUN_DIR/manifest.json"
+"$JQ" -n --arg kind "$PROBE_KIND" --arg run "$RUN_DIR" --arg qemu_sha "$(sha256_file "$QEMU")" --arg collected "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
+    '{schema_version:1,probe_kind:$kind,run_directory:$run,collected_at:$collected,qemu_sha256:$qemu_sha,guest_capture:"guest.json",clean_guest_shutdown:true,protected_inputs_unchanged:true,overlay_removed:true}' > "$RUN_DIR/manifest.json"
 echo "RPRES manifest: $RUN_DIR/manifest.json"

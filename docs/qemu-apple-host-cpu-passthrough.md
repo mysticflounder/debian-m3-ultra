@@ -371,10 +371,11 @@ mismatch observed on the tested inputs, not proof of complete passthrough.
 The [remaining-ID reconciliation](qemu-m3-ultra-remaining-id-disposition.md)
 finds no additional positive mismatch in the available public flags; PFR2
 and MMFR3/MMFR4 remain incomplete host evidence, not proven physical zeros.
-Next coverage candidate: matched CSSC scalar integer min/max observations,
-after verifying encodings and expected semantics, with isolated child
-processes and a positive control. This is not a demonstrated bug. Keep CPU
-features unchanged; no speculative QEMU override is justified.
+The [CSSC scalar follow-up](qemu-m3-ultra-cssc-behavior.md) now agrees on
+24 caught illegal-instruction outcomes and three successful integer controls
+across host/guest. No mismatch is demonstrated for those encodings. WFxT/HBC
+remain untested; review their semantics and safe controls before choosing
+another probe. Keep CPU features unchanged; no speculative override is justified.
 
 Exit gate: every observed mismatch has exactly one classification and an
 evidence-backed disposition.

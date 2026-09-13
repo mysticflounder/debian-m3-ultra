@@ -19,8 +19,9 @@ physical-device configuration.
 
 The [remaining newer-ID reconciliation](qemu-m3-ultra-remaining-id-disposition.md)
 accounts for the available public flags without establishing another positive
-mismatch beyond RPRES. Unknown newer fields stay unknown. The next bounded
-coverage candidate is CSSC scalar min/max, not a speculative register override.
+mismatch beyond RPRES. Unknown newer fields stay unknown. The later
+[CSSC scalar min/max comparison](qemu-m3-ultra-cssc-behavior.md) matched
+24 caught faults and three successful controls; it found no execution mismatch.
 
 ## Evidence and its limits
 

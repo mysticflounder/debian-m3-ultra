@@ -51,7 +51,11 @@ must separate advertisement, instruction availability and result semantics.
 The roadmap now requires a feature-specific expected result or fault,
 instead of declaring every successfully executed unadvertised case a bug.
 
-## Next bounded candidate
+## Bounded candidate and completed follow-up
+
+The [CSSC scalar comparison](qemu-m3-ultra-cssc-behavior.md) has since
+completed: host/guest agree on 24 caught `SIGILL` cases and three successful
+ADD controls. The proposal below records its scope, not outstanding work.
 
 A matched CSSC scalar integer min/max test is a useful next **coverage**
 candidate, not an identified bug. Both captured advertisements are zero;
@@ -64,8 +68,8 @@ architectural behavior; do not confuse them with older SIMD min/max.
 Use isolated, time-bounded child processes with core dumps disabled, a
 baseline integer positive control, and explicit signal-versus-result
 reporting. Match host and disposable guest inputs. A fault is a measured
-outcome, not an assumption based solely on a feature flag. No such probe
-was run in this reconciliation.
+outcome, not an assumption based solely on a feature flag. The reconciliation
+itself was read-only; the linked follow-up contains the later execution evidence.
 
 There is no newly established QEMU transformation bug or supported newer-ID
 override to implement from this evidence. Keep the existing RPRES API gap
