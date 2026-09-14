@@ -1,0 +1,2 @@
+Final status: no unresolved host query failures. All final host inventory queries returned status 0.
+The SDK query emitted Xcode cache/fs-event diagnostics on stderr but returned status 0; see sdk_version.stderr.

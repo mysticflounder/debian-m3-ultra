@@ -1,0 +1,30 @@
+Collection commands (host inventory only; no VM launched)
+
+date -u +%Y-%m-%dT%H:%M:%SZ
+uname -a
+uname -m
+sw_vers -productName
+sw_vers -productVersion
+sw_vers -buildVersion
+sysctl -n hw.model
+sysctl -n machdep.cpu.brand_string
+sysctl -n hw.machine
+sysctl -n hw.ncpu
+sysctl -n hw.activecpu
+sysctl -n hw.physicalcpu
+sysctl -n hw.logicalcpu
+sysctl -n hw.perflevel0.physicalcpu
+sysctl -n hw.perflevel1.physicalcpu
+sysctl -a | rg '^hw\.optional\.arm'
+xcrun --sdk macosx --show-sdk-version
+xcrun --sdk macosx --show-sdk-path
+clang --version
+xcrun --find clang
+shasum -a 256 scripts/hvf-host-cpu.c
+shasum -a 256 scripts/hvf-host-cpu.c docs/qemu-apple-host-cpu-passthrough.md README.md
+clang -std=c11 -Wall -Wextra -Wpedantic -O2 scripts/hvf-host-cpu.c -framework Hypervisor -o docs/inventory/m5-host.etjEIA/hvf-host-cpu
+docs/inventory/m5-host.etjEIA/hvf-host-cpu
+shasum -a 256 docs/inventory/m5-host.etjEIA/hvf-host-cpu
+jq -e 'type == "object" and .schema_version == 1 and .config.status == "ok" and (([.feature_registers[] | select(.status == "ok")] | length) == 14) and (([.ccsidr_el1[] | select(.status == "ok")] | length) == 2)' docs/inventory/m5-host.etjEIA/hvf-host-cpu.json
+git rev-parse HEAD
+git status --short

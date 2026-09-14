@@ -1,0 +1,3 @@
+723be0c05c35c7b26f08bea4e7efe8155dbeb3956aa7f88c7e0bb0c2735942ff  scripts/hvf-host-cpu.c
+a0b175a1e10694caa2fb56024e70846c36568520b73cb93b16408206db3e9f4a  docs/qemu-apple-host-cpu-passthrough.md
+aec2c6b0b232a522153d22e85ed8a1b0918aff4b14999c7374acdf54abf709d9  README.md

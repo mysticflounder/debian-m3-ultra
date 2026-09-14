@@ -1,0 +1,24 @@
+{
+  "schema_version":1,
+  "config":{"status":"ok"},
+  "feature_registers":[
+    {"name":"ID_AA64PFR0_EL1","status":"ok","value":"0x1101000010110011"},
+    {"name":"ID_AA64PFR1_EL1","status":"ok","value":"0x0000000202000001"},
+    {"name":"ID_AA64DFR0_EL1","status":"ok","value":"0x0000000010305006"},
+    {"name":"ID_AA64DFR1_EL1","status":"ok","value":"0x0000000000000000"},
+    {"name":"ID_AA64ISAR0_EL1","status":"ok","value":"0x0221100110212120"},
+    {"name":"ID_AA64ISAR1_EL1","status":"ok","value":"0x0010221110211502"},
+    {"name":"ID_AA64MMFR0_EL1","status":"ok","value":"0x000010000f100022"},
+    {"name":"ID_AA64MMFR1_EL1","status":"ok","value":"0x0000100011312000"},
+    {"name":"ID_AA64MMFR2_EL1","status":"ok","value":"0x1001001102001011"},
+    {"name":"CTR_EL0","status":"ok","value":"0x000000099444c004"},
+    {"name":"CLIDR_EL1","status":"ok","value":"0x0000000080000023"},
+    {"name":"DCZID_EL0","status":"ok","value":"0x0000000000000004"},
+    {"name":"ID_AA64SMFR0_EL1","status":"ok","value":"0x02f15cff00000000"},
+    {"name":"ID_AA64ZFR0_EL1","status":"ok","value":"0x0000100001200002"}
+  ],
+  "ccsidr_el1":[
+    {"cache_type":"data_or_unified","status":"ok","values":["0x00000000700fe03a","0x0000000071ffe07b","0x0000000000000000","0x0000000000000000","0x0000000000000000","0x0000000000000000","0x0000000000000000","0x0000000000000000"]},
+    {"cache_type":"instruction","status":"ok","values":["0x00000000203fe01a","0x0000000000000000","0x0000000000000000","0x0000000000000000","0x0000000000000000","0x0000000000000000","0x0000000000000000","0x0000000000000000"]}
+  ]
+}
