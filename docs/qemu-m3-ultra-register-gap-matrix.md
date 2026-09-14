@@ -22,6 +22,8 @@ accounts for the available public flags without establishing another positive
 mismatch beyond RPRES. Unknown newer fields stay unknown. The later
 [CSSC scalar min/max comparison](qemu-m3-ultra-cssc-behavior.md) matched
 24 caught faults and three successful controls; it found no execution mismatch.
+The [HBC comparison](qemu-m3-ultra-hbc-behavior.md) subsequently matched
+four caught HBC faults and four successful ordinary branch controls.
 
 ## Evidence and its limits
 

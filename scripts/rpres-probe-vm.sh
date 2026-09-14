@@ -1,10 +1,10 @@
 #!/bin/bash
-# One disposable current-fork guest; PROBE_KIND=rpres (default) or cssc.
+# One disposable current-fork guest; PROBE_KIND=rpres (default), cssc, or hbc.
 # Reuse the audited reboot lifecycle helpers.
 set -euo pipefail
 umask 077
 PROBE_KIND="${PROBE_KIND:-rpres}"
-case "$PROBE_KIND" in rpres|cssc) ;; *) echo 'invalid PROBE_KIND' >&2; exit 2;; esac
+case "$PROBE_KIND" in rpres|cssc|hbc) ;; *) echo 'invalid PROBE_KIND' >&2; exit 2;; esac
 RPRES_HERE="$(cd "$(dirname "$0")/.." && pwd -P)"
 REUSE="$RPRES_HERE/scripts/reboot-vm.sh"
 [ ! -L "$RPRES_HERE/out" ] || exit 1
@@ -31,6 +31,10 @@ VALIDATOR="$HERE/scripts/validate-rpres-probe.jq"
 if [ "$PROBE_KIND" = cssc ]; then
     SOURCE="$HERE/scripts/arm64-cssc-probe.c"
     VALIDATOR="$HERE/scripts/validate-cssc-probe.jq"
+fi
+if [ "$PROBE_KIND" = hbc ]; then
+    SOURCE="$HERE/scripts/arm64-hbc-probe.c"
+    VALIDATOR="$HERE/scripts/validate-hbc-probe.jq"
 fi
 CONTROL_STEPS=2400
 OPENSSL=/usr/bin/openssl

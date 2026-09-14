@@ -373,9 +373,11 @@ finds no additional positive mismatch in the available public flags; PFR2
 and MMFR3/MMFR4 remain incomplete host evidence, not proven physical zeros.
 The [CSSC scalar follow-up](qemu-m3-ultra-cssc-behavior.md) now agrees on
 24 caught illegal-instruction outcomes and three successful integer controls
-across host/guest. No mismatch is demonstrated for those encodings. WFxT/HBC
-remain untested; review their semantics and safe controls before choosing
-another probe. Keep CPU features unchanged; no speculative override is justified.
+across host/guest. The [HBC conditional-branch follow-up](qemu-m3-ultra-hbc-behavior.md)
+also matches: four caught HBC faults and four correct ordinary branch controls.
+No mismatch is demonstrated for those encodings. WFxT remains untested;
+review its timeout/event semantics and safe controls before choosing a probe.
+Keep CPU features unchanged; no speculative override is justified.
 
 Exit gate: every observed mismatch has exactly one classification and an
 evidence-backed disposition.

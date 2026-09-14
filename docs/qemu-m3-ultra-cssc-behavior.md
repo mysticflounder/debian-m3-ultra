@@ -81,6 +81,7 @@ bash scripts/compare-cssc-results.sh HOST_JSON GUEST_JSON
 
 CSSC scalar min/max now has matched rejection coverage. The RPRES
 advertisement gap and unknown physical newer-ID fields remain as previously
-documented. WFxT/HBC behavior is still untested; review their feature-specific
+documented. The [HBC follow-up](qemu-m3-ultra-hbc-behavior.md) now has matching
+fault/control outcomes. WFxT is still untested; review its feature-specific
 semantics and safe controls before choosing another probe. This result does
 not justify a QEMU feature override or another performance benchmark.
