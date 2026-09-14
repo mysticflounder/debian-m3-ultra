@@ -376,7 +376,8 @@ The [CSSC scalar follow-up](qemu-m3-ultra-cssc-behavior.md) now agrees on
 across host/guest. The [HBC conditional-branch follow-up](qemu-m3-ultra-hbc-behavior.md)
 also matches: four caught HBC faults and four correct ordinary branch controls.
 No mismatch is demonstrated for those encodings. WFxT remains untested;
-review its timeout/event semantics and safe controls before choosing a probe.
+the [timeout/trap review](qemu-m3-ultra-wfxt-review.md) selects an isolated
+expired-deadline probe next, with future-deadline tests still deferred.
 Keep CPU features unchanged; no speculative override is justified.
 
 Exit gate: every observed mismatch has exactly one classification and an
