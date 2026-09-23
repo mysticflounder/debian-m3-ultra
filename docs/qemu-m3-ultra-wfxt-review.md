@@ -1,7 +1,8 @@
 # WFxT: bounded-probe review
 
-Status: source/semantics review only; no WFxT instructions executed. No QEMU,
-CPU-feature, firmware, or persistent VM changes. Reviewed 2026-09-14 against
+Status: initial source/semantics review completed 2026-09-14; the bounded
+[host/guest follow-up](qemu-m3-ultra-wfxt-behavior.md) completed 2026-09-23.
+No QEMU, CPU-feature, firmware, or persistent VM changes. Reviewed against
 QEMU source `789e3d805f9ca84e64c40fe1b99129336ce911b8`.
 
 ## Scope and evidence
@@ -38,7 +39,7 @@ the historical [QEMU WFxT implementation proposal](https://lists.gnu.org/archive
 described WFET as a NOP; current local system-mode WFET has event/timer logic.
 Neither version justifies inferring wakeup correctness from a simple return.
 
-## First probe to implement
+## Selected first probe (now implemented)
 
 1. Independently assemble/disassemble WFET X0 and WFIT X0 and verify the words
    above. Use a fixed X0 containing zero, with a post-instruction result marker.
@@ -67,5 +68,5 @@ support, or native performance. Host scheduling delay is not a CPU failure.
 
 Future-deadline tests remain deferred pending a separate trap/routing and
 watchdog review, particularly for M5 where WFxT is publicly advertised. There
-is no observed WFxT behavior mismatch yet and no basis for a feature override
+is no observed WFxT behavior mismatch in the expired-deadline cases and no basis for a feature override
 or a speculative HVF patch.

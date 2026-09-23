@@ -375,9 +375,10 @@ The [CSSC scalar follow-up](qemu-m3-ultra-cssc-behavior.md) now agrees on
 24 caught illegal-instruction outcomes and three successful integer controls
 across host/guest. The [HBC conditional-branch follow-up](qemu-m3-ultra-hbc-behavior.md)
 also matches: four caught HBC faults and four correct ordinary branch controls.
-No mismatch is demonstrated for those encodings. WFxT remains untested;
-the [timeout/trap review](qemu-m3-ultra-wfxt-review.md) selects an isolated
-expired-deadline probe next, with future-deadline tests still deferred.
+No mismatch is demonstrated for those encodings. The
+[expired-deadline WFxT follow-up](qemu-m3-ultra-wfxt-behavior.md) also matches:
+two caught timed-instruction faults and two correct controls. Future-deadline
+tests remain deferred; these results do not establish timing or trap routing.
 Keep CPU features unchanged; no speculative override is justified.
 
 Exit gate: every observed mismatch has exactly one classification and an
