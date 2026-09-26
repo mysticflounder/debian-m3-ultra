@@ -1,5 +1,10 @@
 # QEMU Apple Host-CPU Passthrough Plan
 
+Latest result (2026-09-25): [macOS 27 / SDK 27 validation](qemu-m3-ultra-sdk27-results.md)
+closes the tested RPRES guest-advertisement gap. The guarded QEMU import is
+separate from that SDK-dependent result. Persistent-VM binary promotion and
+updated-host regression coverage remain pending.
+
 ## Project priority order
 
 The project now prioritizes a usable persistent test environment over further

@@ -1,5 +1,9 @@
 # Public HVF controls and host feature evidence
 
+Follow-up: [macOS 27 / SDK 27 results](qemu-m3-ultra-sdk27-results.md) provide
+the four missing public feature queries and reproduce RPRES advertisement
+with SDK 27-built QEMU. The SDK 26.5 findings below are historical.
+
 ## Result — 2026-09-11 UTC
 
 The public-control audit found no documented, named way in the installed

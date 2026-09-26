@@ -16,7 +16,7 @@ reuse_hash="$(shasum -a 256 "$REUSE")"
 [ "$(awk '$0 == "# Main program." {n++} END {print n+0}' "$REUSE")" = 1 ] || exit 1
 awk '$0 == "# Main program." {exit} {print}' "$REUSE" > "$DEFS"
 [ "$(shasum -a 256 "$REUSE")" = "$reuse_hash" ] || exit 1
-QEMU="$RPRES_HERE/out/qemu-fork-pmintenclr-build/qemu-system-aarch64"
+QEMU="${QEMU:-$RPRES_HERE/out/qemu-fork-pmintenclr-build/qemu-system-aarch64}"
 MEM=2G
 SMP_LIST=1
 LAUNCH_TIMEOUT=240

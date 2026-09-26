@@ -2,6 +2,37 @@
 
 Status: local draft; not sent.
 
+## Updated disposition — 2026-09-25
+
+There are three independent upstream candidates:
+
+1. **PMINTENCLR clear semantics:** the existing standalone patch below.
+   Preserve `pmu_op_start()` / `pmu_op_finish()` and the IRQ update.
+2. **PSCI power transitions:** fork commit `789e3d805f`; fixes CPU off/on
+   state synchronization. The [PSCI report](qemu-m3-ultra-psci-results.md)
+   records the baseline panic and 76 passing secondary-CPU cycles.
+3. **macOS 27 feature imports:** query ISAR2/PFR2/MMFR3/MMFR4 through the
+   new public APIs, with SDK and runtime guards. The
+   [SDK 27 report](qemu-m3-ultra-sdk27-results.md) records validation and
+   limitations. Do not claim this patch enables guest RPRES: the same-SDK
+   no-import control already exposes it.
+
+Current upstream `target/arm/hvf/hvf.c`, fetched on this date, still uses
+OR for PMINTENCLR writes, lacks the fork's PSCI synchronization, and leaves
+the newer feature imports as TODOs. Before sending, rebase/check against
+then-current upstream, search pending mailing-list patches, refresh
+maintainer routing, and provide reproducer instructions and compatibility
+results. This check did not search the complete pending-patch queue.
+
+Submit these as separately reviewable patches, not a broad M3-only CPU
+model. No Linux/Asahi/m1n1 patch follows from these VM results. Upstream
+acceptance is not a prerequisite for running our fork. Nothing has been
+emailed or opened upstream by this documentation pass.
+
+The design note below predates SDK 27; revise its missing-API statements
+before sending it. QEMU's current submission procedure is documented at
+<https://www.qemu.org/docs/master/devel/submitting-a-patch.html>.
+
 This package separates the concrete HVF PMU bug fix from the broader M3 Ultra
 `-cpu host` investigation. QEMU requires patches to be emailed to
 `qemu-devel@nongnu.org`; a GitHub pull request is not the submission path.

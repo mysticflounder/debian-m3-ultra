@@ -1,5 +1,9 @@
 # Newer ID registers: HVF API-boundary investigation
 
+Follow-up: [macOS 27 / SDK 27 results](qemu-m3-ultra-sdk27-results.md) obtain
+all four values through named public APIs. The rejection results below are
+historical and apply to the runtime tested at that time.
+
 ## Host API result — 2026-09-09
 
 The installed runtime rejects all four candidate newer-register encodings
