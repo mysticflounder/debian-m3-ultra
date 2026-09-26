@@ -1,6 +1,21 @@
 # m1n1 T6032 / J575d Bring-up Plan
 
-Status: planning baseline, 2026-08-29
+Status: offline bring-up preparation resumed 2026-09-26. The detailed phases
+below retain the 2026-08-29 baseline; see the
+[current source/block audit](m3-ultra-soc-status-2026-09-26.md) before acting
+on any old source assertion.
+
+Current scope is local source analysis, sanitized read-only inventory and
+host-side regression tests. No boot-policy, partition, stage-1, or hardware
+register changes are authorized by this phase. Working QEMU/HVF results are
+not evidence of physical SoC support.
+
+Upstream-policy qualification: Asahi's current
+[generative-AI policy](https://asahilinux.org/llm-policy/) forbids material
+AI-generated contributions. The historical upstream-series proposal below
+is not authorization to submit AI-assisted work there. Keep provenance
+explicit; the current tooling is local diagnostic work, not an upstreamable
+Asahi driver series.
 
 Primary target: Mac Studio (M3 Ultra), Apple model `Mac15,14`, board
 `J575dAP`, SoC `T6032`, 32 CPUs (8 efficiency and 24 performance cores),
@@ -57,9 +72,11 @@ tree and revision instead of being combined into one "merged DTS" claim.
 
 ## Safety invariants
 
-This machine currently has no second recovery Mac available. Until either a
-known-good recovery host is on hand or a maintainer runs the payload on a
-separate T6032 test machine:
+The original baseline had no second recovery Mac available. A MacBook has
+since been used for the secondary VM target, but its availability does not
+by itself validate a recovery setup. Until either a known-good recovery
+host/cable/procedure is verified or an independently arranged test runs on a
+separate recoverable T6032 machine:
 
 - do not create or alter an Apple boot-policy entry;
 - do not install or replace m1n1 stage 1;

@@ -11,8 +11,9 @@ return to the measured M3 Ultra CPU plan in the
 [QEMU Apple host-CPU passthrough plan](docs/qemu-apple-host-cpu-passthrough.md),
 but upstream QEMU coordination does not gate the VM: required fixes may land in
 the project fork first. Independent M5 Max validation is later P2 work. The
-[m1n1 T6032 plan](docs/m1n1-t6032-bringup.md) remains a deferred bare-metal
-roadmap.
+[m1n1 T6032 plan](docs/m1n1-t6032-bringup.md) resumed as a separate offline
+bare-metal preparation track on 2026-09-26. See the
+[current SoC-block audit](docs/m3-ultra-soc-status-2026-09-26.md).
 
 ## What this proves and what it cannot prove
 
@@ -23,9 +24,10 @@ roadmap.
 | CPU model | Host/guest feature probes | Which HVF-exposed architectural CPU features actually reach the guest |
 | Hardware | — | Nothing. QEMU has no Apple M-series machine model. |
 
-This host cannot run Asahi natively: the installer has no entry for chip `0x6032`
-or board `j575dap`. Only M3 / M3 Pro / M3 Max MacBooks and iMacs are supported,
-and they need macOS 14.8.3 firmware.
+Native boot on this M3 Ultra has not been validated. M3-family driver or
+device-tree support is not proof of a complete T6032/J575d boot chain or
+installer support. Use the dated source/block audit above rather than
+assuming another M3 model's installer or firmware requirements apply.
 
 ## Scripts
 
