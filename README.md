@@ -14,6 +14,8 @@ the project fork first. Independent M5 Max validation is later P2 work. The
 [m1n1 T6032 plan](docs/m1n1-t6032-bringup.md) resumed as a separate offline
 bare-metal preparation track on 2026-09-26. See the
 [current SoC-block audit](docs/m3-ultra-soc-status-2026-09-26.md).
+The [project status matrix](docs/project-status.md) tracks completed and pending
+work across the VM, QEMU, M3 bare-metal and M5 workstreams.
 
 ## What this proves and what it cannot prove
 

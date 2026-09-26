@@ -1,0 +1,22 @@
+Local review patch: free pruned CPU list on successful cpu-map handoff
+Base: m1n1 4184923ffb2dff079b384d6a32cc02142aa14572, after 0001
+Provenance: AI-assisted project work; not submitted upstream.
+
+The normal cpu-map path returned without releasing the temporary list used
+while pruning dead CPUs.  The missing-cpu-map path already frees it.
+
+---
+ src/kboot.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/kboot.c b/src/kboot.c
+--- a/src/kboot.c
++++ b/src/kboot.c
+@@ -742,6 +742,7 @@ static int dt_set_cpus(void)
+     if ((cluster_node < 0) && (cluster_node != -FDT_ERR_NOTFOUND))
+         bail_cleanup("FDT: Error iterating through CPU clusters\n");
+ 
++    free(pruned_phandles);
+     return 0;
+ 
+ err:

@@ -12,7 +12,10 @@ MAKE="$TOOLS/make-4.4.1/make"
 RUST_SYSROOT=$(rustc --print sysroot)
 RUST_BIN="$RUST_SYSROOT/lib/rustlib/aarch64-apple-darwin/bin"
 TARGET_SYSROOT="$TOOLS/rust-std-1.95.0-aarch64-unknown-none-softfloat/rust-std-aarch64-unknown-none-softfloat"
-PATCH="$ROOT/patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch"
+PATCHES=(
+    "$ROOT/patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch"
+    "$ROOT/patches/m1n1/0002-free-pruned-cpus-after-handoff.patch"
+)
 
 if [[ $(uname -s) != Darwin || $(uname -m) != arm64 ]]; then
     echo 'This build recipe is validated only on Apple-arm64 macOS.' >&2
@@ -40,7 +43,10 @@ printf 'Build directory: %s\n' "$BUILD_DIR"
 tar -xf "$ARCHIVE" -C "$BUILD_DIR"
 SOURCE="$BUILD_DIR/m1n1-$REV"
 if [[ "$MODE" == patched ]]; then
-    (cd "$SOURCE" && patch -p1 --batch --forward -i "$PATCH") > "$BUILD_DIR/patch.log" 2>&1
+    for cpu_patch in "${PATCHES[@]}"; do
+        (cd "$SOURCE" && patch -p1 --batch --forward -i "$cpu_patch") >> "$BUILD_DIR/patch.log" 2>&1
+    done
+    shasum -a 256 "${PATCHES[@]}" > "$BUILD_DIR/PATCH_SHA256SUMS"
 fi
 
 export CARGO_HOME="$TOOLS/cargo-home"

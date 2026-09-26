@@ -77,15 +77,19 @@ pass. The inventory was also checked against the live Studio. The subsequent
 [full offline build](m1n1-cpu-offline-build.md) passed for both baseline and
 patched default firmware. Native hardware testing remains outstanding.
 Source capacity and a successful build are not working CPU release.
-The follow-up also runs the complete `dt_set_cpus()` against real libfdt
-and six synthetic scenarios; see the linked build notes for coverage and
-the separately identified success-path allocation leak.
+The follow-up also runs the complete `dt_set_cpus()` against real libfdt.
+The separate `0002` patch now fixes the success-path allocation leak, and
+all seven synthetic scenarios require zero outstanding allocations. The
+capacity-only negative control continues to reproduce the original leak.
+The separate exact-board harness also passes four scenarios using the pinned
+J575d six-cluster DT, cross-checked against the saved CPU inventory. CPU IDs
+and liveness remain mocked; see the offline-build document for limitations.
 
 ## Next gates
 
-1. Baseline/patched offline builds and synthetic full-function handoff tests
-   now pass. Next, validate the exact board DT and fix the separately tracked
-   success-path allocation leak; the synthetic map is not the six-cluster DT.
+1. Baseline/patched offline builds, allocation cleanup, synthetic handoff
+   tests and exact-board six-cluster DT tests now pass. Preserve these as
+   offline regression gates; they are not native CPU-release evidence.
 2. Establish T6032 CPU-start selection and execution-level behavior from
    evidence; do not assume the T6031 register offset or expand EL3 storage.
 3. Resolve MCC layout and six-cluster frequency initialization separately.

@@ -30,21 +30,49 @@ static u8 *secondary_stacks_el3[4];
 static u8 stack_tokens[MAX_CPUS];
 static u8 stack_tokens_el3[4];
 static size_t tracked_allocations;
+#define TRACKED_MAX 8
+static void *tracked_ptrs[TRACKED_MAX];
 
 static void *tracked_calloc(size_t count, size_t size)
 {
     void *ptr = calloc(count, size);
-    if (ptr)
-        tracked_allocations++;
+    if (ptr) {
+        for (size_t i = 0; i < TRACKED_MAX; i++) {
+            if (!tracked_ptrs[i]) {
+                tracked_ptrs[i] = ptr;
+                tracked_allocations++;
+                return ptr;
+            }
+        }
+        abort();
+    }
     return ptr;
 }
 
 static void tracked_free(void *ptr)
 {
-    if (ptr)
-        tracked_allocations--;
+    if (ptr) {
+        for (size_t i = 0; i < TRACKED_MAX; i++) {
+            if (tracked_ptrs[i] == ptr) {
+                tracked_ptrs[i] = NULL;
+                tracked_allocations--;
+                break;
+            }
+        }
+    }
     free(ptr);
 }
+
+static void tracked_reclaim_all(void)
+{
+    for (size_t i = 0; i < TRACKED_MAX; i++)
+        if (tracked_ptrs[i])
+            tracked_free(tracked_ptrs[i]);
+}
+
+#ifndef EXPECT_KNOWN_LEAK
+#define EXPECT_KNOWN_LEAK 0
+#endif
 
 #define calloc tracked_calloc
 #define free tracked_free
@@ -140,7 +168,8 @@ static int build_tree(int cpu_count, bool include_cpu_map, int dead_cpu)
     int affinities = fdt_add_subnode(dt, aic, "affinities");
     int affinity0 = fdt_add_subnode(dt, affinities, "cluster0");
     int affinity1 = fdt_add_subnode(dt, affinities, "cluster1");
-    int cpu_map = fdt_add_subnode(dt, fdt_path_offset(dt, "/cpus"), "cpu-map");
+    int cpu_map = include_cpu_map ?
+                  fdt_add_subnode(dt, fdt_path_offset(dt, "/cpus"), "cpu-map") : -1;
     if (affinity0 < 0 || affinity1 < 0 || (include_cpu_map && cpu_map < 0)) {
         fprintf(stderr, "build: aic/map failed aff0=%d aff1=%d map=%d\n", affinity0, affinity1, cpu_map);
         return -1;
@@ -345,10 +374,10 @@ static int run_handoff(int cpu_count, bool include_cpu_map, int dead_cpu,
         return 100;
     }
     test_mismatch_cpu = mismatch_cpu;
-    /* Each invocation measures only allocations made by this dt_set_cpus call;
-     * the known successful-path leak is intentionally left for the process to
-     * report, while ASan leak scanning is disabled by the Python runner. */
-    tracked_allocations = 0;
+    if (tracked_allocations != 0) {
+        fprintf(stderr, "scenario cpu=%d tracked state not reclaimed\n", cpu_count);
+        return 111;
+    }
     int result = dt_set_cpus();
     if (result != expected_result) {
         fprintf(stderr, "scenario cpu=%d unexpected result=%d expected=%d\n",
@@ -366,7 +395,7 @@ static int run_handoff(int cpu_count, bool include_cpu_map, int dead_cpu,
                     cpu_count, count_cpu_map_cores(), expected_live);
             return 106;
         }
-        if (!include_cpu_map || validate_cpu_set(false) != expected_live) {
+        if (validate_cpu_set(false) != expected_live) {
             fprintf(stderr, "scenario cpu=%d AIC membership validation failed\n", cpu_count);
             return 109;
         }
@@ -419,6 +448,13 @@ static int run_handoff(int cpu_count, bool include_cpu_map, int dead_cpu,
     }
     printf("scenario cpu=%d dead=%d result=%d live=%d tracked_allocations=%zu\n",
            cpu_count, dead_cpu, result, count_cpu_nodes(), tracked_allocations);
+    tracked_reclaim_all();
+    if (tracked_allocations != 0) {
+        fprintf(stderr, "scenario cpu=%d tracked allocations remain after reclaim\n", cpu_count);
+        free(dt);
+        dt = NULL;
+        return 112;
+    }
     free(dt);
     dt = NULL;
     return 0;
@@ -428,9 +464,11 @@ int main(void)
 {
     int result = 0;
     /* 32 CPUs spanning two synthetic die encodings; ordinal 5 is boot CPU. */
-    result |= run_handoff(32, true, -1, 5, -1, -1, 0, 32, 16, 31, true);
+    result |= run_handoff(32, true, -1, 5, -1, -1, 0, 32, 16, 31,
+                          EXPECT_KNOWN_LEAK != 0);
     /* Dead secondary pruning updates CPU nodes, AIC references and cpu-map. */
-    result |= run_handoff(32, true, 20, 0, -1, -1, 0, 31, 16, 30, true);
+    result |= run_handoff(32, true, 20, 0, -1, -1, 0, 31, 16, 30,
+                          EXPECT_KNOWN_LEAK != 0);
     /* An ordinal 33rd CPU must fail before indexing fixed-size storage. */
     result |= run_handoff(33, true, -1, 0, -1, -1, -1, 0, 0, 0, false);
     /* A DT MPIDR mismatch is fatal and cleans the temporary prune array. */
@@ -438,9 +476,15 @@ int main(void)
     /* A missing reg property is fatal. */
     result |= run_handoff(32, true, -1, 0, -1, 3, -1, 0, 0, 0, false);
     /* A 24-CPU legacy topology remains within the expanded bound. */
-    result |= run_handoff(24, true, -1, 0, -1, -1, 0, 24, 12, 23, true);
+    result |= run_handoff(24, true, -1, 0, -1, -1, 0, 24, 12, 23,
+                          EXPECT_KNOWN_LEAK != 0);
+    /* Missing cpu-map takes the existing early-free path. */
+    result |= run_handoff(32, false, -1, 0, -1, -1, 0, 32, 16, 31, false);
     if (result)
         return result;
-    printf("known existing dt_set_cpus success-path allocation leak observed: 1 per successful cpu-map run\n");
+    if (EXPECT_KNOWN_LEAK)
+        printf("capacity-only negative control: known cpu-map allocation leak observed and reclaimed\n");
+    else
+        printf("known cpu-map allocation leak fixed: zero outstanding allocations\n");
     return 0;
 }

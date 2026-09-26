@@ -1,14 +1,18 @@
 # Offline m1n1 CPU-capacity build
 
 2026-09-26: both the unmodified m1n1 baseline and the local 32-CPU patch
-compile and link successfully on the M3 Ultra host. This is a **build result,
+compile and link successfully on the M3 Ultra host, as does the subsequent
+capacity-plus-cleanup series. This is a **build result,
 not a native boot result**. No artifact was installed or executed.
 
-Source: `4184923ffb2dff079b384d6a32cc02142aa14572`; patch:
-[`0001-expand-cpu-capacity-and-fix-bounds.patch`](../patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch).
-The [build record](inventory/m1n1-cpu-build-2026-09-26.json) records artifact
-hashes and scratch locations. The recipe builds the default firmware configuration, not every optional
-feature combination. It does not introduce T6032 startup dispatch.
+Source: `4184923ffb2dff079b384d6a32cc02142aa14572`; local patch series:
+[`0001` capacity/bounds](../patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch)
+and [`0002` allocation cleanup](../patches/m1n1/0002-free-pruned-cpus-after-handoff.patch).
+The [initial build record](inventory/m1n1-cpu-build-2026-09-26.json) records
+baseline/capacity-only artifacts; the [cleanup-series build record](inventory/m1n1-cpu-cleanup-build-2026-09-26.json)
+records the subsequent two-patch build. Both record hashes and scratch
+locations. The recipe builds the default firmware configuration, not every
+optional feature combination. It does not introduce T6032 startup dispatch.
 
 ## Toolchain
 
@@ -35,7 +39,7 @@ bash scripts/build-m1n1-cpu-offline.sh patched
 ```
 
 The script validates the source archive digest and Rust version, extracts a
-fresh scratch tree per run, applies the patch only to the patched copy,
+fresh scratch tree per run, applies both patches only to the patched copy,
 sets a local version tag and passes `--offline --locked` to Cargo. Logs and
 artifacts are retained on failure or success. There is no install/boot step.
 The source archive stays unmodified. This is a repeatable build recipe, not
@@ -44,7 +48,7 @@ It is not a fully isolated, content-pinned toolchain: the script checks the
 source archive and Rust version but trusts the prepared tools, extracted
 target sysroot and Cargo cache. Preparation digests must be checked manually;
 they do not authenticate subsequent changes to extracted files. The build
-record also identifies the patch digest used for the recorded patched build.
+records identify the patch digests used for each recorded patched build.
 
 Preparation needs network access once. Run from the repository root:
 
@@ -85,7 +89,7 @@ dependencies. The firmware build itself does not fetch dependencies.
 Both builds emit ARM64 ELF images, a Mach-O arm64e image and a raw binary.
 Both have the same two compiler warnings: the pre-existing variable-sized
 union in `dcp_iboot.c`, and an unused Rust `crate::println` import. No new
-compiler warning was observed with the capacity patch.
+compiler warning was observed with either local patch series.
 
 The CPU handoff tests below are separate host-side tests using libfdt
 and mocked SMP state; none execute the firmware. Hardware CPU-start,
@@ -99,11 +103,11 @@ PYTHONDONTWRITEBYTECODE=1 uv run --no-project --python 3.13 scripts/test-m1n1-cp
 ```
 
 This compiles the entire extracted `dt_set_cpus()` from the checksum-checked
-pinned `kboot.c`, after applying the capacity patch, with the source tree's
+pinned `kboot.c`, after applying the two patches, with the source tree's
 real libfdt. Firmware/SMP operations are mocked. AddressSanitizer and UBSan
 are enabled with fail-fast undefined-behavior checking.
 
-Six scenarios pass:
+Seven scenarios pass with zero outstanding tracked allocations:
 
 | Input | Expected result |
 | --- | --- |
@@ -113,23 +117,68 @@ Six scenarios pass:
 | DT/SMP MPIDR mismatch | Error with temporary allocation released |
 | Missing CPU `reg` | Error with temporary allocation released |
 | 24 CPUs | Success; 23 secondary release addresses and stack reservations |
+| Missing CPU map | Success; existing early-free path remains correct |
 
 The harness checks exact surviving AIC/CPU-map phandle membership, not just
 counts, and checks release addresses including the boot-CPU exception.
 Linux FDT values use big-endian cells. The synthetic MPIDRs split CPUs into
 two groups representing dies; they are not measured M3 Ultra MPIDRs. Its
 two-group CPU map is a functional fixture, not the board's actual six-cluster
-device tree. Exact board-DT integration and EL3-mode testing remain separate.
+device tree. The exact board-DT test below is separate; EL3-mode testing
+remains outstanding.
 
-**Known finding, not fixed here:** the pinned function fails to free
-`pruned_phandles` when it successfully processes an existing CPU map.
-The harness explicitly expects and reports one outstanding allocation in
-each such success case (128 bytes at `MAX_CPUS=32`). Error paths in the
-tested cases release it. Leak scanning is disabled for this known finding;
-the allocator counter makes it visible, while address/UB checks remain
-enabled. This is not a claim of a leak-free firmware or sanitizer run.
-Keep a cleanup fix separate from the three-line capacity patch.
+**Fixed by the separate `0002` patch:** the pinned function failed to free
+`pruned_phandles` when it successfully processed an existing CPU map.
+The capacity-only negative control still observes that allocation (128 bytes
+at `MAX_CPUS=32`) and reclaims it in test code. The fixed run requires zero
+outstanding allocations on every tested success/error path. A new missing-map
+case checks the existing early free, guarding against a double-free.
+LeakSanitizer is enabled for the fixed run on non-Darwin hosts; on this Mac,
+leak scanning is disabled because it is unsupported. Explicit allocation
+tracking, AddressSanitizer and fail-fast UBSan remain enabled. This is not a
+whole-firmware leak audit.
 
 The prior 12 topology tests, 15 MCC tests and CPU bounds/negative-control
 harness also pass. The full firmware and test executables are distinct:
 only the host test executables were run.
+
+## Exact T6032/J575d board-DT handoff
+
+The board harness compiles the actual J575d DTS from the pinned Linux
+`asahi` commit `77cb8f24c2381a8abb7272d7bbdec548d6426a8a`. Its
+[source manifest](inventory/t6032-board-dt-sources-2026-09-26.json) records
+the 19-file include closure, commit-addressed URLs and SHA-256 checksums.
+This is a pinned source test, not a claim about current upstream status.
+
+```sh
+# Explicit network preparation, needed only when the source closure is absent:
+PYTHONDONTWRITEBYTECODE=1 uv run --no-project --python 3.13 scripts/test-m1n1-board-handoff.py --fetch
+# The test itself is offline; the pinned m1n1 source must also be prepared:
+PYTHONDONTWRITEBYTECODE=1 uv run --no-project --offline --python 3.13 scripts/test-m1n1-board-handoff.py
+```
+
+Prerequisites are clang, dtc (tested with 1.8.1), and the m1n1 sources above.
+The run reports six existing DTS structural warnings in `simple_bus_reg`
+and `unit_address_vs_reg`; it is not a warning-free DT compilation.
+
+The 32 CPU ordinals and decoded affinities agree with the sanitized live
+host inventory: two dies, each with 4E+6P+6P cores. Linux DT P-core `reg`
+values additionally carry bit 16 (`0x10000`); the adapter checks that marker
+separately from the ADT die/cluster/core fields. Global DT clusters 3–5
+correspond to die 1's local clusters 0–2. This cross-check is **not** a
+measurement of the CPUs' runtime MPIDR registers.
+
+| Board fixture | Result |
+| --- | --- |
+| All 32 CPUs alive | 32 CPUs, six clusters retained |
+| CPU 24 dead | 31 CPUs, six clusters retained |
+| Die-1 cluster 5 dead | 26 CPUs, five clusters retained |
+| Mock CPU 7 MPIDR mismatch | Rejected; temporary allocation released |
+
+All four scenarios pass with zero outstanding tracked allocations under
+AddressSanitizer and fail-fast UBSan. The harness checks exact surviving
+CPU-map phandles, removed CPU nodes, release addresses and reservation
+counts. The board has the `apple,t8122-aic3` fallback compatible but no AIC
+affinity list, so AIC-list pruning coverage comes from the synthetic suite,
+not this board fixture. SMP IDs/liveness and execution level remain mocked;
+neither AIC operation nor native CPU release has been validated.

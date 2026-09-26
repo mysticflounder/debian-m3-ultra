@@ -1,0 +1,27 @@
+{
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "toolchain_record": "m1n1-cpu-build-2026-09-26.json",
+  "configuration": "default Makefile all; capacity and allocation-cleanup patches",
+  "directory": "scratch/m1n1-firmware-patched.vZG39n",
+  "status": "pass",
+  "patches": [
+    {
+      "path": "patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch",
+      "sha256": "acd987129def9126035d384a6e9370d2f0077634b8298cc8f1f02fbb3c74e11c"
+    },
+    {
+      "path": "patches/m1n1/0002-free-pruned-cpus-after-handoff.patch",
+      "sha256": "3fd3508335e9e7af0fffca054d0a718ec4056e9431a8413e8e5312653c9be5e0"
+    }
+  ],
+  "sha256": {
+    "m1n1.elf": "8a60c11c1b9f69efa875d7b88ef6b40eb08d1c42f0ece230ad60aee33906118c",
+    "m1n1-raw.elf": "94c1bce7ea8c022a9d0718a06e1c162312c1d800df96d519b071bc2e1d311087",
+    "m1n1.macho": "85f4641469f47d32d26bd6e019bf9682e730900e85aa0bfea4970cb5b629934f",
+    "m1n1.bin": "9709e174f11157cad1bcc77fb892728e42644c13ef1d981d1f3206f9ae74a6b8"
+  },
+  "new_compiler_warnings_vs_baseline": 0,
+  "network_during_firmware_build": false,
+  "installed_or_executed": false,
+  "native_boot_validated": false
+}

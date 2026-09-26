@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "status": "source_manifest",
+  "repository": "https://github.com/AsahiLinux/linux",
+  "commit": "77cb8f24c2381a8abb7272d7bbdec548d6426a8a",
+  "target": "t6032-j575d (J575d, M3 Ultra)",
+  "source_files": [
+    {"local": "t6032-j575d.dts", "upstream": "arch/arm64/boot/dts/apple/t6032-j575d.dts", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/arch/arm64/boot/dts/apple/t6032-j575d.dts", "sha256": "28ffa9037b10eac9140b3881b47583e91347aabb72ab686decfd1fa17693aeb6"},
+    {"local": "t6032.dtsi", "upstream": "arch/arm64/boot/dts/apple/t6032.dtsi", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/arch/arm64/boot/dts/apple/t6032.dtsi", "sha256": "326f3f9839f6017099e987402176923cb1d65af29ee21d1e34c3b95837ff7fbf"},
+    {"local": "multi-die-cpp.h", "upstream": "arch/arm64/boot/dts/apple/multi-die-cpp.h", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/arch/arm64/boot/dts/apple/multi-die-cpp.h", "sha256": "692ecc0cb7340122da7a558e02ac6c70ed2e49811136d58c4b21d82e8e79abc3"},
+    {"local": "t6031-base.dtsi", "upstream": "arch/arm64/boot/dts/apple/t6031-base.dtsi", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/arch/arm64/boot/dts/apple/t6031-base.dtsi", "sha256": "c1f08bc5b31cda11f94ce193316af5fc8403b4593782b0d25c515d176c37ca5a"},
+    {"local": "t6031-die0.dtsi", "upstream": "arch/arm64/boot/dts/apple/t6031-die0.dtsi", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/arch/arm64/boot/dts/apple/t6031-die0.dtsi", "sha256": "417ea802824a583d94a1b4c9933c629444d199faf4aa2edd87f5e1a9c7c3975f"},
+    {"local": "t6031-dieX.dtsi", "upstream": "arch/arm64/boot/dts/apple/t6031-dieX.dtsi", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/arch/arm64/boot/dts/apple/t6031-dieX.dtsi", "sha256": "6d9ff0c6fe73715f37fe49dbfd4d17ff182a6e8022b18ef128c3cd41b9bc7317"},
+    {"local": "t6031-pmgr.dtsi", "upstream": "arch/arm64/boot/dts/apple/t6031-pmgr.dtsi", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/arch/arm64/boot/dts/apple/t6031-pmgr.dtsi", "sha256": "d14dff6ac71140b534dbaa43b22208a960eb1b7258df1760f0b53f91f562d817"},
+    {"local": "t6031-gpio-pins.dtsi", "upstream": "arch/arm64/boot/dts/apple/t6031-gpio-pins.dtsi", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/arch/arm64/boot/dts/apple/t6031-gpio-pins.dtsi", "sha256": "65069ae20dfc2eb95d2dafbda618cba47b89bcd0c5bc649348601f18c802e4af"},
+    {"local": "t6031-nvme.dtsi", "upstream": "arch/arm64/boot/dts/apple/t6031-nvme.dtsi", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/arch/arm64/boot/dts/apple/t6031-nvme.dtsi", "sha256": "0b9ab097a7e973f05b2237e51b89aa6d93e1d60beff1f5ad01605e4426068b6d"},
+    {"local": "spi1-nvram.dtsi", "upstream": "arch/arm64/boot/dts/apple/spi1-nvram.dtsi", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/arch/arm64/boot/dts/apple/spi1-nvram.dtsi", "sha256": "a4a26dd2abe3412221761fcbe05958599a7ff07b2fd980ab8a739a175966cc5e"},
+    {"local": "hwmon-common.dtsi", "upstream": "arch/arm64/boot/dts/apple/hwmon-common.dtsi", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/arch/arm64/boot/dts/apple/hwmon-common.dtsi", "sha256": "240f138526ff84717ee8a65b47f749b2d855ddd472b6c16e9b5a93dcd8bea601"},
+    {"local": "hwmon-fan.dtsi", "upstream": "arch/arm64/boot/dts/apple/hwmon-fan.dtsi", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/arch/arm64/boot/dts/apple/hwmon-fan.dtsi", "sha256": "05a5627c1087415e7e42d09d0d6cf04ac5167394fa1246143dca1a19c6318b59"},
+    {"local": "hwmon-fan-dual.dtsi", "upstream": "arch/arm64/boot/dts/apple/hwmon-fan-dual.dtsi", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/arch/arm64/boot/dts/apple/hwmon-fan-dual.dtsi", "sha256": "ebc824c95d4195f424d1918a1ac96026f7214b77dcafa1581daf3304b38d3368"},
+    {"local": "dt-bindings/gpio/gpio.h", "upstream": "include/dt-bindings/gpio/gpio.h", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/include/dt-bindings/gpio/gpio.h", "sha256": "5423b3866877ead0920ec978b5b072f06087443033a72445b39faed8f288ddc1"},
+    {"local": "dt-bindings/interrupt-controller/apple-aic.h", "upstream": "include/dt-bindings/interrupt-controller/apple-aic.h", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/include/dt-bindings/interrupt-controller/apple-aic.h", "sha256": "6a67506ab5333d6e552b3a656e03b34f9769af5c88cf7202b1458e1ba5067f25"},
+    {"local": "dt-bindings/interrupt-controller/irq.h", "upstream": "include/dt-bindings/interrupt-controller/irq.h", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/include/dt-bindings/interrupt-controller/irq.h", "sha256": "392400a309a54ea5b1a2ac2e52773d3ab68e07323109b9aed88a69fedc74e082"},
+    {"local": "dt-bindings/pinctrl/apple.h", "upstream": "include/dt-bindings/pinctrl/apple.h", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/include/dt-bindings/pinctrl/apple.h", "sha256": "2079cb60617b0bb054e2e9e346ec6f5b3fdf8b4464ac9da89e09655e3af183b0"},
+    {"local": "dt-bindings/phy/phy.h", "upstream": "include/dt-bindings/phy/phy.h", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/include/dt-bindings/phy/phy.h", "sha256": "1bd66286362f02487d3b5eeefb4be3221b949b1eecbfc4ca717fbbbe5e8a61be"},
+    {"local": "dt-bindings/spmi/spmi.h", "upstream": "include/dt-bindings/spmi/spmi.h", "url": "https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/include/dt-bindings/spmi/spmi.h", "sha256": "c2952b040e5c24726c423e52ba939d389141ff27eb2307fb3888657b455e2b9b"}
+  ],
+  "fetch_template": "curl --fail --location https://raw.githubusercontent.com/AsahiLinux/linux/77cb8f24c2381a8abb7272d7bbdec548d6426a8a/<upstream> -o scratch/m1n1-board-dt/<local>",
+  "notes": [
+    "The runner is offline by default and verifies every listed closure file before preprocessing.",
+    "CPU topology is source-declared DT structure; it is not native hardware or ADT MPIDR validation."
+  ]
+}
