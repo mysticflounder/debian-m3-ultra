@@ -73,14 +73,19 @@ Only the actual guard expression from `dt_set_cpus()` is compiled and tested
 at 0, 23, 24, 31 and 32; this is **not** a full FDT pruning/handoff test.
 
 Validation: 12 topology tests, all 15 existing MCC tests and the C harness
-pass. The inventory was also checked against the live Studio. A full m1n1
-firmware build, synthetic-FDT integration test and native hardware test
-remain outstanding. Source capacity is not working CPU release.
+pass. The inventory was also checked against the live Studio. The subsequent
+[full offline build](m1n1-cpu-offline-build.md) passed for both baseline and
+patched default firmware. Native hardware testing remains outstanding.
+Source capacity and a successful build are not working CPU release.
+The follow-up also runs the complete `dt_set_cpus()` against real libfdt
+and six synthetic scenarios; see the linked build notes for coverage and
+the separately identified success-path allocation leak.
 
 ## Next gates
 
-1. Build the patched firmware offline and test full kernel DT pruning and
-   release-address handoff, including dead secondaries and extra CPU nodes.
+1. Baseline/patched offline builds and synthetic full-function handoff tests
+   now pass. Next, validate the exact board DT and fix the separately tracked
+   success-path allocation leak; the synthetic map is not the six-cluster DT.
 2. Establish T6032 CPU-start selection and execution-level behavior from
    evidence; do not assume the T6031 register offset or expand EL3 storage.
 3. Resolve MCC layout and six-cluster frequency initialization separately.

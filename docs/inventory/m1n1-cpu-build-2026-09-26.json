@@ -1,0 +1,40 @@
+{
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "source_archive_sha256": "6425983260ab96d55c36fdaab3b456830c3bd80f06b7759a61ed2bcca924d973",
+  "configuration": "default Makefile all; no CHAINLOADING or custom LOGO",
+  "host": "macOS 27.0 build 26A428; Apple arm64",
+  "compiler": "Apple clang 21.0.0 clang-2100.3.34.2; aarch64-none-elf",
+  "rust": "1.95.0; aarch64-unknown-none-softfloat",
+  "linker_objcopy": "Rust bundled LLVM 22.1.2",
+  "make": "GNU Make 4.4.1",
+  "network_during_firmware_build": false,
+  "installed_or_executed": false,
+  "native_boot_validated": false,
+  "baseline": {
+    "status": "pass",
+    "directory": "scratch/m1n1-firmware-baseline.6KrAvB",
+    "sha256": {
+      "m1n1.elf": "1ea006a6cc68e1b28d93f4ad13f4561e2443f0042b2aa42bf1c66fae0b6f5dd6",
+      "m1n1-raw.elf": "7aad63a5028fcc808d637c60c32ba05300902300ffc3e8930c65bde31322a495",
+      "m1n1.macho": "bf7047b4d3b53bd1ceeab2e37b80a224fbc4ec29e0f59b0411b46c27f3c137f5",
+      "m1n1.bin": "03ee2e9f7e158488a2fe1c80e9590572c1595e2fa7cccb08725b68c2c4a1b9e3"
+    }
+  },
+  "patched": {
+    "status": "pass",
+    "directory": "scratch/m1n1-firmware-patched.m5slJa",
+    "patch": "patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch",
+    "patch_sha256": "acd987129def9126035d384a6e9370d2f0077634b8298cc8f1f02fbb3c74e11c",
+    "sha256": {
+      "m1n1.elf": "b4cc57a7c3d3fd4620595b66d892996a09bcd94a28965f23521ecb18a432e9da",
+      "m1n1-raw.elf": "c06df9e2fd55c554a2eb92a02889d96f41b89b78aaacb5ee773ae19093ddc0d8",
+      "m1n1.macho": "4d5b1c42a0eb830a2787bebe20beae340c97c7f91b1f2e51fdc32aa342de277c",
+      "m1n1.bin": "d368709c249eb6d19101d7929c047771d451ec8fe724ba075d1d4353f5b702a9"
+    }
+  },
+  "warnings_in_both": [
+    "dcp_iboot.c: GNU variable-sized-type-not-at-end extension",
+    "Rust: unused crate::println import"
+  ],
+  "new_compiler_warnings_in_patched": 0
+}

@@ -132,6 +132,15 @@ Raising the ordinary capacity does not bypass that gate. T6032 CPU-start
 selection, the actual execution-level contract, MCC initialization and
 six-cluster frequency setup remain unresolved hardware-test prerequisites.
 
+The [offline firmware build](m1n1-cpu-offline-build.md) now passes for both
+the pinned baseline and capacity-patched default configuration, with the
+same compiler warnings. Dependencies were staged under project scratch;
+no host toolchain installation or target execution was performed.
+The full `dt_set_cpus()` host harness also passes six scenarios with real
+libfdt and mocked SMP state. It exposes a pre-existing successful CPU-map
+allocation leak, explicitly tracked rather than treated as fixed. Exact
+six-cluster board-DT validation remains outstanding.
+
 ## Development-host split
 
 Adam plans to move most project work to the MacBook to free Studio storage
@@ -145,8 +154,9 @@ or macOS removal is authorized by this plan.
 
 1. Reproduce the MCC selection mismatch with sanitized live evidence and
    negative fixtures; preserve explicit `hardware_validated=false`.
-2. Complete the bounded 32-CPU capacity patch and two-die inventory tests;
-   follow up with a full firmware build and exact handoff-DT validation.
+2. Capacity patch, inventory tests, full offline builds and synthetic handoff
+   tests are complete. Follow up with exact board-DT validation and the
+   separately tracked handoff allocation cleanup.
 3. Obtain a reference T6031 MCC layout and review a bounded, fail-closed
    register-selection design without executing register writes.
 4. Confirm startup and early frequency-control contracts from appropriately
