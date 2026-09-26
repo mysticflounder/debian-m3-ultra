@@ -145,6 +145,14 @@ using the actual pinned J575d DT pass, including CPU-24 and whole-cluster
 pruning. Its six-cluster CPU ordering agrees with the saved live inventory;
 this does not validate hardware CPU startup or AIC operation.
 
+The subsequent [startup-contract audit](m1n1-t6032-startup.md) confirms that
+generic ADT chip identification is distinct from missing T6032 startup
+dispatch. The pinned secondary-start function returns on unknown chip IDs;
+that return does not propagate an error to the overall boot path. Existing
+RVBAR mismatch, allocation-failure and timeout handling need hardening.
+Neither the T6032 start-register contract nor native execution-level behavior
+is established; the four-CPU EL3 gate remains unchanged.
+
 ## Development-host split
 
 Adam plans to move most project work to the MacBook to free Studio storage

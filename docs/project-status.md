@@ -14,7 +14,8 @@ not a fresh remote or live-machine check.
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff cleanup | Validated offline | Two separate patches, seven-case handoff suite and full firmware build pass; no native execution |
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
-| T6032 SoC identity / CPU startup | Pending | Establish target dispatch, CPU-start register contract and execution-level behavior; no guessed offsets |
+| T6032 SoC identity / CPU startup | Source audit and mocked startup tests pass; native contract unresolved | Confirm start-register semantics and native entry/feature state before enabling dispatch |
+| Secondary-start failure handling | Hazards identified; firmware fix pending | Add pre-release RVBAR/allocation guards; review error propagation and late-CPU timeout safety separately |
 | MCC/cache initialization | Layout problem reproduced offline; driver correction pending | Obtain T6031 regression evidence and implement bounded, fail-closed register selection |
 | Six-cluster frequency / DVFS | Pending | Establish early initialization semantics; address die-1 performance metadata separately |
 | Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |
@@ -26,6 +27,7 @@ not a fresh remote or live-machine check.
 | NFS follow-up | Deferred by Adam | Resume only when requested; historical VM NFS evidence is not native-driver validation |
 
 Details: [CPU work](m1n1-t6032-cpus.md),
+[startup contract](m1n1-t6032-startup.md),
 [offline build and handoff](m1n1-cpu-offline-build.md),
 [SoC gaps](m3-ultra-soc-status-2026-09-26.md),
 [persistent VM](persistent-test-vm.md),

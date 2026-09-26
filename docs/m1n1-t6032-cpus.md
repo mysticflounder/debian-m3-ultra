@@ -90,8 +90,10 @@ and liveness remain mocked; see the offline-build document for limitations.
 1. Baseline/patched offline builds, allocation cleanup, synthetic handoff
    tests and exact-board six-cluster DT tests now pass. Preserve these as
    offline regression gates; they are not native CPU-release evidence.
-2. Establish T6032 CPU-start selection and execution-level behavior from
-   evidence; do not assume the T6031 register offset or expand EL3 storage.
+2. The [startup contract audit](m1n1-t6032-startup.md) identifies the missing
+   T6032 dispatch and separates EL3 support from current execution level.
+   Confirm the register/entry contract and harden pre-release failures;
+   do not assume the T6031 register offset or expand EL3 storage.
 3. Resolve MCC layout and six-cluster frequency initialization separately.
 4. Validate recovery and the supported boot-entry path before any RAM-only
    native test. Disk changes and firmware installation are not authorized.
