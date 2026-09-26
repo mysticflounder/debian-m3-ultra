@@ -1,0 +1,53 @@
+Local review patch: smp capacity and half-open CPU bounds
+Base: m1n1 4184923ffb2dff079b384d6a32cc02142aa14572
+Provenance: AI-assisted project work; not submitted upstream.
+
+The T6032 target exposes 32 logical CPUs.  Raise the general CPU storage
+capacity to 32 while leaving the separate EL3 limit unchanged.  The kboot
+CPU-node and HV CPU selectors use a half-open bound; accepting MAX_CPUS would
+index one past their fixed-size arrays.
+
+This patch does not add a SoC target, CPU-start register programming, or any
+MMIO behavior.
+---
+ src/hv.c    | 2 +-
+ src/kboot.c | 2 +-
+ src/smp.h   | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/hv.c b/src/hv.c
+--- a/src/hv.c
++++ b/src/hv.c
+@@ -307,7 +307,7 @@ static void hv_rendezvous(void)
+ 
+ bool hv_switch_cpu(int cpu)
+ {
+-    if (cpu > MAX_CPUS || cpu < 0 || !hv_started_cpus[cpu]) {
++    if (cpu >= MAX_CPUS || cpu < 0 || !hv_started_cpus[cpu]) {
+         printf("HV: CPU #%d is inactive or invalid\n", cpu);
+         return false;
+     }
+diff --git a/src/kboot.c b/src/kboot.c
+--- a/src/kboot.c
++++ b/src/kboot.c
+@@ -558,7 +558,7 @@ static int dt_set_cpus(void)
+         if (strncmp(name, "cpu@", 4))
+             goto next_node;
+ 
+-        if (cpu > MAX_CPUS)
++        if (cpu >= MAX_CPUS)
+             bail_cleanup("Maximum number of CPUs exceeded, consider increasing MAX_CPUS\n");
+ 
+         const fdt64_t *prop = fdt_getprop(dt, node, "reg", NULL);
+diff --git a/src/smp.h b/src/smp.h
+--- a/src/smp.h
++++ b/src/smp.h
+@@ -6,7 +6,7 @@
+ #include "types.h"
+ #include "utils.h"
+ 
+-#define MAX_CPUS     24
++#define MAX_CPUS     32
+ #define MAX_EL3_CPUS 4
+ 
+ #define SECONDARY_STACK_SIZE 0x10000

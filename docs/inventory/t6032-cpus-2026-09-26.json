@@ -1,0 +1,318 @@
+{
+  "cpu_release_validated": false,
+  "hardware_validated": false,
+  "identity": {
+    "chip_id": "0x6032",
+    "target": "J575d"
+  },
+  "register_writes_performed": false,
+  "schema_version": 1,
+  "status": "ok",
+  "topology": {
+    "advertised_max_cpus": 32,
+    "affinity": [
+      {
+        "cluster": 0,
+        "cluster_type": "E",
+        "compatible": "apple,sawtooth",
+        "core": 0,
+        "cpu_id": 0,
+        "die": 0
+      },
+      {
+        "cluster": 0,
+        "cluster_type": "E",
+        "compatible": "apple,sawtooth",
+        "core": 1,
+        "cpu_id": 1,
+        "die": 0
+      },
+      {
+        "cluster": 0,
+        "cluster_type": "E",
+        "compatible": "apple,sawtooth",
+        "core": 2,
+        "cpu_id": 2,
+        "die": 0
+      },
+      {
+        "cluster": 0,
+        "cluster_type": "E",
+        "compatible": "apple,sawtooth",
+        "core": 3,
+        "cpu_id": 3,
+        "die": 0
+      },
+      {
+        "cluster": 1,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 0,
+        "cpu_id": 4,
+        "die": 0
+      },
+      {
+        "cluster": 1,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 1,
+        "cpu_id": 5,
+        "die": 0
+      },
+      {
+        "cluster": 1,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 2,
+        "cpu_id": 6,
+        "die": 0
+      },
+      {
+        "cluster": 1,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 3,
+        "cpu_id": 7,
+        "die": 0
+      },
+      {
+        "cluster": 1,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 4,
+        "cpu_id": 8,
+        "die": 0
+      },
+      {
+        "cluster": 1,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 5,
+        "cpu_id": 9,
+        "die": 0
+      },
+      {
+        "cluster": 2,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 0,
+        "cpu_id": 10,
+        "die": 0
+      },
+      {
+        "cluster": 2,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 1,
+        "cpu_id": 11,
+        "die": 0
+      },
+      {
+        "cluster": 2,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 2,
+        "cpu_id": 12,
+        "die": 0
+      },
+      {
+        "cluster": 2,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 3,
+        "cpu_id": 13,
+        "die": 0
+      },
+      {
+        "cluster": 2,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 4,
+        "cpu_id": 14,
+        "die": 0
+      },
+      {
+        "cluster": 2,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 5,
+        "cpu_id": 15,
+        "die": 0
+      },
+      {
+        "cluster": 0,
+        "cluster_type": "E",
+        "compatible": "apple,sawtooth",
+        "core": 0,
+        "cpu_id": 16,
+        "die": 1
+      },
+      {
+        "cluster": 0,
+        "cluster_type": "E",
+        "compatible": "apple,sawtooth",
+        "core": 1,
+        "cpu_id": 17,
+        "die": 1
+      },
+      {
+        "cluster": 0,
+        "cluster_type": "E",
+        "compatible": "apple,sawtooth",
+        "core": 2,
+        "cpu_id": 18,
+        "die": 1
+      },
+      {
+        "cluster": 0,
+        "cluster_type": "E",
+        "compatible": "apple,sawtooth",
+        "core": 3,
+        "cpu_id": 19,
+        "die": 1
+      },
+      {
+        "cluster": 1,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 0,
+        "cpu_id": 20,
+        "die": 1
+      },
+      {
+        "cluster": 1,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 1,
+        "cpu_id": 21,
+        "die": 1
+      },
+      {
+        "cluster": 1,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 2,
+        "cpu_id": 22,
+        "die": 1
+      },
+      {
+        "cluster": 1,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 3,
+        "cpu_id": 23,
+        "die": 1
+      },
+      {
+        "cluster": 1,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 4,
+        "cpu_id": 24,
+        "die": 1
+      },
+      {
+        "cluster": 1,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 5,
+        "cpu_id": 25,
+        "die": 1
+      },
+      {
+        "cluster": 2,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 0,
+        "cpu_id": 26,
+        "die": 1
+      },
+      {
+        "cluster": 2,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 1,
+        "cpu_id": 27,
+        "die": 1
+      },
+      {
+        "cluster": 2,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 2,
+        "cpu_id": 28,
+        "die": 1
+      },
+      {
+        "cluster": 2,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 3,
+        "cpu_id": 29,
+        "die": 1
+      },
+      {
+        "cluster": 2,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 4,
+        "cpu_id": 30,
+        "die": 1
+      },
+      {
+        "cluster": 2,
+        "cluster_type": "P",
+        "compatible": "apple,everest",
+        "core": 5,
+        "cpu_id": 31,
+        "die": 1
+      }
+    ],
+    "affinity_model": "ADT reg fields; not architectural MPIDR",
+    "clusters_per_die": 3,
+    "cpu_count": 32,
+    "decoder_source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+    "die_count": 2,
+    "group_shape": "4E+6P+6P per die",
+    "groups": [
+      {
+        "cluster": 0,
+        "cluster_type": "E",
+        "cpu_count": 4,
+        "die": 0
+      },
+      {
+        "cluster": 1,
+        "cluster_type": "P",
+        "cpu_count": 6,
+        "die": 0
+      },
+      {
+        "cluster": 2,
+        "cluster_type": "P",
+        "cpu_count": 6,
+        "die": 0
+      },
+      {
+        "cluster": 0,
+        "cluster_type": "E",
+        "cpu_count": 4,
+        "die": 1
+      },
+      {
+        "cluster": 1,
+        "cluster_type": "P",
+        "cpu_count": 6,
+        "die": 1
+      },
+      {
+        "cluster": 2,
+        "cluster_type": "P",
+        "cpu_count": 6,
+        "die": 1
+      }
+    ],
+    "reg_encoding": "little-endian u32; core[7:0], cluster[10:8], die[14:11]"
+  },
+  "topology_validated": true
+}

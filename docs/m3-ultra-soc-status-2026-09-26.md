@@ -109,6 +109,29 @@ also corroborates this: it assembles low cells first, uses little-endian
 byte conversion, and the build is little-endian AArch64. This is Apple ADT
 encoding, not the big-endian cell encoding of a standard flattened Linux DT.
 
+## 32-CPU / two-die preparation
+
+The pinned m1n1 source has a global `MAX_CPUS=24`. Its ADT CPU `reg`
+decoder already separates core bits `[7:0]`, cluster bits `[10:8]` and die
+bits `[14:11]`; representing a second die does not require widening those
+fields. These are ADT fields, not proof of architectural MPIDR values.
+
+The source audit also found two upper-bound checks using `cpu > MAX_CPUS`
+where `cpu >= MAX_CPUS` is required: `dt_set_cpus()` in `src/kboot.c`
+can overrun its pruned-phandle array, and `hv_switch_cpu()` in `src/hv.c`
+can read beyond `hv_started_cpus`. The local patch and source-derived
+regression tests are described in [the CPU work notes](m1n1-t6032-cpus.md).
+
+The ordinary secondary stacks, spin table and CPU-node arrays scale with
+`MAX_CPUS`. The 64-bit hypervisor guest mask and 32-bit AIC IPI CPU field
+can represent indices through 31. This is a capacity audit, not evidence
+that interrupts or secondary CPU release work on T6032.
+
+The separate `MAX_EL3_CPUS=4` allocation and startup gate stay unchanged.
+Raising the ordinary capacity does not bypass that gate. T6032 CPU-start
+selection, the actual execution-level contract, MCC initialization and
+six-cluster frequency setup remain unresolved hardware-test prerequisites.
+
 ## Development-host split
 
 Adam plans to move most project work to the MacBook to free Studio storage
@@ -122,7 +145,8 @@ or macOS removal is authorized by this plan.
 
 1. Reproduce the MCC selection mismatch with sanitized live evidence and
    negative fixtures; preserve explicit `hardware_validated=false`.
-2. Add a separate 32-CPU/two-die topology fixture and audit all m1n1 CPU bounds.
+2. Complete the bounded 32-CPU capacity patch and two-die inventory tests;
+   follow up with a full firmware build and exact handoff-DT validation.
 3. Obtain a reference T6031 MCC layout and review a bounded, fail-closed
    register-selection design without executing register writes.
 4. Confirm startup and early frequency-control contracts from appropriately
@@ -134,9 +158,8 @@ or macOS removal is authorized by this plan.
 
 ## Contribution provenance
 
-Asahi's [current AI policy](https://asahilinux.org/llm-policy/) prohibits
-material contributions made using generative AI, including certain trace
-analysis. This local AI-assisted audit is not presented as an eligible Asahi
-submission. Do not submit generated issues/patches there or conceal their
-provenance. The earlier roadmap's upstream-series proposal is qualified by
-this policy; local diagnostics can proceed without sending anything upstream.
+This AI-assisted work targets Debian and our project forks. Adam has ruled
+out submissions to Asahi while its policy remains unchanged. Preserve
+provenance and check each receiving project's requirements before submission;
+Asahi's policy is not a blocker for this local development work. No external
+submission is authorized by the roadmap.

@@ -10,12 +10,11 @@ host-side regression tests. No boot-policy, partition, stage-1, or hardware
 register changes are authorized by this phase. Working QEMU/HVF results are
 not evidence of physical SoC support.
 
-Upstream-policy qualification: Asahi's current
-[generative-AI policy](https://asahilinux.org/llm-policy/) forbids material
-AI-generated contributions. The historical upstream-series proposal below
-is not authorization to submit AI-assisted work there. Keep provenance
-explicit; the current tooling is local diagnostic work, not an upstreamable
-Asahi driver series.
+Contribution destination: this work targets Debian and our project forks.
+Adam has ruled out Asahi submissions while its policy remains unchanged.
+Keep AI-assistance provenance explicit and check the receiving project's
+requirements before any submission; this is not a blocker for local work.
+The historical upstream-series proposal below is not submission authorization.
 
 Primary target: Mac Studio (M3 Ultra), Apple model `Mac15,14`, board
 `J575dAP`, SoC `T6032`, 32 CPUs (8 efficiency and 24 performance cores),
