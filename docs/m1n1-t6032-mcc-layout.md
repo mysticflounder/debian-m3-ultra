@@ -120,9 +120,11 @@ The controller loop passes value one, then calls the wait helper with twelve
 after completing its writes (`0xfffffe00096e4f00`–`4f34`).
 
 This differs from m1n1's explicit per-plane write-then-poll loop. It is a
-concrete next trace target, not proof of broadcast semantics or permission
-to change the firmware write sequence. Resolve the final write callee,
-aperture base provenance and plane scope before equating the two paths.
+concrete trace target, not proof of broadcast semantics or permission
+to change the firmware write sequence. The subsequent
+[cache-contract trace](m1n1-t6032-cache-contract.md) resolves the import to
+`_pmap_iofilter_protected_write` and follows the aperture-record dataflow.
+Hardware scope and the early-boot access contract remain unresolved.
 These observations do **not** establish the complete early-boot contract.
 
 The candidate TZ offsets `0x6d8`, `0x6dc`, `0x6e4` were not established

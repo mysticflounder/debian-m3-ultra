@@ -16,7 +16,7 @@ not a fresh remote or live-machine check.
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
 | T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; ten-patch cross-build passes | Resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and T6032 payload/HV/proxy status propagation implemented offline | Validate native reset separately; no rollback or recoverable degraded-SMP claim |
-| MCC/cache initialization | Layout, initial carveout preflight and later stage-1 mapping guards pass offline; ten-patch build passes | Establish cache-enable write scope/order, TZ layout and loader containment; DMA/native behavior still unvalidated |
+| MCC/cache initialization | Ten-patch offline baseline passes; Apple protected-write binding and cache polling/order traced | Resolve control-register hardware scope and early-boot access, TZ layout and loader containment; DMA/native behavior still unvalidated |
 | Six-cluster frequency / DVFS | PMGR metadata captured; matching binary consumers located | Complete field/branch semantics before selecting bases/offsets; address die-1 performance metadata separately |
 | Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
@@ -28,6 +28,7 @@ not a fresh remote or live-machine check.
 
 Details: [CPU work](m1n1-t6032-cpus.md),
 [MCC layout and remaining gates](m1n1-t6032-mcc-layout.md),
+[cache-control contract trace](m1n1-t6032-cache-contract.md),
 [carveout metadata and safety gaps](m1n1-t6032-carveouts.md),
 [runtime mapping guards](m1n1-t6032-mapping-guard.md),
 [startup contract](m1n1-t6032-startup.md),
