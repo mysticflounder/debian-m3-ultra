@@ -16,13 +16,16 @@ compatible `pmgr1,t6031`. Its placeholder chip ID is labeled separately.
 No raw ioreg dump is retained by the collector.
 
 The allowlist contains four scalars, `perf-domains`, `perf-regs`, and base,
-`-sram`, and `-extra` voltage-table names with suffixes 1/2/5/13/34/37/45.
-These suffixes are **table selectors, not domain IDs**; 34/37/45 are not a
-proven die-1 mapping. Schema 2 checks the three captured CPU descriptors:
+`-sram`, and `-extra` voltage-table names with suffixes 1/2/5/13/33/34/37/45.
+These suffixes are **table selectors, not domain IDs**. The separately traced
+die-1 consumer maps 1/5/13 to 33/37/45; 34 is comparison data, not the
+ECPU replacement. Schema 2 checks the three captured CPU descriptors:
 domain 2 selects table 1, domain 5 selects 5, and domain 13 selects 13.
 Base tables 1/5/13 are required; table 2 is optional comparison data for a
 different domain. Duplicate/missing CPU descriptors, wrong selector/mode or
 non-28-byte descriptor lengths fail closed. Optional absences are reported.
+Die-1 tables remain optional: the report labels their static selector mapping
+as candidates and explicitly leaves runtime application unvalidated.
 Properties must be nonempty, word-aligned bytes, at most 4096 bytes each;
 scalars must be exactly four bytes. Base and SRAM tables additionally require
 eight-byte alignment. The `-extra` layout is unresolved. Arbitrary identifiers
@@ -42,10 +45,13 @@ The [corrected sanitized inventory](inventory/t6032-dvfs-selected-inputs-2026-09
 retains the two schema-2 reports exactly. The
 [original schema-1 capture](inventory/t6032-dvfs-tables-2026-09-26.json)
 is historical comparison data: it omitted table 1 and therefore did not
-capture the ECPU input. Seventeen portable collector tests pass, including
+capture the ECPU input. The follow-up
+[die-1 live capture](inventory/t6032-dvfs-die1-live-2026-09-26.json) adds
+table 33 without rewriting those historical records. Twenty portable
+collector tests pass, including
 identity, bounds, record alignment, required/optional fields, privacy, source
 labels and sanitized CLI errors. Adjacent PMGR/firmware-DVFS/firmware-MCC
-suites pass 7/18/16 tests, respectively: **58 total**. These tests validate
+suites pass 7/18/16 tests, respectively: **61 total**. These tests validate
 parsing and reporting, not register semantics or safe native operation.
 
 ## Restore tables are not live operating-state tables
@@ -77,6 +83,51 @@ selection and the mode-1 reciprocal conversion into the getter array. It
 does **not** establish raw voltage units, runtime state availability or
 startup/APSC defaults. The metadata collector deliberately leaves those
 claims false; do not divide table sizes to choose boot states.
+
+## Second-die replacement tables
+
+The [die-1 consumer manifest](inventory/t6032-die1-dvfs-2026-09-26.json)
+records a separate path in `ApplePMGR::updateDie1CPUVoltages`, starting at
+`0xfffffe0009bb46fc`. T6031 `initDriver` invokes it at
+`0xfffffe0009f5a76c`, after its qualified base `initDriver` call. That base
+call uses raw vtable symbol `0xfffffe0008292c58` plus `0xcc8`, whose checked
+fixup resolves to `0xfffffe0009b7ca24`; this is not a runtime-vptr offset.
+
+The update requires `this+0x631c >= 2`. It scans the `this+0x6328`
+PerfDomain array with stride `0x118` and count `this+0x6330`, selecting
+records with `+0x110 == 1` and descriptor byte 2 equal to 1. The initializer
+stores its outer-loop quotient into `+0x110` at `0xfffffe0009b7e9e4`.
+These are conditional software guards, not observed live object values.
+
+The three byte pairs at `0xfffffe00076e0a4c` are `01 21 05 25 0d 2d`.
+The routine matches descriptor **byte 0**, then uses the paired second byte
+in `voltage-states%u` (`0xfffffe0009bb4868–0xfffffe0009bb49b0`). Thus the
+mapping is from table selectors, not from domain IDs plus 32:
+
+| Base selector | Replacement selector | Captured bytes, each | Raw records | Differing second words |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 33 | 48 | 6 | 5 |
+| 5 | 37 | 160 | 20 | 9 |
+| 13 | 45 | 160 | 20 | 18 |
+
+All three replacement tables are present in the new allowlisted live
+capture. First words match the corresponding base table and are nonzero;
+the differing second words mean the raw tables must not be treated as
+identical. No second-word voltage units are asserted. Replacement SRAM
+tables 33/37/45 are absent; absence is reported rather than synthesized.
+
+At `0xfffffe0009bb4a28–0xfffffe0009bb4a34`, replacement byte length divided
+by eight must match the existing count at PerfDomain `+0x70`. The normal
+path then replaces its data pointer at `+0x78` (`...4a64`) and recomputes
+getter entries at `+0x98` using the existing mapping at `+0x90` and the same
+`0x03e80000 / word0` conversion (`...4b2c–...4b3c`). Missing or mismatched
+tables take other diagnostic paths; this bounded trace does not establish
+their complete failure policy or make replacements universally mandatory.
+
+This closes the missing table-33 capture and identifies the conditional
+replacement consumer. It does not establish the effective die-count writer,
+the allocation contract, successful six-record runtime construction, safe
+raw APSC/default indices, or permission to execute this path at early boot.
 
 ## Feature names, dispatch and masks
 
@@ -145,5 +196,6 @@ skipped or left as firmware configured it.
   ordering/barriers and bounded failure behavior. Do not transplant runtime
   driver writes just because their masks match existing m1n1 constants.
 - Keep CPU/frequency dispatch disabled until the independent MCC, protection,
-  loader/DMA, boot-entry and recovery gates are met. The MCC Pro consult is
-  still pending; a quiet waiter timeout is not a result.
+  loader/DMA, boot-entry and recovery gates are met. The
+  [MCC Pro review](m1n1-t6032-mcc-pro-review.md) returned family-level evidence,
+  not a T6032 safety contract.

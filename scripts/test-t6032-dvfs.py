@@ -70,6 +70,39 @@ class Tests(unittest.TestCase):
         self.assertEqual(AUDIT.audit_tree([tree])["source_kind"], "supplied IODeviceTree plist")
         self.assertEqual(AUDIT.audit_tree(tree, live=True)["source_kind"], "live IODeviceTree")
 
+    def test_die1_selector_candidates_are_not_domain_offsets(self):
+        tree, _, pmgr = fixture()
+        for name in ("voltage-states33", "voltage-states33-sram", "voltage-states33-extra",
+                     "voltage-states37", "voltage-states45"):
+            pmgr[name] = bytes(16)
+        pmgr["voltage-states34"] = bytes(8)
+        result = AUDIT.audit_tree(tree)
+        candidates = result["die1_table_selector_candidates"]
+        self.assertEqual([(r["base_selector"], r["die1_selector"]) for r in candidates],
+                         [(1, 33), (5, 37), (13, 45)])
+        self.assertEqual([r["die1_property"] for r in candidates],
+                         ["voltage-states33", "voltage-states37", "voltage-states45"])
+        self.assertTrue(all(r["present"] for r in candidates))
+        self.assertIn("voltage-states33-sram", result["properties"])
+        self.assertIn("voltage-states33-extra", result["properties"])
+        self.assertFalse(result["die1_runtime_application_validated"])
+        self.assertFalse(result["safe_initial_states_established"])
+
+    def test_die1_tables_remain_optional(self):
+        tree, _, pmgr = fixture()
+        pmgr["voltage-states34"] = bytes(8)
+        result = AUDIT.audit_tree(tree)
+        self.assertFalse(any(r["present"] for r in result["die1_table_selector_candidates"]))
+        self.assertIn("voltage-states33", result["absent_optional_properties"])
+        self.assertIn("voltage-states34", result["properties"])
+
+    def test_die1_table_cannot_replace_required_base(self):
+        tree, _, pmgr = fixture()
+        del pmgr["voltage-states1"]
+        pmgr["voltage-states33"] = bytes(8)
+        with self.assertRaises(AUDIT.AuditError):
+            AUDIT.audit_tree(tree)
+
     def test_required_properties(self):
         for name in (*AUDIT.REQUIRED_TABLES, *AUDIT.SCALARS, *AUDIT.OTHER):
             with self.subTest(name=name):

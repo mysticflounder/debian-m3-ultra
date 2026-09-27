@@ -29,7 +29,7 @@ AuditError = PMGR.AuditError
 SCALARS = ("first-acc-dvfm-map-state", "nominal-performance1", "boost-performance1",
            "mcx-fast-pcpu-frequency")
 TABLES = tuple(f"voltage-states{number}{suffix}"
-               for number in (1, 2, 5, 13, 34, 37, 45) for suffix in ("", "-sram", "-extra"))
+               for number in (1, 2, 5, 13, 33, 34, 37, 45) for suffix in ("", "-sram", "-extra"))
 # perf-domains byte 0 selects the property; byte 3 is the domain ID.
 # In the pinned J575d descriptors, CPU domain 2 selects table 1, not 2.
 # Table 2 is retained as optional comparison data, not a CPU-state input.
@@ -37,6 +37,9 @@ REQUIRED_TABLES = ("voltage-states1", "voltage-states5", "voltage-states13")
 OTHER = ("perf-domains", "perf-regs")
 MAX_PROPERTY_BYTES = 4096
 CPU_TABLE_SELECTORS = ((2, 1), (5, 5), (13, 13))
+# Pinned ApplePMGR::updateDie1CPUVoltages maps descriptor selectors, not
+# domain IDs. Presence and effective runtime application remain separate.
+DIE1_TABLE_SELECTORS = ((1, 33), (5, 37), (13, 45))
 
 
 def cpu_table_selectors(raw: bytes) -> list[dict]:
@@ -81,6 +84,13 @@ def properties(node: dict) -> dict:
             selected[name]["value_le_u32"] = int.from_bytes(raw, "little")
     return {"properties": selected, "absent_optional_properties": absent,
             "cpu_table_selectors": cpu_table_selectors(node["perf-domains"]),
+            "die1_table_selector_candidates": [
+                {"base_selector": base, "die1_selector": die1,
+                 "base_property": f"voltage-states{base}",
+                 "die1_property": f"voltage-states{die1}",
+                 "present": f"voltage-states{die1}" in selected}
+                for base, die1 in DIE1_TABLE_SELECTORS],
+            "die1_runtime_application_validated": False,
             "table_word_semantics_validated": False,
             "state_count_inferred": False, "safe_initial_states_established": False}
 
@@ -88,7 +98,7 @@ def properties(node: dict) -> dict:
 def report(identity: dict, node: dict, source: str) -> dict:
     return {"schema_version": 2, "status": "ok", "identity": identity,
             "source_kind": source, "source_path": "/arm-io/pmgr", **properties(node),
-            "domain_number_note": "Property suffixes are table selectors, not domain IDs; 34/37/45 are not a validated die-1 mapping",
+            "domain_number_note": "Property suffixes are selectors, not domain IDs; the pinned die-1 consumer maps 1/5/13 to 33/37/45, conditionally on runtime guards; 34 remains comparison data",
             "hardware_validated": False, "register_writes_performed": False}
 
 

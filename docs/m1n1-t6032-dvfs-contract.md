@@ -193,6 +193,17 @@ gives **13**, not 3, for the captured 364 bytes. At
 to reach CPU-record construction. The selected captured ordinals are
 1, 3 and 6, with domain IDs 2, 5 and 13.
 
+The matching collection identifies the provider methods as
+`OSData::getBytesNoCopy()` and `OSData::getLength()`. The OSData class
+pointer is saved at `sp+0x80` by `0xfffffe0009b7cf70–0xfffffe0009b7cf7c`,
+then reloaded for the `perf-domains` `safeMetaCast` at
+`0xfffffe0009b7e7f0–0xfffffe0009b7e7f4`. Checked fixups connect GOT
+`0xfffffe00082a3978` to `OSData::metaClass` and then `OSData::gMetaClass`;
+the two OSData vtable slots resolve to the named methods. This narrows the
+provider contract, not the effective private-object die count. The bounded
+search has not located that count's writer; its absence from that search
+is not proof that no writer exists.
+
 If the effective descriptor count is 13, the outer multiplier is 2, the
 topology bound permits six appends, and initialization succeeds, the
 captured inputs and this append logic predict:
@@ -216,10 +227,10 @@ reconciled; the captured property alone is not proof of a runtime buffer
 overrun or of successful allocation. Do not substitute a hypothetical
 three-record provider or the six `acc-clusters` pairs for those inputs.
 
-Validation for this routing follow-up: all eight bounded extract hashes
-and their 540 instruction words match the full collection; both inventory
+Validation for this routing follow-up: all nine bounded extract hashes
+and their 544 instruction words match the full collection; both inventory
 hashes, the property-name bytes and the six conditional rows were checked.
-The existing 7 PMGR and 17 DVFS-input tests pass. These checks validate the
+The existing 7 PMGR and now 20 DVFS-input tests pass. These checks validate the
 recorded artifacts and input decoding, not runtime execution of the driver.
 
 ### Mode-2 corroboration, not the selected path

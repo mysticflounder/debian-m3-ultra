@@ -30,6 +30,20 @@
     "getVirtToPhysComplexInDie": "input < record count",
     "getComplexToDie": "input < record count"
   },
+  "provider_class": {
+    "class": "OSData",
+    "class_pointer_saved_at": "0xfffffe0009b7cf7c",
+    "perf_domains_safe_meta_cast_at": "0xfffffe0009b7e7f4",
+    "vtable_symbol": "0xfffffe0007f25ca0",
+    "vtable_address_point": "0xfffffe0007f25cb0",
+    "runtime_object_read": false
+  },
+  "checked_fixups": [
+    {"pointer": "0xfffffe00082a3978", "target": "0xfffffe0007f7e150", "role": "OSData::metaClass import"},
+    {"pointer": "0xfffffe0007f7e150", "target": "0xfffffe000cb48830", "role": "OSData::gMetaClass pointer"},
+    {"pointer": "0xfffffe0007f25e10", "target": "0xfffffe000c438278", "role": "OSData vptr+0x160 getLength"},
+    {"pointer": "0xfffffe0007f25e48", "target": "0xfffffe000c437fe8", "role": "OSData vptr+0x198 getBytesNoCopy"}
+  ],
   "initializer_branch": {
     "mode1_target": "0xfffffe0009b7ef58",
     "mode2_target": "0xfffffe0009b7ec6c",
@@ -114,11 +128,16 @@
       "path": "scratch/dvfs-evidence/routing-descriptor-filter-raw.disasm",
       "start": "0xfffffe0009b7ea30", "stop": "0xfffffe0009b7ec58",
       "sha256": "ed6b3377efd20ffa1571ffdbc5737181fcd1d96efd0f53d840272d55cef4fe19"
+    },
+    {
+      "path": "scratch/dvfs-evidence/provider-metaclass-raw.disasm",
+      "start": "0xfffffe0009b7cf70", "stop": "0xfffffe0009b7cf80",
+      "sha256": "a2a2fbb005872b0e7970c78aeb308ca460d156279098a7a7d5115d5447514024"
     }
   ],
   "extract_view": "scratch/mcc-evidence/ApplePMGR.macho",
   "extract_method": "xcrun llvm-objdump --disassemble --start-address=START --stop-address=STOP VIEW; no --macho",
-  "extract_instruction_words_matched_to_full_collection": 540,
+  "extract_instruction_words_matched_to_full_collection": 544,
   "unresolved": [
     "complete mode-1 record construction and effective runtime topology inputs",
     "safe raw initialization states",

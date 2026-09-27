@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "source_kind": "offline binary consumer trace plus allowlisted live metadata",
+  "kernelcache_sha256": "a24fefccc060854cecc996b40983499e1319008e4f16c0717a5fef6c4d4828dc",
+  "metadata_path": "docs/inventory/t6032-dvfs-die1-live-2026-09-26.json",
+  "metadata_sha256": "841e0d77b9ccc4ad5e7ce9a15c3fe3febb530015e31569eceb48801647495dc4",
+  "hardware_validated": false,
+  "register_writes_performed": false,
+  "effective_runtime_guards_verified": false,
+  "safe_initial_states_established": false,
+  "consumer": "ApplePMGR::updateDie1CPUVoltages()",
+  "consumer_address": "0xfffffe0009bb46fc",
+  "guards": ["this+0x631c >= 2", "PerfDomain+0x110 == 1", "descriptor byte 2 == 1"],
+  "perf_domain_array": "this+0x6328",
+  "perf_domain_count": "this+0x6330",
+  "perf_domain_stride": "0x118",
+  "selector_table_address": "0xfffffe00076e0a4c",
+  "selector_table_hex": "012105250d2d",
+  "selector_pairs": [[1, 33], [5, 37], [13, 45]],
+  "property_format_address": "0xfffffe00076d2646",
+  "property_format": "voltage-states%u",
+  "replacement_length_guard": "replacement byte length >> 3 must equal existing PerfDomain+0x70",
+  "replacement_pointer_field": "PerfDomain+0x78",
+  "conversion": "existing mapping+0x90 selects replacement word 0; 0x03e80000 / word0 stored at +0x98; zero word follows separate path",
+  "captured_comparisons": [
+    {"base_selector": 1, "die1_selector": 33, "base_bytes": 48, "die1_bytes": 48, "records": 6, "all_die1_word0_nonzero": true, "word0_equal": true, "word1_differences": 5},
+    {"base_selector": 5, "die1_selector": 37, "base_bytes": 160, "die1_bytes": 160, "records": 20, "all_die1_word0_nonzero": true, "word0_equal": true, "word1_differences": 9},
+    {"base_selector": 13, "die1_selector": 45, "base_bytes": 160, "die1_bytes": 160, "records": 20, "all_die1_word0_nonzero": true, "word0_equal": true, "word1_differences": 18}
+  ],
+  "checked_fixups": [
+    {"pointer": "0xfffffe0008366b78", "target": "0xfffffe0008292c58", "role": "raw base vtable symbol, not address point"},
+    {"pointer": "0xfffffe0008293920", "target": "0xfffffe0009b7ca24", "role": "raw base vtable+0xcc8 initDriver"},
+    {"pointer": "0xfffffe00083661b0", "target": "0xfffffe0009f60f90", "role": "subclass runtime vptr+0xb30 getDieCount"}
+  ],
+  "extracts": [
+    {"path": "scratch/dvfs-evidence/die1-guard-raw.disasm", "start": "0xfffffe0009bb4738", "stop": "0xfffffe0009bb4748", "sha256": "7724522c96472399f26ef6de155e93b260d15f9ca0998db7aeca1d88f86624f8"},
+    {"path": "scratch/dvfs-evidence/die1-selector-raw.disasm", "start": "0xfffffe0009bb47d4", "stop": "0xfffffe0009bb4890", "sha256": "d5d96666d610529e75a7336825ed5ee6a6ecb4dd45baeea96401834b24e6f59f"},
+    {"path": "scratch/dvfs-evidence/die1-replacement-raw.disasm", "start": "0xfffffe0009bb4998", "stop": "0xfffffe0009bb4a68", "sha256": "6f8e85abf3105287b621c6fcd822b4050031939697d44ca89af8f6d3f55ce821"},
+    {"path": "scratch/dvfs-evidence/die1-conversion-raw.disasm", "start": "0xfffffe0009bb4b2c", "stop": "0xfffffe0009bb4b50", "sha256": "993d9044e50393e232b83cb71c435c3b95fe6b2097d8d6065f0bff3fe3716638"},
+    {"path": "scratch/dvfs-evidence/die1-caller-raw.disasm", "start": "0xfffffe0009f5a744", "stop": "0xfffffe0009f5a77c", "sha256": "7296d8087c6a3865a665c9e3da353025c885b4070a63dd38d6c3fbb4a9cbc484"}
+  ],
+  "extract_instruction_words_matched_to_full_collection": 126,
+  "unresolved": ["effective die-count writer and allocation contract", "successful six-record runtime construction", "safe raw APSC/default states", "early-boot applicability and prerequisites"]
+}
