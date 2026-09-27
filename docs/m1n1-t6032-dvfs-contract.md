@@ -132,13 +132,97 @@ Do not interpret the returned logical index as a physical cluster number.
 The base getters at `0xfffffe0009bb333c–0xfffffe0009bb34e4` use a
 CPUComplex array at `this+0x3f150`, count at `+0x3f158`, stride `0x8e08`:
 
-- `getVirtToPhysComplex` returns the input index if `this+0x238c == 1`;
-  otherwise it reads the record's `+0x8df4` field.
-- `getPhysToVirtComplex` returns the input under that same mode, or searches
-  the forward mapping and returns the first match; no match gives `0xffffffff`.
+- `getVirtToPhysComplex` bounds-checks, then returns the input index if
+  `this+0x238c == 1`; otherwise it reads the record's `+0x8df4` field.
+- `getPhysToVirtComplex` returns the input under that same mode **without
+  a count check in this getter**, or searches the forward mapping in other
+  modes and returns the first match; no match gives `0xffffffff`.
 - `getVirtToPhysComplexInDie` reads record `+0x5c` in mode 1, otherwise
   record `+0x8df0`. It bounds-checks the logical input first.
 - `getComplexToDie` bounds-checks and reads record `+0x8dd0`.
+
+The captured `acc-harvesting=1` selects **mode 1**, as established by the
+[mode-selection trace](m1n1-t6032-mask-contract.md). This is captured-input
+evidence, not a live read of the effective private object. At
+`0xfffffe0009b7ec58–0xfffffe0009b7ec68`, mode 1 branches to
+`0xfffffe0009b7ef58`; only mode 2 falls through to the matching path below.
+Consequently, the captured `acc-clusters` order alone does **not** establish
+this machine's mode-1 routing.
+
+### Mode-1 record construction
+
+The [routing manifest](inventory/t6032-complex-routing-2026-09-26.json)
+records bounded instruction extracts from the same full kernel collection.
+The initializer's saved array base is `this+0x3efa8`
+(`0xfffffe0009b7d084–0xfffffe0009b7d088`, saved at
+`0xfffffe0009b7d400`). Its `+0x1a8/+0x1b0` fields are therefore the
+getter array/count at `this+0x3f150/+0x3f158`, not a separate table.
+
+The loop-field base is **`this+0x5d80`**, established at
+`0xfffffe0009b7cb74–0xfffffe0009b7cb7c`. The nearby `this+0x6b160`
+assignment is to a different register. For outer iteration `n`, the code
+at `0xfffffe0009b7e98c–0xfffffe0009b7e9e8` calculates quotient
+`q = n / d` and remainder `r = n % d`, with `d` at `this+0x6334`.
+The remainder selects a 28-byte performance-domain record; the quotient
+is saved for the later append. This is not a loop over only CPU records.
+
+For the mode-1 append:
+
+- `0xfffffe0009b7e944` clears the logical record count. At
+  `0xfffffe0009b7e968`, a 64-bit zero store initializes two local 32-bit
+  counters at **frame pointer `x29-0xb8`**, not stack pointer `sp-0xb8`.
+- `0xfffffe0009b7ef58–0xfffffe0009b7ef70` obtains the topology information
+  and only proceeds to append when the current count is below its `+0xc`
+  value. The alternate paths are not permission to append beyond that bound.
+- `0xfffffe0009b7f014–0xfffffe0009b7f04c` stores local counter `counter[q]`
+  into record `+0x5c` (the in-die index).
+- `0xfffffe0009b7f050–0xfffffe0009b7f088` stores the current global record
+  index into `+0x58` and quotient `q` into `+0x8dd0` (the getter's die field).
+- `0xfffffe0009b7f0a4–0xfffffe0009b7f0b0` increments the global record
+  count and `counter[q]` after the append.
+
+This establishes a per-die **append counter**, not a direct assignment from
+the `acc-clusters` selector bytes. The property lookup at
+`0xfffffe0009b7e7e0–0xfffffe0009b7e7ec` names `perf-domains` (string at
+`0xfffffe00076d2577`). The following object calls use virtual offsets
+`+0x198` for the data pointer and `+0x160` for the length input. The
+length-to-count arithmetic at `0xfffffe0009b7e850–0xfffffe0009b7e864`
+gives **13**, not 3, for the captured 364 bytes. At
+`0xfffffe0009b7ebdc–0xfffffe0009b7ebe8` and on the empty-table path
+`0xfffffe0009b7ec38–0xfffffe0009b7ec48`, descriptor byte 2 must equal 1
+to reach CPU-record construction. The selected captured ordinals are
+1, 3 and 6, with domain IDs 2, 5 and 13.
+
+If the effective descriptor count is 13, the outer multiplier is 2, the
+topology bound permits six appends, and initialization succeeds, the
+captured inputs and this append logic predict:
+
+| Outer iteration | Descriptor ordinal | Domain | Logical index | Die field | In-die field |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 1 | 2 | 0 | 0 | 0 |
+| 3 | 3 | 5 | 1 | 0 | 1 |
+| 6 | 6 | 13 | 2 | 0 | 2 |
+| 14 | 1 | 2 | 3 | 1 | 0 |
+| 16 | 3 | 5 | 4 | 1 | 1 |
+| 19 | 6 | 13 | 5 | 1 | 2 |
+
+This is a **conditional static reconstruction**, not six observed runtime
+records. In particular, the preceding allocation scan at
+`0xfffffe0009b7e8c0–0xfffffe0009b7e90c` walks the `this+0x6330` count
+without the outer loop's modulo, then multiplies its selected-record count
+by `this+0x631c` at `0xfffffe0009b7e914`. The effective multiplier,
+provider-buffer contract and allocation/topology bounds still need to be
+reconciled; the captured property alone is not proof of a runtime buffer
+overrun or of successful allocation. Do not substitute a hypothetical
+three-record provider or the six `acc-clusters` pairs for those inputs.
+
+Validation for this routing follow-up: all eight bounded extract hashes
+and their 540 instruction words match the full collection; both inventory
+hashes, the property-name bytes and the six conditional rows were checked.
+The existing 7 PMGR and 17 DVFS-input tests pass. These checks validate the
+recorded artifacts and input decoding, not runtime execution of the driver.
+
+### Mode-2 corroboration, not the selected path
 
 The record initializer is in `ApplePMGR::initDriver`, not the later
 `_cpuComplexInit` function. It retains the `acc-clusters` data pointer at
@@ -147,7 +231,7 @@ The captured 48-byte payload has record-byte pairs `(domain, selector)`:
 `02/00`, `05/01`, `0d/02`, `02/08`, `05/09`, `0d/0a` (remaining bytes zero).
 Here "selector" names the observed matching byte, not a proven MPIDR field.
 
-At `0xfffffe0009b7ed74–0xfffffe0009b7edac`, the initializer searches this
+In mode 2, at `0xfffffe0009b7ed74–0xfffffe0009b7edac`, the initializer searches this
 table. It compares byte 1 with the second `getCorePhysID` output, byte 0
 with the saved performance-domain ID, and requires a third equality with
 a topology-derived value. The domain ID is reloaded from a saved stack
@@ -157,9 +241,9 @@ record's **ordinal** to `+0x8df4`, and a topology-record value at `+0x78`
 to CPUComplex `+0x8df0` (`0xfffffe0009b7edd4–0xfffffe0009b7ee1c`).
 
 Together with the getters above, this links the captured record order to
-the software physical-complex mapping. It does not establish all six runtime
-CPUComplex records: the additional topology/performance-domain inputs and
-mode selection still require validation. In particular, selector bytes
+the **mode-2** software physical-complex mapping. It does not establish all
+six mode-1 runtime CPUComplex records: the applicable initializer's
+topology/performance-domain inputs still require validation. Selector bytes
 `08/09/0a` must not be substituted directly for global ordinals `3/4/5`.
 
 ## State-index global and chip-specific exception

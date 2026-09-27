@@ -107,6 +107,12 @@ only observed invocation of this conditional follow-on. Static loops do
 not prove that all six runtime records are initialized correctly or that
 every invocation is required for early boot.
 
+The `_initAPSC` argument is a **complex index**, not an APSC performance-state
+index. Neither this loop nor the per-complex tail call selects raw state 1.
+The pinned m1n1 T6031 `apsc_pstate=1` and default states `5/6/6` remain
+separate source constants, not T6032 initialization policy recovered from
+these Apple restore paths.
+
 Calls through runtime slot `+0xd08` in `initAON` and another part of
 `restoreHW` are excluded: that slot is not the ACC restore override.
 

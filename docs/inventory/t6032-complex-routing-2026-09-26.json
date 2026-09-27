@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "source_kind": "offline binary trace and captured metadata; not live CPUComplex records",
+  "kernelcache_sha256": "a24fefccc060854cecc996b40983499e1319008e4f16c0717a5fef6c4d4828dc",
+  "hardware_validated": false,
+  "register_writes_performed": false,
+  "native_dispatch_enabled": false,
+  "mode_input": {
+    "path": "docs/inventory/t6032-pmgr-mode-2026-09-26.json",
+    "sha256": "2cad9a030286eba55ee1644542872e300e30697951edd035098b784ee88fdbbf",
+    "feature": "acc-harvesting",
+    "feature_id": "0x42",
+    "captured_value": 1,
+    "object_value_offset": "0x238c",
+    "runtime_object_read": false,
+    "override_note": "Prior filtered boot-argument check found no acc-harvesting override; loader supports overrides"
+  },
+  "record_layout": {
+    "array_object_offset": "0x3f150",
+    "count_object_offset": "0x3f158",
+    "stride": "0x8e08",
+    "mode1_in_die_field": "0x5c",
+    "other_modes_in_die_field": "0x8df0",
+    "other_modes_physical_ordinal_field": "0x8df4",
+    "die_field": "0x8dd0"
+  },
+  "getter_bounds": {
+    "getVirtToPhysComplex": "input < record count before mode branch",
+    "getPhysToVirtComplex": "mode 1 identity without count check; other modes search within count",
+    "getVirtToPhysComplexInDie": "input < record count",
+    "getComplexToDie": "input < record count"
+  },
+  "initializer_branch": {
+    "mode1_target": "0xfffffe0009b7ef58",
+    "mode2_target": "0xfffffe0009b7ec6c",
+    "other_modes_target": "0xfffffe0009b7efcc",
+    "acc_clusters_ordinal_mapping_applies_to": "mode 2, not captured mode 1"
+  },
+  "mode1_construction": {
+    "saved_array_base": "this+0x3efa8",
+    "loop_field_base": "this+0x5d80",
+    "outer_iteration_bound_field": "this+0x6330",
+    "descriptor_count_field": "this+0x6334",
+    "multiplier_field": "this+0x631c",
+    "source_descriptor_stride": 28,
+    "descriptor_selection": "n modulo descriptor count",
+    "record_die_value": "n divided by descriptor count",
+    "per_die_counter_base": "frame pointer x29-0xb8",
+    "zero_initialized_counter_bytes": 8,
+    "in_die_value": "per-die append counter, incremented after append",
+    "append_bound": "topology pointer returned at 0xfffffe0009b7ef58, u32 field +0xc",
+    "effective_runtime_inputs_verified": false
+  },
+  "captured_descriptors": {
+    "path": "docs/inventory/t6032-dvfs-selected-inputs-2026-09-26.json",
+    "sha256": "367a97b9d5b40ab5ba10c0cf6a42852f762cbba484019ff9108b1604519b0cfd",
+    "property": "perf-domains",
+    "property_name_address": "0xfffffe00076d2577",
+    "length_bytes": 364,
+    "descriptor_count": 13,
+    "cpu_filter": "descriptor byte 2 equals 1",
+    "selected_ordinal_domain_pairs": [[1, 2], [3, 5], [6, 13]],
+    "data_pointer_virtual_offset": "0x198",
+    "length_virtual_offset": "0x160"
+  },
+  "conditional_six_record_reconstruction": {
+    "conditions": [
+      "effective provider descriptors equal the captured 13-record property",
+      "outer multiplier at this+0x631c equals 2",
+      "topology bound permits six appends and preceding allocation/initialization succeeds"
+    ],
+    "columns": ["outer_iteration", "descriptor_ordinal", "domain", "logical_index", "die", "in_die_index"],
+    "rows": [[1, 1, 2, 0, 0, 0], [3, 3, 5, 1, 0, 1], [6, 6, 13, 2, 0, 2], [14, 1, 2, 3, 1, 0], [16, 3, 5, 4, 1, 1], [19, 6, 13, 5, 1, 2]],
+    "runtime_verified": false,
+    "allocation_caveat": "Pre-scan uses total count without modulo, then multiplies selected count again; effective multiplier and provider buffer contract unresolved; no runtime overrun claim"
+  },
+  "extracts": [
+    {
+      "path": "scratch/dvfs-evidence/routing-mode-getters-raw.disasm",
+      "start": "0xfffffe0009bb333c", "stop": "0xfffffe0009bb34e4",
+      "sha256": "9a01df015b45da8dfac78406b76403a8b34ee1d80633be6b252ce1eff54c45cd"
+    },
+    {
+      "path": "scratch/dvfs-evidence/routing-mode-branch-raw.disasm",
+      "start": "0xfffffe0009b7ec58", "stop": "0xfffffe0009b7ec80",
+      "sha256": "a2698c3019f52d468b84c83ba50e9234aad2a57f9b4aad1dddb106126858f388"
+    },
+    {
+      "path": "scratch/dvfs-evidence/routing-mode1-record-raw.disasm",
+      "start": "0xfffffe0009b7ef58", "stop": "0xfffffe0009b7f120",
+      "sha256": "8c333c35327d05f184d146bc6d457ae1bab5c71fa49d4f0d8ea06d61b15c6d31"
+    },
+    {
+      "path": "scratch/dvfs-evidence/routing-outer-loop-raw.disasm",
+      "start": "0xfffffe0009b7e7c0", "stop": "0xfffffe0009b7ea30",
+      "sha256": "28a1fa39d739fdd10b5e4b20a7b3f7408fdb2fe496304e6b462adf5aebaa7e8a"
+    },
+    {
+      "path": "scratch/dvfs-evidence/routing-loop-base-raw.disasm",
+      "start": "0xfffffe0009b7cb6c", "stop": "0xfffffe0009b7cb80",
+      "sha256": "2046f1d747a5145e24afaca4870bc43aa23a02c0546a2634a568ead9536aab39"
+    },
+    {
+      "path": "scratch/dvfs-evidence/routing-array-base-raw.disasm",
+      "start": "0xfffffe0009b7d074", "stop": "0xfffffe0009b7d08c",
+      "sha256": "0e05b58178873fe06d8e22a3199b7356cb29bcf20f37c6c4bb5879020d3f70c7"
+    },
+    {
+      "path": "scratch/dvfs-evidence/routing-array-save-raw.disasm",
+      "start": "0xfffffe0009b7d3f4", "stop": "0xfffffe0009b7d408",
+      "sha256": "f9506623e04b1bb531eb5185e2743e529ba9bca42c9a9d9fb310689a17b3ec46"
+    },
+    {
+      "path": "scratch/dvfs-evidence/routing-descriptor-filter-raw.disasm",
+      "start": "0xfffffe0009b7ea30", "stop": "0xfffffe0009b7ec58",
+      "sha256": "ed6b3377efd20ffa1571ffdbc5737181fcd1d96efd0f53d840272d55cef4fe19"
+    }
+  ],
+  "extract_view": "scratch/mcc-evidence/ApplePMGR.macho",
+  "extract_method": "xcrun llvm-objdump --disassemble --start-address=START --stop-address=STOP VIEW; no --macho",
+  "extract_instruction_words_matched_to_full_collection": 540,
+  "unresolved": [
+    "complete mode-1 record construction and effective runtime topology inputs",
+    "safe raw initialization states",
+    "full activation and restore prerequisites",
+    "early-boot safety and ordering"
+  ]
+}
