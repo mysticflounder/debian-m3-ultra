@@ -74,6 +74,8 @@ the Studio's DFU port as the rightmost USB-C port when facing its rear. This
 identifies a future connection, not a verified working recovery setup.
 
 Channel request 18031 asks the MacBook agent for read-only host readiness;
-18043 clarifies the Finder procedure. Backup verification, the actual cable,
+18043 clarifies the Finder procedure. Adam confirmed on 2026-09-27 that the
+Studio has no current backup. A completed, verified backup is required before
+native testing or firmware/boot-policy/partition changes. The actual cable,
 recovery operation and supported native boot entry remain unconfirmed.
 No DFU entry, revive/restore or firmware test is authorized by this note.

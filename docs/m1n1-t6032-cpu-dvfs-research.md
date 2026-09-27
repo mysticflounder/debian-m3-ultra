@@ -32,19 +32,69 @@ Source presence, table labels and native boot evidence must remain separate.
 
 ## Focused independent consult
 
-Pro request `01M3HYKV2MJ5THADJNPEB2G38M` was queued in `#debian-m3`.
+Pro request `01M3HYKV2MJ5THADJNPEB2G38M` completed in `#debian-m3` and
+was reviewed on 2026-09-27.
 The local prompt is `scratch/mcc-evidence/cpu-dvfs-pro-question.md`.
 It asks specifically for T6032 CPU-release offset/RVBAR/ordering evidence,
 safe six-cluster early DVFS initialization, and any target-matched basis for
 preserving inherited frequency state during a RAM-only diagnostic boot.
 The earlier completed MCC consult is not being repeated.
 
-The first bounded wait returned no response; a quiet timeout is not failure
-or completion. Resume with `nthdegree consult wait` for this same request.
-Any returned claims require independent source verification before changes.
+The full response is retained locally at
+`scratch/mcc-evidence/cpu-dvfs-pro-response.md`. Independent source checks
+confirmed the central findings below; the response is not hardware evidence.
 
-If no evidence is found, the next external request should seek a known-working
-J575d boot implementation or a target-specific register/entry contract from
-a knowledgeable developer, not permission to guess values on the Studio.
-No maintainer contact or upstream submission has been made. Recovery/backup
-readiness remains a separate prerequisite and cannot prove register safety.
+At pinned m1n1 revision
+[`06088c7c90ed3db790a791b5ec079a921e8e4af2`](https://github.com/AsahiLinux/m1n1/tree/06088c7c90ed3db790a791b5ec079a921e8e4af2),
+`src/smp.c` still lacks T6032 startup dispatch. `src/cpufreq.c` lacks T6032
+cluster/feature dispatch and p-state decoding/writing support. Its M3 Max
+table has three clusters, not an established six-cluster Ultra path.
+The [T6032 Linux device tree](https://github.com/torvalds/linux/blob/67d9574cf8ed1c81c472b932a9d9819f47fb5286/arch/arm64/boot/dts/apple/t6032.dtsi)
+leaves die-1 CPU release addresses for the loader to populate. The
+[M3 PMP proposal](https://github.com/AsahiLinux/linux/pull/525) explicitly
+reports testing only T6034. None supplies a verified T6032 early-boot recipe.
+
+## Next bounded offline task: SMP shared-memory compatibility
+
+Sven Peter's
+[`f7124b8d42bcdd44131b4a455ad32e2f98fde166`](https://github.com/AsahiLinux/m1n1/commit/f7124b8d42bcdd44131b4a455ad32e2f98fde166)
+adds a 64-KiB-aligned `.data.smp_shared` section and maps it Device-nGnRnE
+through the identity mapping and three aliases. It moves CPU-startup shared
+state into that section and removes corresponding cache-maintenance calls.
+Independent source review confirmed these changes, but no T6032 dispatch or
+native Ultra execution evidence. The patch has not been integrated locally.
+
+Test compatibility in an isolated scratch source tree against our pinned
+baseline plus patches 0001 through 0014. Check prerequisites and conflicts
+explicitly rather than assuming the newer commit applies alone. Verify:
+
+- Linker alignment and inclusion of the section within the image boundaries.
+- All four mappings retain patch 0010's protected-range checks, including
+  rejection of overlaps in synthetic tests; static layout checks do not
+  establish the Studio's actual carveout contents.
+- Patch 0014's inherited-MMU rejection and initialization ordering remain intact.
+- MMU-off secondary accesses and the removed cache operations are accounted
+  for in the source audit; passing mocked tests does not prove hardware ordering.
+- Existing host regression suites and the cross-build still pass.
+
+Keep native dispatch disabled. This experiment is preparation, not a reason
+to replace the current source pin or weaken failure handling automatically.
+
+## Remaining evidence and safety gates
+
+The bounded public search did not establish a complete target-matched CPU
+release or six-cluster early-DVFS contract. Existing local mask and runtime
+routing evidence remains useful, but is not independently proven boot-entry
+behavior. Skipping DVFS writes alone does not establish that inherited power
+and frequency state is safe across the rest of initialization.
+
+The most useful additional artifact would be a revision-pinned, known-working
+J575d bootloader plus an existing native boot log and firmware identity,
+with CPU-release/reset ordering and six-cluster controller/table/initial-state
+annotations. Partial evidence closes only the corresponding questions.
+No maintainer contact or upstream submission has been made.
+
+Adam confirmed on 2026-09-27 that the Studio has no current backup. Native
+tests, firmware/boot-policy changes and partitioning remain gated on a verified
+backup, recovery readiness and separate explicit authorization. These practical
+prerequisites do not by themselves establish register safety.
