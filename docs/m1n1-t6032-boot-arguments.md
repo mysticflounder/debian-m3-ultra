@@ -109,6 +109,11 @@ remain separate gates even if the RAM-base condition is eventually proven.
 
 ## Verification
 
+The follow-up [boot-stage boundary trace](m1n1-t6032-boot-stage-boundaries.md)
+identifies a common writer for both records, the dynamic source-pointer
+load, and the outgoing platform-call argument. It does not establish the
+source table's runtime contents or the final payload-entry contract.
+
 The byte verifier under `scratch/mcc-evidence/` checks the complete wrapper
 against the pinned raw image, 1,604 words in 18 bounded extracts, two literal
 labels, and the two selected initial table records. These are byte-identity
