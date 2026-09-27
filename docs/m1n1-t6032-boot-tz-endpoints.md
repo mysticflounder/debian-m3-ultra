@@ -101,7 +101,7 @@ the last child. There is no separate lower-record-presence check here.
 Let L and U be the unsigned 32-bit lower/upper values. `subs` at `0x3595c`
 and `b.ls` at `0x35960` reject **U <= L** using the subtraction flags—not
 merely a zero wrapped difference. On the returning paths, arguments passed
-to the as-yet-uninterpreted helper `0x31c90` at `0x35974` and `0x35994` are:
+to helper `0x31c90` at `0x35974` and `0x35994` are:
 
 ```text
 t = u32(U - L + 1)
@@ -122,8 +122,10 @@ That is consistent with a 4-KiB-unit inclusive upper limit, followed by a
 end nor the start of the final 4-KiB page. Do not copy that subtraction into
 m1n1's unmap length or call this a complete interval-validation algorithm.
 The reader does not mask its lower/upper loads with the constructor masks
-on these paths. Nonzero helper returns branch to failure; the helper's
-operation and effects remain outside this trace.
+on these paths. Nonzero helper returns branch to failure. The subsequent
+[callee and SVC trace](m1n1-t6032-boot-tz-translation.md) identifies a
+translation query, not a data load from the endpoint. A zero return does
+not uniquely establish an unmapped address.
 
 ## What this qualifies—and what it does not
 

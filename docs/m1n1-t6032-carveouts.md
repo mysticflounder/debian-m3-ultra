@@ -96,8 +96,12 @@ The subsequent [four-slot and endpoint trace](m1n1-t6032-boot-tz-endpoints.md)
 corroborates all four lower/upper/enable offsets obtained with stride `0x14`.
 Its separate first-aperture reader uses the F-adjusted address for limits,
 and a caller supplies shift 12. The plus-one endpoint arithmetic is consistent
-with inclusive upper limits, but subtracts `0x4000` before an opaque helper
-call; it is not an unmap-length recipe. OR reconstruction with `ram_base`,
+with inclusive upper limits, but subtracts `0x4000` before a helper
+call; it is not an unmap-length recipe. The [callee trace](m1n1-t6032-boot-tz-translation.md)
+now identifies a stage-1 translation query, not a data load from the endpoint.
+Two synthetic source-extracted decoder tests demonstrate that an affine OR
+mapping can pass the software checks while differing from addition; they
+do not establish which encoding the hardware uses. OR reconstruction with `ram_base`,
 alias equivalence and safe initial-MMU reads remain unresolved.
 
 ## Initial-MMU preflight (local patch 0009)

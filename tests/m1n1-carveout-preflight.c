@@ -141,10 +141,48 @@ static int expect_failure_no_effects(void)
     return expect_failure_no_effects_alias(mem_size_actual);
 }
 
+static int test_or_vs_addition_model_limitation(u64 synthetic_base)
+{
+    u64 saved_ram_base = ram_base;
+    u64 saved_mem_size_actual = mem_size_actual;
+    u64 saved_page_size = mock_page_size;
+    const u32 first = 0x100000, last = 0x100001;
+    const u64 raw_start = (u64)first << 12;
+    const u64 raw_end = ((u64)last + 1) << 12;
+    struct mcc_carveout decoded = {0};
+    u64 affine_start = 0, affine_end = 0;
+    int result = 0;
+
+    /* Host-only regression: this documents a current-model limitation, not
+       target encoding evidence or proof that OR is hardware-correct. */
+    ram_base = synthetic_base;
+    mem_size_actual = raw_end - raw_start;
+    mock_page_size = 4096;
+    if (!mcc_t6032_or_range(raw_start, raw_end, ram_base, &affine_start, &affine_end) ||
+        affine_start != synthetic_base || affine_end != synthetic_base + mem_size_actual ||
+        !mcc_t6032_decode_carveout(first, last, mock_page_size, &decoded) ||
+        decoded.base != synthetic_base || decoded.size != mem_size_actual ||
+        decoded.base == raw_start + synthetic_base ||
+        decoded.base + decoded.size == raw_end + synthetic_base)
+        result = 1;
+
+    /* Restore fixture globals so this synthetic address case cannot affect
+       unrelated carveout, alias, heap, or granule tests. */
+    ram_base = saved_ram_base;
+    mem_size_actual = saved_mem_size_actual;
+    mock_page_size = saved_page_size;
+    if (result)
+        fprintf(stderr, "OR-vs-addition model regression failed for base 0x%llx\n",
+                (unsigned long long)synthetic_base);
+    return result;
+}
+
 int main(void)
 {
     /* The runner fails closed if the patch changes helper signatures/source shape. */
     reset_fixture(4096);
+    CHECK(test_or_vs_addition_model_limitation(0x100000000ULL) == 0);
+    CHECK(test_or_vs_addition_model_limitation(0x13f00000000ULL) == 0);
     mock_start[0] = 0x1000; mock_end[0] = 0x1003; mock_enabled[0] = true;
     CHECK(mcc_unmap_carveouts_t6032(mem_size_actual) == 0);
     CHECK(mock_reads == 12 && mock_removals == 4 && mcc_carveout_count == 1);
