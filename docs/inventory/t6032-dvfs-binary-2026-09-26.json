@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "offline binary trace, not a native execution result",
+  "kernelcache_sha256": "a24fefccc060854cecc996b40983499e1319008e4f16c0717a5fef6c4d4828dc",
+  "artifacts": [
+    {"path": "scratch/dvfs-evidence/PMGR-complex-getters.disasm", "sha256": "ce3b942670baf64d72b7350115f0b743790b927891a48197256d8e7ca0e14650"},
+    {"path": "scratch/dvfs-evidence/T6031-domain-to-complex.disasm", "sha256": "dd2614233e754f84ed54cbb9952ec19f9a46464e5032ab44176dcafba40fbe5f"},
+    {"path": "scratch/dvfs-evidence/T6031-enableAPSC.disasm", "sha256": "c5ae4f0a8bb37d703c8645d1c7ecf293bc13344ae0460b6b90284d87ad6b8671"},
+    {"path": "scratch/dvfs-evidence/T6031-initChipIDs-raw.disasm", "sha256": "7a36683b5059f242a17a75d20a98c62c79ec97e6b92809e46a4efb53532bded4"},
+    {"path": "scratch/dvfs-evidence/T6031-initDriver-index-window.txt", "sha256": "ce79041a327b39b1cdf34692816b6fc9db9e8a90082df7aadbf3dfcd4414b146"},
+    {"path": "scratch/dvfs-evidence/T6031-wait-domain.disasm", "sha256": "021c9b8e98b45e853ecd9704dfc7b02b6e8093a966c1b458f1f9ba945b4fa40b"},
+    {"path": "scratch/dvfs-evidence/T6031-wait-complex.disasm", "sha256": "4b76e6e25d7c6ff68fbdb25d99d643c8cc90ba297584072903d6d9e579dddf00"},
+    {"path": "scratch/dvfs-evidence/T6031-wait-callback.disasm", "sha256": "a385929d7619f9f3295efc1797b5af94f449ca797e957de2896f8fa1bfd5f7a4"}
+  ],
+  "pstate_index": {
+    "symbol": "AppleT6031PMGR::kPerfState0TableIndexPCPU",
+    "vmaddr": "0xfffffe000cca0b28",
+    "full_collection_fileoff": 97110824,
+    "static_initial_u32": 2,
+    "observed_override": "1 when raw chosen chip-id == 0x6031 and first getChipRev output == 0",
+    "write_search_scope": "AppleT6031PMGR module only",
+    "domain_2": "requested software state + 1",
+    "domains_5_13": "requested software state + current global value",
+    "runtime_value_captured": false,
+    "safe_initial_states_established": false
+  },
+  "waits": {
+    "pstate_busy_bit": 31,
+    "apsc_disable_bit": 23,
+    "apsc_disable_busy_bit": 7,
+    "logical_acc_offset": "0xe20020",
+    "visible_timeouts_in_inspected_loops": false,
+    "conditional_callback": {
+      "vtable_slot": "0x1168",
+      "pointer_vmaddr": "0xfffffe00083667e8",
+      "raw_word": "0x801183ef02f5c528",
+      "target_vmaddr": "0xfffffe0009f60528",
+      "target_symbol": "AppleT6031PMGR::panicOnDvcDoneErr",
+      "pointer_format": 8,
+      "cache_level": 0,
+      "chain_membership_validated": true,
+      "pac_authenticated": false
+    }
+  },
+  "live_memory_read": false,
+  "hardware_validated": false,
+  "register_writes_performed": false,
+  "firmware_dispatch_enabled": false
+}

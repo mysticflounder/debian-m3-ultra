@@ -120,5 +120,7 @@ Follow-up: the [DVFS register contract](m1n1-t6032-dvfs-contract.md) now
 traces the CPU-specific caller, ACC map selection, ADT translation and
 per-die mapping arithmetic, deriving six static candidates. The generic
 `_setPerfState` above is not the CPU path used for that conclusion. State
-index/default policy, APSC sequencing and early-boot safety remain open;
-no frequency driver or native dispatch has been enabled.
+index initialization and the APSC control/wait loops have since been traced
+within the module. Safe defaults, runtime routing, remaining feature masks
+and early-boot safety remain open; no frequency driver or native dispatch
+has been enabled.

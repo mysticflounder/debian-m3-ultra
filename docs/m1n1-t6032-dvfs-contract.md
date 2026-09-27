@@ -18,6 +18,8 @@ The J575d restore template `DeviceTree.j575dap.im4p` hashes to
 Its decoded ADT is 589140 bytes, SHA-256
 `4a818ecc7f3d71195c1def12c6eed0c90b287f82cad2a6a4ffd6f0849fe13c12`.
 Its `/chosen/chip-id` is a zero placeholder, not live chip identification.
+The follow-up state-index, routing and wait extracts are hash-pinned in the
+[DVFS binary evidence manifest](inventory/t6032-dvfs-binary-2026-09-26.json).
 
 Run the bounded, allowlisted collector and portable synthetic tests:
 
@@ -109,21 +111,156 @@ These match `T6031 cluster base + 0x20020`, with the evidenced die stride,
 but remain **static candidates**, not permission to access those addresses.
 Do not translate again after adding the stride.
 
+## Domain routing and logical/physical complex numbering
+
+`getPerfDomainIDToComplex` at `0xfffffe0009f5f638` selects a physical
+complex, then tail-calls the imported `ApplePMGR::getPhysToVirtComplex`
+through stub `0xfffffe0009f63018`:
+
+| Domain | Die argument zero | Die argument nonzero |
+| --- | --- | --- |
+| 2 | Physical complex 0 | Physical complex 3 |
+| 5 | Physical complex 1 | Physical complex 4 |
+| 13 | Physical complex 2 | Physical complex 5 |
+
+The distinction is zero/nonzero, not unrestricted `3 * die`; this code
+does not establish support for more than two dies. Other domains reach
+cold error paths. The normal `setPerfState` caller supplies zero to this
+lookup, then supplies its separate die argument to the ACC accessor.
+Do not interpret the returned logical index as a physical cluster number.
+
+The base getters at `0xfffffe0009bb333c–0xfffffe0009bb34e4` use a
+CPUComplex array at `this+0x3f150`, count at `+0x3f158`, stride `0x8e08`:
+
+- `getVirtToPhysComplex` returns the input index if `this+0x238c == 1`;
+  otherwise it reads the record's `+0x8df4` field.
+- `getPhysToVirtComplex` returns the input under that same mode, or searches
+  the forward mapping and returns the first match; no match gives `0xffffffff`.
+- `getVirtToPhysComplexInDie` reads record `+0x5c` in mode 1, otherwise
+  record `+0x8df0`. It bounds-checks the logical input first.
+- `getComplexToDie` bounds-checks and reads record `+0x8dd0`.
+
+The record initializer is in `ApplePMGR::initDriver`, not the later
+`_cpuComplexInit` function. It retains the `acc-clusters` data pointer at
+`this+0x6b190` and its eight-byte record count at `this+0x6b188`.
+The captured 48-byte payload has record-byte pairs `(domain, selector)`:
+`02/00`, `05/01`, `0d/02`, `02/08`, `05/09`, `0d/0a` (remaining bytes zero).
+Here "selector" names the observed matching byte, not a proven MPIDR field.
+
+At `0xfffffe0009b7ed74–0xfffffe0009b7edac`, the initializer searches this
+table. It compares byte 1 with the second `getCorePhysID` output, byte 0
+with the saved performance-domain ID, and requires a third equality with
+a topology-derived value. The domain ID is reloaded from a saved stack
+pair at `0xfffffe0009b7ed5c`; it is not the first `getCorePhysID` output.
+On a match, it writes the domain byte to CPUComplex `+0x48`, the matched
+record's **ordinal** to `+0x8df4`, and a topology-record value at `+0x78`
+to CPUComplex `+0x8df0` (`0xfffffe0009b7edd4–0xfffffe0009b7ee1c`).
+
+Together with the getters above, this links the captured record order to
+the software physical-complex mapping. It does not establish all six runtime
+CPUComplex records: the additional topology/performance-domain inputs and
+mode selection still require validation. In particular, selector bytes
+`08/09/0a` must not be substituted directly for global ordinals `3/4/5`.
+
+## State-index global and chip-specific exception
+
+The symbol at `0xfffffe000cca0b28` is
+`AppleT6031PMGR::kPerfState0TableIndexPCPU`. Both the inspection view and
+full collection contain initial little-endian `u32` value **2** there.
+In the full collection it is file offset 97110824, within `__DATA`.
+This is a file value, not a live-memory read.
+
+The module's `initDriver` can overwrite it with **1** at
+`0xfffffe0009f5a738–0xfffffe0009f5a740`, but only when the chip field at
+`this+0x73d6c` equals `0x6031` and the first output of `getChipRev` is zero.
+`_initChipIDs` obtains `/chosen`'s `chip-id`, safe-casts to OSData and
+copies its first word to that field at `0xfffffe0009f5acc0–0xfffffe0009f5acc4`.
+There is no normalization to a family ID in that copy. The OSData virtual
+accessor's name remains an ABI inference. The same field is separately
+compared with `0x6032` in `quiesceHW`.
+
+Thus, **given a chip-id value of `0x6032`**, the observed initialization
+does not take the T6031 revision-zero override. With the static initial
+value retained, the CPU-domain table-index rules are:
+
+| CPU domain | Table index for requested software state `s` |
+| --- | --- |
+| 2 | `s + 1` |
+| 5, 13 | `s + 2` |
+
+The search for writes was confined to the AppleT6031PMGR module; this is
+not a whole-collection proof of absence of other writers, nor a capture of
+the runtime global. The template's zero chip-id must not be substituted for
+the live identity. These offsets also do **not** choose a safe boot state:
+m1n1's cluster table stores raw hardware indices, whereas this Apple API
+converts software states to indices. A default like 5 or 6 must be tied to
+the actual state's voltage/frequency contract, not offset arithmetic alone.
+
+## APSC control bit, separate from P-state request
+
+`enableAPSC(bool, unsigned, unsigned)` at `0xfffffe0009f5c8e8` reads
+logical ACC offset `0xe20020`. At `0xfffffe0009f5c960–0xfffffe0009f5c99c`
+it preserves all bits except bit 23, which it clears for enable and sets
+for disable, then writes through slot `+0x1150`. Both accessor calls pass
+die argument zero, relying on complex-to-die routing rather than an explicit
+die argument supplied to this function.
+
+After the write, **disable only** loops on bit 7 of the same register
+(`0xfffffe0009f5c9c0–0xfffffe0009f5c9f4`). No counter or deadline is present
+in that loop. There is also a conditional virtual tail-call at slot `+0x1168`
+controlled by `this+0x738d1`; its target is identified below.
+
+The bit positions match pinned m1n1's `CLUSTER_PSTATE_M2_APSC_DIS` (23)
+and `CLUSTER_PSTATE_APSC_BUSY` (7). That correspondence does not establish
+the full T6032 feature table, a safe initial state, or equivalent sequencing:
+m1n1's enabled `cpu-apsc` feature clears bit 23 and performs a bounded
+bit-7 wait, whereas this Apple enable branch skips that loop.
+
+### Transition waits and conditional error check
+
+Despite its name, `_waitAPSCPending(unsigned char, unsigned)` at
+`0xfffffe0009f5da6c` waits on **bit 31**, not the bit-7 APSC-disable
+status above. It rejects domains greater than 13, then requires membership
+in mask `0x2024`, admitting only 2, 5 and 13. Each iteration maps the
+domain with die selector zero, reads logical ACC `0xe20020` with the saved
+die argument, and branches back while bit 31 is set
+(`0xfffffe0009f5db2c` to `0xfffffe0009f5dabc`). It has no deadline/counter
+and exposes no recoverable status result.
+
+The one-argument overload at `0xfffffe0009f5f420` likewise loops on bit 31
+but directly uses the supplied complex and passes die argument zero.
+There is no callback in this overload. `setPerfState` invokes the domain
+wait before writing (`0xfffffe0009f5d888`) and optionally after writing
+when its boolean wait argument is true (`0xfffffe0009f5da2c`). A future
+bootloader contract must distinguish pre-existing busy state, request
+completion and APSC-disable completion; it must not copy an unbounded wait.
+
+Both the domain wait and APSC enable/disable function can conditionally
+tail-call vtable slot `+0x1168`. This is a **vtable** offset, not a pointer
+field at that offset in the PMGR object. Checked format-8 slot
+`0xfffffe00083667e8` resolves to `0xfffffe0009f60528`, named
+`AppleT6031PMGR::panicOnDvcDoneErr`. The bounded body reads PMGR SOC
+voltage-manager offsets `0x64` and conditionally `0x68` per die, testing
+their low 24 bits before an error path. It is not a timing barrier or a
+successful-return guarantee merely because the busy bit cleared. The
+register mapping, enable policy and applicability of this error check to
+early boot remain separate questions.
+
 ## Remaining implementation gates
 
 - Complete domain/virtual/physical-complex routing for all six clusters.
-- Establish state-index policy: domain 2 returns requested state + 1;
-  domains 5/13 add the global at `0xfffffe000cca0b28`, whose initialization
-  and runtime value remain untraced. Do not choose default/APSC P-states yet.
-- Trace `_waitAPSCPending`, error handling, policy-dependent pre-write steps,
-  barriers, early-boot prerequisites and safe bounded polling.
+- State-index initialization is traced within the module, but runtime value,
+  supported state tables and safe default/APSC P-states remain unvalidated.
+- The two `_waitAPSCPending` loops and APSC enable bit are now traced;
+  establish early-boot error policy, remaining pre-write steps, barriers,
+  prerequisites and bounded polling before firmware implementation.
 - Establish feature masks before implementing `cpufreq_get_features`.
 - Propagate unsupported/failed frequency initialization through relevant
   callers. Keep native dispatch off until independent startup/recovery gates
   are met; this report does not clear MCC, TZ, DMA or loader safety gates.
 
-The `_cpuComplexInit` and `_initPerfDomainInfo` reviews found initialization
-and performance metadata paths, but did not establish a direct mapping from
-captured `acc-clusters` records to frequency-control registers. No such link
-is assumed. Next bounded task: resolve the performance-state index global
-and APSC wait contract, with portable tests before firmware changes.
+The follow-up `initDriver` trace establishes a partial metadata-to-record
+link; `_cpuComplexInit` and `_initPerfDomainInfo` alone did not establish it.
+Next bounded task: finish record initialization/routing, identify
+the actual state-table and feature-mask inputs, and derive safe initial-state
+and bounded-failure behavior before implementing T6032 frequency dispatch.
