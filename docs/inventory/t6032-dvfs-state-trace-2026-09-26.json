@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "source_kind": "offline decoded ApplePMGR, not live register state",
+  "input_sha256": "a24fefccc060854cecc996b40983499e1319008e4f16c0717a5fef6c4d4828dc",
+  "view": "scratch/mcc-evidence/ApplePMGR.macho",
+  "hardware_validated": false,
+  "safe_initial_states_established": false,
+  "extract_command": "xcrun llvm-objdump --disassemble --start-address=START --stop-address=STOP VIEW > PATH",
+  "extracts": [
+    {
+      "path": "scratch/dvfs-evidence/domain-record-bind-raw.disasm",
+      "start": "0xfffffe0009b7e9a0", "stop": "0xfffffe0009b7ea24",
+      "sha256": "e24c4c6fc3adff0409fdabfd80661a4bf666b4f41be574ce6d24e88f90714ae8"
+    },
+    {
+      "path": "scratch/dvfs-evidence/table-selector-raw.disasm",
+      "start": "0xfffffe0009b7ea24", "stop": "0xfffffe0009b7ec70",
+      "sha256": "724d3d83945d8fd30960e3ea283314683e57e82acfd160565ebbff6a66159ebc"
+    },
+    {
+      "path": "scratch/dvfs-evidence/state-conversion-raw.disasm",
+      "start": "0xfffffe0009b7f0fc", "stop": "0xfffffe0009b7f2d0",
+      "sha256": "9c60baeab8b0a15a0e03703787ec0b04fdfaea38b7b727c58a79c4b80c7c6374"
+    },
+    {
+      "path": "scratch/dvfs-evidence/conversion-constants-raw.disasm",
+      "start": "0xfffffe0009b7e974", "stop": "0xfffffe0009b7e9a0",
+      "sha256": "28fa26c77e00dc038deda69bc9f838afd2c2b160f073f2310307821416dcacf2"
+    },
+    {
+      "path": "scratch/dvfs-evidence/conversion-restore-raw.disasm",
+      "start": "0xfffffe0009b7eef4", "stop": "0xfffffe0009b7ef20",
+      "sha256": "3fdcf2df831a0d3fd392f20920bf324e90747db82ad9e85c49d385cb6c61fa6f"
+    },
+    {
+      "path": "scratch/dvfs-evidence/frequency-getter-raw.disasm",
+      "start": "0xfffffe0009b8ddf8", "stop": "0xfffffe0009b8de58",
+      "sha256": "524a05d5912ea37e68f4ffd9d25bb033397e1f9d696f47df00ed5e909bef8e2b"
+    }
+  ]
+}

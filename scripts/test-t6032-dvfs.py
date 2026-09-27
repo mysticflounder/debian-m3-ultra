@@ -26,6 +26,8 @@ ADT = load("adt_fixtures", "test-firmware-mcc.py")
 def fields():
     result = {name: (4).to_bytes(4, "little") for name in AUDIT.SCALARS}
     result.update({name: bytes(8) for name in (*AUDIT.REQUIRED_TABLES, *AUDIT.OTHER)})
+    result["perf-domains"] = b"".join(bytes((selector, 1, 1, domain)) + bytes(24)
+                                      for domain, selector in AUDIT.CPU_TABLE_SELECTORS)
     return result
 
 
@@ -75,6 +77,40 @@ class Tests(unittest.TestCase):
                 del pmgr[name]
                 with self.assertRaises(AUDIT.AuditError):
                     AUDIT.audit_tree(tree)
+
+    def test_ep_table_selector_is_not_domain_id(self):
+        tree, _, pmgr = fixture()
+        self.assertNotIn("voltage-states2", pmgr)
+        report = AUDIT.audit_tree(tree)
+        self.assertEqual(report["schema_version"], 2)
+        self.assertIn("voltage-states1", report["properties"])
+        self.assertIn("voltage-states2", report["absent_optional_properties"])
+        self.assertEqual(report["cpu_table_selectors"][0], {
+            "descriptor_index": 0, "domain_id_byte3": 2, "table_selector_byte0": 1,
+            "conversion_mode_byte2": 1, "base_property": "voltage-states1"})
+        del pmgr["voltage-states1"]
+        pmgr["voltage-states2"] = bytes(8)
+        with self.assertRaises(AUDIT.AuditError):
+            AUDIT.audit_tree(tree)
+
+    def test_cpu_descriptor_layout_is_fail_closed(self):
+        original = fields()["perf-domains"]
+        for bad in (original[:-4], original[28:], original + original[:28],
+                    bytes((2, 1, 1, 2)) + original[4:],
+                    bytes((1, 1, 0, 2)) + original[4:]):
+            tree, _, pmgr = fixture()
+            pmgr["perf-domains"] = bad
+            with self.subTest(raw=bad.hex()), self.assertRaises(AUDIT.AuditError):
+                AUDIT.audit_tree(tree)
+
+    def test_cpu_descriptor_order_is_not_assumed(self):
+        tree, _, pmgr = fixture()
+        raw = pmgr["perf-domains"]
+        pmgr["perf-domains"] = raw[56:] + raw[28:56] + raw[:28]
+        selectors = AUDIT.audit_tree(tree)["cpu_table_selectors"]
+        self.assertEqual([r["descriptor_index"] for r in selectors], [2, 1, 0])
+        self.assertEqual([r["base_property"] for r in selectors],
+                         ["voltage-states1", "voltage-states5", "voltage-states13"])
 
     def test_bad_property_values(self):
         for name in (*AUDIT.SCALARS, *AUDIT.TABLES, *AUDIT.OTHER):

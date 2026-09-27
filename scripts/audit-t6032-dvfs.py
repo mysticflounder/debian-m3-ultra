@@ -29,10 +29,33 @@ AuditError = PMGR.AuditError
 SCALARS = ("first-acc-dvfm-map-state", "nominal-performance1", "boost-performance1",
            "mcx-fast-pcpu-frequency")
 TABLES = tuple(f"voltage-states{number}{suffix}"
-               for number in (2, 5, 13, 34, 37, 45) for suffix in ("", "-sram", "-extra"))
-REQUIRED_TABLES = ("voltage-states2", "voltage-states5", "voltage-states13")
+               for number in (1, 2, 5, 13, 34, 37, 45) for suffix in ("", "-sram", "-extra"))
+# perf-domains byte 0 selects the property; byte 3 is the domain ID.
+# In the pinned J575d descriptors, CPU domain 2 selects table 1, not 2.
+# Table 2 is retained as optional comparison data, not a CPU-state input.
+REQUIRED_TABLES = ("voltage-states1", "voltage-states5", "voltage-states13")
 OTHER = ("perf-domains", "perf-regs")
 MAX_PROPERTY_BYTES = 4096
+CPU_TABLE_SELECTORS = ((2, 1), (5, 5), (13, 13))
+
+
+def cpu_table_selectors(raw: bytes) -> list[dict]:
+    """Decode only the three proven J575d CPU descriptors, not die routing."""
+    if len(raw) % 28:
+        raise AuditError("invalid_perf_domains_record_length")
+    records = [raw[offset:offset + 28] for offset in range(0, len(raw), 28)]
+    selected = []
+    for domain, selector in CPU_TABLE_SELECTORS:
+        matches = [(i, record) for i, record in enumerate(records) if record[3] == domain]
+        if len(matches) != 1:
+            raise AuditError("missing_or_duplicate_cpu_domain")
+        index, record = matches[0]
+        if record[0] != selector or record[2] != 1:
+            raise AuditError("unsupported_cpu_table_descriptor")
+        selected.append({"descriptor_index": index, "domain_id_byte3": domain,
+                         "table_selector_byte0": selector, "conversion_mode_byte2": record[2],
+                         "base_property": f"voltage-states{selector}"})
+    return selected
 
 
 def properties(node: dict) -> dict:
@@ -57,14 +80,15 @@ def properties(node: dict) -> dict:
         if name in SCALARS:
             selected[name]["value_le_u32"] = int.from_bytes(raw, "little")
     return {"properties": selected, "absent_optional_properties": absent,
+            "cpu_table_selectors": cpu_table_selectors(node["perf-domains"]),
             "table_word_semantics_validated": False,
             "state_count_inferred": False, "safe_initial_states_established": False}
 
 
 def report(identity: dict, node: dict, source: str) -> dict:
-    return {"schema_version": 1, "status": "ok", "identity": identity,
+    return {"schema_version": 2, "status": "ok", "identity": identity,
             "source_kind": source, "source_path": "/arm-io/pmgr", **properties(node),
-            "domain_number_note": "34/37/45 are selected property names, not a validated die-1 mapping",
+            "domain_number_note": "Property suffixes are table selectors, not domain IDs; 34/37/45 are not a validated die-1 mapping",
             "hardware_validated": False, "register_writes_performed": False}
 
 
@@ -122,6 +146,6 @@ if __name__ == "__main__":
         raise SystemExit(main())
     except (AuditError, ValueError, OSError):
         # Do not leak paths, property contents or parser exception payloads.
-        print(json.dumps({"schema_version": 1, "status": "error",
+        print(json.dumps({"schema_version": 2, "status": "error",
                           "error": "dvfs_metadata_unavailable_or_invalid"}), file=sys.stderr)
         raise SystemExit(1)

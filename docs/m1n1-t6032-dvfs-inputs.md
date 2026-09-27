@@ -16,8 +16,13 @@ compatible `pmgr1,t6031`. Its placeholder chip ID is labeled separately.
 No raw ioreg dump is retained by the collector.
 
 The allowlist contains four scalars, `perf-domains`, `perf-regs`, and base,
-`-sram`, and `-extra` voltage-table names for IDs 2/5/13/34/37/45. The latter
-three names are **not a proven die-1 mapping**. Optional absences are reported.
+`-sram`, and `-extra` voltage-table names with suffixes 1/2/5/13/34/37/45.
+These suffixes are **table selectors, not domain IDs**; 34/37/45 are not a
+proven die-1 mapping. Schema 2 checks the three captured CPU descriptors:
+domain 2 selects table 1, domain 5 selects 5, and domain 13 selects 13.
+Base tables 1/5/13 are required; table 2 is optional comparison data for a
+different domain. Duplicate/missing CPU descriptors, wrong selector/mode or
+non-28-byte descriptor lengths fail closed. Optional absences are reported.
 Properties must be nonempty, word-aligned bytes, at most 4096 bytes each;
 scalars must be exactly four bytes. Base and SRAM tables additionally require
 eight-byte alignment. The `-extra` layout is unresolved. Arbitrary identifiers
@@ -33,20 +38,25 @@ PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
   uv run --no-project --offline --python 3.13 scripts/test-t6032-dvfs.py
 ```
 
-The [sanitized inventory](inventory/t6032-dvfs-tables-2026-09-26.json) retains
-the two reports exactly. Fourteen portable collector tests pass, including
+The [corrected sanitized inventory](inventory/t6032-dvfs-selected-inputs-2026-09-26.json)
+retains the two schema-2 reports exactly. The
+[original schema-1 capture](inventory/t6032-dvfs-tables-2026-09-26.json)
+is historical comparison data: it omitted table 1 and therefore did not
+capture the ECPU input. Seventeen portable collector tests pass, including
 identity, bounds, record alignment, required/optional fields, privacy, source
 labels and sanitized CLI errors. Adjacent PMGR/firmware-DVFS/firmware-MCC
-suites pass 7/18/16 tests, respectively: **55 total**. These tests validate
+suites pass 7/18/16 tests, respectively: **58 total**. These tests validate
 parsing and reporting, not register semantics or safe native operation.
 
 ## Restore tables are not live operating-state tables
 
 | Property | Restore-template bytes | Live IODeviceTree bytes |
 | --- | ---: | ---: |
-| `voltage-states2` | 32 | 40 |
+| `voltage-states1` (CPU domain 2) | 24 | 48 |
+| `voltage-states2` (domain 3, not ECPU) | 32 | 40 |
 | `voltage-states5` | 24 | 160 |
 | `voltage-states13` | 24 | 160 |
+| `voltage-states1-sram` | Absent | 48 |
 | `voltage-states5-sram`, `voltage-states13-sram` | Absent | 160 each |
 | `voltage-states5-extra`, `voltage-states13-extra` | Absent | 76 each |
 | `voltage-states37`, `voltage-states45` | Absent | 160 each |
@@ -62,10 +72,11 @@ The matching ApplePMGR `initDriver` builds property names
 `0xfffffe0009b7ea24–0xfffffe0009b7ea3c` and
 `0xfffffe0009b7eaf8–0xfffffe0009b7eb10`. Length shifts at
 `0xfffffe0009b7eab4` and `0xfffffe0009b7eb84` support eight-byte records.
-This does **not** establish the units or transformations of either raw word,
-the usable CPU-state count, or startup/APSC defaults. The collector deliberately
-leaves those claims false. Trace the conversion into the per-domain frequency
-arrays before assigning meanings; do not divide table sizes to choose states.
+The [follow-up state trace](m1n1-t6032-dvfs-states.md) establishes property
+selection and the mode-1 reciprocal conversion into the getter array. It
+does **not** establish raw voltage units, runtime state availability or
+startup/APSC defaults. The metadata collector deliberately leaves those
+claims false; do not divide table sizes to choose boot states.
 
 ## Feature names, dispatch and masks
 
@@ -126,7 +137,8 @@ skipped or left as firmware configured it.
 
 ## Remaining work before implementation
 
-- Finish raw-table conversion, per-domain state construction and safe defaults.
+- Finish per-die runtime state construction and safe defaults; the mode-1
+  conversion and correct property selection are now traced separately.
 - Complete six-cluster runtime routing, including the complex index consumed
   by the indexed feature path and its separate die argument.
 - Establish which operations are needed at early boot, their prerequisites,

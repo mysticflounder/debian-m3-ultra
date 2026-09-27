@@ -265,6 +265,9 @@ The follow-up `initDriver` trace establishes a partial metadata-to-record
 link; `_cpuComplexInit` and `_initPerfDomainInfo` alone did not establish it.
 The [live-input/feature audit](m1n1-t6032-dvfs-inputs.md) captures the actual
 allowlisted state-table properties and proves indexed throttler dispatch.
-Next bounded task: finish table conversion and record initialization/routing,
-then derive safe initial-state and bounded-failure behavior before implementing
-T6032 frequency dispatch. Restore templates cannot replace the live tables.
+The [state-input trace](m1n1-t6032-dvfs-states.md) corrects domain 2's table
+selection to `voltage-states1` and establishes mode-1 prefix/mapping/conversion
+arithmetic. Next: propagate frequency-init failure before secondary startup,
+finish runtime routing and derive safe raw initialization states and ordering.
+Restore templates cannot replace live tables, and runtime frequency conversion
+does not by itself validate m1n1's raw-index boot policy.

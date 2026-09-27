@@ -123,6 +123,7 @@ per-die mapping arithmetic, deriving six static candidates. The generic
 index initialization and the APSC control/wait loops have since been traced
 within the module. The [live-input/feature audit](m1n1-t6032-dvfs-inputs.md)
 now preserves actual table inputs separately from restore placeholders and
-traces the indexed throttler masks. Raw-table conversion, safe defaults,
-runtime routing and early-boot safety remain open; no frequency driver or
-native dispatch has been enabled.
+traces the indexed throttler masks. The [state-input trace](m1n1-t6032-dvfs-states.md)
+now identifies the correct ECPU property (`voltage-states1`) and the mode-1
+conversion. Safe raw defaults/APSC states, runtime routing and early-boot
+safety remain open; no frequency driver or native dispatch has been enabled.
