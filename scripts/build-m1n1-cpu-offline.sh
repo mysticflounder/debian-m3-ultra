@@ -26,6 +26,7 @@ PATCHES=(
     "$ROOT/patches/m1n1/0011-propagate-t6032-cpufreq-failures.patch"
     "$ROOT/patches/m1n1/0012-decode-t6032-tz-relative-origin.patch"
     "$ROOT/patches/m1n1/0013-check-t6032-tz-plane-consistency.patch"
+    "$ROOT/patches/m1n1/0014-reject-uninitialized-t6032-mmu-entry.patch"
 )
 
 if [[ $(uname -s) != Darwin || $(uname -m) != arm64 ]]; then

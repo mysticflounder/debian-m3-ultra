@@ -1,0 +1,40 @@
+Local review patch: reject inherited MMU state without local T6032 setup
+Base: m1n1 4184923ffb2dff079b384d6a32cc02142aa14572, after 0001..0013
+Provenance: AI-assisted Debian project work; not submitted upstream.
+
+An enabled SCTLR.M alone does not establish that T6032 carveout preflight
+has run. Track successful local MMU initialization so a first MMU-on entry
+cannot silently take the idempotent return path. Clear that state before
+a disabled-MMU rebuild, and publish it only after the enable write returns.
+Successful repeat calls and temporary disable/restore retain their behavior;
+legacy SoCs are unchanged. This is a software lifecycle guard, not adoption
+or validation of inherited page tables or protection against privileged
+table/register mutation. Panic is not a verified native recovery mechanism.
+No firmware execution or new hardware access is authorized by this patch.
+
+--- a/src/memory.c
++++ b/src/memory.c
+@@ -47,4 +47,6 @@
+ uint64_t ram_base = 0;
++/* An inherited SCTLR.M bit is not evidence of local T6032 carveout setup. */
++static bool t6032_mmu_initialized;
+ 
+ static inline u64 read_sctlr(void)
+ {
+@@ -590,2 +592,4 @@
+     if (read_sctlr() & SCTLR_M) {
++        if (chip_id == T6032 && !t6032_mmu_initialized)
++            panic("T6032: inherited MMU state has not been validated!\n");
+         printf("MMU: already initialized.\n");
+@@ -596,3 +600,5 @@
+-    if (chip_id == T6032)
++    if (chip_id == T6032) {
++        t6032_mmu_initialized = false;
+         mcc_t6032_begin_carveout_setup();
++    }
+     mmu_init_pagetables();
+@@ -614,2 +620,4 @@
+     write_sctlr(sctlr);
++    if (chip_id == T6032)
++        t6032_mmu_initialized = true;
+     printf("MMU: running with MMU and caches enabled!\n");

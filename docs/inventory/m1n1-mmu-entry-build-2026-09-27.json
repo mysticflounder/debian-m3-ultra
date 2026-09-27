@@ -1,0 +1,45 @@
+{
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "toolchain_record": "m1n1-cpu-build-2026-09-26.json",
+  "configuration": "default Makefile all; patches 0001 through 0014; CPU/frequency dispatch disabled",
+  "prior_patch_records": {
+    "path": "m1n1-tz-consistency-build-2026-09-27.json",
+    "sha256": "08e9cb2ecca44987d87a278d1d51ded4830fd9f4fcc1c23590e0a49e5c406ff7",
+    "scope": "patch 0013 and its referenced 0001..0012 records; not prior artifact or test hashes"
+  },
+  "additional_patch": {
+    "path": "patches/m1n1/0014-reject-uninitialized-t6032-mmu-entry.patch",
+    "sha256": "8171b99618f3d33a8ce5d9baf6cb7500c8dd87b49474c78be405a7c8d7add65a"
+  },
+  "build_script_sha256": "c388ff153fd9b7a4617e97a2c67546ea36bc49eaa734e36640ea33737d099f07",
+  "directory": "scratch/m1n1-firmware-patched.I82ocW",
+  "status": "pass",
+  "sha256": {
+    "m1n1.elf": "0be23a4838cd3c97146a3bbc1a9de2ddc6306c7aa50ba230bbe6f9033cf04093",
+    "m1n1-raw.elf": "bf4576691433e86209215763d49fa7d8eb65c3ed52192e89f27652b205ed1e7c",
+    "m1n1.macho": "8fad7cad00b4ee06d98445b7ceb90aeec543f758499d22e5d6303d7a291e8060",
+    "m1n1.bin": "39240041beddfee1ee0d121d384b9ee6257998e13a3414bad057e0fd0e0b71b5"
+  },
+  "host_tests": {
+    "status": "pass",
+    "patch_count": 14,
+    "sanitizers": "address,undefined; recovery disabled",
+    "scope": "Source-extracted mmu_init with mocked stages; seven lifecycle cases, simulated disable/restore; adjacent carveout and mapping suites",
+    "source_sha256": {
+      "scripts/test-m1n1-mmu-entry.py": "0323b9c1a90deace4d17a5e9146c17c216dcad99b2f45f29598a76845ac346dc",
+      "tests/m1n1-mmu-entry.c": "d172cf6f8eee38c9be0934bc313d593502e24745b8a050c6b0b20fa604bf8f8d",
+      "scripts/test-m1n1-carveout-preflight.py": "d2f1c2236dab1e8edd038503010a2b84e110253afcfbdd0c4b92d250a0b89165",
+      "scripts/test-m1n1-mapping-guard.py": "390cb6c3d1814d93c361a1c008bc5220882b528d70a109fefa3f999cad651d97",
+      "tests/m1n1-carveout-preflight.c": "70b50aeeae8be4bd92060e49b9f260434d049e26e7a40633ee9113d36b9e2055",
+      "tests/m1n1-mapping-guard.c": "2d660c899cdbba9d9b10871f5dff8b1d39ef98ade591a9151372506c5ff501eb"
+    },
+    "log_sha256": {
+      "scratch/mcc-evidence/mmu-entry-lifecycle.log": "252ff1f3f8c762114338d63a352152c0a31e4f619537ac560201077d72460599",
+      "scratch/mcc-evidence/mmu-entry-carveout-preflight.log": "303f9fd53d2a4abda5d8a8d5bd6c81454bedbbdbc9c90c2520c5470dd2bfe660",
+      "scratch/mcc-evidence/mmu-entry-mapping-guard.log": "f4952842d8622146837477c85ff541ca6d96f6b9d5f7e6ab56bad9c62c7c627a"
+    }
+  },
+  "native_execution": false,
+  "mmio_testing": false,
+  "scope": "Offline build and mocked host tests only; primary MMU lifecycle guard is not native entry, MMIO, recovery or inherited-table validation"
+}
