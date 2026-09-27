@@ -106,11 +106,24 @@ cache/TZ behavior, entry/reset/recovery and CPU/DVFS gates remain open.
 Further H15 disassembly corroborates plane stride `0x40000` (`start`,
 `0xfffffe00096e16e4`/`0xfffffe00096e1718`) and DCS stride `0x200000`
 (`0xfffffe00096e1814`/`0xfffffe00096e1848`/`0xfffffe00096e187c`).
-`mccEnableCacheMode` writes offset `0x1c00`; `_mccWaitForWaysPwrOn`
-polls `0x1c04` and extracts bits 13:9 and 8:4. `setWayMask` reads
-`0x1c08` and clamps its way count at twelve. These corroborate offsets
-and field widths, **not all m1n1 enable values, expected status values,
-mode transitions or early-boot ordering**.
+`_mccWaitForWaysPwrOn` polls a per-plane `0x1c04` offset and extracts bits
+13:9 and 8:4. `setWayMask` reads `0x1c08` and clamps its way count at twelve.
+
+Correction from the subsequent cache-mode trace: the enable call does **not**
+pass a bare `0x1c00`. At `0xfffffe00096e4f0c`, `mov w3,#0x1c00` is followed
+by `movk w3,#0x1c,lsl #16` at `0xfffffe00096e4f10`, producing the full
+offset argument **`0x1c1c00`**. The protected-write helper preserves that
+argument (`0xfffffe00096e4d40`/`4d54`), adds it to the selected aperture base
+at `0xfffffe00096e4d7c`, and passes the resulting address, value and width
+four to its tail callee at `0xfffffe00096e4dec`–`4e1c`.
+The controller loop passes value one, then calls the wait helper with twelve
+after completing its writes (`0xfffffe00096e4f00`–`4f34`).
+
+This differs from m1n1's explicit per-plane write-then-poll loop. It is a
+concrete next trace target, not proof of broadcast semantics or permission
+to change the firmware write sequence. Resolve the final write callee,
+aperture base provenance and plane scope before equating the two paths.
+These observations do **not** establish the complete early-boot contract.
 
 The candidate TZ offsets `0x6d8`, `0x6dc`, `0x6e4` were not established
 in H15's active path. The subsequent [carveout audit](m1n1-t6032-carveouts.md)
@@ -178,6 +191,7 @@ Both are sixteen bytes and decode into plausible address/size pairs under
 the pinned source's convention. This does not establish candidate TZ register
 offsets or prove that every die shares one map. Patch 0009 now adds checked
 initial-MMU range preflight and fatal caller propagation, with a successful
-nine-patch offline build. Later framebuffer mappings and the register-layout
-evidence remain open gates; see the carveout document. No hardware register read, native
+nine-patch offline build. The subsequent [runtime mapping guard](m1n1-t6032-mapping-guard.md)
+adds checks for later stage-1 mappings, with a ten-patch offline build.
+Register-layout and native evidence remain open gates. No hardware register read, native
 execution or installation is authorized by these metadata results.

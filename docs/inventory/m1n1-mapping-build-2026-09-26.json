@@ -1,0 +1,31 @@
+{
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "toolchain_record": "m1n1-cpu-build-2026-09-26.json",
+  "configuration": "default Makefile all; patches 0001 through 0010, T6032 CPU dispatch still disabled",
+  "directory": "scratch/m1n1-firmware-patched.Buj9o3",
+  "status": "pass",
+  "patches": [
+    {"path": "patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch", "sha256": "acd987129def9126035d384a6e9370d2f0077634b8298cc8f1f02fbb3c74e11c"},
+    {"path": "patches/m1n1/0002-free-pruned-cpus-after-handoff.patch", "sha256": "3fd3508335e9e7af0fffca054d0a718ec4056e9431a8413e8e5312653c9be5e0"},
+    {"path": "patches/m1n1/0003-guard-secondary-start-prerequisites.patch", "sha256": "2958b2b583841f0d8b049859a4e961fe59a1966252805855788d09186f0dded3"},
+    {"path": "patches/m1n1/0004-abort-on-secondary-start-timeout.patch", "sha256": "2e6061606f3dd08e8b69534a6fcb831963b7155ff34569441fff7d5297e2d41d"},
+    {"path": "patches/m1n1/0005-t6032-cpu-start-masks.patch", "sha256": "0c6b7da275569b6f2329736c89b620bbd6c834f8753ecd52fcacb73e6929d91c"},
+    {"path": "patches/m1n1/0006-preflight-t6032-cpu-inventory.patch", "sha256": "1e755adddc3c04493a39fae80150d6930baa9db6f49d3d3810810c82bef933ce"},
+    {"path": "patches/m1n1/0007-propagate-t6032-cpu-start-failures.patch", "sha256": "fabe6b87f536ac44323e945c266e5e88727bec2ebb4001ca220a54378dca06e5"},
+    {"path": "patches/m1n1/0008-validate-t6032-mcc-layout.patch", "sha256": "3ac58c2d4bf87f588b42a45411d58037b65d53958a6d20eb9ef52798322a1b11"},
+    {"path": "patches/m1n1/0009-preflight-t6032-carveout-removal.patch", "sha256": "0dba4d39a4b6da7075b87627bdd77a9fe65def3f75573336430eb7f1291c0e81"},
+    {"path": "patches/m1n1/0010-guard-t6032-runtime-mappings.patch", "sha256": "e77e9bf8a3e0fc5cae24405ed42ce9239a46018b372c04fc6db7c73c1ae99507"}
+  ],
+  "sha256": {
+    "m1n1.elf": "6eb85b8ea4451383dc48e41f0b502a1155d9fdf6ab808901be08d1c73a9380a3",
+    "m1n1-raw.elf": "78de2bda56f13f42ac49dba394d70efe76ec3efbdbcbe2687b23615a2790fbd0",
+    "m1n1.macho": "85787489efb87276e6f25c3c21a70c52000f84a8f859e0f792c64e8fa87c84d6",
+    "m1n1.bin": "f95c47160d71194cbf6573bfa83c984c26c816e95d5c107b086f7ee8d72be10c"
+  },
+  "new_compiler_warnings_vs_baseline": 0,
+  "network_during_firmware_build": false,
+  "installed_or_executed": false,
+  "native_boot_validated": false,
+  "native_cache_tz_validated": false,
+  "native_dma_or_stage2_validated": false
+}

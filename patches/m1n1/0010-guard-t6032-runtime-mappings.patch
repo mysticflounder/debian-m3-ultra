@@ -1,0 +1,139 @@
+Local review patch: keep T6032 carveouts excluded from later stage-1 mappings
+Base: m1n1 4184923ffb2dff079b384d6a32cc02142aa14572, after 0001..0009
+Provenance: AI-assisted Debian project work; not submitted upstream.
+
+Check raw mapping requests and valid descriptor targets before page-table
+effects; check framebuffer remaps before their cache-maintenance prelude.
+Track publication separately from carveout count, including zero-region maps.
+An MMU-disabled table rebuild explicitly begins a new setup phase; disabling
+and restoring the existing MMU alone does not drop published protection.
+This guards stage-1 software mappings, not DMA, stage-2, privileged arbitrary
+memory writes, unvalidated TZ hardware semantics, or native execution safety.
+
+--- a/src/mcc.c
++++ b/src/mcc.c
+@@ -131,6 +131,34 @@
+ 
+ size_t mcc_carveout_count;
+ struct mcc_carveout mcc_carveouts[PLANE_TZ_MAX_REGS + 1];
++static bool mcc_carveouts_ready;
++
++/* Only start a new setup phase with the MMU disabled and before building tables. */
++void mcc_t6032_begin_carveout_setup(void)
++{
++    mcc_carveouts_ready = false;
++    mcc_carveout_count = 0;
++    memset(mcc_carveouts, 0, sizeof(mcc_carveouts));
++}
++
++bool mcc_t6032_range_allowed(u64 base, u64 size)
++{
++    if (!mcc_carveouts_ready || !size)
++        return true;
++    u64 page_size = get_page_size();
++    if ((page_size != 4096 && page_size != 16384) || base > (u64)-1 - size ||
++        mcc_carveout_count > PLANE_TZ_MAX_REGS)
++        return false;
++    u64 end = base + size;
++    for (size_t i = 0; i < mcc_carveout_count; i++) {
++        u64 start = mcc_carveouts[i].base, length = mcc_carveouts[i].size;
++        if (!start || !length || start > (u64)-1 - length ||
++            ((start | length) & (page_size - 1)) ||
++            (base < start + length && start < end))
++            return false;
++    }
++    return true;
++}
+ 
+ struct mcc_regs {
+     u64 plane_base;
+@@ -379,6 +407,9 @@
+ 
+ int mcc_unmap_carveouts_t6032(u64 alias_size)
+ {
++    /* Do not drop published protection outside an explicit MMU rebuild. */
++    if (mcc_carveouts_ready)
++        return -1;
+     const u64 aliases[] = {0, REGION_RWX_EL0, REGION_RW_EL0, REGION_RX_EL1};
+     struct mcc_carveout staged[PLANE_TZ_MAX_REGS + 1] = {0};
+     u64 starts[PLANE_TZ_MAX_REGS * 4], ends[PLANE_TZ_MAX_REGS * 4];
+@@ -449,6 +480,7 @@
+         mmu_rm_mapping(starts[i], ends[i] - starts[i]);
+     memcpy(mcc_carveouts, staged, sizeof(staged));
+     mcc_carveout_count = count;
++    mcc_carveouts_ready = true;
+     return 0;
+ }
+ 
+--- a/src/mcc.h
++++ b/src/mcc.h
+@@ -16,6 +16,8 @@
+ int mcc_init(void);
+ int mcc_unmap_carveouts(void);
+ int mcc_unmap_carveouts_t6032(u64 alias_size);
++void mcc_t6032_begin_carveout_setup(void);
++bool mcc_t6032_range_allowed(u64 base, u64 size);
+ int mcc_enable_cache(void);
+ 
+ #endif
+--- a/src/memory.c
++++ b/src/memory.c
+@@ -303,11 +303,29 @@
+         from += BIT(VADDR_L3_OFFSET_BITS);
+         to += BIT(VADDR_L3_OFFSET_BITS);
+     }
++}
++
++static bool mmu_t6032_mapping_allowed(u64 from, u64 to, u64 size)
++{
++    if (!size)
++        return true;
++    u64 page_size = get_page_size();
++    /* Match mmu_configure(): low-48-bit table indices and TCR_IPS_4TB. */
++    const u64 va_limit = BIT(48), pa_limit = BIT(42);
++    if ((page_size != 4096 && page_size != 16384) ||
++        ((from | to | size) & (page_size - 1)) || from >= va_limit || to >= pa_limit ||
++        size > va_limit - from || size > pa_limit - to)
++        return false;
++    return mcc_t6032_range_allowed(to, size);
+ }
+ 
+ int mmu_map(u64 from, u64 to, u64 size)
+ {
+     u64 chunk;
++    /* Check the physical target, not descriptor attributes or the virtual alias. */
++    if (chip_id == T6032 && (to & PTE_VALID) &&
++        !mmu_t6032_mapping_allowed(from, to & PTE_TARGET_MASK, size))
++        return -1;
+     if (from & MASK(VADDR_L3_OFFSET_BITS) || size & MASK(VADDR_L3_OFFSET_BITS))
+         return -1;
+ 
+@@ -374,6 +392,9 @@
+ 
+ void mmu_add_mapping(u64 from, u64 to, size_t size, u8 attribute_index, u64 perms)
+ {
++    /* Validate raw physical addresses before descriptor bits can disguise them. */
++    if (chip_id == T6032 && !mmu_t6032_mapping_allowed(from, to, size))
++        panic("T6032: rejected MMU mapping 0x%lx -> 0x%lx (0x%lx)\n", from, to, size);
+     if (mmu_map(from,
+                 to | PTE_MAIR_IDX(attribute_index) | PTE_ACCESS | PTE_VALID | PTE_SH_OS | perms,
+                 size) < 0)
+@@ -454,6 +475,8 @@
+ 
+ void mmu_map_framebuffer(u64 addr, size_t size)
+ {
++    if (chip_id == T6032 && !mmu_t6032_mapping_allowed(addr, addr, size))
++        panic("T6032: rejected framebuffer mapping 0x%lx (0x%zx)\n", addr, size);
+     printf("MMU: Adding Normal-NC mapping at 0x%lx (0x%zx) for framebuffer\n", addr, size);
+     dc_civac_range((void *)addr, size);
+     mmu_add_mapping(addr, addr, size, MAIR_IDX_NORMAL_NC, PERM_RW_EL0);
+@@ -569,6 +592,9 @@
+         return;
+     }
+ 
++    /* Rebuilds are permitted only after the MMU-disabled check above. */
++    if (chip_id == T6032)
++        mcc_t6032_begin_carveout_setup();
+     mmu_init_pagetables();
+     mmu_add_default_mappings();
+     mmu_configure();

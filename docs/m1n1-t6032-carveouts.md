@@ -171,11 +171,13 @@ not the hardware assumptions. A direct H15 TZ consumer or independently
 validated layout is still required, including controller/die equivalence and
 the inclusive-end/enable/address-field semantics.
 
-Later mapping changes also remain a separate gate: `fb_init()` and
+Later mapping changes were a separate gap after 0009: `fb_init()` and
 `fb_clear_direct()` call `mmu_add_mapping()` after initial setup and could
 reintroduce a protected mapping if their ranges overlap a carveout. A check
-only in `mmu_map_framebuffer()` would miss these direct callers. Audit and
-guard the shared mapping entry point before claiming persistent exclusion.
+only in `mmu_map_framebuffer()` would miss these direct callers. The
+subsequent [0010 runtime mapping guard](m1n1-t6032-mapping-guard.md) checks
+the shared entry points and the framebuffer cache-maintenance prelude.
+Its stage-1 software checks are not native or DMA validation.
 The Linux memory handoff and actual loader payload boundary also need
 same-boot evidence. Do not add speculative register accesses or enable native
 boot merely because the collector, build or arithmetic harness passes.

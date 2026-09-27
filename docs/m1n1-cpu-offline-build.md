@@ -5,7 +5,8 @@ compile and link successfully on the M3 Ultra host, as does the subsequent
 capacity-plus-cleanup series, the three-patch pre-release-guard series, and
 the four-patch fatal-timeout series, five-patch T6032 mask series and
 six-patch CPU-inventory preflight series, seven-patch caller-status series,
-eight-patch MCC-layout series, and nine-patch initial-carveout-preflight series.
+eight-patch MCC-layout series, nine-patch initial-carveout-preflight series,
+and ten-patch runtime-mapping-guard series.
 This is a **build result,
 not a native boot result**. No artifact was installed or executed.
 
@@ -18,7 +19,8 @@ plus [`0005` T6032 masks](../patches/m1n1/0005-t6032-cpu-start-masks.patch)
 plus [`0006` inventory preflight](../patches/m1n1/0006-preflight-t6032-cpu-inventory.patch)
 plus [`0007` caller status](../patches/m1n1/0007-propagate-t6032-cpu-start-failures.patch)
 plus [`0008` MCC layout](../patches/m1n1/0008-validate-t6032-mcc-layout.patch)
-and [`0009` carveout preflight](../patches/m1n1/0009-preflight-t6032-carveout-removal.patch).
+plus [`0009` carveout preflight](../patches/m1n1/0009-preflight-t6032-carveout-removal.patch)
+and [`0010` runtime mapping guard](../patches/m1n1/0010-guard-t6032-runtime-mappings.patch).
 The [initial build record](inventory/m1n1-cpu-build-2026-09-26.json) records
 baseline/capacity-only artifacts; the [cleanup-series build record](inventory/m1n1-cpu-cleanup-build-2026-09-26.json)
 records the two-patch build; the [startup-guard build record](inventory/m1n1-cpu-startup-build-2026-09-26.json)
@@ -28,7 +30,8 @@ records the five-patch build; the [preflight build record](inventory/m1n1-cpu-pr
 records the six-patch build; the [caller-status build record](inventory/m1n1-cpu-status-build-2026-09-26.json)
 records the seven-patch build; the [MCC build record](inventory/m1n1-mcc-build-2026-09-26.json)
 records the eight-patch build; the [carveout build record](inventory/m1n1-carveout-build-2026-09-26.json)
-records the nine-patch build. These records include hashes and scratch
+records the nine-patch build; the [runtime-mapping build record](inventory/m1n1-mapping-build-2026-09-26.json)
+records the ten-patch build. These records include hashes and scratch
 locations. The recipe builds the default firmware configuration, not every
 optional feature combination. It does not introduce T6032 startup dispatch.
 
@@ -57,7 +60,7 @@ bash scripts/build-m1n1-cpu-offline.sh patched
 ```
 
 The script validates the source archive digest and Rust version, extracts a
-fresh scratch tree per run, applies all nine patches only to the patched copy,
+fresh scratch tree per run, applies all ten patches only to the patched copy,
 sets a local version tag and passes `--offline --locked` to Cargo. Logs and
 artifacts are retained on failure or success. There is no install/boot step.
 The source archive stays unmodified. This is a repeatable build recipe, not
@@ -207,7 +210,7 @@ The separate [startup regression](m1n1-t6032-startup.md#offline-startup-regressi
 compares original, `0003`, `0003` plus `0004`, and the subsequent `0005` startup implementations,
 with mocked RVBAR, allocation failures, EL3 state, release writes and a
 non-returning fatal handler. The full default firmware build includes all
-nine patches; the handoff-only harnesses still apply just the two patches
+ten patches; the handoff-only harnesses still apply just the two patches
 relevant to their extracted function. Post-release timeout now terminates
 the calling path before shared reset-state reuse; legacy pre-release skip policy
 is unchanged, while `0007` rejects T6032 continuation. No timeout reclamation or T6032 start-offset selection is

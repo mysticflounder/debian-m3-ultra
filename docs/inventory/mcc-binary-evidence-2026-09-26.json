@@ -23,7 +23,11 @@
   "cache_observations": {
     "plane_stride": "0x40000",
     "dcs_stride": "0x200000",
-    "control_offset": "0x1c00",
+    "control_offset": "0x1c1c00",
+    "control_offset_basis": "Full protected-write offset argument: MOV at 0xfffffe00096e4f0c plus MOVK at 0xfffffe00096e4f10; corrects prior low-half-only 0x1c00 claim. Aperture scope and final write callee still require tracing.",
+    "enable_argument": 1,
+    "wait_way_count_argument": 12,
+    "cache_mode_order_observation": "Complete controller write-call loop before wait helper; not equivalent to m1n1 per-plane write-then-poll without further evidence",
     "status_offset": "0x1c04",
     "status_fields": ["13:9", "8:4"],
     "way_mask_count_clamp": 12,

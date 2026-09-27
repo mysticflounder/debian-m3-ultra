@@ -14,9 +14,9 @@ not a fresh remote or live-machine check.
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff cleanup | Validated offline | Two separate patches, seven-case handoff suite and full firmware build pass; no native execution |
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
-| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; nine-patch cross-build passes | Resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
+| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; ten-patch cross-build passes | Resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and T6032 payload/HV/proxy status propagation implemented offline | Validate native reset separately; no rollback or recoverable degraded-SMP claim |
-| MCC/cache initialization | Layout and initial-MMU carveout preflight pass offline; nine-patch build passes; live metadata captured | Guard later mapping changes; establish TZ layout, loader containment and cache-mode semantics before native use |
+| MCC/cache initialization | Layout, initial carveout preflight and later stage-1 mapping guards pass offline; ten-patch build passes | Establish cache-enable write scope/order, TZ layout and loader containment; DMA/native behavior still unvalidated |
 | Six-cluster frequency / DVFS | PMGR metadata captured; matching binary consumers located | Complete field/branch semantics before selecting bases/offsets; address die-1 performance metadata separately |
 | Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
@@ -29,6 +29,7 @@ not a fresh remote or live-machine check.
 Details: [CPU work](m1n1-t6032-cpus.md),
 [MCC layout and remaining gates](m1n1-t6032-mcc-layout.md),
 [carveout metadata and safety gaps](m1n1-t6032-carveouts.md),
+[runtime mapping guards](m1n1-t6032-mapping-guard.md),
 [startup contract](m1n1-t6032-startup.md),
 [PMGR metadata](m1n1-t6032-pmgr.md),
 [local PMGR binary evidence](m1n1-t6032-pmgr-binary.md),
