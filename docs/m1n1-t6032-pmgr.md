@@ -3,6 +3,11 @@
 This task adds host metadata, not firmware enablement. No MMIO access,
 native payload, boot-policy change or storage operation was performed.
 
+Follow-up: [matching local Apple PMGR binary analysis](m1n1-t6032-pmgr-binary.md)
+now corroborates the die stride, separate group offsets and eight-byte
+`acc-clusters` consumer stride. The observations below describe the earlier
+metadata-only capture; full masks and safe CPU release remain unresolved.
+
 ## New read-only observations
 
 The [allowlisted live capture](inventory/t6032-pmgr-2026-09-26.json) validates
