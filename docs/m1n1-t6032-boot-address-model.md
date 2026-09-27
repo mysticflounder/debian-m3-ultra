@@ -87,3 +87,11 @@ identify actual cache-control/carveout accesses, guards and translations;
 then compare them with the [MCC handoff ledger](m1n1-t6032-mcc-handoff-ledger.md).
 Native access, cache effects, TZ scope, loader/DMA containment and recovery
 remain separate open gates.
+
+Follow-up: the [boot-consumer trace](m1n1-t6032-boot-consumers.md) records
+the AMCC diagnostic's conditional two-die/eight-controller/four-plane
+geometry, direct access formulas and conditional writeback. It also identifies
+the `amcc`/`cache-status` record labels and corroborates selected field meanings
+against published `chosen/lock-regs/amcc` metadata. The parent `0x1c0000`
+field and safe native cache-transition contract remain unresolved. A diagnostic
+is not necessarily a read-only probe.
