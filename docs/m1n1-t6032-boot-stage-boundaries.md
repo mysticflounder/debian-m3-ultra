@@ -79,6 +79,11 @@ replace a proof of the actual boot-argument physical-base window. Further
 offline work should examine the preceding boot stage's table construction
 and address publication; do not turn this discovery into an MMIO probe.
 
+Follow-up: the [LLB publication trace](m1n1-t6032-llb-table-publication.md)
+now identifies the preceding-stage writer and selector-1 input, including
+its initial image value. Runtime table contents and the BootArgs RAM-base
+window remain unproved.
+
 ## The outgoing BootArgs coordinate reaches a platform call
 
 On normal continuation from `0xdb8`, function `0x856b8` preserves the two
