@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "status": "ok",
+  "identity": {
+    "target": "J575d",
+    "chip_id": "0x6032"
+  },
+  "source_node": "/chosen/carveout-memory-map",
+  "regions": [
+    {
+      "name": "region-id-2",
+      "raw_hex": "0080e4c63f0100000000403800000000",
+      "byte_length": 16,
+      "candidate_base": "0x13fc6e48000",
+      "candidate_size": "0x38400000",
+      "candidate_end_exclusive": "0x13fff248000"
+    },
+    {
+      "name": "region-id-4",
+      "raw_hex": "0040fbba3f0100000080fd0100000000",
+      "byte_length": 16,
+      "candidate_base": "0x13fbafb4000",
+      "candidate_size": "0x1fd8000",
+      "candidate_end_exclusive": "0x13fbcf8c000"
+    }
+  ],
+  "candidate_encoding": "two little-endian u64 values interpreted as address,size",
+  "candidate_regions_overlap": false,
+  "limitations": [
+    "metadata only; interpretation requires consumer corroboration",
+    "does not identify TZ register offsets, slot numbers or per-die replication",
+    "not an MMIO snapshot, bootloader carveout validation or native boot test"
+  ],
+  "hardware_registers_accessed": false,
+  "native_execution_performed": false,
+  "tz_layout_validated": false,
+  "capture_mode": "live_ioreg_metadata"
+}

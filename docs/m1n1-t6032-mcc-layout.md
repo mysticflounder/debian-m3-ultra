@@ -113,9 +113,10 @@ and field widths, **not all m1n1 enable values, expected status values,
 mode transitions or early-boot ordering**.
 
 The candidate TZ offsets `0x6d8`, `0x6dc`, `0x6e4` were not established
-in H15's active path. Similar offsets in AppleARMPlatform's separate
-`MCPolicyMgrPMP` code are not sufficient evidence for the H15 TZ layout.
-Tracing that path and memory-carveout handling remains required before
+in H15's active path. The subsequent [carveout audit](m1n1-t6032-carveouts.md)
+rejects the AppleARMPlatform `MCPolicyMgrPMP` matches: they are software
+object fields, not MCC registers; no literal `#0x6e4` access was found there.
+Independent register-layout and carveout evidence remains required before
 promoting MCC/cache support to native-ready.
 
 ## Local implementation boundary
@@ -171,12 +172,11 @@ bash scripts/build-m1n1-cpu-offline.sh patched
 
 ## Next evidence gate
 
-The current allowlisted captures do not contain
+A subsequent [allowlisted capture](m1n1-t6032-carveouts.md) now records
 `/chosen/carveout-memory-map`'s `region-id-2`/`region-id-4` properties.
-The pinned m1n1 source identifies these as a possible geometry cross-check
-from booted macOS. A future collector should retain only those properties,
-verify their encoding and address/size bounds, and keep this metadata
-separate from register-layout evidence. This alone cannot establish the
-candidate TZ register offsets or prove that every die shares one map.
-Continue the offline consumer trace before proposing any hardware register
-read, native execution or installation.
+Both are sixteen bytes and decode into plausible address/size pairs under
+the pinned source's convention. This does not establish candidate TZ register
+offsets or prove that every die shares one map. Next address the identified
+runtime range-validation/caller-propagation gaps offline, while keeping the
+register-layout evidence gate open. No hardware register read, native
+execution or installation is authorized by these metadata results.
