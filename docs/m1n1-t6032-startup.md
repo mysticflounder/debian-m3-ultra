@@ -79,7 +79,7 @@ to `_cpu_reset_c()`, and executes `eret` into non-secure AArch64 EL1h.
 secondary to `smp_secondary_entry()`. These are source observations; host
 C tests cannot execute or validate that assembly transition.
 
-## Failure handling: pre-release guards and remaining work
+## Failure handling: pre-release guards and fatal release timeout
 
 The audit found existing control-flow hazards independently of the unknown
 T6032 register map:
@@ -88,8 +88,8 @@ T6032 register map:
 | --- | --- | --- |
 | RVBAR differs while `apple_sysregs_unlocked` is false | Logs a failure, then allocates stacks and issues start writes (`smp.c:127–165`) | `0003` returns before allocation or release writes; the existing predicate is unchanged |
 | Stack allocation fails | Neither `memalign()` result is checked before pointer arithmetic (`smp.c:138–146`) | `0003` checks local allocations before publishing state; only an unpublished first stack is freed if the EL3 allocation fails |
-| Secondary does not acknowledge | Bounded wait prints failure, but returns no status (`smp.c:166–180`) | Propagate failure; preserve post-release state until the CPU is proved stopped |
-| Unsupported SoC or startup failure | `smp_start_secondaries()` is `void`; callers cannot inspect a result | Separate successful startup, intentional skips and errors; define degraded-SMP policy explicitly |
+| Secondary does not acknowledge | Bounded wait prints failure, then restores shared reset pointers and returns (`smp.c:166–180`) | `0004` enters the existing non-returning panic path before restoring pointers; no allocation or published state is reclaimed |
+| Unsupported SoC or pre-release failure | `smp_start_secondaries()` is `void`; callers cannot inspect a result | Existing return/skip policy unchanged; structured status and recoverable degraded-SMP behavior remain separate work |
 
 **Do not free a secondary's stacks merely because its acknowledgement timed
 out.** The core may still enter late after the release writes. A safe timeout
@@ -113,10 +113,39 @@ before clearing the spin table or changing `target_cpu`, the published stack
 arrays, or reset pointers. On successful allocation, the original publication,
 cache maintenance, barriers and release sequence are preserved.
 
-The patch does not change the `void` API, SoC selection, EL3 limit, timeout,
-or caller behavior. Error propagation across payload,
-proxy and hypervisor interfaces needs separate compatibility review; silently
-changing every supported machine's degraded-SMP behavior would be premature.
+The `0003` patch does not change the `void` API, SoC selection, EL3 limit,
+timeout, or caller behavior.
+
+The separate [fatal-timeout patch](../patches/m1n1/0004-abort-on-secondary-start-timeout.patch)
+changes only the post-release timeout branch to `panic()`, before resetting
+the shared stack pointers. This **intentionally makes an unacknowledged
+release fatal on every supported SoC**, rather than allowing degraded boot
+after an uncertain release. Successful starts, pre-release skips and the
+polling deadline remain unchanged. Acknowledgement during the final delay
+still reaches the existing timeout branch; no new final flag check is added.
+
+The call-site audit found `smp_start_cpu()` is static and called only by
+`smp_start_secondaries()`. A non-returning timeout therefore prevents that
+invocation from progressing to another CPU, payload/kernel handoff, HV
+initialization or proxy continuation. It needs no public ABI change or
+new status protocol. Returning an error alone would not suffice: later
+kernel handoff, proxy operations and teardown could still reuse uncertain
+state. Recoverable operation would require explicit uncertainty tracking
+and an independently established stop/reset proof.
+
+This is a **control-flow containment measure, not proof of multicore stop
+or successful reset**. `panic()` in `src/utils.h:447–451` prints and calls
+`flush_and_reboot()` (`src/utils.c:129–132`). Console printing/flushing can
+block on locks or device callbacks (`src/iodev.c:121–130,166–187,302–312`).
+`reboot()` in `src/start.S:210–222` has an optional HVC path, arms the watchdog,
+then loops forever. Watchdog reset is a no-op without a discovered base
+(`src/wdt.c:51–58`). A late core may still enter while this terminal path
+runs; its published stack and shared target are left intact. No test here
+executes the real fatal handler, reset assembly or watchdog.
+
+This patch does not fix best-effort secondary-stop timeouts, synchronous
+SMP waits, or generic pre-release error reporting. Nor does it turn an
+unsupported-chip return into a whole-boot safety gate.
 
 ## Missing evidence before enabling T6032 startup
 
@@ -139,14 +168,25 @@ hardware-evidence gates remain open.
 
 The initial audit on 2026-09-26 passed the checks below against the original
 startup implementation without changing firmware. The follow-up `0003`
-patch adds pre-release guards; the runner now compares baseline and patched
-behavior. A new [three-patch build record](inventory/m1n1-cpu-startup-build-2026-09-26.json)
-records the full offline firmware build, with no installation or execution.
+patch adds pre-release guards; `0004` adds fatal timeout containment. The
+runner compares three variants: original, `0003`, and `0003` plus `0004`.
+All three use CPU limits extracted from `0001`-patched `smp.h` (32 ordinary,
+four EL3); "original" means original startup logic at that capacity, not an
+unmodified 24-CPU firmware build.
+The [three-patch build record](inventory/m1n1-cpu-startup-build-2026-09-26.json)
+is retained, alongside the [four-patch build record](inventory/m1n1-cpu-timeout-build-2026-09-26.json).
+Neither build was installed or executed.
 
-Both startup variants pass under ASan/UBSan: the baseline retains the RVBAR
+All three startup variants pass under ASan/UBSan: the baseline retains the RVBAR
 continuation negative control; the patched run rejects it and passes the
 normal/EL3 allocation-failure cases. The allocator mock rejects foreign and
 double frees, and failure fixtures check that prior published state survives.
+The timeout tests use a non-returning mock intercepted with `setjmp`/`longjmp`.
+They check retained normal/EL3 stacks, shared target and reset pointers,
+absence of cleanup, and no caller continuation or subsequent release.
+Original and `0003` variants reproduce timeout return and dummy-pointer
+restoration as negative controls. Mock acknowledgements at delays 99 and
+100 verify that the existing polling boundary has not changed.
 The existing 12 CPU, 15 MCC, CPU-bounds, seven synthetic handoff and four
 board-DT checks also pass. The firmware build has no new compiler warnings
 relative to the recorded baseline. These tests are not cross-machine native
@@ -167,6 +207,13 @@ headers, then extracts the functions, execution-level helpers and register
 constants. Leak scanning is disabled for this harness; allocation uses static
 mock storage and does not test the production allocator.
 
+In particular, the pinned `src/dlmalloc/malloc_config.h` configures
+`MALLOC_FAILURE_ACTION` to panic, and its `sbrk()` path calls
+`heapblock_alloc()`, which can also panic. `panic` uses `flush_and_reboot()`
+(`src/utils.h:447`). Thus a real out-of-memory condition may reboot before
+`memalign()` returns NULL. The guards remain correct for a NULL return;
+the fault-injection suite does not establish recoverable production OOM.
+
 | Check | Expected outcome |
 | --- | --- |
 | T6032 chip selection | Unknown-offset return without secondary-start effects |
@@ -175,7 +222,9 @@ mock storage and does not test the production allocator.
 | Non-EL3 capacity / EL3 boundary | Ordinary index 31 can reach the mock start path; index 32 and EL3 index 4 cannot |
 | Already-alive CPU | No new allocation or start writes |
 | Two-die topology | Source arithmetic exercised across all 32 saved affinity tuples |
-| Acknowledged / timed-out start | Early acknowledgement exits; timeout performs 100 mocked 1,000-μs delays |
+| Acknowledged / timed-out start | Early acknowledgement restores dummy pointers; timeout performs 100 mocked 1,000-μs delays |
+| Fatal timeout, normal and EL3 | `0004` cannot return to caller or release another core; published target, reset pointers and allocations survive |
+| Deadline boundary, normal and EL3 | Acknowledgement on delay 99 succeeds; acknowledgement on delay 100 retains the pre-existing timeout decision |
 | Unwritable mismatched RVBAR | Baseline reproduces continuation; patched function returns before allocations or release writes |
 | First allocation fails, with or without EL3 | Patched function returns without publishing state or freeing prior allocations |
 | Second allocation fails under EL3 | Patched function frees only its new first allocation and leaves shared startup state untouched |
@@ -187,7 +236,8 @@ behavior, and do not establish T6032 support. No ARM reset assembly is run,
 no CPU actually starts, and no real elapsed timeout is measured. Failed
 allocation is injected by host mocks, not the production allocator. Baseline
 NULL-pointer arithmetic is not deliberately executed in-process. Timeout
-tests retain allocated stacks; they do not validate late-core cancellation.
+tests retain allocated stacks; they do not execute a late core, real panic,
+console flush or reset, and do not validate late-core cancellation.
 
 ## Evidence boundary
 

@@ -1,0 +1,25 @@
+Local review patch: abort after a secondary-start acknowledgement timeout
+Base: m1n1 4184923ffb2dff079b384d6a32cc02142aa14572, after 0001 through 0003
+Provenance: AI-assisted project work; not submitted upstream.
+
+A released CPU may enter late. Do not restore the shared reset pointers,
+release another CPU using target_cpu, or return toward a kernel/HV handoff
+when acknowledgement times out. Keep the published stacks and state intact
+and enter the existing non-returning panic path.
+
+This intentionally makes post-release timeout fatal on all supported SoCs.
+Successful starts, pre-release skips, the void ABI, and the polling deadline
+are unchanged. Panic may block flushing a console; reboot may remain in its
+terminal loop if watchdog reset is unavailable. Neither constitutes proof
+that a late core has stopped. This is control-flow containment, not native
+reset validation, recoverable degraded SMP, or T6032 startup enablement.
+
+--- a/src/smp.c
++++ b/src/smp.c
+@@ -189,4 +189,5 @@
+     if (i >= 100)
+-        printf("Failed!\n");
++        /* A late CPU can still consume target_cpu and the shared reset stacks. */
++        panic("SMP: CPU %d start timed out; refusing to reuse reset state\n", index);
+     else
+         printf("  Started.\n");

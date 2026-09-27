@@ -16,6 +16,7 @@ PATCHES=(
     "$ROOT/patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch"
     "$ROOT/patches/m1n1/0002-free-pruned-cpus-after-handoff.patch"
     "$ROOT/patches/m1n1/0003-guard-secondary-start-prerequisites.patch"
+    "$ROOT/patches/m1n1/0004-abort-on-secondary-start-timeout.patch"
 )
 
 if [[ $(uname -s) != Darwin || $(uname -m) != arm64 ]]; then

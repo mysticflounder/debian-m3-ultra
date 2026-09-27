@@ -19,6 +19,7 @@ PINNED = ROOT / "scratch/m1n1-cpu-audit/m1n1-4184923ffb2dff079b384d6a32cc02142aa
 TEMPLATE = ROOT / "tests/m1n1-cpu-startup.c"
 SMP = PINNED / "src/smp.c"
 PATCH = ROOT / "patches/m1n1/0003-guard-secondary-start-prerequisites.patch"
+TIMEOUT_PATCH = ROOT / "patches/m1n1/0004-abort-on-secondary-start-timeout.patch"
 SMP_SHA256 = "173ae51dd860d1b075a071d78d06945e3ed929910ce06ab0f76cd6b9e261371b"
 UTILS_SHA256 = "c224e336539e24a23913f8567abf185fd68627c9bcd71874ba6ff6014996d23d"
 SOC_SHA256 = "3569ce0f11ad808f724bf0c050b1fc8381dd199791ec95729f411ad8c2359bca"
@@ -59,17 +60,17 @@ def helper_module():
     return module
 
 
-def variant_source(work: pathlib.Path, fixed: bool) -> pathlib.Path:
-    """Materialize pinned smp.c, optionally applying local prerequisite guards."""
-    name = "fixed" if fixed else "baseline"
+def variant_source(work: pathlib.Path, variant: int) -> pathlib.Path:
+    """Materialize original, guarded, or guarded-plus-fatal-timeout smp.c."""
+    name = ("baseline", "guarded", "fatal-timeout")[variant]
     tree = work / name
     source = tree / "src/smp.c"
     source.parent.mkdir(parents=True)
     shutil.copy2(SMP, source)
-    if fixed:
-        applied = run(["patch", "-p1", "--batch", "--forward", "-i", str(PATCH)], tree)
+    for patch in (PATCH, TIMEOUT_PATCH)[:variant]:
+        applied = run(["patch", "-p1", "--batch", "--forward", "-i", str(patch)], tree)
         if applied.returncode:
-            fail(f"0003 did not apply to pinned smp.c:\n{applied.stdout}{applied.stderr}")
+            fail(f"{patch.name} did not apply to pinned smp.c:\n{applied.stdout}{applied.stderr}")
     return source
 
 
@@ -89,6 +90,8 @@ def main() -> int:
         fail("startup C template missing")
     if not PATCH.is_file():
         fail("startup prerequisite patch missing")
+    if not TIMEOUT_PATCH.is_file():
+        fail("startup timeout patch missing")
     if not TOPOLOGY.is_file():
         fail("source topology inventory missing")
 
@@ -101,6 +104,8 @@ def main() -> int:
             if helper.max_cpu(smp_header, patched / "src/smp.h") != 32:
                 fail("capacity patch did not establish MAX_CPUS=32")
             helper.require_max_el3(smp_header)
+            source_limits = "\n".join(line for line in smp_header.splitlines()
+                                      if re.match(r"#define\s+(MAX_CPUS|MAX_EL3_CPUS)\s", line))
         except helper.HarnessError as exc:
             fail(str(exc))
         utils = (PINNED / "src/utils.h").read_text(encoding="utf-8")
@@ -121,42 +126,45 @@ def main() -> int:
         topology = ", ".join("{%d, %d, %d}" % (item["die"], item["cluster"], item["core"])
                              for item in inventory)
         template = TEMPLATE.read_text(encoding="utf-8")
-        markers = ("/* INSERT_SOURCE_CONSTANTS */", "/* INSERT_SOURCE_EL_HELPERS */",
+        markers = ("/* INSERT_SOURCE_CONSTANTS */", "/* INSERT_SOURCE_LIMITS */", "/* INSERT_SOURCE_EL_HELPERS */",
                    "/* INSERT_SMP_START_CPU */", "/* INSERT_SMP_START_SECONDARIES */",
                    "/* INSERT_TOPOLOGY */")
         if any(template.count(marker) != 1 for marker in markers):
             fail("startup insertion markers missing or duplicated")
         results = []
-        for fixed in (False, True):
-            source_path = variant_source(work, fixed)
+        for variant, name in enumerate(("baseline", "guarded", "fatal-timeout")):
+            source_path = variant_source(work, variant)
             source = source_path.read_text(encoding="utf-8")
             start_cpu = helper.extract_function(source, "static void smp_start_cpu(", source_path)
             start_secondaries = helper.extract_function(source, "void smp_start_secondaries(void)", source_path)
             generated_text = template.replace("/* INSERT_SOURCE_CONSTANTS */", "\n".join(source_defines))
+            generated_text = generated_text.replace("/* INSERT_SOURCE_LIMITS */", source_limits)
             generated_text = generated_text.replace("/* INSERT_SOURCE_EL_HELPERS */", el_helpers)
             generated_text = generated_text.replace("/* INSERT_SMP_START_CPU */", start_cpu)
             generated_text = generated_text.replace("/* INSERT_SMP_START_SECONDARIES */", start_secondaries)
             generated_text = generated_text.replace("/* INSERT_TOPOLOGY */", topology)
-            generated = work / ("startup-fixed.c" if fixed else "startup-baseline.c")
+            generated = work / f"startup-{name}.c"
             generated.write_text(generated_text, encoding="utf-8")
-            binary = work / ("startup-fixed" if fixed else "startup-baseline")
+            binary = work / f"startup-{name}"
             compiled = run(["clang", "-std=c11", "-O1", "-g", "-fno-omit-frame-pointer",
                             "-fsanitize=address,undefined", "-fno-sanitize-recover=all",
-                            "-DEXPECT_PATCHED=1" if fixed else "-DEXPECT_PATCHED=0",
+                            f"-DEXPECT_PATCHED={int(variant > 0)}",
+                            f"-DEXPECT_FATAL_TIMEOUT={int(variant == 2)}",
                             "-include", "stdlib.h", str(generated), "-o", str(binary)], work)
             if compiled.returncode:
-                fail(f"clang {('fixed' if fixed else 'baseline')} failed:\n"
+                fail(f"clang {name} failed:\n"
                      f"{compiled.stdout}{compiled.stderr}")
             completed = run([str(binary)], work)
             if completed.returncode:
-                fail(f"startup {('fixed' if fixed else 'baseline')} harness failed "
+                fail(f"startup {name} harness failed "
                      f"({completed.returncode}):\n{completed.stdout}{completed.stderr}")
-            results.append(("fixed 0003" if fixed else "baseline original", completed.stdout))
+            results.append((name, completed.stdout))
         for name, output in results:
             interesting = [line for line in output.splitlines()
-                           if line.startswith(("selection:", "start_cpu:", "variant:", "note:"))]
+                           if line.startswith(("selection:", "start_cpu:", "timeout:", "variant:", "note:"))]
             print(f"[{name}]\n" + "\n".join(interesting))
-    print("m1n1 CPU-start harness passed: baseline and fixed source variants")
+    print("m1n1 CPU-start harness passed: original, guarded and fatal-timeout source variants")
+    print("all variants use limits from 0001-patched smp.h; baseline means original startup logic, not stock capacity")
     print("start_secondaries was extracted exactly; ADT CPU enumeration is intentionally no-child mocked")
     print("coverage is mocked host execution only; no native boot, MMIO, firmware, or T6032 dispatch")
     return 0

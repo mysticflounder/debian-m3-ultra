@@ -492,7 +492,7 @@ other device-bound secrets.
 
 The m1n1 milestone is complete when:
 
-- upstream m1n1 recognizes T6032/J575d without an unsafe fallback;
+- the project's m1n1 patch series recognizes T6032/J575d without an unsafe fallback;
 - kboot processes all 32 CPU nodes with a correct upper-bound check;
 - MCC enumeration selects the 16 real instance windows, rejects unexpected
   layouts, and cannot enable cache through an unvalidated address;
@@ -504,7 +504,8 @@ The m1n1 milestone is complete when:
   corrupting CPU nodes;
 - a RAM-only Linux payload repeatedly boots with 32 CPUs and survives bounded
   stress;
-- the implementation and evidence are reviewed upstream; and
+- the implementation and evidence receive local review for the Debian/project-fork
+  target (external submission is separate, not a completion gate); and
 - recovery and rollback procedures are documented and exercised before any
   installer or internal-storage work.
 

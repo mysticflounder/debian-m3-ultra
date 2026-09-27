@@ -1,6 +1,7 @@
 /* Host-only template: the runner inserts pinned smp_start_cpu/secondaries(). */
 
 #include <stdbool.h>
+#include <setjmp.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,9 +14,27 @@ typedef uint64_t u64;
 #ifndef EXPECT_PATCHED
 #define EXPECT_PATCHED 0
 #endif
+#ifndef EXPECT_FATAL_TIMEOUT
+#define EXPECT_FATAL_TIMEOUT 0
+#endif
 
-#define MAX_CPUS 32
-#define MAX_EL3_CPUS 4
+static jmp_buf panic_env;
+static bool expect_panic;
+static unsigned panic_count;
+static bool caller_continued;
+
+static _Noreturn void mock_panic(const char *fmt, ...)
+{
+    (void)fmt;
+    if (!expect_panic)
+        abort();
+    panic_count++;
+    longjmp(panic_env, 1);
+}
+
+#define panic(...) mock_panic(__VA_ARGS__)
+
+/* INSERT_SOURCE_LIMITS */
 #define SECONDARY_STACK_SIZE 0x10000
 #define DUMMY_STACK_SIZE 0x1000
 #define MPIDR_EL1 1
@@ -226,6 +245,9 @@ static const void *adt_getprop(const void *tree, int node, const char *name, u32
 
 static void reset_effects(void)
 {
+    expect_panic = false;
+    panic_count = 0;
+    caller_continued = false;
     memset(spin_table, 0, sizeof(spin_table));
     memset(secondary_stacks, 0, sizeof(secondary_stacks));
     memset(secondary_stacks_el3, 0, sizeof(secondary_stacks_el3));
@@ -333,14 +355,6 @@ static int test_start_cpu(void)
         return 24;
 
     reset_effects();
-    ack_after = -1;
-    smp_start_cpu(2, 0, 1, 5, 0x3000, 0x100000);
-    if (write32_count != 2 || udelay_calls != 100 || cache_count != 1 || allocations != 1 ||
-        allocation_attempts != 1 || free_count != 0 || !allocation_live[0] ||
-        secondary_stacks[2] != fake_stacks[0] || bad_delay_arg)
-        return 25;
-
-    reset_effects();
     cpu_features->apple_sysregs_unlocked = true;
     ack_after = 1;
     smp_start_cpu(6, 0, 1, 2, 0x3000, 0x100000);
@@ -431,6 +445,64 @@ static int test_start_cpu(void)
     return 0;
 }
 
+/* All observations changed across longjmp are static, not indeterminate locals. */
+static int test_timeout(bool el3, int acknowledgement)
+{
+    reset_effects();
+    mock_pfr0 = el3 ? 0x1000 : 0;
+    ack_after = acknowledgement;
+    expect_panic = EXPECT_FATAL_TIMEOUT;
+    if (setjmp(panic_env) == 0) {
+        smp_start_cpu(2, 0, 1, 5, 0x3000, 0x100000);
+        caller_continued = true;
+        if (EXPECT_FATAL_TIMEOUT) {
+            /* Must never release another core with the shared reset state. */
+            ack_after = 1;
+            smp_start_cpu(3, 0, 1, 0, 0x3000, 0x100000);
+        }
+    }
+    expect_panic = false;
+    if (panic_count != EXPECT_FATAL_TIMEOUT || caller_continued == !!EXPECT_FATAL_TIMEOUT ||
+        target_cpu != 2 || write32_count != 2 || udelay_calls != 100 ||
+        cache_count != (el3 ? 2u : 1u) || allocations != (el3 ? 2u : 1u) ||
+        allocation_attempts != allocations || free_count || !allocation_live[0] ||
+        secondary_stacks[2] != fake_stacks[0] || bad_delay_arg ||
+        spin_table[2].flag != (acknowledgement == 100 ? 1u : 0u) ||
+        spin_table[2].target != 0)
+        return 31;
+    if (el3 && (secondary_stacks_el3[2] != fake_stacks[1] || !allocation_live[1]))
+        return 32;
+    if (EXPECT_FATAL_TIMEOUT) {
+        if (_reset_stack != fake_stacks[el3 ? 1 : 0] + SECONDARY_STACK_SIZE ||
+            _reset_stack_el1 != (el3 ? fake_stacks[0] + SECONDARY_STACK_SIZE : dummy_stack_el1))
+            return 33;
+    } else if (_reset_stack != dummy_stack + DUMMY_STACK_SIZE ||
+               _reset_stack_el1 != dummy_stack_el1 + DUMMY_STACK_SIZE) {
+        return 34;
+    }
+    return 0;
+}
+
+static int test_deadline(void)
+{
+    for (int el3 = 0; el3 <= 1; el3++) {
+        for (int ack = -1; ack <= 100; ack += 101) {
+            int result = test_timeout(el3, ack);
+            if (result)
+                return result;
+        }
+        reset_effects();
+        mock_pfr0 = el3 ? 0x1000 : 0;
+        ack_after = 99;
+        smp_start_cpu(2, 0, 1, 5, 0x3000, 0x100000);
+        if (panic_count || udelay_calls != 99 || !spin_table[2].flag ||
+            _reset_stack != dummy_stack + DUMMY_STACK_SIZE ||
+            _reset_stack_el1 != dummy_stack_el1 + DUMMY_STACK_SIZE)
+            return 35;
+    }
+    return 0;
+}
+
 int main(void)
 {
     for (unsigned el = 1; el <= 3; el++) {
@@ -448,11 +520,18 @@ int main(void)
     result = test_start_cpu();
     if (result)
         return result;
+    result = test_deadline();
+    if (result)
+        return result;
     printf("selection: T6032 returns before secondary-start effects, T6031=0x88000, T6022=0x28000\n");
     printf("start_cpu: index bounds, EL3 3/4, skip-alive, die stride, ack/timeout passed\n");
-    printf("variant: %s\n", EXPECT_PATCHED ?
+    printf("variant: %s\n", EXPECT_FATAL_TIMEOUT ?
+           "fatal timeout plus RVBAR/allocation guards passed" : EXPECT_PATCHED ?
            "guarded: RVBAR rejection and allocation-failure ownership checks passed" :
            "baseline: successful starts and RVBAR-mismatch continuation reproduced");
+    printf("timeout: %s; normal/EL3 and 99/100-delay acknowledgement boundaries passed\n",
+           EXPECT_FATAL_TIMEOUT ? "fatal, published reset state retained, no caller continuation" :
+           "negative control: timeout returns and restores dummy reset pointers");
     printf("note: status mask uses source expression 1 << (4*cluster+core); no uniqueness claim\n");
     return 0;
 }

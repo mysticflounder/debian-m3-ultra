@@ -1,0 +1,36 @@
+{
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "toolchain_record": "m1n1-cpu-build-2026-09-26.json",
+  "configuration": "default Makefile all; capacity, handoff cleanup, pre-release guards and fatal release timeout",
+  "directory": "scratch/m1n1-firmware-patched.nNIPuk",
+  "status": "pass",
+  "patches": [
+    {
+      "path": "patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch",
+      "sha256": "acd987129def9126035d384a6e9370d2f0077634b8298cc8f1f02fbb3c74e11c"
+    },
+    {
+      "path": "patches/m1n1/0002-free-pruned-cpus-after-handoff.patch",
+      "sha256": "3fd3508335e9e7af0fffca054d0a718ec4056e9431a8413e8e5312653c9be5e0"
+    },
+    {
+      "path": "patches/m1n1/0003-guard-secondary-start-prerequisites.patch",
+      "sha256": "2958b2b583841f0d8b049859a4e961fe59a1966252805855788d09186f0dded3"
+    },
+    {
+      "path": "patches/m1n1/0004-abort-on-secondary-start-timeout.patch",
+      "sha256": "2e6061606f3dd08e8b69534a6fcb831963b7155ff34569441fff7d5297e2d41d"
+    }
+  ],
+  "sha256": {
+    "m1n1.elf": "4e379d4ea88b1505ad9a451be11dc2f947b626b9e459ff2189642e2dd60932d6",
+    "m1n1-raw.elf": "60a261146dfe8ee2dfcca2fd1dca86d802426daecaf7d4495c5157b7212b0c9d",
+    "m1n1.macho": "71de6924c77de4f8f66d561dce7734e93750ad132ed0e46a4f54dc7bd86713fe",
+    "m1n1.bin": "e44b3127396dcb298d7f1bcc2ab5e75387572bcbb72e5f7e2a611acaae365f1b"
+  },
+  "new_compiler_warnings_vs_baseline": 0,
+  "network_during_firmware_build": false,
+  "installed_or_executed": false,
+  "native_boot_validated": false,
+  "native_reset_validated": false
+}
