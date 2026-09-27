@@ -17,7 +17,7 @@ not a fresh remote or live-machine check.
 | T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; fourteen-patch cross-build passes | Resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; T6032 frequency failure now rejects before SMP, nine sanitizer cases pass | Validate native reset separately; no rollback or recoverable degraded-SMP claim |
 | MCC/cache initialization | Fixed-origin decoder, all-controller/plane consistency and primary MMU-entry guard implemented; fourteen-patch build, seven MMU lifecycle cases and carveout/mapping sanitizer suites pass | Qualify all 64 sampled contexts before native access; actual handoff/encoding, aperture relationship, cache effects and DMA remain unresolved |
-| Six-cluster frequency / DVFS | Conditional routing and OSData provider traced; die-1 selectors 33/37/45 identified and captured; 61 input/adjacent tests pass | Resolve effective die-count writer/allocation contract, safe raw APSC/default indices and early-boot prerequisites; native dispatch disabled |
+| Six-cluster frequency / DVFS | Conditional routing and OSData provider traced; die-1 selectors 33/37/45 identified and captured; 61 input/adjacent tests pass; focused CPU/DVFS Pro research pending | Resolve effective die-count writer/allocation contract, safe raw APSC/default indices and early-boot prerequisites; native dispatch disabled |
 | Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
@@ -41,6 +41,7 @@ Details: [CPU work](m1n1-t6032-cpus.md),
 [fixed-origin T6032 decoder and mapped-RAM containment](m1n1-t6032-tz-origin.md),
 [all-controller/plane TZ consistency preflight](m1n1-t6032-tz-consistency.md),
 [MMU entry lifecycle and recovery prerequisites](m1n1-t6032-mmu-entry.md),
+[bounded CPU/DVFS source search and pending Pro consult](m1n1-t6032-cpu-dvfs-research.md),
 [boot-argument physical-base producer and copy path](m1n1-t6032-boot-arguments.md),
 [source-table merge and boot-stage boundaries](m1n1-t6032-boot-stage-boundaries.md),
 [LLB memory-table address publication](m1n1-t6032-llb-table-publication.md),
