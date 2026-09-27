@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "kernelcache_sha256": "a24fefccc060854cecc996b40983499e1319008e4f16c0717a5fef6c4d4828dc",
+  "live_service": {
+    "IOObjectClass": "AppleH15MemCacheController",
+    "IOClass": "AppleH15MemCacheController",
+    "CFBundleIdentifier": "com.apple.driver.AppleH15MCD",
+    "IOProviderClass": "AppleARMIODevice",
+    "IONameMatched": "mcc,t6031"
+  },
+  "identity_capture_method": "read-only ioreg IOService text parsed in memory; only allowlisted metadata retained",
+  "artifacts": [
+    {"path": "scratch/mcc-evidence/AppleH15MCD.macho", "sha256": "465f34b50ad2b92d3c4a78202c04a7f0a075c3920f894d5f0934e174e543d99f", "kind": "non-loadable inspection view"},
+    {"path": "scratch/mcc-evidence/H15-init-start.disasm", "sha256": "a6607d91beb0bfd2b9cb7b066a03aad56b4ce609f0ac749cffe8bb69aae86d57", "kind": "offline disassembly"},
+    {"path": "scratch/mcc-evidence/H15-mapApertures.disasm", "sha256": "34bce43327e916c49431f7ada27c7623986149e269539ef76283c13f6f57829d", "kind": "offline disassembly"},
+    {"path": "scratch/mcc-evidence/H15-cache-regops.disasm", "sha256": "af22f6eb63b5d53f9defc6a11ccf1a230ae225fb6ae6ea5d0e046bbcb04f67f2", "kind": "offline disassembly"},
+    {"path": "scratch/mcc-evidence/H15-wait-ways.disasm", "sha256": "fae15dd782e1b0823a29a5ec2642a601564a774dc662bda75b82fdd6871c9823", "kind": "offline disassembly"}
+  ],
+  "register_index_rule": "chip-id 0x6032: 4; otherwise: 3",
+  "window_count_rule": "reg property bytes / 16 - base register index",
+  "mapping_loop": "provider virtual slot 0x710, arguments base_index + ordinal and zero",
+  "virtual_method_name": "mapDeviceMemoryWithIndex (ABI-based inference, not direct symbol relocation)",
+  "cache_observations": {
+    "plane_stride": "0x40000",
+    "dcs_stride": "0x200000",
+    "control_offset": "0x1c00",
+    "status_offset": "0x1c04",
+    "status_fields": ["13:9", "8:4"],
+    "way_mask_count_clamp": 12,
+    "limits": "Not a full trace of enable-mode values, expected status, TZ layout or early-boot ordering"
+  },
+  "native_mmio_validated": false,
+  "native_early_boot_ordering_validated": false,
+  "installed_or_executed": false
+}

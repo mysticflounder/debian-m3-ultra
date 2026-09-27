@@ -42,7 +42,7 @@ cell is `-`; that does not establish a supported installation path.
 | SoC identity / early console | m1n1 `soc.h` has no T6032 target definition | Target-definition and console-path audit; UART address alone is not full board enablement |
 | 32-CPU / two-die representation | m1n1 `smp.h` still has `MAX_CPUS 24` | Audit every bound, mask, allocation and kboot CPU-node path before changing capacity |
 | Secondary CPU release | T6032 startup remains a roadmap gap | Confirm the CPU-start register contract; do not infer it solely from T6031 compatibility |
-| MCC / cache initialization | m1n1 M3 parser still starts register instances at index 3 | First local work item: geometry regression for Ultra's four-header layout, then a separately reviewed fail-closed implementation design |
+| MCC / cache initialization | Pinned upstream parser starts at index 3; local 0008 corrects Ultra to index 4 with bounded, staged validation | Max/Ultra source harness and eight-patch build pass offline; establish remaining TZ/carveout/cache-mode semantics before native use |
 | Early CPU frequency setup | m1n1 `cpufreq.c` has no T6032 dispatch | Validate six-cluster register semantics before adding writes or copying a Max table |
 | Kernel topology / interrupt / console | T6032/J575d CPU, AIC, PMGR, UART and watchdog descriptions exist | Compile and validate the exact handoff DT; a present node is not a hardware test |
 | CPU performance metadata | Asahi `asahi` supplies OPP/capacity/performance domains for the inherited die-0 CPUs but omits them on T6032's added die-1 CPUs; mainline lacks this metadata on both sets | Keep the downstream die-1 completion distinct from mainline's broader missing DVFS integration; not the first console-boot gate |
@@ -80,10 +80,14 @@ uv run --no-project --python 3.13 scripts/test-t6032-mcc.py
 uv run --no-project --python 3.13 scripts/audit-t6032-mcc.py --live
 ```
 
-The T6031 regression capture required before changing the shared driver is
-still missing. Synthetic T6032 fixtures cannot substitute for it. The
-unknown CPU-start offset and six-cluster initialization semantics also remain
-unresolved. Do not enable native kboot merely because this audit passes.
+A live T6031 regression capture is still missing. The subsequent
+[paired Apple firmware-template comparison](m1n1-t6032-mcc-layout.md) supplies
+a genuine J516c/M3 Max layout reference: three headers and eight controller
+windows, versus Ultra's four headers and sixteen windows. It is not a live
+or iBoot-final capture. Preserve the legacy Max path; do not treat synthetic
+fixtures or template geometry as proof of native cache/TZ semantics.
+CPU release/entry and six-cluster initialization gates remain unresolved.
+Do not enable native kboot merely because this audit passes.
 
 Validation on 2026-09-26: all 15 synthetic tests pass. An explicit live run
 on this M3 Ultra, macOS 27.0 build 26A428, exits 0 with the expected layout.
@@ -165,13 +169,17 @@ or macOS removal is authorized by this plan.
 
 ## Next bounded milestones
 
-1. Reproduce the MCC selection mismatch with sanitized live evidence and
-   negative fixtures; preserve explicit `hardware_validated=false`.
+1. MCC selection mismatch reproduced with sanitized live evidence and
+   negative fixtures; paired Max/Ultra firmware templates now corroborate
+   the different header counts. Preserve explicit `hardware_validated=false`.
 2. Capacity patch, inventory tests, full offline builds, synthetic and
    exact-board handoff tests, and allocation cleanup are complete.
    None of these are native CPU-release evidence.
-3. Obtain a reference T6031 MCC layout and review a bounded, fail-closed
-   register-selection design without executing register writes.
+3. Ultra-specific bounded MCC selection and initialization-failure gates
+   implemented in local 0008; source-extracted Max/Ultra tests and the full
+   eight-patch build pass. Continue the separate cache/TZ and carveout
+   evidence work without executing hardware register writes. See
+   [MCC layout correction](m1n1-t6032-mcc-layout.md).
 4. Confirm startup and early frequency-control contracts from appropriately
    sourced evidence; then build diagnostic payloads offline.
 5. Before any target execution, verify recovery equipment and procedure,

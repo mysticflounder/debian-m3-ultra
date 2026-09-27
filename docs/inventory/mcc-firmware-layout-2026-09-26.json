@@ -1,0 +1,250 @@
+{
+  "schema_version": 1,
+  "records": [
+    {
+      "identity": {
+        "target": "J516c",
+        "model": "Mac15,9",
+        "template_chip_id": "0x0"
+      },
+      "mcc": {
+        "compatible": "mcc,t6031",
+        "planes_per_mcc": 4,
+        "dcs_per_mcc": 4,
+        "reg_entry_count": 11,
+        "header_count": 3,
+        "instance_count": 8,
+        "header_sizes": [
+          "0x20000",
+          "0x149c",
+          "0x4000"
+        ],
+        "instance_indices": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "instance_size": "0x2000000",
+        "raw_bus_windows": [
+          {
+            "index": 0,
+            "base": "0x903c0000",
+            "size": "0x20000"
+          },
+          {
+            "index": 1,
+            "base": "0x904d0000",
+            "size": "0x149c"
+          },
+          {
+            "index": 2,
+            "base": "0x92818000",
+            "size": "0x4000"
+          },
+          {
+            "index": 3,
+            "base": "0x20000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 4,
+            "base": "0x22000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 5,
+            "base": "0x24000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 6,
+            "base": "0x26000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 7,
+            "base": "0x28000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 8,
+            "base": "0x2a000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 9,
+            "base": "0x2c000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 10,
+            "base": "0x2e000000",
+            "size": "0x2000000"
+          }
+        ]
+      },
+      "address_space": "raw ADT bus addresses; not translated MMIO addresses",
+      "evidence_kind": "restore firmware template, not live or iBoot-final ADT",
+      "hardware_validated": false,
+      "input_filename": "DeviceTree.j516cap.im4p",
+      "im4p_sha256": "61d447e3aeb9b5d938e6b7e9d7c2ef9cb0c041f7548de33590e22431ff239312",
+      "adt_sha256": "cb6fa92562a14e6fc28e520b909ef91a1a00306f18661ca35b6ebb8ae005e314",
+      "adt_size": 407932
+    },
+    {
+      "identity": {
+        "target": "J575d",
+        "model": "Mac15,14",
+        "template_chip_id": "0x0"
+      },
+      "mcc": {
+        "compatible": "mcc,t6031",
+        "planes_per_mcc": 4,
+        "dcs_per_mcc": 4,
+        "reg_entry_count": 20,
+        "header_count": 4,
+        "instance_count": 16,
+        "header_sizes": [
+          "0x20000",
+          "0x149c",
+          "0x4000",
+          "0x4000"
+        ],
+        "instance_indices": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19
+        ],
+        "instance_size": "0x2000000",
+        "raw_bus_windows": [
+          {
+            "index": 0,
+            "base": "0x903c0000",
+            "size": "0x20000"
+          },
+          {
+            "index": 1,
+            "base": "0x904d0000",
+            "size": "0x149c"
+          },
+          {
+            "index": 2,
+            "base": "0x92818000",
+            "size": "0x4000"
+          },
+          {
+            "index": 3,
+            "base": "0x2092818000",
+            "size": "0x4000"
+          },
+          {
+            "index": 4,
+            "base": "0x20000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 5,
+            "base": "0x22000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 6,
+            "base": "0x24000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 7,
+            "base": "0x26000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 8,
+            "base": "0x28000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 9,
+            "base": "0x2a000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 10,
+            "base": "0x2c000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 11,
+            "base": "0x2e000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 12,
+            "base": "0x2020000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 13,
+            "base": "0x2022000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 14,
+            "base": "0x2024000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 15,
+            "base": "0x2026000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 16,
+            "base": "0x2028000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 17,
+            "base": "0x202a000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 18,
+            "base": "0x202c000000",
+            "size": "0x2000000"
+          },
+          {
+            "index": 19,
+            "base": "0x202e000000",
+            "size": "0x2000000"
+          }
+        ]
+      },
+      "address_space": "raw ADT bus addresses; not translated MMIO addresses",
+      "evidence_kind": "restore firmware template, not live or iBoot-final ADT",
+      "hardware_validated": false,
+      "input_filename": "DeviceTree.j575dap.im4p",
+      "im4p_sha256": "6c3ca4ac7272ecf9c05f6b2b413ef923ff2d3ff252469493fc700260b6938c60",
+      "adt_sha256": "4a818ecc7f3d71195c1def12c6eed0c90b287f82cad2a6a4ffd6f0849fe13c12",
+      "adt_size": 589140
+    }
+  ],
+  "installed_or_executed": false
+}
