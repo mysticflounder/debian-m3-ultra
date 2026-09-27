@@ -18,6 +18,7 @@ PATCHES=(
     "$ROOT/patches/m1n1/0003-guard-secondary-start-prerequisites.patch"
     "$ROOT/patches/m1n1/0004-abort-on-secondary-start-timeout.patch"
     "$ROOT/patches/m1n1/0005-t6032-cpu-start-masks.patch"
+    "$ROOT/patches/m1n1/0006-preflight-t6032-cpu-inventory.patch"
 )
 
 if [[ $(uname -s) != Darwin || $(uname -m) != arm64 ]]; then

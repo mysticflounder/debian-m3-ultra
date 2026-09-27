@@ -1,0 +1,44 @@
+{
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "toolchain_record": "m1n1-cpu-build-2026-09-26.json",
+  "configuration": "default Makefile all; patches 0001 through 0006, T6032 dispatch still disabled",
+  "directory": "scratch/m1n1-firmware-patched.jc4CDZ",
+  "status": "pass",
+  "patches": [
+    {
+      "path": "patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch",
+      "sha256": "acd987129def9126035d384a6e9370d2f0077634b8298cc8f1f02fbb3c74e11c"
+    },
+    {
+      "path": "patches/m1n1/0002-free-pruned-cpus-after-handoff.patch",
+      "sha256": "3fd3508335e9e7af0fffca054d0a718ec4056e9431a8413e8e5312653c9be5e0"
+    },
+    {
+      "path": "patches/m1n1/0003-guard-secondary-start-prerequisites.patch",
+      "sha256": "2958b2b583841f0d8b049859a4e961fe59a1966252805855788d09186f0dded3"
+    },
+    {
+      "path": "patches/m1n1/0004-abort-on-secondary-start-timeout.patch",
+      "sha256": "2e6061606f3dd08e8b69534a6fcb831963b7155ff34569441fff7d5297e2d41d"
+    },
+    {
+      "path": "patches/m1n1/0005-t6032-cpu-start-masks.patch",
+      "sha256": "0c6b7da275569b6f2329736c89b620bbd6c834f8753ecd52fcacb73e6929d91c"
+    },
+    {
+      "path": "patches/m1n1/0006-preflight-t6032-cpu-inventory.patch",
+      "sha256": "1e755adddc3c04493a39fae80150d6930baa9db6f49d3d3810810c82bef933ce"
+    }
+  ],
+  "sha256": {
+    "m1n1.elf": "306a1cb8f4420e663dc2cfc22c84d7b9a4ac86446cce868ca4bf9ec7eaf2de08",
+    "m1n1-raw.elf": "c13b4b6edf5f3187b6c29445e5dc597c81ddf1900e9f7b3c1402e6ae588e2293",
+    "m1n1.macho": "2ff12b1d45f68c255ad375f29a79d7a57036d91e8d0a6ad832df22b825f99e90",
+    "m1n1.bin": "c3d04533cfb20ed8285f4ccac40a0964352ed17eac613548cedebd8a68ba5fd6"
+  },
+  "new_compiler_warnings_vs_baseline": 0,
+  "network_during_firmware_build": false,
+  "installed_or_executed": false,
+  "native_boot_validated": false,
+  "native_reset_validated": false
+}

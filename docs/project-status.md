@@ -14,7 +14,7 @@ not a fresh remote or live-machine check.
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff cleanup | Validated offline | Two separate patches, seven-case handoff suite and full firmware build pass; no native execution |
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
-| T6032 SoC identity / CPU startup | T6032-only mask preflight implemented; all 32 masks, 24 rejection cases, legacy-SoC regression and five-patch build pass offline | Review whole-inventory/boot-CPU RVBAR sequencing and remaining native entry/recovery gates; dispatch stays disabled |
+| T6032 SoC identity / CPU startup | Mask selection plus complete 32-node metadata preflight implemented; six-patch build and host checks pass offline | Propagate failure through callers; resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
 | Secondary-start failure handling | Pre-release guards and fatal-timeout containment validated offline | Post-release timeout is now fatal; native reset unverified, recoverable status/stop handling remains separate work |
 | MCC/cache initialization | Layout problem reproduced offline; driver correction pending | Obtain T6031 regression evidence and implement bounded, fail-closed register selection |
 | Six-cluster frequency / DVFS | PMGR metadata captured; matching binary consumers located | Complete field/branch semantics before selecting bases/offsets; address die-1 performance metadata separately |
@@ -32,6 +32,7 @@ Details: [CPU work](m1n1-t6032-cpus.md),
 [local PMGR binary evidence](m1n1-t6032-pmgr-binary.md),
 [32-CPU mask comparison](m1n1-t6032-cpu-masks.md),
 [mask contract and mode selection](m1n1-t6032-mask-contract.md),
+[whole-inventory preflight](m1n1-t6032-inventory-preflight.md),
 [offline build and handoff](m1n1-cpu-offline-build.md),
 [SoC gaps](m3-ultra-soc-status-2026-09-26.md),
 [persistent VM](persistent-test-vm.md),

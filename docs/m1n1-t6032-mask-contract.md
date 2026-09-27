@@ -93,7 +93,9 @@ requested coordinates pass validation. Failure precedes RVBAR access,
 allocation, stack publication, cache operations and release writes.
 This is a per-secondary preflight, not an all-CPU transaction or a
 whole-boot abort/status interface. Before enabling dispatch, the boot CPU's
-separate RVBAR path and whole-inventory validation must also be reviewed.
+separate RVBAR path and caller-failure handling must also be reviewed.
+[Patch 0006](m1n1-t6032-inventory-preflight.md) now adds whole-inventory
+metadata validation before that path, without enabling CPU release.
 
 Other SoCs keep the original two mask expressions, without reading these
 properties. A `T6032` identity constant is added, **not** a dispatch case or

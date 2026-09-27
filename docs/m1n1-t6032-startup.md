@@ -167,6 +167,12 @@ More `ioreg` topology captures alone cannot fill the missing reset-time
 register semantics. Offline failure-path hardening can proceed while those
 hardware-evidence gates remain open.
 
+The subsequent [whole-inventory preflight](m1n1-t6032-inventory-preflight.md)
+validates every T6032 CPU's IDs, coordinates, boot-state string and explicit
+implementation-register window before the existing startup loop. It avoids
+the legacy fallback and copy-before-length-check helper. It is still not
+whole-boot failure propagation, native RVBAR validation or dispatch enablement.
+
 ## Offline startup regression
 
 The initial audit on 2026-09-26 passed the checks below against the original

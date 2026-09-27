@@ -1,0 +1,337 @@
+{
+  "cpu_count": 32,
+  "cpus": [
+    {
+      "cluster": 0,
+      "core": 0,
+      "cpu_id": 0,
+      "cpu_impl_base": "0x210050000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x0",
+      "state": "waiting"
+    },
+    {
+      "cluster": 0,
+      "core": 1,
+      "cpu_id": 1,
+      "cpu_impl_base": "0x210150000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x1",
+      "state": "waiting"
+    },
+    {
+      "cluster": 0,
+      "core": 2,
+      "cpu_id": 2,
+      "cpu_impl_base": "0x210250000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x2",
+      "state": "waiting"
+    },
+    {
+      "cluster": 0,
+      "core": 3,
+      "cpu_id": 3,
+      "cpu_impl_base": "0x210350000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x3",
+      "state": "waiting"
+    },
+    {
+      "cluster": 1,
+      "core": 0,
+      "cpu_id": 4,
+      "cpu_impl_base": "0x211050000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x100",
+      "state": "running"
+    },
+    {
+      "cluster": 1,
+      "core": 1,
+      "cpu_id": 5,
+      "cpu_impl_base": "0x211150000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x101",
+      "state": "waiting"
+    },
+    {
+      "cluster": 1,
+      "core": 2,
+      "cpu_id": 6,
+      "cpu_impl_base": "0x211250000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x102",
+      "state": "waiting"
+    },
+    {
+      "cluster": 1,
+      "core": 3,
+      "cpu_id": 7,
+      "cpu_impl_base": "0x211350000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x103",
+      "state": "waiting"
+    },
+    {
+      "cluster": 1,
+      "core": 4,
+      "cpu_id": 8,
+      "cpu_impl_base": "0x211450000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x104",
+      "state": "waiting"
+    },
+    {
+      "cluster": 1,
+      "core": 5,
+      "cpu_id": 9,
+      "cpu_impl_base": "0x211550000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x105",
+      "state": "waiting"
+    },
+    {
+      "cluster": 2,
+      "core": 0,
+      "cpu_id": 10,
+      "cpu_impl_base": "0x212050000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x200",
+      "state": "waiting"
+    },
+    {
+      "cluster": 2,
+      "core": 1,
+      "cpu_id": 11,
+      "cpu_impl_base": "0x212150000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x201",
+      "state": "waiting"
+    },
+    {
+      "cluster": 2,
+      "core": 2,
+      "cpu_id": 12,
+      "cpu_impl_base": "0x212250000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x202",
+      "state": "waiting"
+    },
+    {
+      "cluster": 2,
+      "core": 3,
+      "cpu_id": 13,
+      "cpu_impl_base": "0x212350000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x203",
+      "state": "waiting"
+    },
+    {
+      "cluster": 2,
+      "core": 4,
+      "cpu_id": 14,
+      "cpu_impl_base": "0x212450000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x204",
+      "state": "waiting"
+    },
+    {
+      "cluster": 2,
+      "core": 5,
+      "cpu_id": 15,
+      "cpu_impl_base": "0x212550000",
+      "cpu_impl_size": "0x9010",
+      "die": 0,
+      "reg": "0x205",
+      "state": "waiting"
+    },
+    {
+      "cluster": 0,
+      "core": 0,
+      "cpu_id": 16,
+      "cpu_impl_base": "0x2210050000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0x800",
+      "state": "waiting"
+    },
+    {
+      "cluster": 0,
+      "core": 1,
+      "cpu_id": 17,
+      "cpu_impl_base": "0x2210150000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0x801",
+      "state": "waiting"
+    },
+    {
+      "cluster": 0,
+      "core": 2,
+      "cpu_id": 18,
+      "cpu_impl_base": "0x2210250000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0x802",
+      "state": "waiting"
+    },
+    {
+      "cluster": 0,
+      "core": 3,
+      "cpu_id": 19,
+      "cpu_impl_base": "0x2210350000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0x803",
+      "state": "waiting"
+    },
+    {
+      "cluster": 1,
+      "core": 0,
+      "cpu_id": 20,
+      "cpu_impl_base": "0x2211050000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0x900",
+      "state": "waiting"
+    },
+    {
+      "cluster": 1,
+      "core": 1,
+      "cpu_id": 21,
+      "cpu_impl_base": "0x2211150000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0x901",
+      "state": "waiting"
+    },
+    {
+      "cluster": 1,
+      "core": 2,
+      "cpu_id": 22,
+      "cpu_impl_base": "0x2211250000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0x902",
+      "state": "waiting"
+    },
+    {
+      "cluster": 1,
+      "core": 3,
+      "cpu_id": 23,
+      "cpu_impl_base": "0x2211350000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0x903",
+      "state": "waiting"
+    },
+    {
+      "cluster": 1,
+      "core": 4,
+      "cpu_id": 24,
+      "cpu_impl_base": "0x2211450000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0x904",
+      "state": "waiting"
+    },
+    {
+      "cluster": 1,
+      "core": 5,
+      "cpu_id": 25,
+      "cpu_impl_base": "0x2211550000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0x905",
+      "state": "waiting"
+    },
+    {
+      "cluster": 2,
+      "core": 0,
+      "cpu_id": 26,
+      "cpu_impl_base": "0x2212050000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0xa00",
+      "state": "waiting"
+    },
+    {
+      "cluster": 2,
+      "core": 1,
+      "cpu_id": 27,
+      "cpu_impl_base": "0x2212150000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0xa01",
+      "state": "waiting"
+    },
+    {
+      "cluster": 2,
+      "core": 2,
+      "cpu_id": 28,
+      "cpu_impl_base": "0x2212250000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0xa02",
+      "state": "waiting"
+    },
+    {
+      "cluster": 2,
+      "core": 3,
+      "cpu_id": 29,
+      "cpu_impl_base": "0x2212350000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0xa03",
+      "state": "waiting"
+    },
+    {
+      "cluster": 2,
+      "core": 4,
+      "cpu_id": 30,
+      "cpu_impl_base": "0x2212450000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0xa04",
+      "state": "waiting"
+    },
+    {
+      "cluster": 2,
+      "core": 5,
+      "cpu_id": 31,
+      "cpu_impl_base": "0x2212550000",
+      "cpu_impl_size": "0x9010",
+      "die": 1,
+      "reg": "0xa05",
+      "state": "waiting"
+    }
+  ],
+  "hardware_validated": false,
+  "identity": {
+    "chip_id": "0x6032",
+    "target": "J575d"
+  },
+  "implementation_registers_read": false,
+  "mpidr_mapping_validated": false,
+  "register_writes_performed": false,
+  "running_cpu_id": 4,
+  "schema_version": 1,
+  "source_path": "/cpus",
+  "status": "ok"
+}
