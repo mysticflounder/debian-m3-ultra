@@ -16,7 +16,7 @@ not a fresh remote or live-machine check.
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
 | T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; eleven-patch cross-build passes | Resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; T6032 frequency failure now rejects before SMP, nine sanitizer cases pass | Validate native reset separately; no rollback or recoverable degraded-SMP claim |
-| MCC/cache initialization | LLB parent-buffer constructor and explicit zero-fill traced; 306 additional instruction words checked offline | Resolve runtime record writers, constructor/export ordering and final payload-entry contract; BootArgs RAM-base window, cache effects, early permissions and DMA remain unqualified |
+| MCC/cache initialization | Three LLB dynamic selector paths narrowed to other initial/direct-caller keys; 258 additional instruction words and three image fields checked offline | Resolve remaining runtime record writers, constructor/export ordering and final payload-entry contract; BootArgs RAM-base window, cache effects, early permissions and DMA remain unqualified |
 | Six-cluster frequency / DVFS | Conditional routing and OSData provider traced; die-1 selectors 33/37/45 identified and captured; 61 input/adjacent tests pass | Resolve effective die-count writer/allocation contract, safe raw APSC/default indices and early-boot prerequisites; native dispatch disabled |
 | Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
@@ -42,6 +42,7 @@ Details: [CPU work](m1n1-t6032-cpus.md),
 [source-table merge and boot-stage boundaries](m1n1-t6032-boot-stage-boundaries.md),
 [LLB memory-table address publication](m1n1-t6032-llb-table-publication.md),
 [LLB memory-list export and eligibility](m1n1-t6032-llb-memory-export.md),
+[LLB dynamic selector paths and bounded exclusions](m1n1-t6032-llb-selector-paths.md),
 [cache-control contract trace](m1n1-t6032-cache-contract.md),
 [carveout metadata and safety gaps](m1n1-t6032-carveouts.md),
 [runtime mapping guards](m1n1-t6032-mapping-guard.md),

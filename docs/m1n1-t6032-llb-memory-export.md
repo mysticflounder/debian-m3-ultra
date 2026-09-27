@@ -141,7 +141,9 @@ and wrapper checks. Independent review separately checked the fill path.
 - Initializer report SHA-256: `10968c61e36ebacc9366e9c8f999d3aa96f4635c6f21df8de987554c8b68795c`
 
 The fixed-table-to-list transformation and parent-buffer clearing path are
-now identified. Next trace the selector-4/selector-`0x18` writers and the
+now identified. A [selector-path follow-up](m1n1-t6032-llb-selector-paths.md)
+narrows three dynamic setter call sites without identifying the missing
+ranges. Next trace the selector-4/selector-`0x18` writers and the
 initialization-to-export call sequence; do not substitute these routines'
 existence for runtime values or execution order.
 The publication destination's mapped alias and the final platform
