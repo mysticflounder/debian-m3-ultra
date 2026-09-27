@@ -1,0 +1,31 @@
+{
+  "cluster_metadata": {
+    "acc-clusters": {
+      "length": 48,
+      "raw_hex": "020000000000000005010000000000000d02000000000000020800000000000005090000000000000d0a000000000000"
+    },
+    "cluster-ctl-offset": {
+      "length": 4,
+      "raw_hex": "00800100",
+      "value_le_u32": 98304
+    },
+    "clusters": {
+      "length": 12,
+      "raw_hex": "040000000600040006000a00"
+    }
+  },
+  "features": {
+    "amx-thrtl": {"raw_hex": "01000000", "value_le_u32": 1},
+    "apsc-snooze": {"raw_hex": "00000000", "value_le_u32": 0},
+    "cpu-apsc": {"raw_hex": "01000000", "value_le_u32": 1},
+    "cpu-fixed-freq-pll-relock": {"raw_hex": "00000000", "value_le_u32": 0},
+    "llc-thrtl": {"raw_hex": "01000000", "value_le_u32": 1},
+    "ppt-thrtl": {"raw_hex": "01000000", "value_le_u32": 1}
+  },
+  "identity": {"chip_id": "0x6032", "target": "J575d"},
+  "register_semantics_validated": false,
+  "register_writes_performed": false,
+  "schema_version": 1,
+  "source_path": "/arm-io/pmgr",
+  "status": "ok"
+}

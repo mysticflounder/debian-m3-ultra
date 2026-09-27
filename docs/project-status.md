@@ -17,7 +17,7 @@ not a fresh remote or live-machine check.
 | T6032 SoC identity / CPU startup | Source audit and mocked startup tests pass; native contract unresolved | Confirm start-register semantics and native entry/feature state before enabling dispatch |
 | Secondary-start failure handling | Pre-release guards and fatal-timeout containment validated offline | Post-release timeout is now fatal; native reset unverified, recoverable status/stop handling remains separate work |
 | MCC/cache initialization | Layout problem reproduced offline; driver correction pending | Obtain T6031 regression evidence and implement bounded, fail-closed register selection |
-| Six-cluster frequency / DVFS | Pending | Establish early initialization semantics; address die-1 performance metadata separately |
+| Six-cluster frequency / DVFS | PMGR feature/cluster metadata captured; register semantics pending | Trace metadata consumers before selecting bases/offsets; address die-1 performance metadata separately |
 | Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
@@ -28,6 +28,7 @@ not a fresh remote or live-machine check.
 
 Details: [CPU work](m1n1-t6032-cpus.md),
 [startup contract](m1n1-t6032-startup.md),
+[PMGR metadata](m1n1-t6032-pmgr.md),
 [offline build and handoff](m1n1-cpu-offline-build.md),
 [SoC gaps](m3-ultra-soc-status-2026-09-26.md),
 [persistent VM](persistent-test-vm.md),
