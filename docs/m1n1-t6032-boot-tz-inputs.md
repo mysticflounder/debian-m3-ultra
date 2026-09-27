@@ -111,6 +111,11 @@ machine's installed memory, and the map is not a captured m1n1 boot argument.
 
 ## Remaining boundaries
 
+The subsequent [boot-argument producer trace](m1n1-t6032-boot-arguments.md)
+identifies the source-record IDs, conditional physical-base adjustment and
+copy/output path. The initial source records contain unresolved values;
+their writers and the actual handoff value still need qualification.
+
 This identifies a concrete encoding used by the target firmware image.
 It does not establish live branch selection, actual limit values, equality
 between F-adjusted and per-plane register contents, or early MCC access
