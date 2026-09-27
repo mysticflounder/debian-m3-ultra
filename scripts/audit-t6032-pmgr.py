@@ -22,7 +22,9 @@ FEATURES = (
     "llc-thrtl", "ppt-thrtl",
 )
 # Shape constraints for the observed J575d six-cluster metadata, not MMIO semantics.
-RAW_FIELDS = {"acc-clusters": 48, "cluster-ctl-offset": 4, "clusters": 12}
+RAW_FIELDS = {"acc-clusters": 48, "acc-cores": 256, "cluster-ctl-offset": 4,
+              "clusters": 12, "die-stride": 8}
+SCHEMA_VERSION = 2
 
 
 def child(parent: dict[str, Any], name: str) -> dict[str, Any]:
@@ -60,7 +62,7 @@ def audit_tree(tree: Any) -> dict[str, Any]:
         property_bytes(pmgr, "cluster-ctl-offset", 4), "little"
     )
     return {
-        "schema_version": 1,
+        "schema_version": SCHEMA_VERSION,
         "status": "ok",
         "identity": identity,
         "source_path": "/arm-io/pmgr",
@@ -80,9 +82,9 @@ def main(argv: list[str] | None = None) -> int:
             raise AuditError("invalid_timeout")
         report = audit_tree(HELPER._load_plist(HELPER._read_input(args)))
     except AuditError as exc:
-        report = {"schema_version": 1, "status": "error", "error": {"code": exc.code}}
+        report = {"schema_version": SCHEMA_VERSION, "status": "error", "error": {"code": exc.code}}
     except (OSError, UnicodeError):
-        report = {"schema_version": 1, "status": "error", "error": {"code": "input_unavailable"}}
+        report = {"schema_version": SCHEMA_VERSION, "status": "error", "error": {"code": "input_unavailable"}}
     print(json.dumps(report, sort_keys=True, separators=(",", ":")))
     return 0 if report["status"] == "ok" else 1
 

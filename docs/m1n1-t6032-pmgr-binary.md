@@ -83,6 +83,10 @@ per-core/cluster mapping and derive all 32 expected masks in a host-side
 model, with explicit failure on inconsistent metadata, before proposing
 firmware writes. Then handle the independent early-boot/recovery gates.
 
+Follow-up: the [32-CPU mask comparison](m1n1-t6032-cpu-masks.md) now joins
+all captured `acc-cores` records to the CPU inventory and demonstrates
+12 differences from the legacy formula. Remaining gates are explicit there.
+
 ## Reproduction tooling
 
 `scripts/inspect-local-kernelcache.py` accepts only bounded local files.
