@@ -267,7 +267,8 @@ The [live-input/feature audit](m1n1-t6032-dvfs-inputs.md) captures the actual
 allowlisted state-table properties and proves indexed throttler dispatch.
 The [state-input trace](m1n1-t6032-dvfs-states.md) corrects domain 2's table
 selection to `voltage-states1` and establishes mode-1 prefix/mapping/conversion
-arithmetic. Next: propagate frequency-init failure before secondary startup,
-finish runtime routing and derive safe raw initialization states and ordering.
+arithmetic. [Patch 0011](m1n1-t6032-cpufreq-status.md) propagates T6032
+frequency-init failure before secondary startup. Next: finish runtime routing
+and derive safe raw initialization states and ordering.
 Restore templates cannot replace live tables, and runtime frequency conversion
 does not by itself validate m1n1's raw-index boot policy.

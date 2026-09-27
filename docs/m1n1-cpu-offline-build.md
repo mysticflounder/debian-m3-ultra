@@ -6,7 +6,7 @@ capacity-plus-cleanup series, the three-patch pre-release-guard series, and
 the four-patch fatal-timeout series, five-patch T6032 mask series and
 six-patch CPU-inventory preflight series, seven-patch caller-status series,
 eight-patch MCC-layout series, nine-patch initial-carveout-preflight series,
-and ten-patch runtime-mapping-guard series.
+ten-patch runtime-mapping-guard series, and eleven-patch frequency-status series.
 This is a **build result,
 not a native boot result**. No artifact was installed or executed.
 
@@ -20,7 +20,8 @@ plus [`0006` inventory preflight](../patches/m1n1/0006-preflight-t6032-cpu-inven
 plus [`0007` caller status](../patches/m1n1/0007-propagate-t6032-cpu-start-failures.patch)
 plus [`0008` MCC layout](../patches/m1n1/0008-validate-t6032-mcc-layout.patch)
 plus [`0009` carveout preflight](../patches/m1n1/0009-preflight-t6032-carveout-removal.patch)
-and [`0010` runtime mapping guard](../patches/m1n1/0010-guard-t6032-runtime-mappings.patch).
+plus [`0010` runtime mapping guard](../patches/m1n1/0010-guard-t6032-runtime-mappings.patch)
+and [`0011` frequency-init status](../patches/m1n1/0011-propagate-t6032-cpufreq-failures.patch).
 The [initial build record](inventory/m1n1-cpu-build-2026-09-26.json) records
 baseline/capacity-only artifacts; the [cleanup-series build record](inventory/m1n1-cpu-cleanup-build-2026-09-26.json)
 records the two-patch build; the [startup-guard build record](inventory/m1n1-cpu-startup-build-2026-09-26.json)
@@ -31,7 +32,8 @@ records the six-patch build; the [caller-status build record](inventory/m1n1-cpu
 records the seven-patch build; the [MCC build record](inventory/m1n1-mcc-build-2026-09-26.json)
 records the eight-patch build; the [carveout build record](inventory/m1n1-carveout-build-2026-09-26.json)
 records the nine-patch build; the [runtime-mapping build record](inventory/m1n1-mapping-build-2026-09-26.json)
-records the ten-patch build. These records include hashes and scratch
+records the ten-patch build; the [frequency-status build record](inventory/m1n1-cpufreq-status-build-2026-09-26.json)
+records the eleven-patch build. These records include hashes and scratch
 locations. The recipe builds the default firmware configuration, not every
 optional feature combination. It does not introduce T6032 startup dispatch.
 

@@ -1,0 +1,117 @@
+{
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "toolchain_record": "m1n1-cpu-build-2026-09-26.json",
+  "configuration": "default Makefile all; patches 0001 through 0011, T6032 CPU and frequency dispatch remain disabled",
+  "directory": "scratch/m1n1-firmware-patched.fxakRr",
+  "status": "pass",
+  "patches": [
+    {
+      "path": "patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch",
+      "sha256": "acd987129def9126035d384a6e9370d2f0077634b8298cc8f1f02fbb3c74e11c"
+    },
+    {
+      "path": "patches/m1n1/0002-free-pruned-cpus-after-handoff.patch",
+      "sha256": "3fd3508335e9e7af0fffca054d0a718ec4056e9431a8413e8e5312653c9be5e0"
+    },
+    {
+      "path": "patches/m1n1/0003-guard-secondary-start-prerequisites.patch",
+      "sha256": "2958b2b583841f0d8b049859a4e961fe59a1966252805855788d09186f0dded3"
+    },
+    {
+      "path": "patches/m1n1/0004-abort-on-secondary-start-timeout.patch",
+      "sha256": "2e6061606f3dd08e8b69534a6fcb831963b7155ff34569441fff7d5297e2d41d"
+    },
+    {
+      "path": "patches/m1n1/0005-t6032-cpu-start-masks.patch",
+      "sha256": "0c6b7da275569b6f2329736c89b620bbd6c834f8753ecd52fcacb73e6929d91c"
+    },
+    {
+      "path": "patches/m1n1/0006-preflight-t6032-cpu-inventory.patch",
+      "sha256": "1e755adddc3c04493a39fae80150d6930baa9db6f49d3d3810810c82bef933ce"
+    },
+    {
+      "path": "patches/m1n1/0007-propagate-t6032-cpu-start-failures.patch",
+      "sha256": "fabe6b87f536ac44323e945c266e5e88727bec2ebb4001ca220a54378dca06e5"
+    },
+    {
+      "path": "patches/m1n1/0008-validate-t6032-mcc-layout.patch",
+      "sha256": "3ac58c2d4bf87f588b42a45411d58037b65d53958a6d20eb9ef52798322a1b11"
+    },
+    {
+      "path": "patches/m1n1/0009-preflight-t6032-carveout-removal.patch",
+      "sha256": "0dba4d39a4b6da7075b87627bdd77a9fe65def3f75573336430eb7f1291c0e81"
+    },
+    {
+      "path": "patches/m1n1/0010-guard-t6032-runtime-mappings.patch",
+      "sha256": "e77e9bf8a3e0fc5cae24405ed42ce9239a46018b372c04fc6db7c73c1ae99507"
+    },
+    {
+      "path": "patches/m1n1/0011-propagate-t6032-cpufreq-failures.patch",
+      "sha256": "c3041620dfcf742333dfa6a8e58b64a4946c0f3c701e8bc60f64fc504f9b1918"
+    }
+  ],
+  "sha256": {
+    "m1n1.elf": "fda2fe01506bb6038bcbc8203216bf7c76346a6179d9a6519c17c9875c60195b",
+    "m1n1-raw.elf": "b403039a05044b326099195d85d7400c08fe38d2d31afd43e5ee5e5298ef52a9",
+    "m1n1.macho": "348d036c85679483ccbacbc0877176be94fa0ffca31484c51bdcba814b52d8aa",
+    "m1n1.bin": "0c11ed9880e0d5d870737861dcfded7e89d56ea3300b9ebb9e8f49ed62370c87"
+  },
+  "validation_sources": [
+    {
+      "path": "scripts/test-m1n1-cpufreq-status.py",
+      "sha256": "5141c710c0637dc2a630dd1de72b78eb11548b533a777cbfa3886a21d05b77f8"
+    },
+    {
+      "path": "tests/m1n1-cpufreq-status.c",
+      "sha256": "a5408ca688dd15c4789a59b1617940c12e751ec3aadb079d032a209caf397695"
+    },
+    {
+      "path": "scripts/build-m1n1-cpu-offline.sh",
+      "sha256": "5f7742aa5532eb7e264e5dd3660148d9285dd04230c27875db5f0a64d664c11b"
+    }
+  ],
+  "host_validation": {
+    "cpufreq_caller": {
+      "status": "pass",
+      "cases": 9,
+      "sanitizers": [
+        "address",
+        "undefined"
+      ],
+      "log": "scratch/test-m1n1-cpufreq-status-review.log",
+      "scope": "source-extracted kernel caller prefix; mocked frequency/SMP, not full payload execution",
+      "prerequisite_patches": [
+        "0001",
+        "0003",
+        "0004",
+        "0005",
+        "0006",
+        "0007",
+        "0011"
+      ]
+    },
+    "existing_smp_caller_suite": {
+      "status": "pass",
+      "log": "scratch/test-m1n1-cpu-start-status-cpufreq-review.log",
+      "scope": "existing seven-patch status materializer, not full eleven-patch runtime"
+    },
+    "existing_mapping_suite": {
+      "status": "pass",
+      "log": "scratch/test-m1n1-mapping-guard-cpufreq-review.log",
+      "scope": "existing ten-patch mapping materializer"
+    }
+  },
+  "compiler_warnings": {
+    "count": 2,
+    "unchanged_from_ten_patch_build": true,
+    "comparison_directory": "scratch/m1n1-firmware-patched.Buj9o3",
+    "sources": [
+      "src/dcp_iboot.c:37 GNU variable-sized member extension",
+      "rust/src/usb4.rs:4 unused crate::println import"
+    ]
+  },
+  "network_during_firmware_build": false,
+  "installed_or_executed": false,
+  "native_boot_validated": false,
+  "native_frequency_or_reset_validated": false
+}

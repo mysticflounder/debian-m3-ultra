@@ -98,12 +98,12 @@ APSC/default raw-state policy, the `0x440f8` operation's applicability,
 feature ordering and bounded failure propagation. Runtime MHz derivation
 is not itself a prerequisite for an m1n1-style raw-index initialization.
 
-One concrete caller gap is independently confirmed in the current ten-patch
-offline baseline: `payload_run()` ignores `cpufreq_init()`'s return before
-secondary startup. The next implementation should reject a T6032 frequency
-failure before SMP and kernel handoff while preserving legacy behavior.
+The ten-patch baseline ignored `cpufreq_init()`'s return before secondary
+startup. [Patch 0011](m1n1-t6032-cpufreq-status.md) now rejects that failure
+on T6032 before SMP and kernel handoff while preserving legacy behavior.
 Proxy `P_CPUFREQ_INIT` already returns the status; `hv_init()` does not call
-frequency initialization and needs no fabricated frequency guard.
+frequency initialization and needs no fabricated frequency guard. This does
+not resolve the raw-state policy or enable frequency dispatch.
 
 ## Reproduction
 

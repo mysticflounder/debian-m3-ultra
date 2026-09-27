@@ -23,6 +23,7 @@ PATCHES=(
     "$ROOT/patches/m1n1/0008-validate-t6032-mcc-layout.patch"
     "$ROOT/patches/m1n1/0009-preflight-t6032-carveout-removal.patch"
     "$ROOT/patches/m1n1/0010-guard-t6032-runtime-mappings.patch"
+    "$ROOT/patches/m1n1/0011-propagate-t6032-cpufreq-failures.patch"
 )
 
 if [[ $(uname -s) != Darwin || $(uname -m) != arm64 ]]; then

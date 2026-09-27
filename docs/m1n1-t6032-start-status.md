@@ -25,7 +25,7 @@ startup switch.
 
 | Caller | On negative SMP result | What is deliberately unchanged |
 | --- | --- | --- |
-| Payload kernel path | Return failure before mitigations, TSO, DT preparation or kernel handoff | Existing frequency-init prelude; main may enter its existing proxy fallback |
+| Payload kernel path | Return failure before mitigations, TSO, DT preparation or kernel handoff | Frequency call ordering; its T6032 error is separately checked by 0011; existing proxy fallback remains |
 | Hypervisor initialization | Return failure before WFE, watchdog, page-table and hypervisor-register setup | PCIe/display/USB prelude and its ordering |
 | Proxy SMP / HV-init commands | Set signed reply status `S_BADSTATE = -2` | Wire layout, opcodes and return-value field |
 
@@ -68,3 +68,7 @@ requirements, followed by six-cluster/two-die DVFS semantics. Native entry
 level/features, MPIDR mapping, boot-CPU RVBAR policy, reset ordering and
 recovery/console access still require separate evidence and authorization.
 No passing host test or cross-build opens those gates.
+
+Follow-up: [patch 0011](m1n1-t6032-cpufreq-status.md) now checks the
+frequency-init result on T6032 before reaching the SMP guard. It preserves
+legacy behavior and does not alter the HV/proxy contracts above.
