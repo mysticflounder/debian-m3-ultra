@@ -176,7 +176,8 @@ A subsequent [allowlisted capture](m1n1-t6032-carveouts.md) now records
 `/chosen/carveout-memory-map`'s `region-id-2`/`region-id-4` properties.
 Both are sixteen bytes and decode into plausible address/size pairs under
 the pinned source's convention. This does not establish candidate TZ register
-offsets or prove that every die shares one map. Next address the identified
-runtime range-validation/caller-propagation gaps offline, while keeping the
-register-layout evidence gate open. No hardware register read, native
+offsets or prove that every die shares one map. Patch 0009 now adds checked
+initial-MMU range preflight and fatal caller propagation, with a successful
+nine-patch offline build. Later framebuffer mappings and the register-layout
+evidence remain open gates; see the carveout document. No hardware register read, native
 execution or installation is authorized by these metadata results.

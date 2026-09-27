@@ -80,10 +80,78 @@ values. The generic controller constructs that object at
 `#0x6e4` access was found in this view. Numeric offset matches must not be
 promoted into H15 hardware-layout evidence.
 
-## Remaining implementation gates
+## Initial-MMU preflight (local patch 0009)
 
-The local eight-patch series already fixes MCC register selection and checks
-initialization failure before MMU setup. It does **not** fix these separate
+[`0009`](../patches/m1n1/0009-preflight-t6032-carveout-removal.patch) adds a
+T6032-only path. It retains the existing controller-0/plane-0 slot reads and
+OR address model; it does not infer a new register layout from the metadata.
+
+- Validate enabled intervals against mapped RAM, runtime 4K/16K granularity,
+  representable endpoints and affine OR translation across the entire range.
+  Zero, equal and inverted raw endpoints fail closed. Equal endpoints remain
+  unqualified rather than being newly accepted as a one-page hardware region.
+- Stage all valid intervals before removing mappings or changing the heap
+  limit. Reject overlapping targets and ranges covering the loaded image,
+  payload-to-heap reservation or allocated kernel/heap prefix. Publication is
+  cleared on entry and completed only after removal, including its sentinel.
+- Obtain the exact alias length from `memory.c`: identity RAM uses
+  `mem_size_actual`, while the three aliases use `ram_size`. Clip each alias
+  target to that mapping's extent; skip empty intersections. The legacy API
+  rejects T6032 calls that do not supply this length.
+- Bound future heap growth by the nearest carveout at/above the current heap
+  cursor, actual RAM end and any tighter existing limit. Read-only allocator
+  getters expose those existing boundaries without changing legacy allocation.
+- Remove T6032 carveouts after all default mappings and `mmu_remap_ranges()`,
+  with fatal failure propagation before MMU enable. Other chips retain the
+  original call placement and legacy implementation.
+
+The image guard uses `[_base, top_of_kernel_data)` and requires
+`_base < _payload_start <= top_of_kernel_data`. This relies on the loader
+placing the complete payload below the initial heap; it is not a measurement
+of payload length. The raw linker has no `_payload_end`, so using that Mach-O
+symbol would fail the raw build. Neither a fixed 64 MiB reservation nor the
+current host metadata is substituted for the runtime loader boundary.
+
+The heap cap is set **before** removal because splitting block mappings can
+allocate page tables. Exhaustion can therefore terminate removal; there is no
+rollback/atomic-MMU-update guarantee, and successful native boot is unproved.
+The all-region preflight guarantees no mapping/heap-limit mutation on a
+validation rejection, not recovery from allocation failure during removal.
+
+### Offline verification
+
+The [source-extracted harness](../scripts/test-m1n1-carveout-preflight.py)
+passes under AddressSanitizer and fail-fast UndefinedBehaviorSanitizer. It
+checks both granules, malformed/overlapping ranges, alias clipping and exact
+removal addresses, heap/image guards, stale-state clearing, late rejection
+with no removals or heap-limit changes, publication/sentinel contents, zero
+and four enabled slots, and the legacy T6031 path. MMIO and allocator/mapping
+effects are mocked. Constants/functions come from the pinned patched source;
+the legacy function is compared against the original after removing only the
+new T6032 rejection guard. Caller ordering is checked structurally, not by
+executing the complete MMU caller on hardware.
+
+The twelve existing regression suites also pass: MCC layout; CPU startup,
+caller status, inventory preflight, synthetic handoff and board handoff;
+CPU-mask, startup-metadata, firmware-MCC, MCC-metadata, CPU-metadata and
+carveout-metadata tests. Together these comprise six existing host harnesses
+and 71 Python unit tests, in addition to the new carveout harness.
+
+The [nine-patch default build](inventory/m1n1-carveout-build-2026-09-26.json)
+produces all four firmware artifacts with the same two baseline warning
+categories. All nine patch and four artifact hashes match the saved record.
+T6032 CPU dispatch stays disabled; nothing was installed or executed.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 scripts/test-m1n1-carveout-preflight.py
+bash scripts/build-m1n1-cpu-offline.sh patched
+```
+
+## Remaining hardware and later-mapping gates
+
+Before patch 0009, the eight-patch series fixed MCC register selection and
+checked initialization failure before MMU setup, but left these separate
 carveout issues in the pinned implementation:
 
 1. Enabled inverted TZ intervals (`end < start`) are not rejected before
@@ -98,7 +166,16 @@ carveout issues in the pinned implementation:
    mapping removal are incremental, without an all-regions preflight.
 4. Controller-0/plane-0 representativeness on the two-die Ultra is unproved.
 
-Next: design/test checked range decoding and fail-closed caller propagation
-offline, while separately seeking a direct H15 TZ consumer or independently
-validated layout. Do not add speculative register accesses or enable native
-boot merely because the collector or an arithmetic harness passes.
+Patch 0009 addresses the initial-MMU range/failure-handling gaps above, but
+not the hardware assumptions. A direct H15 TZ consumer or independently
+validated layout is still required, including controller/die equivalence and
+the inclusive-end/enable/address-field semantics.
+
+Later mapping changes also remain a separate gate: `fb_init()` and
+`fb_clear_direct()` call `mmu_add_mapping()` after initial setup and could
+reintroduce a protected mapping if their ranges overlap a carveout. A check
+only in `mmu_map_framebuffer()` would miss these direct callers. Audit and
+guard the shared mapping entry point before claiming persistent exclusion.
+The Linux memory handoff and actual loader payload boundary also need
+same-boot evidence. Do not add speculative register accesses or enable native
+boot merely because the collector, build or arithmetic harness passes.

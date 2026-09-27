@@ -21,6 +21,7 @@ PATCHES=(
     "$ROOT/patches/m1n1/0006-preflight-t6032-cpu-inventory.patch"
     "$ROOT/patches/m1n1/0007-propagate-t6032-cpu-start-failures.patch"
     "$ROOT/patches/m1n1/0008-validate-t6032-mcc-layout.patch"
+    "$ROOT/patches/m1n1/0009-preflight-t6032-carveout-removal.patch"
 )
 
 if [[ $(uname -s) != Darwin || $(uname -m) != arm64 ]]; then

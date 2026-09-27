@@ -1,0 +1,30 @@
+{
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "toolchain_record": "m1n1-cpu-build-2026-09-26.json",
+  "configuration": "default Makefile all; patches 0001 through 0009, T6032 CPU dispatch still disabled",
+  "directory": "scratch/m1n1-firmware-patched.jeWo9Y",
+  "status": "pass",
+  "patches": [
+    {"path": "patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch", "sha256": "acd987129def9126035d384a6e9370d2f0077634b8298cc8f1f02fbb3c74e11c"},
+    {"path": "patches/m1n1/0002-free-pruned-cpus-after-handoff.patch", "sha256": "3fd3508335e9e7af0fffca054d0a718ec4056e9431a8413e8e5312653c9be5e0"},
+    {"path": "patches/m1n1/0003-guard-secondary-start-prerequisites.patch", "sha256": "2958b2b583841f0d8b049859a4e961fe59a1966252805855788d09186f0dded3"},
+    {"path": "patches/m1n1/0004-abort-on-secondary-start-timeout.patch", "sha256": "2e6061606f3dd08e8b69534a6fcb831963b7155ff34569441fff7d5297e2d41d"},
+    {"path": "patches/m1n1/0005-t6032-cpu-start-masks.patch", "sha256": "0c6b7da275569b6f2329736c89b620bbd6c834f8753ecd52fcacb73e6929d91c"},
+    {"path": "patches/m1n1/0006-preflight-t6032-cpu-inventory.patch", "sha256": "1e755adddc3c04493a39fae80150d6930baa9db6f49d3d3810810c82bef933ce"},
+    {"path": "patches/m1n1/0007-propagate-t6032-cpu-start-failures.patch", "sha256": "fabe6b87f536ac44323e945c266e5e88727bec2ebb4001ca220a54378dca06e5"},
+    {"path": "patches/m1n1/0008-validate-t6032-mcc-layout.patch", "sha256": "3ac58c2d4bf87f588b42a45411d58037b65d53958a6d20eb9ef52798322a1b11"},
+    {"path": "patches/m1n1/0009-preflight-t6032-carveout-removal.patch", "sha256": "0dba4d39a4b6da7075b87627bdd77a9fe65def3f75573336430eb7f1291c0e81"}
+  ],
+  "sha256": {
+    "m1n1.elf": "97d9c4c60772ea267f0a8f91172508d687e6df9d46e942a1154a34844b5920c9",
+    "m1n1-raw.elf": "e7028a58a2b3d05d6f5543cc7e29b528f5966ec4695e10a98a86f8b1b6c19d8f",
+    "m1n1.macho": "f9e82b142c641a453dc62910011c2f479f956f82d7b0906e59cafb50ebc83a12",
+    "m1n1.bin": "395c87aef986fbbdaa247db182a1cf010b650fdf88733ec50510c2cddcf9b2d3"
+  },
+  "new_compiler_warnings_vs_baseline": 0,
+  "network_during_firmware_build": false,
+  "installed_or_executed": false,
+  "native_boot_validated": false,
+  "native_cache_tz_validated": false,
+  "later_mapping_exclusion_validated": false
+}
