@@ -17,6 +17,9 @@ typedef uint64_t u64;
 #ifndef EXPECT_FATAL_TIMEOUT
 #define EXPECT_FATAL_TIMEOUT 0
 #endif
+#ifndef EXPECT_T6032_MASK
+#define EXPECT_T6032_MASK 0
+#endif
 
 static jmp_buf panic_env;
 static bool expect_panic;
@@ -88,6 +91,18 @@ static unsigned write32_count;
 static unsigned write64_count;
 static u64 write32_addr[4], write32_value[4];
 static u64 write64_addr[2], write64_value[2];
+static unsigned read64_count;
+static int mock_pmgr_node = 1;
+static unsigned mock_adt_path_calls;
+static unsigned mock_adt_getprop_calls;
+static u8 mock_mode_bytes[4] = {1, 0, 0, 0};
+static u8 mock_cluster_bytes[12] = {
+    4, 0, 0, 0, 6, 0, 4, 0, 6, 0, 10, 0,
+};
+static const u8 *mock_mode_data = mock_mode_bytes;
+static u32 mock_mode_length = 4;
+static const u8 *mock_cluster_data = mock_cluster_bytes;
+static u32 mock_cluster_length = 12;
 static u64 mock_pfr0;
 static u64 mock_current_el;
 static u64 mock_rvbar;
@@ -137,6 +152,7 @@ static void mock_msr(unsigned reg, u64 value)
 static u64 read64(u64 addr)
 {
     (void)addr;
+    read64_count++;
     return mock_rvbar;
 }
 
@@ -207,7 +223,9 @@ static int adt_path_offset_trace(const void *tree, const char *path, int *trace)
 static int adt_path_offset(const void *tree, const char *path)
 {
     (void)tree;
-    (void)path;
+    mock_adt_path_calls++;
+    if (path && !strcmp(path, "/arm-io/pmgr"))
+        return mock_pmgr_node;
     return 1;
 }
 
@@ -228,10 +246,19 @@ static int adt_get_reg(const void *tree, int *path, const char *prop, int index,
 static const void *adt_getprop(const void *tree, int node, const char *name, u32 *length)
 {
     (void)tree;
-    (void)node;
-    (void)name;
-    if (length)
-        *length = 0;
+    mock_adt_getprop_calls++;
+    if (node != mock_pmgr_node || !name)
+        return NULL;
+    if (!strcmp(name, "acc-harvesting")) {
+        if (length)
+            *length = mock_mode_length;
+        return mock_mode_data;
+    }
+    if (!strcmp(name, "clusters")) {
+        if (length)
+            *length = mock_cluster_length;
+        return mock_cluster_data;
+    }
     return NULL;
 }
 
@@ -240,6 +267,7 @@ static const void *adt_getprop(const void *tree, int node, const char *name, u32
 #define ADT_FOREACH_CHILD(tree, node) for (int no_children = 0; no_children < 0; no_children++)
 #define free mock_free
 
+/* INSERT_SMP_CPU_START_MASKS */
 /* INSERT_SMP_START_CPU */
 /* INSERT_SMP_START_SECONDARIES */
 
@@ -266,6 +294,7 @@ static void reset_effects(void)
     ack_after = -1;
     write32_count = 0;
     write64_count = 0;
+    read64_count = 0;
     sysop_count = 0;
     msr_count = 0;
     cache_count = 0;
@@ -274,7 +303,19 @@ static void reset_effects(void)
     mock_current_el = 1 << 2;
     mock_rvbar = (u64)_vectors_start;
     cpu_features->apple_sysregs_unlocked = false;
+    mock_pmgr_node = 1;
+    mock_adt_path_calls = 0;
+    mock_adt_getprop_calls = 0;
+    memcpy(mock_mode_bytes, (const u8[]){1, 0, 0, 0}, sizeof(mock_mode_bytes));
+    memcpy(mock_cluster_bytes, (const u8[]){4, 0, 0, 0, 6, 0, 4, 0, 6, 0, 10, 0},
+           sizeof(mock_cluster_bytes));
+    mock_mode_data = mock_mode_bytes;
+    mock_mode_length = sizeof(mock_mode_bytes);
+    mock_cluster_data = mock_cluster_bytes;
+    mock_cluster_length = sizeof(mock_cluster_bytes);
 }
+
+static const u8 test_topology[32][3] = { /* INSERT_TOPOLOGY */ };
 
 static int test_selection(void)
 {
@@ -303,17 +344,16 @@ static int test_selection(void)
 
 static int test_start_cpu(void)
 {
-    static const u8 topology[32][3] = { /* INSERT_TOPOLOGY */ };
     for (int index = 0; index < MAX_CPUS; index++) {
         reset_effects();
         ack_after = 1;
-        smp_start_cpu(index, topology[index][0], topology[index][1], topology[index][2],
+        smp_start_cpu(index, test_topology[index][0], test_topology[index][1], test_topology[index][2],
                       0x3000, 0x100000);
-        u64 base = 0x100000 + (u64)topology[index][0] * PMGR_DIE_OFFSET;
+        u64 base = 0x100000 + (u64)test_topology[index][0] * PMGR_DIE_OFFSET;
         if (write32_count != 2 || write32_addr[0] != base + 4 ||
-            write32_value[0] != (1u << (4 * topology[index][1] + topology[index][2])) ||
-            write32_addr[1] != base + 0x8 + 4 * topology[index][1] ||
-            write32_value[1] != (1u << topology[index][2]) || udelay_calls != 1 ||
+            write32_value[0] != (1u << (4 * test_topology[index][1] + test_topology[index][2])) ||
+            write32_addr[1] != base + 0x8 + 4 * test_topology[index][1] ||
+            write32_value[1] != (1u << test_topology[index][2]) || udelay_calls != 1 ||
             cache_count != 1 || allocations != 1 || bad_delay_arg)
             return 19;
     }
@@ -445,6 +485,114 @@ static int test_start_cpu(void)
     return 0;
 }
 
+#if EXPECT_T6032_MASK
+static int test_t6032_masks(void)
+{
+    static const u8 shifts[3] = {0, 4, 10};
+    u32 seen_system[2] = {0, 0};
+
+    for (int index = 0; index < 32; index++) {
+        int die = test_topology[index][0];
+        int cluster = test_topology[index][1];
+        int core = test_topology[index][2];
+        u32 system_mask = 1U << (shifts[cluster] + core);
+        reset_effects();
+        chip_id = T6032;
+        ack_after = 1;
+        smp_start_cpu(index, die, cluster, core, 0x3000, 0x100000);
+        if (write32_count != 2 || write32_value[0] != system_mask ||
+            write32_value[1] != (1U << core) ||
+            write32_addr[0] != 0x100000 + (u64)die * PMGR_DIE_OFFSET + 4 ||
+            write32_addr[1] != 0x100000 + (u64)die * PMGR_DIE_OFFSET + 0x8 + 4 * cluster ||
+            mock_adt_path_calls != 1 || mock_adt_getprop_calls != 2 ||
+            allocations != 1 || cache_count != 1)
+            return 40;
+        if (seen_system[die] & system_mask)
+            return 41;
+        seen_system[die] |= system_mask;
+    }
+    if (seen_system[0] != 0xffff || seen_system[1] != 0xffff)
+        return 42;
+
+    /* Existing SoCs retain the legacy masks and never inspect T6032 metadata. */
+    static const u32 legacy_chips[] = {
+        S5L8960X, T7000, T7001, S8000, S8001, S8003, T8010, T8011, T8012,
+        T8015, T8103, T8112, T8122, T8132, T8140, T8142, T6000, T6001,
+        T6002, T6020, T6021, T6022, T6030, T6031, T6034, T6040, T6041,
+        T6050, T6051,
+    };
+    for (unsigned i = 0; i < sizeof(legacy_chips) / sizeof(legacy_chips[0]); i++) {
+        reset_effects();
+        chip_id = legacy_chips[i];
+        ack_after = 1;
+        mock_pmgr_node = -1;
+        mock_mode_data = NULL;
+        mock_cluster_data = NULL;
+        smp_start_cpu(31, 1, 2, 5, 0x3000, 0x100000);
+        if (write32_count != 2 || write32_value[0] != (1U << 13) ||
+            write32_value[1] != (1U << 5) || mock_adt_path_calls ||
+            mock_adt_getprop_calls)
+            return 43;
+    }
+
+    /* Every malformed T6032 property/topology input fails before hardware effects. */
+    for (unsigned case_id = 0; case_id < 24; case_id++) {
+        reset_effects();
+        chip_id = T6032;
+        target_cpu = 29;
+        spin_table[2].target = 0x2222;
+        _reset_stack = (void *)(uintptr_t)0x3333;
+        _reset_stack_el1 = (void *)(uintptr_t)0x4444;
+        switch (case_id) {
+        case 0: mock_pmgr_node = -1; break;
+        case 1: mock_mode_data = NULL; break;
+        case 2: mock_mode_length = 3; break;
+        case 3: mock_mode_bytes[0] = 2; break;
+        case 4: mock_cluster_data = NULL; break;
+        case 5: mock_cluster_length = 8; break;
+        case 6: mock_cluster_bytes[0] = 5; break;
+        case 7: mock_cluster_bytes[10] = 9; break;
+        case 8: smp_start_cpu(2, -1, 1, 2, 0x3000, 0x100000); goto malformed_check;
+        case 9: smp_start_cpu(2, 0, 3, 0, 0x3000, 0x100000); goto malformed_check;
+        case 10: smp_start_cpu(2, 0, 0, 4, 0x3000, 0x100000); goto malformed_check;
+        case 11: smp_start_cpu(2, 0, 0, -1, 0x3000, 0x100000); goto malformed_check;
+        case 12: smp_start_cpu(2, 2, 0, 0, 0x3000, 0x100000); goto malformed_check;
+        case 13: smp_start_cpu(2, 0, -1, 0, 0x3000, 0x100000); goto malformed_check;
+        case 14: mock_mode_length = 5; break;
+        case 15: mock_mode_bytes[1] = 1; break;
+        case 16: mock_mode_bytes[2] = 1; break;
+        case 17: mock_mode_bytes[3] = 1; break;
+        case 18: mock_cluster_length = 13; break;
+        case 19: mock_cluster_bytes[9] = 1; break;
+        case 20: mock_cluster_bytes[11] = 1; break;
+        case 21: mock_cluster_bytes[10] = 31; break;
+        case 22: mock_cluster_bytes[6] = 0; break;
+        case 23: smp_start_cpu(2, 1, 2, 6, 0x3000, 0x100000); goto malformed_check;
+        }
+        /* Request cluster 0 so a late cluster-table error cannot be hidden by selection. */
+        smp_start_cpu(2, 0, 0, 2, 0x3000, 0x100000);
+malformed_check:
+        if (read64_count || write32_count || write64_count || allocations ||
+            allocation_attempts || free_count || cache_count || sysop_count ||
+            udelay_calls || msr_count ||
+            mock_adt_getprop_calls > 2 || target_cpu != 29 ||
+            spin_table[2].target != 0x2222 ||
+            _reset_stack != (void *)(uintptr_t)0x3333 ||
+            _reset_stack_el1 != (void *)(uintptr_t)0x4444)
+            return 44 + (int)case_id;
+    }
+
+    reset_effects();
+    chip_id = T6032;
+    mock_cluster_bytes[10] = 31;
+    u32 system_output = 0xdeadbeef, cluster_output = 0xcafebabe;
+    if (smp_cpu_start_masks(0, 0, 0, &system_output, &cluster_output) ||
+        system_output != 0xdeadbeef || cluster_output != 0xcafebabe)
+        return 68;
+    return 0;
+}
+#endif
+
 /* All observations changed across longjmp are static, not indeterminate locals. */
 static int test_timeout(bool el3, int acknowledgement)
 {
@@ -520,18 +668,26 @@ int main(void)
     result = test_start_cpu();
     if (result)
         return result;
+#if EXPECT_T6032_MASK
+    result = test_t6032_masks();
+    if (result)
+        return result;
+#endif
     result = test_deadline();
     if (result)
         return result;
     printf("selection: T6032 returns before secondary-start effects, T6031=0x88000, T6022=0x28000\n");
     printf("start_cpu: index bounds, EL3 3/4, skip-alive, die stride, ack/timeout passed\n");
-    printf("variant: %s\n", EXPECT_FATAL_TIMEOUT ?
+    printf("variant: %s\n", EXPECT_T6032_MASK ?
+           "T6032 metadata masks plus fatal-timeout and guards passed" : EXPECT_FATAL_TIMEOUT ?
            "fatal timeout plus RVBAR/allocation guards passed" : EXPECT_PATCHED ?
            "guarded: RVBAR rejection and allocation-failure ownership checks passed" :
            "baseline: successful starts and RVBAR-mismatch continuation reproduced");
     printf("timeout: %s; normal/EL3 and 99/100-delay acknowledgement boundaries passed\n",
            EXPECT_FATAL_TIMEOUT ? "fatal, published reset state retained, no caller continuation" :
            "negative control: timeout returns and restores dummy reset pointers");
-    printf("note: status mask uses source expression 1 << (4*cluster+core); no uniqueness claim\n");
+    printf("note: %s\n", EXPECT_T6032_MASK ?
+           "T6032 masks validated from exact 4/6/6 metadata; legacy family masks unchanged" :
+           "status mask uses source expression 1 << (4*cluster+core); no uniqueness claim");
     return 0;
 }

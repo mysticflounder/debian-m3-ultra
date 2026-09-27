@@ -12,7 +12,10 @@ J575d, chip `0x6032`, and 32 CPUs. The pinned `src/main.c:41–70`
 `get_device_info()` reads the numeric `/chosen/chip-id`; it does not need a
 `T6032` preprocessor constant to report the identity.
 
-`src/soc.h` lacks that constant and a T6032 compile-time early-UART mapping.
+The pinned `src/soc.h` lacks that constant and a T6032 compile-time early-UART mapping.
+Local patch `0005` now adds the identity constant for its
+[mask preflight](m1n1-t6032-mask-contract.md), but still does not add a
+compile-time UART mapping or a runtime T6032 CPU-start dispatch case.
 Those omissions are distinct from runtime identification and runtime UART
 discovery: `src/uart.c:17–39` selects `/arm-io/uart6/debug-console` or
 `/arm-io/uart0` and translates its ADT register entry. `src/startup.c:194–203`
@@ -168,16 +171,18 @@ hardware-evidence gates remain open.
 
 The initial audit on 2026-09-26 passed the checks below against the original
 startup implementation without changing firmware. The follow-up `0003`
-patch adds pre-release guards; `0004` adds fatal timeout containment. The
-runner compares three variants: original, `0003`, and `0003` plus `0004`.
-All three use CPU limits extracted from `0001`-patched `smp.h` (32 ordinary,
+patch adds pre-release guards; `0004` adds fatal timeout containment;
+`0005` adds the T6032-only mask preflight. The runner compares four variants:
+original, `0003`, `0003` plus `0004`, and then `0005` on top.
+All four use CPU limits extracted from `0001`-patched `smp.h` (32 ordinary,
 four EL3); "original" means original startup logic at that capacity, not an
 unmodified 24-CPU firmware build.
 The [three-patch build record](inventory/m1n1-cpu-startup-build-2026-09-26.json)
-is retained, alongside the [four-patch build record](inventory/m1n1-cpu-timeout-build-2026-09-26.json).
-Neither build was installed or executed.
+is retained, alongside the [four-patch build record](inventory/m1n1-cpu-timeout-build-2026-09-26.json)
+and [five-patch build record](inventory/m1n1-cpu-mask-build-2026-09-26.json).
+None of these builds was installed or executed.
 
-All three startup variants pass under ASan/UBSan: the baseline retains the RVBAR
+All four startup variants pass under ASan/UBSan: the baseline retains the RVBAR
 continuation negative control; the patched run rejects it and passes the
 normal/EL3 allocation-failure cases. The allocator mock rejects foreign and
 double frees, and failure fixtures check that prior published state survives.
@@ -187,6 +192,13 @@ absence of cleanup, and no caller continuation or subsequent release.
 Original and `0003` variants reproduce timeout return and dummy-pointer
 restoration as negative controls. Mock acknowledgements at delays 99 and
 100 verify that the existing polling boundary has not changed.
+The fourth variant additionally tests all 32 T6032 mask/address pairs,
+per-die uniqueness, unchanged legacy masks for all 29 existing SoC constants
+without ADT dependency, 24 rejected metadata/coordinate cases before startup
+side effects, and preservation of output masks on helper failure. T6032
+top-level dispatch still returns before starting a CPU. ADT CPU enumeration
+is intentionally no-child mocked; these checks do not validate a complete
+32-CPU boot transaction.
 The existing 12 CPU, 15 MCC, CPU-bounds, seven synthetic handoff and four
 board-DT checks also pass. The firmware build has no new compiler warnings
 relative to the recorded baseline. These tests are not cross-machine native

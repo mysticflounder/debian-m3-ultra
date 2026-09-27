@@ -83,10 +83,36 @@ a reason to switch the observed board to mode 2.
 
 ## Implementation boundary and reproduction
 
-Next: prepare a **T6032-scoped**, fail-closed mask-selection implementation
-using the observed cluster metadata; preserve other SoCs' behavior. Check
-all 32 masks, malformed properties and pre-write failure paths. Do not
-enable T6032 CPU release merely because this offline contract is clearer:
+Local patch [0005](../patches/m1n1/0005-t6032-cpu-start-masks.patch) adds a
+**T6032-scoped**, fail-closed mask-selection helper to secondary startup.
+It accepts only the captured `acc-harvesting=1` and twelve-byte `clusters`
+table with pairs `(4,0), (6,4), (6,10)`, and die/cluster/core coordinates
+within that two-die layout. Bytewise little-endian decoding avoids alignment
+assumptions. Both outputs are assigned only after the entire table and the
+requested coordinates pass validation. Failure precedes RVBAR access,
+allocation, stack publication, cache operations and release writes.
+This is a per-secondary preflight, not an all-CPU transaction or a
+whole-boot abort/status interface. Before enabling dispatch, the boot CPU's
+separate RVBAR path and whole-inventory validation must also be reviewed.
+
+Other SoCs keep the original two mask expressions, without reading these
+properties. A `T6032` identity constant is added, **not** a dispatch case or
+supported build target. The helper does not consume macOS boot arguments;
+it qualifies only this captured ADT contract, not arbitrary runtime modes.
+The [full offline build](inventory/m1n1-cpu-mask-build-2026-09-26.json)
+passes with all five patches and no new compiler warnings. The firmware
+artifacts have not been installed or executed.
+
+The source-extracted startup harness passes four variants under ASan/UBSan:
+baseline, pre-release guards, fatal timeout, and T6032 masks. The new variant
+checks all 32 masks and per-die uniqueness, all 29 existing SoC constants
+with no new ADT dependency, 24 malformed metadata/coordinate cases with no
+startup side effects, and unchanged output masks on helper rejection.
+The separate 63 Python regression tests and bounds, synthetic handoff and
+four exact-board handoff cases also pass. Full ADT CPU enumeration remains
+mocked in the startup harness; this is not native hardware validation.
+
+Do not enable T6032 CPU release merely because this offline contract is clearer:
 native entry/reset sequencing, CPU feature state and recovery readiness
 remain separate gates. Apple's runtime sequence also writes zero masks to
 other clusters; equivalence of an early-boot sequence remains untested.

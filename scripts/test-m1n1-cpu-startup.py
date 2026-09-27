@@ -20,6 +20,7 @@ TEMPLATE = ROOT / "tests/m1n1-cpu-startup.c"
 SMP = PINNED / "src/smp.c"
 PATCH = ROOT / "patches/m1n1/0003-guard-secondary-start-prerequisites.patch"
 TIMEOUT_PATCH = ROOT / "patches/m1n1/0004-abort-on-secondary-start-timeout.patch"
+MASK_PATCH = ROOT / "patches/m1n1/0005-t6032-cpu-start-masks.patch"
 SMP_SHA256 = "173ae51dd860d1b075a071d78d06945e3ed929910ce06ab0f76cd6b9e261371b"
 UTILS_SHA256 = "c224e336539e24a23913f8567abf185fd68627c9bcd71874ba6ff6014996d23d"
 SOC_SHA256 = "3569ce0f11ad808f724bf0c050b1fc8381dd199791ec95729f411ad8c2359bca"
@@ -61,16 +62,21 @@ def helper_module():
 
 
 def variant_source(work: pathlib.Path, variant: int) -> pathlib.Path:
-    """Materialize original, guarded, or guarded-plus-fatal-timeout smp.c."""
-    name = ("baseline", "guarded", "fatal-timeout")[variant]
+    """Materialize the three controls plus the T6032 mask variant."""
+    name = ("baseline", "guarded", "fatal-timeout", "t6032-mask")[variant]
     tree = work / name
     source = tree / "src/smp.c"
     source.parent.mkdir(parents=True)
     shutil.copy2(SMP, source)
-    for patch in (PATCH, TIMEOUT_PATCH)[:variant]:
+    shutil.copy2(PINNED / "src/soc.h", tree / "src/soc.h")
+    for patch in (PATCH, TIMEOUT_PATCH)[:min(variant, 2)]:
         applied = run(["patch", "-p1", "--batch", "--forward", "-i", str(patch)], tree)
         if applied.returncode:
             fail(f"{patch.name} did not apply to pinned smp.c:\n{applied.stdout}{applied.stderr}")
+    if variant == 3:
+        applied = run(["patch", "-p1", "--batch", "--forward", "-i", str(MASK_PATCH)], tree)
+        if applied.returncode:
+            fail(f"{MASK_PATCH.name} did not apply to pinned smp.c:\n{applied.stdout}{applied.stderr}")
     return source
 
 
@@ -92,6 +98,8 @@ def main() -> int:
         fail("startup prerequisite patch missing")
     if not TIMEOUT_PATCH.is_file():
         fail("startup timeout patch missing")
+    if not MASK_PATCH.is_file():
+        fail("T6032 mask patch missing")
     if not TOPOLOGY.is_file():
         fail("source topology inventory missing")
 
@@ -128,18 +136,27 @@ def main() -> int:
         template = TEMPLATE.read_text(encoding="utf-8")
         markers = ("/* INSERT_SOURCE_CONSTANTS */", "/* INSERT_SOURCE_LIMITS */", "/* INSERT_SOURCE_EL_HELPERS */",
                    "/* INSERT_SMP_START_CPU */", "/* INSERT_SMP_START_SECONDARIES */",
-                   "/* INSERT_TOPOLOGY */")
+                   "/* INSERT_SMP_CPU_START_MASKS */", "/* INSERT_TOPOLOGY */")
         if any(template.count(marker) != 1 for marker in markers):
             fail("startup insertion markers missing or duplicated")
         results = []
-        for variant, name in enumerate(("baseline", "guarded", "fatal-timeout")):
+        for variant, name in enumerate(("baseline", "guarded", "fatal-timeout", "t6032-mask")):
             source_path = variant_source(work, variant)
             source = source_path.read_text(encoding="utf-8")
             start_cpu = helper.extract_function(source, "static void smp_start_cpu(", source_path)
             start_secondaries = helper.extract_function(source, "void smp_start_secondaries(void)", source_path)
-            generated_text = template.replace("/* INSERT_SOURCE_CONSTANTS */", "\n".join(source_defines))
+            mask_helper = (helper.extract_function(
+                source, "static bool smp_cpu_start_masks(", source_path)
+                if variant == 3 else "")
+            variant_defines = source_defines
+            if variant == 3:
+                variant_defines = source_defines + [
+                    line for line in (source_path.parent / "soc.h").read_text(encoding="utf-8").splitlines()
+                    if line.startswith("#define T6032 ")]
+            generated_text = template.replace("/* INSERT_SOURCE_CONSTANTS */", "\n".join(variant_defines))
             generated_text = generated_text.replace("/* INSERT_SOURCE_LIMITS */", source_limits)
             generated_text = generated_text.replace("/* INSERT_SOURCE_EL_HELPERS */", el_helpers)
+            generated_text = generated_text.replace("/* INSERT_SMP_CPU_START_MASKS */", mask_helper)
             generated_text = generated_text.replace("/* INSERT_SMP_START_CPU */", start_cpu)
             generated_text = generated_text.replace("/* INSERT_SMP_START_SECONDARIES */", start_secondaries)
             generated_text = generated_text.replace("/* INSERT_TOPOLOGY */", topology)
@@ -149,7 +166,8 @@ def main() -> int:
             compiled = run(["clang", "-std=c11", "-O1", "-g", "-fno-omit-frame-pointer",
                             "-fsanitize=address,undefined", "-fno-sanitize-recover=all",
                             f"-DEXPECT_PATCHED={int(variant > 0)}",
-                            f"-DEXPECT_FATAL_TIMEOUT={int(variant == 2)}",
+                            f"-DEXPECT_FATAL_TIMEOUT={int(variant in (2, 3))}",
+                            f"-DEXPECT_T6032_MASK={int(variant == 3)}",
                             "-include", "stdlib.h", str(generated), "-o", str(binary)], work)
             if compiled.returncode:
                 fail(f"clang {name} failed:\n"
@@ -163,7 +181,7 @@ def main() -> int:
             interesting = [line for line in output.splitlines()
                            if line.startswith(("selection:", "start_cpu:", "timeout:", "variant:", "note:"))]
             print(f"[{name}]\n" + "\n".join(interesting))
-    print("m1n1 CPU-start harness passed: original, guarded and fatal-timeout source variants")
+    print("m1n1 CPU-start harness passed: original, guarded, fatal-timeout and T6032-mask source variants")
     print("all variants use limits from 0001-patched smp.h; baseline means original startup logic, not stock capacity")
     print("start_secondaries was extracted exactly; ADT CPU enumeration is intentionally no-child mocked")
     print("coverage is mocked host execution only; no native boot, MMIO, firmware, or T6032 dispatch")
