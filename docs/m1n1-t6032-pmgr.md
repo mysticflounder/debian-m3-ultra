@@ -92,3 +92,26 @@ pipe; its timeout is bounded, but that limit is not a streaming memory cap.
 Missing evidence remains: the CPU-release contract, MCC semantics/reference
 on T6031, six-cluster frequency register semantics, and recovery/native-entry
 validation. Register addresses must not be guessed from family resemblance.
+
+## Next DVFS trace after the MCC software-policy audit
+
+The current ten-patch source still has no T6032 cases in
+`pstate_reg_to_pstate`, `set_pstate`, `cpufreq_get_clusters` or
+`cpufreq_get_features`. `cpufreq_init` therefore returns `-1` before cluster
+MMIO; `cpufreq_fixup` returns without work. The direct-payload caller ignores
+the initialization result, whereas the proxy reports it. CPU-start rejection
+is a separate existing gate, not evidence that DVFS is initialized.
+
+The six-entry T6022 table is a structural example only. Neither its bases
+and P-state defaults nor the three-entry T6031 table establish Ultra's
+frequency-control contract. Topology and PMGR feature flags alone cannot
+fill in the missing addresses, encoding, busy/status behavior and safe
+initial P-states.
+
+In the hash-matched Apple PMGR binary, the next bounded consumer traces are
+`_cpuComplexInit(CPUComplex*)` at `0xfffffe0009b897b0`,
+`_initPerfDomainInfo()` at `0xfffffe0009b8b764`, and `_setPerfState()` at
+`0xfffffe0009babf98`. Their relationship to the captured eight-byte
+`acc-clusters` records is **not established**. Trace the actual per-domain
+construction and its DT inputs before inventing a metadata schema or
+promoting copied family constants into a T6032 firmware table.

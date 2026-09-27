@@ -109,8 +109,34 @@ that `0x1c1c00` is a broadcast register. Its scope remains an evidence gate.
 The normal enable branch requires both its boolean request and a nonzero
 field at `this+0x90` (`0xfffffe00096e4e9c`–`4ea4`). `start()` also checks
 this field before its virtual cache-enable call (`0xfffffe00096e265c`–`2684`).
-`setWayMask` clamps values at least 13 down to 12 (`0xfffffe00096e4abc`–`4acc`),
-but the field's initial provenance remains unresolved.
+`setWayMask` clamps values at least 13 down to 12 (`0xfffffe00096e4abc`–`4acc`).
+
+The follow-up parent-driver trace resolves the field's initial provenance.
+H15's call at `0xfffffe00096e1fc0`–`1fe0` uses imported superclass vtable
+slot `+0x600`. Two checked format-8 fixups resolve GOT `0xfffffe000819bab8`
+to `0xfffffe0008002488`, then its slot at `0xfffffe0008002a88` to
+`AppleMemCacheController::start` at `0xfffffe0008cb8af0`. This confirms the
+callee beyond a virtual-method-name inference; it is still not live PAC
+authentication or evidence of successful execution.
+
+Once its policy object at `this+0xa8` is non-null, parent `start` applies:
+
+| Order | Input / condition | Effect on `this+0x90` | Instruction address |
+| --- | --- | --- | --- |
+| 1 | Default | Store `0xffffffff` | `0xfffffe0008cb9154`–`9158` |
+| 2 | Provider `disable-mcc`, castable to OSData, first word nonzero | Store zero | `0xfffffe0008cb915c`–`91c4` |
+| 3 | Boot argument `-disable_mcc` present | Store zero; skip clamp parsing | `0xfffffe0008cb91c8`–`91e0` |
+| 4 | Otherwise, `mcc_clampwaycount` successfully parsed into four bytes | Store parsed word | `0xfffffe0008cb9238`–`9254` |
+
+Consequently, a clamp argument can overwrite the property-based disable,
+but cannot override the boot-argument disable through this path. The parent
+uses `_PE_parse_boot_argn` import `0xfffffe0008cea108`, not the disassembler's
+nearest-symbol annotation. The string addresses are `0xfffffe0007187ed3`,
+`0xfffffe0007187edf` and `0xfffffe0007187f3f`, checked by translating their
+VM addresses through the full collection's file-backed segment table.
+The OSData cast is symbol-backed; naming its virtual data accessor is still
+ABI inference. This is a software policy trace, not a claim about this
+machine's current boot arguments or the correct policy for m1n1.
 
 An alternative configuration path calls `setWayMask` when a cached global
 equals one. Its initialization call at `0xfffffe00096e4e6c` resolves via
@@ -119,6 +145,16 @@ import stub `0xfffffe00096ec8f4` to `_PE_parse_boot_argn`, **not**
 boot-argument branch, not its applicability to m1n1. These preconditions and
 the early-boot protection state must be understood before copying this
 sequence into early-boot firmware.
+
+The other inspected control users (`_mccFlush`, call sites
+`0xfffffe00096e132c`/`1370`, and `setWayMask`, `0xfffffe00096e4b80`/`4c28`)
+also loop over mapped apertures with full offset `0x1c1c00`, using values zero and one.
+That corroborates the repeated per-window control operation; it does not
+independently establish a hardware broadcast alias or prove the existing
+per-plane m1n1 path incorrect. No inspected string names this offset as a
+broadcast register. Further firmware changes need independent register
+evidence or separately planned and authorized native validation, rather
+than another assumption based on the same offset arithmetic.
 
 Do not promote the existing per-plane sequence as hardware-validated, or
 replace it with a guessed broadcast store. A future T6032-only change needs
@@ -138,9 +174,20 @@ PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
   scripts/inspect-kernelcache-fixup.py scratch/kernelcache-tool-reviewed.macho \
   0xfffffe000819ba40
 PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 \
+  scripts/inspect-kernelcache-fixup.py scratch/kernelcache-tool-reviewed.macho \
+  0xfffffe000819bab8
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 \
+  scripts/inspect-kernelcache-fixup.py scratch/kernelcache-tool-reviewed.macho \
+  0xfffffe0008002a88
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
   uv run --no-project --offline --python 3.13 scripts/test-kernelcache-fixup.py
 ```
 
 All seven synthetic fixup tests pass. The real-slot check returns the pinned
 kernelcache hash, target `0xfffffe000be6381c`, `chain_membership_validated:
 true`, `pac_authenticated: false` and `live_memory_read: false`.
+The two parent-call checks return vtable `0xfffffe0008002488` and function
+`0xfffffe0008cb8af0`, also with validated chain membership and no live PAC
+authentication. All nine manifest artifact hashes match their local files.

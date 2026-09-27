@@ -16,7 +16,7 @@ not a fresh remote or live-machine check.
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
 | T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; ten-patch cross-build passes | Resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and T6032 payload/HV/proxy status propagation implemented offline | Validate native reset separately; no rollback or recoverable degraded-SMP claim |
-| MCC/cache initialization | Ten-patch offline baseline passes; Apple protected-write binding and cache polling/order traced | Resolve control-register hardware scope and early-boot access, TZ layout and loader containment; DMA/native behavior still unvalidated |
+| MCC/cache initialization | Ten-patch offline baseline passes; protected-write path and inherited enable/clamp policy traced | Independent evidence needed for control-register scope and early-boot access; TZ, loader containment, DMA and native validation remain open |
 | Six-cluster frequency / DVFS | PMGR metadata captured; matching binary consumers located | Complete field/branch semantics before selecting bases/offsets; address die-1 performance metadata separately |
 | Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
