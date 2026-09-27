@@ -1,4 +1,4 @@
-# Project status — 2026-09-26
+# Project status — 2026-09-27
 
 Updated at task completion. Source/offline validation is not native-hardware
 validation. External PR, VM and MacBook states below are last recorded states,
@@ -16,7 +16,7 @@ not a fresh remote or live-machine check.
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
 | T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; eleven-patch cross-build passes | Resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; T6032 frequency failure now rejects before SMP, nine sanitizer cases pass | Validate native reset separately; no rollback or recoverable degraded-SMP claim |
-| MCC/cache initialization | Boot diagnostic geometry/writeback traced; AMCC/cache-status record names and fields corroborated by live published metadata; 897 additional raw words verified | Resolve parent field `+0x14`, actual cache-transition and TZ contracts; register scope, early access, loader containment and DMA remain native gates |
+| MCC/cache initialization | Parent `+0x14` now traced into write addresses; nonzero field selects one write iteration, later verification uses full plane count; 422 further raw words verified | Identify cache-specific records/payloads and transition/TZ contracts; hardware scope, early access, loader containment and DMA remain native gates |
 | Six-cluster frequency / DVFS | Conditional routing and OSData provider traced; die-1 selectors 33/37/45 identified and captured; 61 input/adjacent tests pass | Resolve effective die-count writer/allocation contract, safe raw APSC/default indices and early-boot prerequisites; native dispatch disabled |
 | Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
@@ -33,6 +33,7 @@ Details: [CPU work](m1n1-t6032-cpus.md),
 [J575d boot-firmware artifacts](m1n1-t6032-boot-firmware.md),
 [boot-image address model and code references](m1n1-t6032-boot-address-model.md),
 [boot consumers and published lock-reg metadata](m1n1-t6032-boot-consumers.md),
+[AMCC write-address field and per-plane reads](m1n1-t6032-boot-write-addresses.md),
 [cache-control contract trace](m1n1-t6032-cache-contract.md),
 [carveout metadata and safety gaps](m1n1-t6032-carveouts.md),
 [runtime mapping guards](m1n1-t6032-mapping-guard.md),

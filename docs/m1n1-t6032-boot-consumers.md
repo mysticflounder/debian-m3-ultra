@@ -108,11 +108,14 @@ used by the MCC `reg` geometry; these must not be substituted for one another.
 The three allowlisted `broadcast-reg-offset/mask/value` keys were absent
 from this node. That is not evidence that the hardware lacks broadcast access.
 
-The parent descriptor's `+0x14 = 0x1c0000` remains unresolved. At
+The export path alone leaves parent descriptor `+0x14 = 0x1c0000` unresolved. At
 `0x1a2074`, forming `descriptor+0x14` supplies the end bound of the
 four-byte `plane-stride` slice beginning at `+0x10`; it does **not** read
 the word at `+0x14`. This export path therefore does not justify adding
 `0x1c0000` to the cache-status offset or labeling that field a broadcast base.
+The subsequent [write-address trace](m1n1-t6032-boot-write-addresses.md)
+does find an actual F-dependent address consumer and separate per-plane reads;
+cache-specific selection, hardware scope and early access remain unresolved.
 
 ## Inclusive-TZ argument packaging
 
