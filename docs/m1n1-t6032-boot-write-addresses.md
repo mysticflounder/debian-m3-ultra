@@ -109,6 +109,9 @@ full-plane verification loop. Adding `F=0x1c0000` to a record offset is
 therefore supported by actual address-consuming instructions, not just by
 adjacent constants or exported metadata. Interpreting F as a write alias
 is consistent with this code; its hardware scope remains unverified.
+The later [TZ endpoint reader](m1n1-t6032-boot-tz-endpoints.md) also reads
+through an F-adjusted address. F must not be described as write-only;
+the per-plane helper above is one particular read path, not every read path.
 
 Do not yet substitute `R=0x1c00` and claim this proves the cache-enable
 operation. The representative stores' selected records/payloads must be

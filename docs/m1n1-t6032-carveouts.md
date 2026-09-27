@@ -92,6 +92,14 @@ other slots, inclusive endpoints, reconstruction with `ram_base`, matching
 contents across controllers/planes and safe initial-MMU access remain
 unverified. The existing reader has not been changed by this evidence task.
 
+The subsequent [four-slot and endpoint trace](m1n1-t6032-boot-tz-endpoints.md)
+corroborates all four lower/upper/enable offsets obtained with stride `0x14`.
+Its separate first-aperture reader uses the F-adjusted address for limits,
+and a caller supplies shift 12. The plus-one endpoint arithmetic is consistent
+with inclusive upper limits, but subtracts `0x4000` before an opaque helper
+call; it is not an unmap-length recipe. OR reconstruction with `ram_base`,
+alias equivalence and safe initial-MMU reads remain unresolved.
+
 ## Initial-MMU preflight (local patch 0009)
 
 [`0009`](../patches/m1n1/0009-preflight-t6032-carveout-removal.patch) adds a
