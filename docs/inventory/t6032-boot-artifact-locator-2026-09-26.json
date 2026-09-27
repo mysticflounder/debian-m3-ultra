@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "scope": "Restore-archive metadata only; not installed firmware identification",
+  "source_url": "https://updates.cdn-apple.com/2026FallFCS/afcfc88e-bbe6-44bf-a5da-07c56eebc06c/UniversalMac_27.0_26A428_Restore.ipsw",
+  "archive_size": 26626436228,
+  "product_build_version": "26A428",
+  "product_version": "27.0",
+  "build_manifest": {
+    "member": "BuildManifest.plist",
+    "local_path": "scratch/mcc-boot-reference/BuildManifest.plist",
+    "compressed_size": 1567652,
+    "size": 31194642,
+    "sha256": "22949db91be2ddd0009a0047ceba37336452b76af3ff915f496d842b85cce6a7",
+    "identity_count": 180
+  },
+  "retrieval": {
+    "script": "scratch/fetch-ipsw-boot-reference.py",
+    "script_sha256": "b7c04632a688674cd56e5f530a6dc048d6e758fb6ee6cf8310719179dc871833",
+    "successful_run_range_bytes_received": 1736898,
+    "range_limit_bytes": 4194304,
+    "total_range_limit_bytes": 16777216,
+    "manifest_uncompressed_limit_bytes": 67108864,
+    "http_status_and_content_range_checked": true,
+    "zip_crc_checked": true,
+    "firmware_signature_verified": false
+  },
+  "target": {
+    "device_class": "j575dap",
+    "ap_chip_id": "0x6032",
+    "ap_board_id": "0x44",
+    "excluded_neighbor": "j575cap / 0x6041 / 0x02"
+  },
+  "build_identities": [
+    {"index": 33, "variant": "Customer Erase Install (IPSW)", "components_present": ["iBoot", "LLB", "DeviceTree"]},
+    {"index": 93, "variant": "Customer Upgrade Install (IPSW)", "components_present": ["iBoot", "LLB", "DeviceTree"]},
+    {"index": 153, "variant": "macOS Customer", "components_present": ["iBoot", "DeviceTree"], "llb_component_present": false}
+  ],
+  "components": [
+    {
+      "name": "iBoot",
+      "member": "Firmware/all_flash/iBoot.j575d.RELEASE.im4p",
+      "compressed_size": 1156810,
+      "size": 1167497,
+      "manifest_digest_hex": "27be6c2f3ecc9d78805872fafb7701a173831ee1ba00f067f460ba65f8baa3550b9a21c3660589990eacdb614eadf326",
+      "downloaded": false
+    },
+    {
+      "name": "LLB",
+      "member": "Firmware/all_flash/LLB.j575d.RELEASE.im4p",
+      "compressed_size": 1339702,
+      "size": 1348791,
+      "manifest_digest_hex": "a45e6cb9b906541baa5ca1b897f150fed1393a75429ed812aa199d06f9766b8cefffc810ac5d0f68d8fe99f188c9b940",
+      "downloaded": false
+    }
+  ],
+  "digest_note": "Raw 48-byte plist Digest values, identical across matching identities where present. Algorithm and hashed byte scope not established here; not independently verified artifact hashes.",
+  "related_device_tree_member": "Firmware/all_flash/DeviceTree.j575dap.im4p",
+  "installed_or_executed": false,
+  "running_firmware_match_status": "not established",
+  "native_access_safety_established": false
+}

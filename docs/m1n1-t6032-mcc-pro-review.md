@@ -44,8 +44,9 @@ must be considered separately from that upstream spelling.
 
 ## Remaining evidence needed
 
-The next MCC artifact is a handoff/access ledger, separating macOS runtime
-operations from operations in the matching boot firmware. For enable,
+The [handoff/access ledger](m1n1-t6032-mcc-handoff-ledger.md) now records
+our source-level accesses and independent guards. The remaining trace must
+separate macOS runtime operations from the matching boot firmware. For enable,
 status and carveout accesses, record the accessor, guards, aperture selection,
 translation, width and ordering, and label what is observed versus inferred.
 Identify the matching firmware binary/version/hash before attributing any
