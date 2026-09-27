@@ -99,6 +99,9 @@ Byte identity is not a semantic proof or a hardware test.
 The address-publication producer is now located. Remaining work is to
 trace the table's construction and runtime selector-4/selector-`0x18`
 contents, plus the final platform callback's code/mapping contract.
+The [LLB export follow-up](m1n1-t6032-llb-memory-export.md) now identifies
+the conditional fixed-record-to-list transformation; the runtime values
+and buffer-initialization preconditions remain unresolved.
 Finding another literal callback getter is not evidence that its target
 code has been initialized or that its calling convention is known.
 
