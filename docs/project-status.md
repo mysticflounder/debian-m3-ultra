@@ -15,7 +15,7 @@ not a fresh remote or live-machine check.
 | M3 m1n1 capacity / handoff cleanup | Validated offline | Two separate patches, seven-case handoff suite and full firmware build pass; no native execution |
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
 | T6032 SoC identity / CPU startup | Source audit and mocked startup tests pass; native contract unresolved | Confirm start-register semantics and native entry/feature state before enabling dispatch |
-| Secondary-start failure handling | Hazards identified; firmware fix pending | Add pre-release RVBAR/allocation guards; review error propagation and late-CPU timeout safety separately |
+| Secondary-start failure handling | Pre-release guards validated offline; caller/timeout work pending | Review error propagation and late-CPU timeout safety without silently changing degraded-SMP policy |
 | MCC/cache initialization | Layout problem reproduced offline; driver correction pending | Obtain T6031 regression evidence and implement bounded, fail-closed register selection |
 | Six-cluster frequency / DVFS | Pending | Establish early initialization semantics; address die-1 performance metadata separately |
 | Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |

@@ -1,0 +1,31 @@
+{
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "toolchain_record": "m1n1-cpu-build-2026-09-26.json",
+  "configuration": "default Makefile all; capacity, handoff cleanup and pre-release startup guards",
+  "directory": "scratch/m1n1-firmware-patched.MUXeBc",
+  "status": "pass",
+  "patches": [
+    {
+      "path": "patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch",
+      "sha256": "acd987129def9126035d384a6e9370d2f0077634b8298cc8f1f02fbb3c74e11c"
+    },
+    {
+      "path": "patches/m1n1/0002-free-pruned-cpus-after-handoff.patch",
+      "sha256": "3fd3508335e9e7af0fffca054d0a718ec4056e9431a8413e8e5312653c9be5e0"
+    },
+    {
+      "path": "patches/m1n1/0003-guard-secondary-start-prerequisites.patch",
+      "sha256": "2958b2b583841f0d8b049859a4e961fe59a1966252805855788d09186f0dded3"
+    }
+  ],
+  "sha256": {
+    "m1n1.elf": "c49a54eabf6e232b0a5ffcde2bedea0874a2399763b6a297124902d57d1cb63e",
+    "m1n1-raw.elf": "285a6c209dcda3217a2769d4f290ec90e4aa68767c6d9dbbe57173b977ef704a",
+    "m1n1.macho": "46c175534a55f3fc6781550d4a3d0fb4fb8c6ac79eafabd9678f337b8f8be988",
+    "m1n1.bin": "e0a25d6106b602684628fc006407103df763153ed32afdc225876066acacc572"
+  },
+  "new_compiler_warnings_vs_baseline": 0,
+  "network_during_firmware_build": false,
+  "installed_or_executed": false,
+  "native_boot_validated": false
+}

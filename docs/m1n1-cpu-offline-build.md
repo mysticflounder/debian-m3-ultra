@@ -2,15 +2,18 @@
 
 2026-09-26: both the unmodified m1n1 baseline and the local 32-CPU patch
 compile and link successfully on the M3 Ultra host, as does the subsequent
-capacity-plus-cleanup series. This is a **build result,
+capacity-plus-cleanup series and the three-patch pre-release-guard series.
+This is a **build result,
 not a native boot result**. No artifact was installed or executed.
 
 Source: `4184923ffb2dff079b384d6a32cc02142aa14572`; local patch series:
 [`0001` capacity/bounds](../patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch)
-and [`0002` allocation cleanup](../patches/m1n1/0002-free-pruned-cpus-after-handoff.patch).
+plus [`0002` allocation cleanup](../patches/m1n1/0002-free-pruned-cpus-after-handoff.patch)
+and [`0003` startup guards](../patches/m1n1/0003-guard-secondary-start-prerequisites.patch).
 The [initial build record](inventory/m1n1-cpu-build-2026-09-26.json) records
 baseline/capacity-only artifacts; the [cleanup-series build record](inventory/m1n1-cpu-cleanup-build-2026-09-26.json)
-records the subsequent two-patch build. Both record hashes and scratch
+records the two-patch build; the [startup-guard build record](inventory/m1n1-cpu-startup-build-2026-09-26.json)
+records the three-patch build. These records include hashes and scratch
 locations. The recipe builds the default firmware configuration, not every
 optional feature combination. It does not introduce T6032 startup dispatch.
 
@@ -39,7 +42,7 @@ bash scripts/build-m1n1-cpu-offline.sh patched
 ```
 
 The script validates the source archive digest and Rust version, extracts a
-fresh scratch tree per run, applies both patches only to the patched copy,
+fresh scratch tree per run, applies all three patches only to the patched copy,
 sets a local version tag and passes `--offline --locked` to Cargo. Logs and
 artifacts are retained on failure or success. There is no install/boot step.
 The source archive stays unmodified. This is a repeatable build recipe, not
@@ -86,10 +89,10 @@ dependencies. The firmware build itself does not fetch dependencies.
 
 ## Validation limits
 
-Both builds emit ARM64 ELF images, a Mach-O arm64e image and a raw binary.
-Both have the same two compiler warnings: the pre-existing variable-sized
+All recorded builds emit ARM64 ELF images, a Mach-O arm64e image and a raw binary.
+They have the same two compiler warnings: the pre-existing variable-sized
 union in `dcp_iboot.c`, and an unused Rust `crate::println` import. No new
-compiler warning was observed with either local patch series.
+compiler warning was observed with any of the recorded local patch series.
 
 The CPU handoff tests below are separate host-side tests using libfdt
 and mocked SMP state; none execute the firmware. Hardware CPU-start,
@@ -182,3 +185,12 @@ counts. The board has the `apple,t8122-aic3` fallback compatible but no AIC
 affinity list, so AIC-list pruning coverage comes from the synthetic suite,
 not this board fixture. SMP IDs/liveness and execution level remain mocked;
 neither AIC operation nor native CPU release has been validated.
+
+## Secondary-start prerequisite guards
+
+The separate [startup regression](m1n1-t6032-startup.md#offline-startup-regression)
+tests `0003` against the original startup implementation, with mocked RVBAR,
+allocation failures, EL3 state and release writes. The full default firmware
+build includes all three patches; the handoff-only harnesses still apply just
+the two patches relevant to their extracted function. No timeout reclamation,
+caller error-policy change or T6032 start-offset selection is included.

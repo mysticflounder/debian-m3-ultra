@@ -18,6 +18,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 PINNED = ROOT / "scratch/m1n1-cpu-audit/m1n1-4184923ffb2dff079b384d6a32cc02142aa14572"
 TEMPLATE = ROOT / "tests/m1n1-cpu-startup.c"
 SMP = PINNED / "src/smp.c"
+PATCH = ROOT / "patches/m1n1/0003-guard-secondary-start-prerequisites.patch"
 SMP_SHA256 = "173ae51dd860d1b075a071d78d06945e3ed929910ce06ab0f76cd6b9e261371b"
 UTILS_SHA256 = "c224e336539e24a23913f8567abf185fd68627c9bcd71874ba6ff6014996d23d"
 SOC_SHA256 = "3569ce0f11ad808f724bf0c050b1fc8381dd199791ec95729f411ad8c2359bca"
@@ -58,6 +59,20 @@ def helper_module():
     return module
 
 
+def variant_source(work: pathlib.Path, fixed: bool) -> pathlib.Path:
+    """Materialize pinned smp.c, optionally applying local prerequisite guards."""
+    name = "fixed" if fixed else "baseline"
+    tree = work / name
+    source = tree / "src/smp.c"
+    source.parent.mkdir(parents=True)
+    shutil.copy2(SMP, source)
+    if fixed:
+        applied = run(["patch", "-p1", "--batch", "--forward", "-i", str(PATCH)], tree)
+        if applied.returncode:
+            fail(f"0003 did not apply to pinned smp.c:\n{applied.stdout}{applied.stderr}")
+    return source
+
+
 def main() -> int:
     if shutil.which("clang") is None:
         fail("clang is required")
@@ -72,6 +87,8 @@ def main() -> int:
             fail(f"pinned {name} SHA-256 mismatch")
     if not TEMPLATE.is_file():
         fail("startup C template missing")
+    if not PATCH.is_file():
+        fail("startup prerequisite patch missing")
     if not TOPOLOGY.is_file():
         fail("source topology inventory missing")
 
@@ -86,9 +103,6 @@ def main() -> int:
             helper.require_max_el3(smp_header)
         except helper.HarnessError as exc:
             fail(str(exc))
-        source = SMP.read_text(encoding="utf-8")
-        start_cpu = helper.extract_function(source, "static void smp_start_cpu(", SMP)
-        start_secondaries = helper.extract_function(source, "void smp_start_secondaries(void)", SMP)
         utils = (PINNED / "src/utils.h").read_text(encoding="utf-8")
         el_helpers = "\n\n".join(helper.extract_function(utils, signature, PINNED / "src/utils.h")
                                       for signature in ("static inline int in_el2(void)",
@@ -112,27 +126,37 @@ def main() -> int:
                    "/* INSERT_TOPOLOGY */")
         if any(template.count(marker) != 1 for marker in markers):
             fail("startup insertion markers missing or duplicated")
-        generated_text = template.replace("/* INSERT_SOURCE_CONSTANTS */", "\n".join(source_defines))
-        generated_text = generated_text.replace("/* INSERT_SOURCE_EL_HELPERS */", el_helpers)
-        generated_text = generated_text.replace("/* INSERT_SMP_START_CPU */", start_cpu)
-        generated_text = generated_text.replace("/* INSERT_SMP_START_SECONDARIES */", start_secondaries)
-        generated_text = generated_text.replace("/* INSERT_TOPOLOGY */", topology)
-        generated = work / "startup.c"
-        generated.write_text(generated_text, encoding="utf-8")
-        binary = work / "startup"
-        compiled = run(["clang", "-std=c11", "-O1", "-g", "-fno-omit-frame-pointer",
-                        "-fsanitize=address,undefined", "-fno-sanitize-recover=all",
-                        "-include", "stdlib.h", str(generated), "-o", str(binary)], work)
-        if compiled.returncode:
-            fail(f"clang failed:\n{compiled.stdout}{compiled.stderr}")
-        completed = run([str(binary)], work)
-        if completed.returncode:
-            fail(f"startup harness failed ({completed.returncode}):\n"
-                 f"{completed.stdout}{completed.stderr}")
-        interesting = [line for line in completed.stdout.splitlines()
-                       if line.startswith(("selection:", "start_cpu:", "note:"))]
-        print("\n".join(interesting))
-    print("m1n1 CPU-start harness passed: source switch + full extracted start_cpu")
+        results = []
+        for fixed in (False, True):
+            source_path = variant_source(work, fixed)
+            source = source_path.read_text(encoding="utf-8")
+            start_cpu = helper.extract_function(source, "static void smp_start_cpu(", source_path)
+            start_secondaries = helper.extract_function(source, "void smp_start_secondaries(void)", source_path)
+            generated_text = template.replace("/* INSERT_SOURCE_CONSTANTS */", "\n".join(source_defines))
+            generated_text = generated_text.replace("/* INSERT_SOURCE_EL_HELPERS */", el_helpers)
+            generated_text = generated_text.replace("/* INSERT_SMP_START_CPU */", start_cpu)
+            generated_text = generated_text.replace("/* INSERT_SMP_START_SECONDARIES */", start_secondaries)
+            generated_text = generated_text.replace("/* INSERT_TOPOLOGY */", topology)
+            generated = work / ("startup-fixed.c" if fixed else "startup-baseline.c")
+            generated.write_text(generated_text, encoding="utf-8")
+            binary = work / ("startup-fixed" if fixed else "startup-baseline")
+            compiled = run(["clang", "-std=c11", "-O1", "-g", "-fno-omit-frame-pointer",
+                            "-fsanitize=address,undefined", "-fno-sanitize-recover=all",
+                            "-DEXPECT_PATCHED=1" if fixed else "-DEXPECT_PATCHED=0",
+                            "-include", "stdlib.h", str(generated), "-o", str(binary)], work)
+            if compiled.returncode:
+                fail(f"clang {('fixed' if fixed else 'baseline')} failed:\n"
+                     f"{compiled.stdout}{compiled.stderr}")
+            completed = run([str(binary)], work)
+            if completed.returncode:
+                fail(f"startup {('fixed' if fixed else 'baseline')} harness failed "
+                     f"({completed.returncode}):\n{completed.stdout}{completed.stderr}")
+            results.append(("fixed 0003" if fixed else "baseline original", completed.stdout))
+        for name, output in results:
+            interesting = [line for line in output.splitlines()
+                           if line.startswith(("selection:", "start_cpu:", "variant:", "note:"))]
+            print(f"[{name}]\n" + "\n".join(interesting))
+    print("m1n1 CPU-start harness passed: baseline and fixed source variants")
     print("start_secondaries was extracted exactly; ADT CPU enumeration is intentionally no-child mocked")
     print("coverage is mocked host execution only; no native boot, MMIO, firmware, or T6032 dispatch")
     return 0

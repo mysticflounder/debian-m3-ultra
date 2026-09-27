@@ -92,7 +92,8 @@ and liveness remain mocked; see the offline-build document for limitations.
    offline regression gates; they are not native CPU-release evidence.
 2. The [startup contract audit](m1n1-t6032-startup.md) identifies the missing
    T6032 dispatch and separates EL3 support from current execution level.
-   Confirm the register/entry contract and harden pre-release failures;
+   The separate `0003` patch guards RVBAR/allocation failures before release.
+   Confirm the register/entry contract and review caller/timeout policy;
    do not assume the T6031 register offset or expand EL3 storage.
 3. Resolve MCC layout and six-cluster frequency initialization separately.
 4. Validate recovery and the supported boot-entry path before any RAM-only

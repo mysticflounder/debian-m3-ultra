@@ -10,6 +10,10 @@ typedef uint8_t u8;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
+#ifndef EXPECT_PATCHED
+#define EXPECT_PATCHED 0
+#endif
+
 #define MAX_CPUS 32
 #define MAX_EL3_CPUS 4
 #define SECONDARY_STACK_SIZE 0x10000
@@ -47,6 +51,9 @@ static u8 dummy_stack[DUMMY_STACK_SIZE];
 static u8 dummy_stack_el1[DUMMY_STACK_SIZE];
 static u8 fake_stacks[MAX_CPUS + MAX_EL3_CPUS][SECONDARY_STACK_SIZE];
 static unsigned allocations;
+static unsigned allocation_attempts;
+static unsigned free_count;
+static bool allocation_live[MAX_CPUS + MAX_EL3_CPUS];
 static unsigned allocation_limit = MAX_CPUS + MAX_EL3_CPUS;
 static int target_cpu;
 static int cpu_nodes[MAX_CPUS];
@@ -70,6 +77,21 @@ static unsigned msr_count;
 static u8 _vectors_start[1] __attribute__((aligned(4096)));
 static unsigned cache_count;
 static bool bad_delay_arg;
+
+static void mock_free(void *ptr)
+{
+    if (!ptr)
+        return;
+    for (unsigned i = 0; i < MAX_CPUS + MAX_EL3_CPUS; i++)
+        if (ptr == fake_stacks[i]) {
+            if (!allocation_live[i])
+                abort(); /* Reject unallocated or double-freed storage. */
+            allocation_live[i] = false;
+            free_count++;
+            return;
+        }
+    abort(); /* In particular, never free a previously published sentinel. */
+}
 
 static u64 mock_mrs(unsigned reg)
 {
@@ -119,9 +141,12 @@ static void write32(u64 addr, u32 value)
 
 static void *memalign(size_t alignment, size_t size)
 {
-    (void)alignment;
+    if (alignment != 0x4000)
+        abort();
+    allocation_attempts++;
     if (size != SECONDARY_STACK_SIZE || allocations >= allocation_limit)
         return NULL;
+    allocation_live[allocations] = true;
     return fake_stacks[allocations++];
 }
 
@@ -194,6 +219,7 @@ static const void *adt_getprop(const void *tree, int node, const char *name, u32
 #define ADT_GETPROP(tree, node, name, value) (-1)
 #define ADT_GETPROP_ARRAY(tree, node, name, value) (-1)
 #define ADT_FOREACH_CHILD(tree, node) for (int no_children = 0; no_children < 0; no_children++)
+#define free mock_free
 
 /* INSERT_SMP_START_CPU */
 /* INSERT_SMP_START_SECONDARIES */
@@ -208,6 +234,11 @@ static void reset_effects(void)
     memset(write64_addr, 0, sizeof(write64_addr));
     memset(write64_value, 0, sizeof(write64_value));
     allocations = 0;
+    allocation_attempts = 0;
+    free_count = 0;
+    memset(allocation_live, 0, sizeof(allocation_live));
+    _reset_stack = dummy_stack;
+    _reset_stack_el1 = dummy_stack_el1;
     allocation_limit = MAX_CPUS + MAX_EL3_CPUS;
     udelay_calls = 0;
     ack_after = -1;
@@ -273,37 +304,40 @@ static int test_start_cpu(void)
     u64 base = pmgr_reg + cpu_start_off + PMGR_DIE_OFFSET;
     if (write32_count != 2 || write32_addr[0] != base + 4 || write32_value[0] != (1u << 13) ||
         write32_addr[1] != base + 0x10 || write32_value[1] != (1u << 5) || udelay_calls != 3 ||
-        cache_count != 1 || allocations != 1 || bad_delay_arg)
+        cache_count != 1 || allocations != 1 || allocation_attempts != 1 || free_count != 0 || bad_delay_arg)
         return 20;
 
     reset_effects();
     mock_pfr0 = 0x1000;
     ack_after = 1;
     smp_start_cpu(3, 0, 0, 3, 0x3000, 0x100000);
-    if (!has_el3() || write32_count != 2 || allocations != 2 || cache_count != 2 || bad_delay_arg)
+    if (!has_el3() || write32_count != 2 || allocations != 2 || allocation_attempts != 2 ||
+        cache_count != 2 || free_count != 0 || bad_delay_arg)
         return 21;
 
     reset_effects();
     mock_pfr0 = 0x1000;
     smp_start_cpu(4, 0, 0, 0, 0x3000, 0x100000);
-    if (write32_count || write64_count || cache_count || allocations)
+    if (write32_count || write64_count || cache_count || allocations || allocation_attempts)
         return 22;
 
     reset_effects();
     smp_start_cpu(32, 0, 0, 0, 0x3000, 0x100000);
-    if (write32_count || write64_count || cache_count || allocations)
+    if (write32_count || write64_count || cache_count || allocations || allocation_attempts)
         return 23;
 
     reset_effects();
     spin_table[7].flag = 1;
     smp_start_cpu(7, 0, 1, 1, 0x3000, 0x100000);
-    if (write32_count || write64_count || cache_count || allocations)
+    if (write32_count || write64_count || cache_count || allocations || allocation_attempts)
         return 24;
 
     reset_effects();
     ack_after = -1;
     smp_start_cpu(2, 0, 1, 5, 0x3000, 0x100000);
-    if (write32_count != 2 || udelay_calls != 100 || cache_count != 1 || allocations != 1 || bad_delay_arg)
+    if (write32_count != 2 || udelay_calls != 100 || cache_count != 1 || allocations != 1 ||
+        allocation_attempts != 1 || free_count != 0 || !allocation_live[0] ||
+        secondary_stacks[2] != fake_stacks[0] || bad_delay_arg)
         return 25;
 
     reset_effects();
@@ -315,12 +349,85 @@ static int test_start_cpu(void)
         return 26;
 
     reset_effects();
+    /* The lock bit is outside RVBAR_ADDR and must not create a false mismatch. */
+    mock_rvbar = (u64)_vectors_start | 1;
+    ack_after = 1;
+    smp_start_cpu(7, 0, 1, 3, 0x3000, 0x100000);
+    if (write32_count != 2 || write64_count || allocations != 1 || cache_count != 1)
+        return 31;
+
+    reset_effects();
+    /* Unlocked hardware is rewritten even when its current RVBAR differs. */
+    cpu_features->apple_sysregs_unlocked = true;
+    mock_rvbar = 0;
+    ack_after = 1;
+    smp_start_cpu(7, 0, 1, 3, 0x3000, 0x100000);
+    if (write64_count != 1 || write64_addr[0] != 0x3000 ||
+        write64_value[0] != (u64)_vectors_start || write32_count != 2 ||
+        allocations != 1 || cache_count != 1)
+        return 32;
+
+    reset_effects();
     /* Existing source behavior: locked RVBAR mismatch logs but still starts. */
     mock_rvbar = 0;
     ack_after = 1;
+    spin_table[8].target = 0x8888;
+    target_cpu = 25;
     smp_start_cpu(8, 0, 1, 4, 0x3000, 0x100000);
-    if (write32_count != 2 || allocations != 1 || cache_count != 1)
+    if (!EXPECT_PATCHED && (write32_count != 2 || allocations != 1 || allocation_attempts != 1 || cache_count != 1))
         return 27;
+    if (EXPECT_PATCHED && (write32_count || write64_count || allocations || allocation_attempts ||
+                           cache_count || free_count || spin_table[8].target != 0x8888 ||
+                           target_cpu != 25 || _reset_stack != dummy_stack ||
+                           _reset_stack_el1 != dummy_stack_el1))
+        return 27;
+#if EXPECT_PATCHED
+    reset_effects();
+    secondary_stacks[9] = (u8 *)(uintptr_t)0x11110000;
+    spin_table[9].target = 0x1111;
+    target_cpu = 29;
+    _reset_stack = (void *)(uintptr_t)0x2222;
+    _reset_stack_el1 = (void *)(uintptr_t)0x3333;
+    allocation_limit = 0;
+    smp_start_cpu(9, 0, 1, 1, 0x3000, 0x100000);
+    if (allocation_attempts != 1 || allocations || free_count || write32_count || write64_count ||
+        cache_count || secondary_stacks[9] != (u8 *)(uintptr_t)0x11110000 ||
+        spin_table[9].target != 0x1111 || target_cpu != 29 || _reset_stack != (void *)(uintptr_t)0x2222 ||
+        _reset_stack_el1 != (void *)(uintptr_t)0x3333) {
+        return 28;
+    }
+
+    reset_effects();
+    mock_pfr0 = 0x1000;
+    secondary_stacks[2] = (u8 *)(uintptr_t)0x4444;
+    secondary_stacks_el3[2] = (u8 *)(uintptr_t)0x5555;
+    spin_table[2].target = 0x2222;
+    target_cpu = 28;
+    allocation_limit = 0;
+    smp_start_cpu(2, 0, 1, 2, 0x3000, 0x100000);
+    if (allocation_attempts != 1 || allocations || free_count || write32_count || write64_count ||
+        cache_count || secondary_stacks[2] != (u8 *)(uintptr_t)0x4444 ||
+        secondary_stacks_el3[2] != (u8 *)(uintptr_t)0x5555 || spin_table[2].target != 0x2222 ||
+        target_cpu != 28 || _reset_stack != dummy_stack || _reset_stack_el1 != dummy_stack_el1) {
+        return 29;
+    }
+
+    reset_effects();
+    mock_pfr0 = 0x1000;
+    secondary_stacks[3] = (u8 *)(uintptr_t)0x6666;
+    secondary_stacks_el3[3] = (u8 *)(uintptr_t)0x7777;
+    spin_table[3].target = 0x3333;
+    target_cpu = 27;
+    allocation_limit = 1;
+    smp_start_cpu(3, 1, 2, 3, 0x3000, 0x100000);
+    if (allocation_attempts != 2 || allocations != 1 || free_count != 1 || write32_count ||
+        write64_count || cache_count || secondary_stacks[3] != (u8 *)(uintptr_t)0x6666 ||
+        secondary_stacks_el3[3] != (u8 *)(uintptr_t)0x7777 || spin_table[3].target != 0x3333 ||
+        target_cpu != 27 || allocation_live[0] || _reset_stack != dummy_stack ||
+        _reset_stack_el1 != dummy_stack_el1) {
+        return 30;
+    }
+#endif
     return 0;
 }
 
@@ -343,7 +450,9 @@ int main(void)
         return result;
     printf("selection: T6032 returns before secondary-start effects, T6031=0x88000, T6022=0x28000\n");
     printf("start_cpu: index bounds, EL3 3/4, skip-alive, die stride, ack/timeout passed\n");
+    printf("variant: %s\n", EXPECT_PATCHED ?
+           "guarded: RVBAR rejection and allocation-failure ownership checks passed" :
+           "baseline: successful starts and RVBAR-mismatch continuation reproduced");
     printf("note: status mask uses source expression 1 << (4*cluster+core); no uniqueness claim\n");
-    printf("note: existing RVBAR mismatch continuation reproduced, not fixed\n");
     return 0;
 }

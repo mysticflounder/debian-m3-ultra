@@ -1,0 +1,52 @@
+Local review patch: guard secondary CPU startup prerequisites
+Base: m1n1 4184923ffb2dff079b384d6a32cc02142aa14572, after 0001 and 0002
+Provenance: AI-assisted project work; not submitted upstream.
+
+Stop before release when the existing RVBAR check fails. Allocate both
+required stacks before publishing CPU/reset state, and handle allocation
+failure without pointer arithmetic on NULL. Only a newly allocated,
+unpublished stack is freed when the EL3 allocation fails.
+
+The void startup API, callers, supported SoCs and post-release timeout
+behavior are unchanged. This does not make the overall boot path fail closed
+or enable T6032. In particular, do not free stacks after a release timeout:
+a late CPU could still use them.
+
+--- a/src/smp.c
++++ b/src/smp.c
+@@ -128,16 +128,32 @@ static void smp_start_cpu(int index, int die, int cluster, int core, u64 impl, u64 c
+         (read64(impl) & RVBAR_ADDR) != (u64)_vectors_start) {
+         printf("Failed! \n    RVBAR (=0x%lx) is locked and differs from entry point (=0x%lx)\n",
+                read64(impl) & RVBAR_ADDR, (u64)_vectors_start);
++        return;
+     }
+ 
+     printf("Starting CPU %d (%d:%d:%d)... ", index, die, cluster, core);
+ 
++    u8 *stack = memalign(0x4000, SECONDARY_STACK_SIZE);
++    if (!stack) {
++        printf("Failed to allocate secondary stack!\n");
++        return;
++    }
++    u8 *stack_el3 = NULL;
++    if (has_el3()) {
++        stack_el3 = memalign(0x4000, SECONDARY_STACK_SIZE);
++        if (!stack_el3) {
++            free(stack);
++            printf("Failed to allocate EL3 secondary stack!\n");
++            return;
++        }
++    }
++
+     memset(&spin_table[index], 0, sizeof(struct spin_table));
+ 
+     target_cpu = index;
+-    secondary_stacks[index] = memalign(0x4000, SECONDARY_STACK_SIZE);
+-    if (has_el3()) {
+-        secondary_stacks_el3[index] = memalign(0x4000, SECONDARY_STACK_SIZE);
++    secondary_stacks[index] = stack;
++    if (stack_el3) {
++        secondary_stacks_el3[index] = stack_el3;
+         _reset_stack = secondary_stacks_el3[index] + SECONDARY_STACK_SIZE; // EL3
+         _reset_stack_el1 = secondary_stacks[index] + SECONDARY_STACK_SIZE; // EL1
+ 

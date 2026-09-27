@@ -79,15 +79,15 @@ to `_cpu_reset_c()`, and executes `eret` into non-secure AArch64 EL1h.
 secondary to `smp_secondary_entry()`. These are source observations; host
 C tests cannot execute or validate that assembly transition.
 
-## Failure handling needs a separate change
+## Failure handling: pre-release guards and remaining work
 
 The audit found existing control-flow hazards independently of the unknown
 T6032 register map:
 
-| Condition | Current source behavior | Required design work |
+| Condition | Pinned baseline behavior | Local patch / remaining work |
 | --- | --- | --- |
-| RVBAR differs while `apple_sysregs_unlocked` is false | Logs a failure, then allocates stacks and issues start writes (`smp.c:127–165`) | Reject before any allocation or start write; do not infer writable RVBAR from a chip name |
-| Stack allocation fails | Neither `memalign()` result is checked before pointer arithmetic (`smp.c:138–146`) | Check both allocations; unwind only resources known not to be in use |
+| RVBAR differs while `apple_sysregs_unlocked` is false | Logs a failure, then allocates stacks and issues start writes (`smp.c:127–165`) | `0003` returns before allocation or release writes; the existing predicate is unchanged |
+| Stack allocation fails | Neither `memalign()` result is checked before pointer arithmetic (`smp.c:138–146`) | `0003` checks local allocations before publishing state; only an unpublished first stack is freed if the EL3 allocation fails |
 | Secondary does not acknowledge | Bounded wait prints failure, but returns no status (`smp.c:166–180`) | Propagate failure; preserve post-release state until the CPU is proved stopped |
 | Unsupported SoC or startup failure | `smp_start_secondaries()` is `void`; callers cannot inspect a result | Separate successful startup, intentional skips and errors; define degraded-SMP policy explicitly |
 
@@ -107,8 +107,14 @@ is unset (`src/kboot.c:573–581`). Therefore a bounded wait or unknown-chip
 return does not by itself impose a whole-boot abort. This is a source control-
 flow observation, not evidence that T6032 currently reaches Linux at all.
 
-The next safe implementation slice is pre-release RVBAR/allocation guards
-with source-extracted regression tests. Error propagation across payload,
+The separate [pre-release guard patch](../patches/m1n1/0003-guard-secondary-start-prerequisites.patch)
+implements the first two corrections. Both required stacks are obtained
+before clearing the spin table or changing `target_cpu`, the published stack
+arrays, or reset pointers. On successful allocation, the original publication,
+cache maintenance, barriers and release sequence are preserved.
+
+The patch does not change the `void` API, SoC selection, EL3 limit, timeout,
+or caller behavior. Error propagation across payload,
 proxy and hypervisor interfaces needs separate compatibility review; silently
 changing every supported machine's degraded-SMP behavior would be premature.
 
@@ -131,11 +137,20 @@ hardware-evidence gates remain open.
 
 ## Offline startup regression
 
-Result on 2026-09-26: the checks below pass. The 12 topology tests, 15 MCC
-tests, CPU-bounds negative controls, seven synthetic handoff cases and four
-board-DT cases also still pass. No production firmware source or patch was
-changed in this audit, so the prior firmware build is not claimed as a new
-build result.
+The initial audit on 2026-09-26 passed the checks below against the original
+startup implementation without changing firmware. The follow-up `0003`
+patch adds pre-release guards; the runner now compares baseline and patched
+behavior. A new [three-patch build record](inventory/m1n1-cpu-startup-build-2026-09-26.json)
+records the full offline firmware build, with no installation or execution.
+
+Both startup variants pass under ASan/UBSan: the baseline retains the RVBAR
+continuation negative control; the patched run rejects it and passes the
+normal/EL3 allocation-failure cases. The allocator mock rejects foreign and
+double frees, and failure fixtures check that prior published state survives.
+The existing 12 CPU, 15 MCC, CPU-bounds, seven synthetic handoff and four
+board-DT checks also pass. The firmware build has no new compiler warnings
+relative to the recorded baseline. These tests are not cross-machine native
+regression coverage.
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
@@ -161,14 +176,18 @@ mock storage and does not test the production allocator.
 | Already-alive CPU | No new allocation or start writes |
 | Two-die topology | Source arithmetic exercised across all 32 saved affinity tuples |
 | Acknowledged / timed-out start | Early acknowledgement exits; timeout performs 100 mocked 1,000-μs delays |
-| Unwritable mismatched RVBAR | Characterize existing continuation as a known hazard, not desired behavior |
+| Unwritable mismatched RVBAR | Baseline reproduces continuation; patched function returns before allocations or release writes |
+| First allocation fails, with or without EL3 | Patched function returns without publishing state or freeing prior allocations |
+| Second allocation fails under EL3 | Patched function frees only its new first allocation and leaves shared startup state untouched |
 
 The selection fixture has no ADT CPU children: it checks dispatch and early
 return, not end-to-end enumeration or CPU-property parsing. Direct calls to
 the extracted per-CPU function bypass dispatch solely to check generic source
 behavior, and do not establish T6032 support. No ARM reset assembly is run,
-no CPU actually starts, and no real elapsed timeout is measured. Allocation-
-failure recovery remains a source-identified gap, not a passing test claim.
+no CPU actually starts, and no real elapsed timeout is measured. Failed
+allocation is injected by host mocks, not the production allocator. Baseline
+NULL-pointer arithmetic is not deliberately executed in-process. Timeout
+tests retain allocated stacks; they do not validate late-core cancellation.
 
 ## Evidence boundary
 

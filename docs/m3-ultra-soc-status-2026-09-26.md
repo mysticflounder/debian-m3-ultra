@@ -149,7 +149,8 @@ The subsequent [startup-contract audit](m1n1-t6032-startup.md) confirms that
 generic ADT chip identification is distinct from missing T6032 startup
 dispatch. The pinned secondary-start function returns on unknown chip IDs;
 that return does not propagate an error to the overall boot path. Existing
-RVBAR mismatch, allocation-failure and timeout handling need hardening.
+RVBAR mismatch and allocation failures are now guarded by the separate local
+`0003` patch; timeout behavior and caller error propagation remain unchanged.
 Neither the T6032 start-register contract nor native execution-level behavior
 is established; the four-CPU EL3 gate remains unchanged.
 

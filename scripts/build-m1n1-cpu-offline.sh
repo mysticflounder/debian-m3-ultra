@@ -15,6 +15,7 @@ TARGET_SYSROOT="$TOOLS/rust-std-1.95.0-aarch64-unknown-none-softfloat/rust-std-a
 PATCHES=(
     "$ROOT/patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch"
     "$ROOT/patches/m1n1/0002-free-pruned-cpus-after-handoff.patch"
+    "$ROOT/patches/m1n1/0003-guard-secondary-start-prerequisites.patch"
 )
 
 if [[ $(uname -s) != Darwin || $(uname -m) != arm64 ]]; then
