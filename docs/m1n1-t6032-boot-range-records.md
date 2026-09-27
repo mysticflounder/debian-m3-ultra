@@ -56,7 +56,10 @@ at `+0x10/+0x14`, masks them with the lower/upper records' `+0xc` words,
 checks ordering, and saves the results in `[sp+0x58]` and `[sp+0x50]`.
 Without that gate those working values are initialized to zero.
 The stores use those saved payloads. Input construction, units and runtime
-selection are not established by this bounded trace.
+selection are not established by this bounded trace. A subsequent
+[producer trace](m1n1-t6032-boot-tz-inputs.md) connects TZ0's input to an
+explicit subtraction of 1 TiB followed by shift 12; the actual handoff
+RAM base and runtime execution remain unverified.
 
 ## Group names and TZ0 constructor
 

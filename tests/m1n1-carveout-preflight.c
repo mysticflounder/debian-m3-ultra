@@ -177,12 +177,50 @@ static int test_or_vs_addition_model_limitation(u64 synthetic_base)
     return result;
 }
 
+static int test_static_producer_formula_decodes_exact_range(void)
+{
+    const u64 saved_ram_base = ram_base;
+    const u64 saved_mem_size_actual = mem_size_actual;
+    const u64 saved_page_size = mock_page_size;
+    const u64 base = 0x10000000000ULL; /* static producer constant: 1 << 40 */
+    const u64 expected_start = base + 0x1000000;
+    const u64 expected_end = base + 0x1008000;
+    /* Producer model: first=u32((start-base)>>12),
+       last=u32((end-0x1000-base)>>12). */
+    const u32 first = (u32)((expected_start - base) >> 12);
+    const u32 last = (u32)((expected_end - 0x1000 - base) >> 12);
+    int result = 0;
+
+    /* Host-only conditional/synthetic check of the observed static formula.
+       It assumes the 4-GiB-aligned, bootargs-derived ram_base equals this
+       observed constant; it does not establish actual bootargs, runtime
+       placement, or hardware behavior. */
+    ram_base = base;
+    mem_size_actual = 0x20000000ULL;
+    for (u64 page_size = 4096; page_size <= 16384; page_size *= 4) {
+        struct mcc_carveout decoded = {0};
+        mock_page_size = page_size;
+        if (!mcc_t6032_decode_carveout(first, last, page_size, &decoded) ||
+            decoded.base != expected_start || decoded.size != expected_end - expected_start)
+            result = 1;
+    }
+
+    /* Restore globals so this synthetic base cannot affect later fixtures. */
+    ram_base = saved_ram_base;
+    mem_size_actual = saved_mem_size_actual;
+    mock_page_size = saved_page_size;
+    if (result)
+        fprintf(stderr, "static producer formula decode regression failed\n");
+    return result;
+}
+
 int main(void)
 {
     /* The runner fails closed if the patch changes helper signatures/source shape. */
     reset_fixture(4096);
     CHECK(test_or_vs_addition_model_limitation(0x100000000ULL) == 0);
     CHECK(test_or_vs_addition_model_limitation(0x13f00000000ULL) == 0);
+    CHECK(test_static_producer_formula_decodes_exact_range() == 0);
     mock_start[0] = 0x1000; mock_end[0] = 0x1003; mock_enabled[0] = true;
     CHECK(mcc_unmap_carveouts_t6032(mem_size_actual) == 0);
     CHECK(mock_reads == 12 && mock_removals == 4 && mcc_carveout_count == 1);

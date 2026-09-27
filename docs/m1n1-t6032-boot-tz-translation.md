@@ -122,3 +122,8 @@ the same boot and pass the separate native-access/recovery authorization
 gates. Do not substitute current metadata addresses or perform speculative
 register reads. Alias equivalence, cache transition effects and early access
 permissions remain separate open obligations.
+
+Subsequent [input-production evidence](m1n1-t6032-boot-tz-inputs.md)
+identifies a fixed-1-TiB-relative, shift-12 conversion feeding TZ0's range
+writer. This supports a conditional inverse when the boot-argument-derived
+`ram_base` is that constant, but does not establish its actual handoff value.
