@@ -80,6 +80,18 @@ values. The generic controller constructs that object at
 `#0x6e4` access was found in this view. Numeric offset matches must not be
 promoted into H15 hardware-layout evidence.
 
+### Subsequent J575d iBoot evidence (2026-09-27)
+
+The [named protection-range trace](m1n1-t6032-boot-range-records.md) now
+connects AMCC group `0x103` (`tz0`) to lower/upper records at offsets
+`0x6d8`/`0x6dc`, with masks `0x0fffffff`, and to the generic range-writing
+consumer. Unlike the rejected software-object matches above, these are
+named descriptor fields that reach address-consuming operations.
+This corroborates those two TZ0 constants, not the entire carveout contract:
+other slots, inclusive endpoints, reconstruction with `ram_base`, matching
+contents across controllers/planes and safe initial-MMU access remain
+unverified. The existing reader has not been changed by this evidence task.
+
 ## Initial-MMU preflight (local patch 0009)
 
 [`0009`](../patches/m1n1/0009-preflight-t6032-carveout-removal.patch) adds a

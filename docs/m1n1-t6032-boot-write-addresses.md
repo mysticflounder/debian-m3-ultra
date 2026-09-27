@@ -112,9 +112,12 @@ is consistent with this code; its hardware scope remains unverified.
 
 Do not yet substitute `R=0x1c00` and claim this proves the cache-enable
 operation. The representative stores' selected records/payloads must be
-traced to the cache-specific caller. The earlier `0xc1` pointer's stack
+traced to their selecting caller. The subsequent
+[record-identity trace](m1n1-t6032-boot-range-records.md) identifies these
+representative stores as lower/upper protection-range writes, not cache enable.
+The earlier `0xc1` pointer's stack
 slot is cleared at `0x1a1008`; its identity cannot be carried across that
-store. Next: establish the cache-specific operation, permissions and ordering,
+store. Next: find a distinct cache-specific operation, permissions and ordering,
 and compare with the [macOS cache contract](m1n1-t6032-cache-contract.md).
 Early MCC carveout reads, TZ protection, loader/DMA containment and recovery
 remain separate gates. CPU/frequency dispatch being off does not guard those
