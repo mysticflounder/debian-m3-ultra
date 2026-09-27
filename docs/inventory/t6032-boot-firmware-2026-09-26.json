@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "scope": "Offline restore-artifact acquisition and bounded decompression only",
+  "locator_record": "t6032-boot-artifact-locator-2026-09-26.json",
+  "product_build_version": "26A428",
+  "target": {"device_class": "j575dap", "chip_id": "0x6032", "board_id": "0x44"},
+  "acquisition": {
+    "script": "scratch/fetch-j575d-boot-payloads.py",
+    "script_sha256": "ea0ae144412c9adcbca124ac671ee926f030932044be0b9325893258041961b4",
+    "receipt": "scratch/mcc-boot-reference/payloads/download.json",
+    "range_bytes_received": 2665853,
+    "zip_crc_checked": true,
+    "full_im4p_sha384_equals_manifest_digest": true
+  },
+  "inspector": {
+    "path": "scripts/inspect-boot-firmware.py",
+    "sha256": "5dea257b32b63cc66c16f900882f5cb879c7a55751861a6014b7569a4d8bcc93",
+    "input_limit_bytes": 4194304,
+    "decoded_buffer_bytes": 16777216,
+    "decoded_size_must_match_container": true,
+    "test_runner": "scripts/test-boot-firmware.py",
+    "test_runner_sha256": "842a3be7f2ea1c6c522169c4cd7e89b1da5dfbda5a1001b2eefa07523bf79060",
+    "synthetic_tests_passed": 28
+  },
+  "artifacts": [
+    {
+      "component": "iBoot",
+      "im4p_path": "scratch/mcc-boot-reference/payloads/iBoot.j575d.RELEASE.im4p",
+      "im4p_size": 1167497,
+      "im4p_sha256": "4b5bbde28524480e57b8633550d21fd99efc28cf2c44eff59ad6bd71c41e0a00",
+      "type": "ibot",
+      "description": "mBoot-20457.1.29",
+      "payload_offset": 40,
+      "payload_size": 1167417,
+      "payload_sha256": "f5d07dfef6968808d241c8dfb924a88426643d26b845c0bc9f67d5c01c919383",
+      "compression_marker": 1,
+      "decoded_path": "scratch/mcc-boot-reference/decoded-iboot/iBoot.j575d.RELEASE.bin",
+      "decoded_size": 3200112,
+      "decoded_sha256": "bed91c680ce5471ed1210be017ef9a33542e47c83bb7721f03e0aac209ca1c9e",
+      "decoded_first16_hex": "1f211cd5df3f03d502113cd542005eb2"
+    },
+    {
+      "component": "LLB",
+      "im4p_path": "scratch/mcc-boot-reference/payloads/LLB.j575d.RELEASE.im4p",
+      "im4p_size": 1348791,
+      "im4p_sha256": "4bc8a03798f07612f43870ff972b67f82ba4008b17526f28fef9175950493846",
+      "type": "illb",
+      "description": "mBoot-20457.1.29",
+      "payload_offset": 40,
+      "payload_size": 1348251,
+      "payload_sha256": "a1df71a619e237bb1914aef7ca9c42f6cb225ff812bb5e1a47ef59925e25a6cc",
+      "compression_marker": 1,
+      "decoded_path": "scratch/mcc-boot-reference/decoded-llb/LLB.j575d.RELEASE.bin",
+      "decoded_size": 3127656,
+      "decoded_sha256": "80ebece82b6752d76f1e00b09a6386f87f98c77aa69c6541346825549344d582",
+      "decoded_first16_hex": "1f211cd5df3f03d502113cd542005eb2"
+    }
+  ],
+  "apple_signature_verified": false,
+  "installed_firmware_match_status": "not established",
+  "native_access_safety_established": false,
+  "installed_or_executed": false
+}

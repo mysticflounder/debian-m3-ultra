@@ -109,11 +109,12 @@ LLB's absence from the third identity is not proof of absence from the boot
 chain. Shared component digests are recorded as raw plist bytes without
 assuming their algorithm or hashed byte scope.
 
-Only the BuildManifest and ZIP metadata were retrieved in this task.
-The next artifact step is bounded acquisition and hashing of these exact
-members, followed by offline container/version inspection. Matching this
-archive to the kernel build does not establish the installed boot firmware
-version or a safe native execution path.
+The locator task retrieved only BuildManifest and ZIP metadata. Subsequent
+[bounded acquisition and decoding](m1n1-t6032-boot-firmware.md) now pins
+both exact members and records boot-stage/T6032/AMCC string leads. The next
+step is code-reference tracing, not native testing. Matching this archive
+to the kernel build does not establish the installed boot firmware version
+or a safe native execution path.
 
 Open gates remain: register effects and TZ layout; controller/plane scope;
 inherited cache state and early access prerequisites; loader containment;
