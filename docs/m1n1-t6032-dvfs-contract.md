@@ -268,7 +268,11 @@ allowlisted state-table properties and proves indexed throttler dispatch.
 The [state-input trace](m1n1-t6032-dvfs-states.md) corrects domain 2's table
 selection to `voltage-states1` and establishes mode-1 prefix/mapping/conversion
 arithmetic. [Patch 0011](m1n1-t6032-cpufreq-status.md) propagates T6032
-frequency-init failure before secondary startup. Next: finish runtime routing
-and derive safe raw initialization states and ordering.
+frequency-init failure before secondary startup. The
+[ACC restore trace](m1n1-t6032-acc-restore.md) matches the extra `0x440f8`
+write to Apple's logical `0xe440f8`, derives six static addresses and proves
+that its zero die argument invokes complex-to-die routing. Next: finish
+runtime routing and derive safe raw initialization states and ordering,
+including the restore path's prerequisites and conditional APSC follow-on.
 Restore templates cannot replace live tables, and runtime frequency conversion
 does not by itself validate m1n1's raw-index boot policy.

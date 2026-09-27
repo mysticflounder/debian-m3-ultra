@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "source_kind": "offline binary and restore-template trace; not live register state",
+  "kernelcache_sha256": "a24fefccc060854cecc996b40983499e1319008e4f16c0717a5fef6c4d4828dc",
+  "im4p_sha256": "6c3ca4ac7272ecf9c05f6b2b413ef923ff2d3ff252469493fc700260b6938c60",
+  "adt_sha256": "4a818ecc7f3d71195c1def12c6eed0c90b287f82cad2a6a4ffd6f0849fe13c12",
+  "hardware_validated": false,
+  "register_writes_performed": false,
+  "early_boot_policy_validated": false,
+  "logical_offset": "0xe440f8",
+  "map_relative_offset": "0x40f8",
+  "write_value": 1,
+  "access_bytes": 8,
+  "die_argument_zero": "derive from virtual complex with getComplexToDie; not forced die 0",
+  "fixup_method": "inspect-kernelcache-fixup.py; format-8/cache-0 chain membership checked; PAC not authenticated",
+  "checked_fixups": [
+    {"pointer": "0xfffffe00083667d0", "target": "0xfffffe0009f5fc24", "role": "writeACCReg"},
+    {"pointer": "0xfffffe00083667c0", "target": "0xfffffe0009f5f9cc", "role": "readACCReg"},
+    {"pointer": "0xfffffe0008366b78", "target": "0xfffffe0008292c58", "role": "base vtable address point"},
+    {"pointer": "0xfffffe0008293960", "target": "0xfffffe0009b926a0", "role": "base restoreACC"}
+  ],
+  "static_windows": [
+    {"physical_complex_in_die": 0, "table": "0xfffffe000778113c", "entry_ordinal": 8, "regmap": 10, "provider_reg_index": 8, "bus_base": "0x10e40000", "size": "0xb028", "die0_candidate": "0x210e440f8", "die1_candidate": "0x2210e440f8"},
+    {"physical_complex_in_die": 1, "table": "0xfffffe0007781184", "entry_ordinal": 10, "regmap": 22, "provider_reg_index": 17, "bus_base": "0x11e40000", "size": "0xb028", "die0_candidate": "0x211e440f8", "die1_candidate": "0x2211e440f8"},
+    {"physical_complex_in_die": 2, "table": "0xfffffe00077811dc", "entry_ordinal": 10, "regmap": 34, "provider_reg_index": 28, "bus_base": "0x12e40000", "size": "0xb028", "die0_candidate": "0x212e440f8", "die1_candidate": "0x2212e440f8"}
+  ],
+  "extract_command": "xcrun llvm-objdump --disassemble --start-address=START --stop-address=STOP VIEW > PATH",
+  "extracts": [
+    {"path": "scratch/dvfs-evidence/restore-acc-raw.disasm", "view": "scratch/mcc-evidence/AppleT6031PMGR.macho", "start": "0xfffffe0009f5b7e8", "stop": "0xfffffe0009f5b898", "sha256": "8d1d8c1747b5abe88dd624dc24cae1a3c464fafa2070f083dfd6df1cdfa17736"},
+    {"path": "scratch/dvfs-evidence/restore-write-helper-raw.disasm", "view": "scratch/mcc-evidence/AppleT6031PMGR.macho", "start": "0xfffffe0009f5fc24", "stop": "0xfffffe0009f5fd3c", "sha256": "2e7d930dd75a200ef0f4e1135d3eae011e5767df4d6a58c54dd7a6d0e3379a72"},
+    {"path": "scratch/dvfs-evidence/restore-map-init-raw.disasm", "view": "scratch/mcc-evidence/AppleT6031PMGR.macho", "start": "0xfffffe0009f59d60", "stop": "0xfffffe0009f5a3a0", "sha256": "d37785b8dc5b788112d2fb1594d001168b28c37d10c53605cef3f3f3931690d0"},
+    {"path": "scratch/dvfs-evidence/restore-apsc-raw.disasm", "view": "scratch/mcc-evidence/AppleT6031PMGR.macho", "start": "0xfffffe0009f5b898", "stop": "0xfffffe0009f5be20", "sha256": "bffdd9ce507ccbd73f30e24efc773e65502b03c9b527353946f5d8252e212063"},
+    {"path": "scratch/dvfs-evidence/restore-base-raw.disasm", "view": "scratch/mcc-evidence/ApplePMGR.macho", "start": "0xfffffe0009b926a0", "stop": "0xfffffe0009b92a00", "sha256": "79fda058cca24c9d07933443ded73079f316d20313ec57b257719fff79897ac7"}
+  ],
+  "unresolved": ["six-complex runtime mapping", "safe raw initialization states", "restore caller prerequisites", "conditional APSC follow-on applicability", "register hardware semantics", "early-boot safety and ordering"]
+}

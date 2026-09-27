@@ -94,8 +94,10 @@ table cannot justify copying that APSC index. Likewise, finding a normal
 index within a table does not prove it is safe at boot.
 
 Remaining implementation requirements are six-cluster/die routing, the
-APSC/default raw-state policy, the `0x440f8` operation's applicability,
-feature ordering and bounded failure propagation. Runtime MHz derivation
+APSC/default raw-state policy, restore prerequisites, feature ordering and
+bounded failure propagation. The [ACC restore trace](m1n1-t6032-acc-restore.md)
+now matches the `0x440f8` write and six static windows; it does not establish
+early-boot applicability. Runtime MHz derivation
 is not itself a prerequisite for an m1n1-style raw-index initialization.
 
 The ten-patch baseline ignored `cpufreq_init()`'s return before secondary

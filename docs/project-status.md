@@ -17,7 +17,7 @@ not a fresh remote or live-machine check.
 | T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; eleven-patch cross-build passes | Resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; T6032 frequency failure now rejects before SMP, nine sanitizer cases pass | Validate native reset separately; no rollback or recoverable degraded-SMP claim |
 | MCC/cache initialization | Ten-patch offline baseline passes; protected-write path and inherited enable/clamp policy traced; Pro source-research consult pending | Independent evidence needed for control-register scope and early-boot access; TZ, loader containment, DMA and native validation remain open |
-| Six-cluster frequency / DVFS | Addresses/indexing/masks and mode-1 conversion traced; corrected table selection captured; frequency-init rejection now propagated | Resolve runtime routing, safe raw APSC/default indices, the 0x440f8 operation and early-boot ordering; native dispatch disabled |
+| Six-cluster frequency / DVFS | Addresses/indexing/masks/conversion traced; frequency-init rejection propagated; 0x440f8 write matched to Apple restore path and six static windows | Resolve runtime routing, safe raw APSC/default indices, restore prerequisites and early-boot ordering; native dispatch disabled |
 | Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
@@ -36,6 +36,7 @@ Details: [CPU work](m1n1-t6032-cpus.md),
 [DVFS register contract](m1n1-t6032-dvfs-contract.md),
 [DVFS live inputs and feature consumers](m1n1-t6032-dvfs-inputs.md),
 [DVFS state selection and conversion](m1n1-t6032-dvfs-states.md),
+[ACC restore write and die routing](m1n1-t6032-acc-restore.md),
 [frequency-init failure propagation](m1n1-t6032-cpufreq-status.md),
 [local PMGR binary evidence](m1n1-t6032-pmgr-binary.md),
 [32-CPU mask comparison](m1n1-t6032-cpu-masks.md),
