@@ -4,7 +4,7 @@
 compile and link successfully on the M3 Ultra host, as does the subsequent
 capacity-plus-cleanup series, the three-patch pre-release-guard series, and
 the four-patch fatal-timeout series, five-patch T6032 mask series and
-six-patch CPU-inventory preflight series.
+six-patch CPU-inventory preflight series and seven-patch caller-status series.
 This is a **build result,
 not a native boot result**. No artifact was installed or executed.
 
@@ -14,14 +14,16 @@ plus [`0002` allocation cleanup](../patches/m1n1/0002-free-pruned-cpus-after-han
 plus [`0003` startup guards](../patches/m1n1/0003-guard-secondary-start-prerequisites.patch)
 plus [`0004` fatal timeout](../patches/m1n1/0004-abort-on-secondary-start-timeout.patch)
 plus [`0005` T6032 masks](../patches/m1n1/0005-t6032-cpu-start-masks.patch)
-and [`0006` inventory preflight](../patches/m1n1/0006-preflight-t6032-cpu-inventory.patch).
+plus [`0006` inventory preflight](../patches/m1n1/0006-preflight-t6032-cpu-inventory.patch)
+and [`0007` caller status](../patches/m1n1/0007-propagate-t6032-cpu-start-failures.patch).
 The [initial build record](inventory/m1n1-cpu-build-2026-09-26.json) records
 baseline/capacity-only artifacts; the [cleanup-series build record](inventory/m1n1-cpu-cleanup-build-2026-09-26.json)
 records the two-patch build; the [startup-guard build record](inventory/m1n1-cpu-startup-build-2026-09-26.json)
 records the three-patch build; the [timeout build record](inventory/m1n1-cpu-timeout-build-2026-09-26.json)
 records the four-patch build; the [mask build record](inventory/m1n1-cpu-mask-build-2026-09-26.json)
 records the five-patch build; the [preflight build record](inventory/m1n1-cpu-preflight-build-2026-09-26.json)
-records the six-patch build. These records include hashes and scratch
+records the six-patch build; the [caller-status build record](inventory/m1n1-cpu-status-build-2026-09-26.json)
+records the seven-patch build. These records include hashes and scratch
 locations. The recipe builds the default firmware configuration, not every
 optional feature combination. It does not introduce T6032 startup dispatch.
 
@@ -50,7 +52,7 @@ bash scripts/build-m1n1-cpu-offline.sh patched
 ```
 
 The script validates the source archive digest and Rust version, extracts a
-fresh scratch tree per run, applies all six patches only to the patched copy,
+fresh scratch tree per run, applies all seven patches only to the patched copy,
 sets a local version tag and passes `--offline --locked` to Cargo. Logs and
 artifacts are retained on failure or success. There is no install/boot step.
 The source archive stays unmodified. This is a repeatable build recipe, not
@@ -200,13 +202,14 @@ The separate [startup regression](m1n1-t6032-startup.md#offline-startup-regressi
 compares original, `0003`, `0003` plus `0004`, and the subsequent `0005` startup implementations,
 with mocked RVBAR, allocation failures, EL3 state, release writes and a
 non-returning fatal handler. The full default firmware build includes all
-six patches; the handoff-only harnesses still apply just the two patches
+seven patches; the handoff-only harnesses still apply just the two patches
 relevant to their extracted function. Post-release timeout now terminates
-the calling path before shared reset-state reuse; pre-release skip policy
-is unchanged. No timeout reclamation or T6032 start-offset selection is
+the calling path before shared reset-state reuse; legacy pre-release skip policy
+is unchanged, while `0007` rejects T6032 continuation. No timeout reclamation or T6032 start-offset selection is
 included, and native reset behavior remains unvalidated. The additional
 [mask helper](m1n1-t6032-mask-contract.md) qualifies the captured T6032
 metadata without opening its normal startup dispatch.
 The separate [whole-inventory preflight](m1n1-t6032-inventory-preflight.md)
 checks all CPU metadata before the boot CPU's RVBAR path; it does not resolve
-the remaining caller-failure or native-entry gates.
+the native-entry gates. The subsequent [caller-status patch](m1n1-t6032-start-status.md)
+propagates T6032 rejection without enabling dispatch or rolling back caller preludes.

@@ -1,0 +1,203 @@
+Local review patch: propagate T6032 CPU-start rejection to callers
+Base: m1n1 4184923ffb2dff079b384d6a32cc02142aa14572, after 0001..0006
+Provenance: AI-assisted Debian project work; not submitted upstream.
+
+Return a negative status for rejected T6032 startup. Zero means the caller
+may continue under the existing policy, not that every legacy CPU started.
+Preserve best-effort behavior for other SoCs. Record pre-release leaf failure
+without changing allocation ownership or fatal post-release timeout policy.
+
+Payload and HV callers stop their remaining work on rejection. Existing
+cpufreq and PCIe/display/USB preludes retain their ordering and are not
+rolled back. Proxy SMP/HV-init commands return S_BADSTATE, which existing
+clients already reject as a nonzero status. This is not a global proxy
+command sandbox and does not enable T6032 startup dispatch.
+
+--- a/src/smp.h
++++ b/src/smp.h
+@@ -19,1 +19,2 @@
+-void smp_start_secondaries(void);
++/* Negative: T6032 startup rejected. Zero: retain legacy continuation policy. */
++int smp_start_secondaries(void);
+--- a/src/smp.c
++++ b/src/smp.c
+@@ -242,18 +242,18 @@
+-static void smp_start_cpu(int index, int die, int cluster, int core, u64 impl, u64 cpu_start_base)
++static bool smp_start_cpu(int index, int die, int cluster, int core, u64 impl, u64 cpu_start_base)
+ {
+     int i;
+ 
+     if (index >= MAX_CPUS)
+-        return;
++        return false;
+ 
+     if (has_el3() && index >= MAX_EL3_CPUS)
+-        return;
++        return false;
+ 
+     if (spin_table[index].flag)
+-        return;
++        return true;
+ 
+     u32 system_mask, cluster_mask;
+     if (!smp_cpu_start_masks(die, cluster, core, &system_mask, &cluster_mask)) {
+         printf("Unsupported T6032 CPU-start metadata or topology!\n");
+-        return;
++        return false;
+     }
+@@ -263,5 +263,5 @@
+         printf("Failed! \n    RVBAR (=0x%lx) is locked and differs from entry point (=0x%lx)\n",
+                read64(impl) & RVBAR_ADDR, (u64)_vectors_start);
+-        return;
++        return false;
+     }
+ 
+@@ -273,5 +273,5 @@
+     u8 *stack = memalign(0x4000, SECONDARY_STACK_SIZE);
+     if (!stack) {
+         printf("Failed to allocate secondary stack!\n");
+-        return;
++        return false;
+     }
+@@ -281,5 +281,5 @@
+         if (!stack_el3) {
+             free(stack);
+             printf("Failed to allocate EL3 secondary stack!\n");
+-            return;
++            return false;
+         }
+@@ -328,4 +328,5 @@
+     _reset_stack = dummy_stack + DUMMY_STACK_SIZE;
+     _reset_stack_el1 = dummy_stack_el1 + DUMMY_STACK_SIZE;
++    return true;
+ }
+ 
+@@ -381,2 +382,2 @@
+-void smp_start_secondaries(void)
++int smp_start_secondaries(void)
+ {
+@@ -389,9 +390,9 @@
+     if (adt_path_offset_trace(adt, "/arm-io/pmgr", pmgr_path) < 0) {
+         printf("Error getting /arm-io/pmgr node\n");
+-        return;
++        return chip_id == T6032 ? -1 : 0;
+     }
+     if (adt_get_reg(adt, pmgr_path, "reg", 0, &pmgr_reg, NULL) < 0) {
+         printf("Error getting /arm-io/pmgr regs\n");
+-        return;
++        return chip_id == T6032 ? -1 : 0;
+     }
+ 
+@@ -399,6 +400,6 @@
+     int arm_io_node;
+     if ((arm_io_node = adt_path_offset(adt, "/arm-io")) < 0) {
+         printf("Error getting /arm-io node\n");
+-        return;
++        return chip_id == T6032 ? -1 : 0;
+     }
+ 
+@@ -407,10 +408,10 @@
+         printf("Error getting /cpus node\n");
+-        return;
++        return chip_id == T6032 ? -1 : 0;
+     }
+ 
+     if (chip_id == T6032 && !smp_t6032_preflight(node)) {
+         printf("Invalid T6032 CPU inventory; no CPU startup attempted!\n");
+-        return;
++        return -1;
+     }
+ 
+     memset(cpu_nodes, 0, sizeof(cpu_nodes));
+@@ -467,5 +468,5 @@
+         default:
+             printf("CPU start offset is unknown for this SoC!\n");
+-            return;
++            return chip_id == T6032 ? -1 : 0;
+     }
+ 
+@@ -504,5 +505,5 @@
+         printf(
+             "Could not find currently running CPU in cpu table, can't start other processors!\n");
+-        return;
++        return chip_id == T6032 ? -1 : 0;
+     }
+ 
+@@ -550,5 +551,13 @@
+         u8 die = FIELD_GET(CPU_REG_DIE, reg);
+ 
+-        smp_start_cpu(i, die, cluster, core, cpu_impl_reg[0], pmgr_reg + cpu_start_off);
++        if (!smp_start_cpu(i, die, cluster, core, cpu_impl_reg[0], pmgr_reg + cpu_start_off) &&
++            chip_id == T6032)
++            return -1;
+     }
++    if (chip_id == T6032) {
++        for (int i = 0; i < MAX_CPUS; i++)
++            if (i != boot_cpu_idx && !spin_table[i].flag)
++                return -1;
++    }
++    return 0;
+ }
+--- a/src/payload.c
++++ b/src/payload.c
+@@ -315,7 +315,8 @@
+ 
+     if (kernel && fdt) {
+         cpufreq_init();
+-        smp_start_secondaries();
++        if (smp_start_secondaries() < 0)
++            return -1;
+         mitigations_perform();
+         if (enable_tso) {
+ 
+--- a/src/hv.h
++++ b/src/hv.h
+@@ -114,1 +114,1 @@
+-void hv_init(void);
++int hv_init(void);
+--- a/src/hv.c
++++ b/src/hv.c
+@@ -56,1 +56,1 @@
+-void hv_init(void)
++int hv_init(void)
+@@ -62,6 +62,7 @@
+     // reenable hpm interrupts for the guest for unused iodevs
+     usb_hpm_restore_irqs(0);
+-    smp_start_secondaries();
++    if (smp_start_secondaries() < 0)
++        return -1;
+     smp_set_wfe_mode(true);
+     hv_wdt_init();
+ 
+@@ -107,6 +108,7 @@
+     sysop("tlbi alle1is");
+     sysop("dsb ish");
+     sysop("isb");
++    return 0;
+ }
+ 
+ static void hv_set_gxf_vbar(void)
+--- a/src/proxy.h
++++ b/src/proxy.h
+@@ -185,4 +185,5 @@
+ #define S_OK     0
+ #define S_BADCMD -1
++#define S_BADSTATE -2
+ 
+ typedef struct {
+--- a/src/proxy.c
++++ b/src/proxy.c
+@@ -347,4 +347,5 @@
+         case P_SMP_START_SECONDARIES:
+-            smp_start_secondaries();
++            if (smp_start_secondaries() < 0)
++                reply->status = S_BADSTATE;
+             break;
+         case P_SMP_STOP_SECONDARIES:
+@@ -492,4 +493,5 @@
+         case P_HV_INIT:
+-            hv_init();
++            if (hv_init() < 0)
++                reply->status = S_BADSTATE;
+             break;
+         case P_HV_MAP:

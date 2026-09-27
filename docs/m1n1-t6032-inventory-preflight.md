@@ -88,11 +88,11 @@ PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
 
 ## Remaining native gates
 
-The existing startup API returns `void`; payload, proxy and hypervisor
-callers do not receive a failure result. Rejecting metadata before CPU
-writes does **not** prevent every caller from proceeding toward handoff.
-T6032 needs explicit failure propagation or an appropriate terminal policy
-before native enablement, with tests covering each caller.
+At patch 0006 the startup API still returned `void`, so rejecting metadata
+did not stop every caller from proceeding. The subsequent
+[caller-status patch](m1n1-t6032-start-status.md) propagates T6032 rejection
+through payload, proxy and hypervisor initialization. It does not roll back
+their existing preludes or enable native dispatch.
 
 Native MPIDR-to-ADT mapping, entry level/features, reset/RVBAR ordering,
 the boot CPU's separate RVBAR policy, register side effects, recovery and

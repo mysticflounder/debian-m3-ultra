@@ -92,7 +92,7 @@ T6032 register map:
 | RVBAR differs while `apple_sysregs_unlocked` is false | Logs a failure, then allocates stacks and issues start writes (`smp.c:127–165`) | `0003` returns before allocation or release writes; the existing predicate is unchanged |
 | Stack allocation fails | Neither `memalign()` result is checked before pointer arithmetic (`smp.c:138–146`) | `0003` checks local allocations before publishing state; only an unpublished first stack is freed if the EL3 allocation fails |
 | Secondary does not acknowledge | Bounded wait prints failure, then restores shared reset pointers and returns (`smp.c:166–180`) | `0004` enters the existing non-returning panic path before restoring pointers; no allocation or published state is reclaimed |
-| Unsupported SoC or pre-release failure | `smp_start_secondaries()` is `void`; callers cannot inspect a result | Existing return/skip policy unchanged; structured status and recoverable degraded-SMP behavior remain separate work |
+| Unsupported SoC or pre-release failure | `smp_start_secondaries()` is `void`; callers cannot inspect a result | `0007` propagates T6032 rejection through callers; legacy continuation is retained, recoverable degraded SMP remains separate work |
 
 **Do not free a secondary's stacks merely because its acknowledgement timed
 out.** The core may still enter late after the release writes. A safe timeout
@@ -102,7 +102,7 @@ be reused for another release while the first core could still enter late.
 Pre-release allocation-failure cleanup is a different case and can be tested
 independently.
 
-The direct-payload path calls `smp_start_secondaries()` and continues toward
+In the pinned baseline, the direct-payload path calls `smp_start_secondaries()` and continues toward
 `kboot_boot()` without receiving a status (`src/payload.c:316–350`); the
 hypervisor and proxy callers likewise get none (`src/hv.c:56–66`,
 `src/proxy.c:347–349`). `dt_set_cpus()` can prune secondaries whose alive flag
@@ -172,6 +172,10 @@ validates every T6032 CPU's IDs, coordinates, boot-state string and explicit
 implementation-register window before the existing startup loop. It avoids
 the legacy fallback and copy-before-length-check helper. It is still not
 whole-boot failure propagation, native RVBAR validation or dispatch enablement.
+
+The subsequent [caller-status patch 0007](m1n1-t6032-start-status.md) returns
+T6032 rejection through payload, HV-init and proxy callers. It preserves
+legacy continuation policy and caller preludes, and leaves dispatch closed.
 
 ## Offline startup regression
 
