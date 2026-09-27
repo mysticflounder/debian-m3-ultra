@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "source_kind": "offline decoded kernel collection, not live register state",
+  "input_sha256": "a24fefccc060854cecc996b40983499e1319008e4f16c0717a5fef6c4d4828dc",
+  "hardware_validated": false,
+  "register_writes_performed": false,
+  "vtable_symbol": "0xfffffe0008365670",
+  "constructor_confirmed_address_point": "0xfffffe0008365680",
+  "feature_dispatch_slot_offset": "0xdb0",
+  "checked_fixups": [
+    {"pointer": "0xfffffe0008366430", "target": "0xfffffe0009f5d384", "role": "selected indexed enableThrottler overload"},
+    {"pointer": "0xfffffe0008366428", "target": "0xfffffe0009f5d004", "role": "adjacent nonselected looping overload"},
+    {"pointer": "0xfffffe0008294020", "target": "0xfffffe00076d08c2", "feature_id": 20, "name": "ppt-thrtl"},
+    {"pointer": "0xfffffe0008294038", "target": "0xfffffe00076d08cc", "feature_id": 21, "name": "llc-thrtl"},
+    {"pointer": "0xfffffe0008294050", "target": "0xfffffe00076d08d6", "feature_id": 22, "name": "amx-thrtl"}
+  ],
+  "fixup_method": "inspect-kernelcache-fixup.py; format-8 chain membership and cache level 0 checked; PAC not authenticated",
+  "extract_command": "xcrun llvm-objdump --disassemble --start-address=START --stop-address=STOP VIEW > PATH",
+  "extracts": [
+    {
+      "path": "scratch/dvfs-evidence/feature-vptr-raw.disasm",
+      "view": "scratch/mcc-evidence/AppleT6031PMGR.macho",
+      "start": "0xfffffe0009f59a68", "stop": "0xfffffe0009f59aa0",
+      "sha256": "78b1d85b59c50cfea256c35eb123307dccb75f0d759bde9057daada510603507"
+    },
+    {
+      "path": "scratch/dvfs-evidence/feature-copy-raw.disasm",
+      "view": "scratch/mcc-evidence/ApplePMGR.macho",
+      "start": "0xfffffe0009b74058", "stop": "0xfffffe0009b74074",
+      "sha256": "8776c672063c4cb61eea944b6dbd0fd10c580296f8cfa45f33884d8c2221be16"
+    },
+    {
+      "path": "scratch/dvfs-evidence/feature-properties-raw.disasm",
+      "view": "scratch/mcc-evidence/ApplePMGR.macho",
+      "start": "0xfffffe0009b74690", "stop": "0xfffffe0009b74710",
+      "sha256": "45b1f68c6af3a65d84be6236ccd03975431f4cc30af0ca38d937b1e8903b0f2b"
+    },
+    {
+      "path": "scratch/dvfs-evidence/feature-dispatch-raw.disasm",
+      "view": "scratch/mcc-evidence/ApplePMGR.macho",
+      "start": "0xfffffe0009b92560", "stop": "0xfffffe0009b92690",
+      "sha256": "cee4a5d6e8665192739f97292d477fc0af10fdfc32f32218fbf9a79e81f715a3"
+    },
+    {
+      "path": "scratch/dvfs-evidence/throttler-indexed-raw.disasm",
+      "view": "scratch/mcc-evidence/AppleT6031PMGR.macho",
+      "start": "0xfffffe0009f5d384", "stop": "0xfffffe0009f5d7e8",
+      "sha256": "45bfabb8cda5d86d7994d5039bdf65df8d32dc63c00544f0d6a7b2dc3b4b7fb8"
+    },
+    {
+      "path": "scratch/dvfs-evidence/fixed-relock-raw.disasm",
+      "view": "scratch/mcc-evidence/ApplePMGR.macho",
+      "start": "0xfffffe0009b97690", "stop": "0xfffffe0009b97850",
+      "sha256": "5d195fc294f7b7c2db7f923da78f39ae81f263156c49f4d0b14e4a8b22171010"
+    }
+  ]
+}

@@ -121,6 +121,8 @@ traces the CPU-specific caller, ACC map selection, ADT translation and
 per-die mapping arithmetic, deriving six static candidates. The generic
 `_setPerfState` above is not the CPU path used for that conclusion. State
 index initialization and the APSC control/wait loops have since been traced
-within the module. Safe defaults, runtime routing, remaining feature masks
-and early-boot safety remain open; no frequency driver or native dispatch
-has been enabled.
+within the module. The [live-input/feature audit](m1n1-t6032-dvfs-inputs.md)
+now preserves actual table inputs separately from restore placeholders and
+traces the indexed throttler masks. Raw-table conversion, safe defaults,
+runtime routing and early-boot safety remain open; no frequency driver or
+native dispatch has been enabled.

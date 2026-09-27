@@ -1,0 +1,137 @@
+# T6032 DVFS: live inputs and feature consumers
+
+This is metadata and offline binary evidence, **not a frequency driver**.
+No MMIO, native firmware execution, installation or boot-policy changes were
+performed. T6032 firmware dispatch remains disabled. Register addresses in
+this note are logical arguments to Apple's accessors unless stated otherwise.
+
+## Capture contract
+
+[`audit-t6032-dvfs.py`](../scripts/audit-t6032-dvfs.py) captures only selected
+`/arm-io/pmgr` properties. `--live` reads IODeviceTree metadata in memory;
+`--plist PATH` inspects a supplied capture; `--firmware PATH` inspects a local
+restore IM4P. These sources have distinct labels. The live/plist identity
+must be J575d/chip `0x6032`; the template must be J575d/Mac15,14 with PMGR
+compatible `pmgr1,t6031`. Its placeholder chip ID is labeled separately.
+No raw ioreg dump is retained by the collector.
+
+The allowlist contains four scalars, `perf-domains`, `perf-regs`, and base,
+`-sram`, and `-extra` voltage-table names for IDs 2/5/13/34/37/45. The latter
+three names are **not a proven die-1 mapping**. Optional absences are reported.
+Properties must be nonempty, word-aligned bytes, at most 4096 bytes each;
+scalars must be exactly four bytes. Base and SRAM tables additionally require
+eight-byte alignment. The `-extra` layout is unresolved. Arbitrary identifiers
+and properties are excluded; CLI failure output does not contain input data.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 scripts/audit-t6032-dvfs.py --live
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 scripts/audit-t6032-dvfs.py \
+  --firmware scratch/mcc-firmware-reference/DeviceTree.j575dap.im4p
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 scripts/test-t6032-dvfs.py
+```
+
+The [sanitized inventory](inventory/t6032-dvfs-tables-2026-09-26.json) retains
+the two reports exactly. Fourteen portable collector tests pass, including
+identity, bounds, record alignment, required/optional fields, privacy, source
+labels and sanitized CLI errors. Adjacent PMGR/firmware-DVFS/firmware-MCC
+suites pass 7/18/16 tests, respectively: **55 total**. These tests validate
+parsing and reporting, not register semantics or safe native operation.
+
+## Restore tables are not live operating-state tables
+
+| Property | Restore-template bytes | Live IODeviceTree bytes |
+| --- | ---: | ---: |
+| `voltage-states2` | 32 | 40 |
+| `voltage-states5` | 24 | 160 |
+| `voltage-states13` | 24 | 160 |
+| `voltage-states5-sram`, `voltage-states13-sram` | Absent | 160 each |
+| `voltage-states5-extra`, `voltage-states13-extra` | Absent | 76 each |
+| `voltage-states37`, `voltage-states45` | Absent | 160 each |
+
+Both reports contain `perf-domains` (364 bytes) and `perf-regs` (336 bytes).
+The four little-endian scalars agree: `first-acc-dvfm-map-state=4`,
+`nominal-performance1=0`, `boost-performance1=0`,
+`mcx-fast-pcpu-frequency=0`. `voltage-states34` is absent in both.
+Equality of these scalar values does not identify a safe boot state.
+
+The matching ApplePMGR `initDriver` builds property names
+`voltage-states%u-sram` and `voltage-states%u` at unslid PCs
+`0xfffffe0009b7ea24–0xfffffe0009b7ea3c` and
+`0xfffffe0009b7eaf8–0xfffffe0009b7eb10`. Length shifts at
+`0xfffffe0009b7eab4` and `0xfffffe0009b7eb84` support eight-byte records.
+This does **not** establish the units or transformations of either raw word,
+the usable CPU-state count, or startup/APSC defaults. The collector deliberately
+leaves those claims false. Trace the conversion into the per-domain frequency
+arrays before assigning meanings; do not divide table sizes to choose states.
+
+## Feature names, dispatch and masks
+
+The input collection SHA-256 and reproduction method are in the
+[register contract](m1n1-t6032-dvfs-contract.md). All PCs below refer to that
+same unslid collection. The bounded raw extracts and critical fixups are
+listed in the [feature evidence manifest](inventory/t6032-dvfs-features-2026-09-26.json).
+
+The base constructor copies `0x918` bytes from global table
+`0xfffffe0008293e40` to object `+0x1d50` at
+`0xfffffe0009b74058–0xfffffe0009b74070`. `ApplePMGR::start`, not
+`initDriver`, indexes this table with stride `0x18`, looks up each property's
+name and stores its presence/value at record `+8/+0xc`
+(`0xfffffe0009b74690–0xfffffe0009b746c0`). Checked full-cache fixups map
+entries 20/21/22 to `ppt-thrtl`/`llc-thrtl`/`amx-thrtl`, respectively.
+This establishes the numeric/name link independently of cstring adjacency.
+
+`_enableFeatureACC` (`0xfffffe0009b92560`) maps these IDs to throttler
+selectors 1/11/12 and branches through vptr slot `+0xdb0`.
+The T6031 constructor explicitly installs vtable-symbol **plus `0x10`**
+at `0xfffffe0009f59a84–0xfffffe0009f59a9c`; the address point is
+`0xfffffe0008365680`. Therefore slot `0xfffffe0008366430` resolves to
+`0xfffffe0009f5d384`, the **four-argument** `enableThrottler` overload.
+The adjacent slot `0xfffffe0008366428` points to the two-argument overload
+at `0xfffffe0009f5d004`; using a mistaken `+8` address-point adjustment
+would select that wrong function.
+
+| Feature ID / name | Selector | Logical ACC offset(s) | Update |
+| --- | ---: | --- | --- |
+| 20 / `ppt-thrtl` | 1 | `0xe48400`, `0xe48408` | Preserve bits 62:0; bit 63 equals enable |
+| 21 / `llc-thrtl` | 11 | `0xe40270` | Same |
+| 22 / `amx-thrtl` | 12 | `0xe40250` | Same |
+
+The selected overload saves incoming `x3` as the complex index and uses it
+in the ACC calls; it does **not** loop across all complexes. These branches
+pass zero as the separate low-level die argument. Thus complete virtual to
+physical/in-die routing is still required before interpreting hardware scope.
+For PPT it reads both registers before either write (`0xfffffe0009f5d400`,
+`...d450`, then `...d4b8` and the tail-call through `...d610`). The second
+offset is computed by OR-ing 8 into `0xe48400`, not loaded as a literal.
+
+The low offsets and bit-63 masks correspond to pinned m1n1
+`4184923ffb2dff079b384d6a32cc02142aa14572`'s `t6030_features`. This is
+not complete sequencing equivalence: m1n1 updates its two PPT entries one
+at a time. Apple's logical `0xe00000` prefix belongs to its mapping layer;
+do not add it directly to an m1n1 cluster base.
+
+The separate base `enableCPUFixedFreqRelock` at `0xfffffe0009b97690`
+selects RegMap 9 for selector 0 or RegMap 21 for selector 7, checks map
+availability, then updates bit 42 of offset `0x20`, preserving other bits.
+The observed read/write die argument is zero. Other selectors go to a cold
+error path. This confirms a mask correspondence, **not** that this method
+is the applicable six-cluster T6032 boot path. Earlier
+[live PMGR metadata](inventory/t6032-pmgr-cores-2026-09-26.json) records
+APSC and the three throttlers as 1, fixed-frequency relock as 0; a property
+value alone does not settle whether a disabled feature should be cleared,
+skipped or left as firmware configured it.
+
+## Remaining work before implementation
+
+- Finish raw-table conversion, per-domain state construction and safe defaults.
+- Complete six-cluster runtime routing, including the complex index consumed
+  by the indexed feature path and its separate die argument.
+- Establish which operations are needed at early boot, their prerequisites,
+  ordering/barriers and bounded failure behavior. Do not transplant runtime
+  driver writes just because their masks match existing m1n1 constants.
+- Keep CPU/frequency dispatch disabled until the independent MCC, protection,
+  loader/DMA, boot-entry and recovery gates are met. The MCC Pro consult is
+  still pending; a quiet waiter timeout is not a result.

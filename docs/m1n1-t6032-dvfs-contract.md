@@ -95,7 +95,7 @@ the collector rejects ambiguity for selected windows, not unrelated overlaps.
 This translation follows pinned m1n1 `rust/src/adt.rs` (revision
 `4184923ffb2dff079b384d6a32cc02142aa14572`).
 
-`ApplePMGR::initDriver` loads the `die-stride` property into `this+0x6320`
+`ApplePMGR::start` loads the `die-stride` property into `this+0x6320`
 at `0xfffffe0009b74a94–0xfffffe0009b74ad4`. `initRegMap` gets the die-0
 physical address and computes `physical + stride * die` at
 `0xfffffe0009b7c7dc–0xfffffe0009b7c7ec`. It does not add the die to the
@@ -254,13 +254,17 @@ early boot remain separate questions.
 - The two `_waitAPSCPending` loops and APSC enable bit are now traced;
   establish early-boot error policy, remaining pre-write steps, barriers,
   prerequisites and bounded polling before firmware implementation.
-- Establish feature masks before implementing `cpufreq_get_features`.
+- Throttler masks and their indexed dispatch are traced in the
+  [live-input/feature audit](m1n1-t6032-dvfs-inputs.md); establish early-boot
+  applicability and ordering before implementing `cpufreq_get_features`.
 - Propagate unsupported/failed frequency initialization through relevant
   callers. Keep native dispatch off until independent startup/recovery gates
   are met; this report does not clear MCC, TZ, DMA or loader safety gates.
 
 The follow-up `initDriver` trace establishes a partial metadata-to-record
 link; `_cpuComplexInit` and `_initPerfDomainInfo` alone did not establish it.
-Next bounded task: finish record initialization/routing, identify
-the actual state-table and feature-mask inputs, and derive safe initial-state
-and bounded-failure behavior before implementing T6032 frequency dispatch.
+The [live-input/feature audit](m1n1-t6032-dvfs-inputs.md) captures the actual
+allowlisted state-table properties and proves indexed throttler dispatch.
+Next bounded task: finish table conversion and record initialization/routing,
+then derive safe initial-state and bounded-failure behavior before implementing
+T6032 frequency dispatch. Restore templates cannot replace the live tables.
