@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "scope": "Static decoded-file offsets; not observed runtime addresses or hardware validation",
+  "artifact_record": "t6032-boot-firmware-2026-09-26.json",
+  "verification": {
+    "script": "scratch/mcc-evidence/verify-boot-offset-evidence.py",
+    "script_sha256": "2b6be23c2ac3e5a9c89a8451e0d0a40cf639375fab83aa20af89727b19ebf432",
+    "report": "scratch/mcc-evidence/boot-offset-evidence-v3.json",
+    "report_sha256": "64c99e0b2eee4dd2e047dc0ec9141e6a8c5a5bdd9d73e84d93bf963e1602ad06",
+    "byte_identical_zero_address_wrappers": 2,
+    "wrapper_text_relocations": 0,
+    "raw_disassembly_words_compared": 316,
+    "extract_count": 9,
+    "word_scope": "Byte comparison, not code classification. LLB 0x2b048..0x2b057 is literal data."
+  },
+  "preferred_constants": [
+    {
+      "component": "iBoot",
+      "base_literal_offset": "0x380",
+      "base_literal_value": "0x10071a94000",
+      "end_literal_offset": "0x388",
+      "end_literal_value": "0x10071da1480",
+      "helper_offset": "0x38a34",
+      "helper_behavior": "bare ret",
+      "copy_extent": "0x30d480",
+      "decoded_size": "0x30d470"
+    },
+    {
+      "component": "LLB",
+      "base_literal_offset": "0x380",
+      "base_literal_value": "0x1fc088000",
+      "end_literal_offset": "0x388",
+      "end_literal_value": "0x1fc383980",
+      "helper_offset": "0x2afd0",
+      "helper_behavior": "system-register path, preserves x0/x1 on return; hardware completion unverified",
+      "copy_extent": "0x2fb980",
+      "decoded_size": "0x2fb968"
+    }
+  ],
+  "iboot_references": [
+    {"adrp": "0x65084", "add": "0x65088", "target": "0x2c6190", "label": "AMCC diagnostic format", "call": "0x15ece4"},
+    {"adrp": "0x715bc", "add": "0x715c0", "target": "0x2c667b", "label": "unsupported T6032 chip_rev", "shared_error_call": "0x31254"},
+    {"adrp": "0x133960", "add": "0x133964", "target": "0x2c7517", "label": "inclusive-tz-range", "helper": "0x13410c", "later_call": "0x150340"}
+  ],
+  "record_lead": {
+    "constructor": "0x3b6a4",
+    "direct_caller": "0x357c0",
+    "record_x26_fields": {"0x10": "0x40000", "0x14": "0x1c0000"},
+    "second_record_fields": {"0x0": "0xc1", "0x8": "0x1c00", "0xc": "0x1", "0x10": "0x0"},
+    "consumer_schema_resolved": false,
+    "mmio_store_proven": false
+  },
+  "runtime_base_observed": false,
+  "native_register_access_performed": false,
+  "installed_or_executed": false
+}

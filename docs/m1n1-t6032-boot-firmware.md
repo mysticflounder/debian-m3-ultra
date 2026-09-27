@@ -88,9 +88,10 @@ bytes at these positions were checked directly after the string search.
 
 These are search anchors, not proof that a particular path executes or
 that AMCC diagnostics implement the cache-enable operation under study.
-The next step is to establish the image's address model and trace code
-references to these anchors, then connect actual accesses and guards to the
-MCC handoff ledger. No register address or permission is inferred from a
+The [address-model and first-reference trace](m1n1-t6032-boot-address-model.md)
+now records preferred relocation constants and bounded instruction flows.
+Next, connect actual accesses and guards to the MCC handoff ledger.
+No register address or permission is inferred from a
 string's presence; unlisted strings are not claimed absent.
 
 ## Interpretation boundary
