@@ -12,12 +12,20 @@
   "write_value": 1,
   "access_bytes": 8,
   "die_argument_zero": "derive from virtual complex with getComplexToDie; not forced die 0",
+  "vtable_origins": {
+    "base_symbol": "0xfffffe0008292c58", "base_address_point": "0xfffffe0008292c68",
+    "subclass_address_point": "0xfffffe0008365680", "restore_runtime_slot": "0xcf8",
+    "qualified_base_symbol_offset": "0xd08"
+  },
   "fixup_method": "inspect-kernelcache-fixup.py; format-8/cache-0 chain membership checked; PAC not authenticated",
   "checked_fixups": [
     {"pointer": "0xfffffe00083667d0", "target": "0xfffffe0009f5fc24", "role": "writeACCReg"},
     {"pointer": "0xfffffe00083667c0", "target": "0xfffffe0009f5f9cc", "role": "readACCReg"},
-    {"pointer": "0xfffffe0008366b78", "target": "0xfffffe0008292c58", "role": "base vtable address point"},
-    {"pointer": "0xfffffe0008293960", "target": "0xfffffe0009b926a0", "role": "base restoreACC"}
+    {"pointer": "0xfffffe0008366b78", "target": "0xfffffe0008292c58", "role": "raw base vtable symbol, not runtime address point"},
+    {"pointer": "0xfffffe0008293960", "target": "0xfffffe0009b926a0", "role": "base restoreACC"},
+    {"pointer": "0xfffffe0008366378", "target": "0xfffffe0009f5b7e8", "role": "runtime vptr+0xcf8 restoreACC override"},
+    {"pointer": "0xfffffe0008294428", "target": "0xfffffe00076d0abe", "role": "feature 63 name apsc-snooze"},
+    {"pointer": "0xfffffe0008366490", "target": "0xfffffe0009f6117c", "role": "isFeatureSupportOverride returns 1"}
   ],
   "static_windows": [
     {"physical_complex_in_die": 0, "table": "0xfffffe000778113c", "entry_ordinal": 8, "regmap": 10, "provider_reg_index": 8, "bus_base": "0x10e40000", "size": "0xb028", "die0_candidate": "0x210e440f8", "die1_candidate": "0x2210e440f8"},
@@ -30,7 +38,24 @@
     {"path": "scratch/dvfs-evidence/restore-write-helper-raw.disasm", "view": "scratch/mcc-evidence/AppleT6031PMGR.macho", "start": "0xfffffe0009f5fc24", "stop": "0xfffffe0009f5fd3c", "sha256": "2e7d930dd75a200ef0f4e1135d3eae011e5767df4d6a58c54dd7a6d0e3379a72"},
     {"path": "scratch/dvfs-evidence/restore-map-init-raw.disasm", "view": "scratch/mcc-evidence/AppleT6031PMGR.macho", "start": "0xfffffe0009f59d60", "stop": "0xfffffe0009f5a3a0", "sha256": "d37785b8dc5b788112d2fb1594d001168b28c37d10c53605cef3f3f3931690d0"},
     {"path": "scratch/dvfs-evidence/restore-apsc-raw.disasm", "view": "scratch/mcc-evidence/AppleT6031PMGR.macho", "start": "0xfffffe0009f5b898", "stop": "0xfffffe0009f5be20", "sha256": "bffdd9ce507ccbd73f30e24efc773e65502b03c9b527353946f5d8252e212063"},
-    {"path": "scratch/dvfs-evidence/restore-base-raw.disasm", "view": "scratch/mcc-evidence/ApplePMGR.macho", "start": "0xfffffe0009b926a0", "stop": "0xfffffe0009b92a00", "sha256": "79fda058cca24c9d07933443ded73079f316d20313ec57b257719fff79897ac7"}
+    {"path": "scratch/dvfs-evidence/restore-base-raw.disasm", "view": "scratch/mcc-evidence/ApplePMGR.macho", "start": "0xfffffe0009b926a0", "stop": "0xfffffe0009b92a00", "sha256": "79fda058cca24c9d07933443ded73079f316d20313ec57b257719fff79897ac7"},
+    {"path": "scratch/dvfs-evidence/restore-base-vptr-raw.disasm", "view": "scratch/mcc-evidence/ApplePMGR.macho", "start": "0xfffffe0009b73f64", "stop": "0xfffffe0009b73f80", "sha256": "9c29b87c334fdba0f1799a39af6953bcc1f1435137176a19158e51bf0f7d09b6"},
+    {"path": "scratch/dvfs-evidence/apsc-snooze-flag-raw.disasm", "view": "scratch/mcc-evidence/AppleT6031PMGR.macho", "start": "0xfffffe0009f5a6a8", "stop": "0xfffffe0009f5a820", "sha256": "8793bc1b3eb657cf01c19b9cbe860978d9bfa6f15159c1151f8d3ff65a1f5d63"},
+    {"path": "scratch/dvfs-evidence/apsc-feature-getter-raw.disasm", "view": "scratch/mcc-evidence/ApplePMGR.macho", "start": "0xfffffe0009b75574", "stop": "0xfffffe0009b755b0", "sha256": "e78f847defbaa607111980ae8ba973449c12a5e639463f498dc5da7dc492c4aa"},
+    {"path": "scratch/dvfs-evidence/apsc-feature-input-raw.disasm", "view": "scratch/mcc-evidence/ApplePMGR.macho", "start": "0xfffffe0009b74690", "stop": "0xfffffe0009b74734", "sha256": "971de5688b46b10dcfa5b3b8aab690e74aae09fe1f356fd53fa00cc6de97b7ff"},
+    {"path": "scratch/dvfs-evidence/apsc-feature-override-raw.disasm", "view": "scratch/mcc-evidence/AppleT6031PMGR.macho", "start": "0xfffffe0009f6117c", "stop": "0xfffffe0009f61188", "sha256": "a3c3010a56a47a10e95cc0496518a08caf23f558913bccf74d017a23e3d91666"},
+    {"path": "scratch/dvfs-evidence/restore-all-complexes-raw.disasm", "view": "scratch/mcc-evidence/ApplePMGR.macho", "start": "0xfffffe0009b93878", "stop": "0xfffffe0009b93934", "sha256": "296f2d700d19b8dd7f3c7dfeab70b34afef41e299ee1266e95ed255c86c9f453"},
+    {"path": "scratch/dvfs-evidence/apsc-all-complexes-raw.disasm", "view": "scratch/mcc-evidence/AppleT6031PMGR.macho", "start": "0xfffffe0009f5bbc0", "stop": "0xfffffe0009f5bbe8", "sha256": "c98e6e1f17ad4600e7bb908dfd6b4f7e04b00031714410edf805b7b3ccdf3424"},
+    {"path": "scratch/dvfs-evidence/restore-enable-complex-raw.disasm", "view": "scratch/mcc-evidence/ApplePMGR.macho", "start": "0xfffffe0009b95f28", "stop": "0xfffffe0009b960c8", "sha256": "08ad752f05e52cbaa6a068a4508bf4173086d5ac5e35fe54f60c4255c39531e8"},
+    {"path": "scratch/dvfs-evidence/restore-enable-cluster-raw.disasm", "view": "scratch/mcc-evidence/ApplePMGR.macho", "start": "0xfffffe0009b9614c", "stop": "0xfffffe0009b9630c", "sha256": "0ff8dc2794493dbbda15c71903140a2850fdc35da47390065978ca76bb8d94b2"}
   ],
+  "apsc_snooze_gate": {
+    "feature_id": 63, "name": "apsc-snooze", "flag_object_offset": "0x73d67",
+    "setter": "nonzero effective feature sets byte 1; zero branch does not clear",
+    "boot_argument_override_supported": true, "runtime_flag_read": false,
+    "metadata_path": "docs/inventory/t6032-pmgr-mode-2026-09-26.json",
+    "metadata_sha256": "2cad9a030286eba55ee1644542872e300e30697951edd035098b784ee88fdbbf",
+    "captured_dt_value": 0, "captured_cpu_apsc_value": 1
+  },
   "unresolved": ["six-complex runtime mapping", "safe raw initialization states", "restore caller prerequisites", "conditional APSC follow-on applicability", "register hardware semantics", "early-boot safety and ordering"]
 }

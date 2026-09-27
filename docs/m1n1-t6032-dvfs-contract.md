@@ -274,5 +274,9 @@ write to Apple's logical `0xe440f8`, derives six static addresses and proves
 that its zero die argument invokes complex-to-die routing. Next: finish
 runtime routing and derive safe raw initialization states and ordering,
 including the restore path's prerequisites and conditional APSC follow-on.
+That follow-on's gate is now tied to `apsc-snooze`, with a supported
+boot-argument override; the recorded DT value alone is not its runtime value.
+The restore callers use runtime vptr slot `+0xcf8`, distinguished from the
+qualified base call's raw-vtable-symbol offset `+0xd08`.
 Restore templates cannot replace live tables, and runtime frequency conversion
 does not by itself validate m1n1's raw-index boot policy.
