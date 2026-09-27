@@ -33,6 +33,10 @@ from those offsets alone.
 
 ## Exact adjustment, without assuming a fixed RAM base
 
+The first-4-GiB condition derived below applies to the earlier OR-based TZ
+decoder. [Patch 0012](m1n1-t6032-tz-origin.md) removes that specific decoder
+dependency. It does not establish the actual handoff values or boot ABI.
+
 At `0x2cfac–0x2cfb4`, selector 4 is passed to `0x19ff0c`, then its result
 to `0x1a01b0`. For a valid record with nonzero first word and no addition
 overflow, that helper returns D = `[record] + [record+0x10]`. A zero first

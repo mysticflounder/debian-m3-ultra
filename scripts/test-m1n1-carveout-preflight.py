@@ -98,10 +98,10 @@ def materialize(tree: pathlib.Path) -> None:
         if not source.is_file() or source.read_bytes() != originals[relative]:
             fail(f"pinned source mismatch: {relative}")
         destination.write_bytes(originals[relative])
-    for index in range(1, 10):
-        matches = sorted(PATCH_DIR.glob(f"000{index}-*.patch"))
+    for index in range(1, 13):
+        matches = sorted(PATCH_DIR.glob(f"{index:04d}-*.patch"))
         if len(matches) != 1:
-            fail(f"missing or ambiguous patch 000{index}: {[p.name for p in matches]}")
+            fail(f"missing or ambiguous patch {index:04d}: {[p.name for p in matches]}")
         result = run(["patch", "-p1", "--batch", "--forward", "-i", str(matches[0])], tree)
         if result.returncode:
             fail(f"patch failed: {matches[0].name}\n{result.stdout}{result.stderr}")

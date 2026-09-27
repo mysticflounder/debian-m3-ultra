@@ -86,6 +86,11 @@ side-effect proof for all intervening callees is claimed.
 
 ## Conditional decoder agreement
 
+This section records the pre-0012 OR decoder. The subsequent
+[fixed-origin decoder patch](m1n1-t6032-tz-origin.md) separates TZ encoding
+from mapped RAM containment; it no longer requires `ram_base == B` solely
+to reconstruct these fields.
+
 For a range inside the 1-TiB window beginning at B, with `E < 2*B`, the
 28-bit page-index encoding can be inverted by adding B. OR with B agrees
 because the reconstructed offsets have bit 40 clear. This statement needs
@@ -119,6 +124,7 @@ their writers and the actual handoff value still need qualification.
 This identifies a concrete encoding used by the target firmware image.
 It does not establish live branch selection, actual limit values, equality
 between F-adjusted and per-plane register contents, or early MCC access
-permission. A decoder change is not justified solely by replacing the
-boot-argument-derived base with this constant. Native testing still requires
+permission. The subsequent decoder change uses the traced conversion and
+field widths, independent RAM containment and host regressions, not just a
+constant substitution. Native testing still requires
 the independently reviewed access plan, recovery readiness and authorization.

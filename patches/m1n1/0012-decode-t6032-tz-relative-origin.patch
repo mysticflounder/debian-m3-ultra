@@ -1,0 +1,36 @@
+Local review patch: separate T6032 TZ encoding origin from mapped RAM base
+Base: m1n1 4184923ffb2dff079b384d6a32cc02142aa14572, after 0001..0011
+Provenance: AI-assisted Debian project work; not submitted upstream.
+
+The pinned J575d iBoot TZ producer subtracts 1 TiB before encoding 4-KiB
+page indices; its consumer writes 28-bit fields. Reconstruct using addition
+to that origin, not OR with the separately bootargs-derived mapped RAM base.
+Reject nonzero bits outside the traced fields rather than silently masking
+them. Preserve RAM containment, alignment, alias and staged-effect checks.
+
+This is a conditional software decoder, not qualification of live register
+contents, controller scope, access permissions or boot ABI. Native dispatch
+remains disabled. No access sequence or legacy decoder changes here.
+
+--- a/src/mcc.c
++++ b/src/mcc.c
+@@ -392,13 +392,16 @@
+ {
+-    u64 start, end;
++    /* TZ page indices use a fixed origin, independently of mapped RAM.
++     * Reject unknown high bits; do not reinterpret them as address bits. */
++    const u64 tz_origin = 0x10000000000ULL;
+     if ((page_size != 4096 && page_size != 16384) || !first || last <= first ||
++        first > 0x0fffffffU || last > 0x0fffffffU ||
+         !ram_base || !mem_size_actual || ram_base > (u64)-1 - mem_size_actual)
+         return false;
++    u64 start = tz_origin + ((u64)first << 12);
++    u64 end = tz_origin + (((u64)last + 1) << 12);
+     u64 ram_end = ram_base + mem_size_actual;
+     if (((ram_base | ram_end) & (page_size - 1)) ||
+-        !mcc_t6032_or_range((u64)first << 12, ((u64)last + 1) << 12, ram_base,
+-                            &start, &end) ||
+         start < ram_base || end > ram_end || ((start | end) & (page_size - 1)))
+         return false;
+     out->base = start;
+     out->size = end - start;

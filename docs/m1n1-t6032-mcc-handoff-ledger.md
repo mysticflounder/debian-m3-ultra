@@ -8,6 +8,12 @@ Relevant changes are [0008](../patches/m1n1/0008-validate-t6032-mcc-layout.patch
 [0009](../patches/m1n1/0009-preflight-t6032-carveout-removal.patch), and
 [0010](../patches/m1n1/0010-guard-t6032-runtime-mappings.patch).
 
+Update 2026-09-27: [0012 separates TZ origin from mapped RAM](m1n1-t6032-tz-origin.md).
+The OR-based decoder description and line numbers below describe the prior
+eleven-patch snapshot. The twelve-patch version uses fixed-origin addition
+and rejects nonzero bits outside the 28-bit fields, retaining RAM containment.
+The access sequence and unresolved permission/scope gates below are unchanged.
+
 ## Accesses and ordering in our source
 
 | Phase | Access / transformation | Guard and remaining limitation |

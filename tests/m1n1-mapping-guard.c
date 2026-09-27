@@ -141,7 +141,7 @@ static bool expect_framebuffer_panic(u64 addr, size_t size)
 
 static void reset_fixture(void)
 {
-    ram_base = 0x800000000ULL;
+    ram_base = 0x10000000000ULL;
     chip_id = T6032;
     mock_page_size = 4096;
     mock_16k = false;
@@ -287,7 +287,7 @@ int main(void)
     mcc_carveout_count = 1; mcc_carveouts_ready = true;
     mcc_t6032_begin_carveout_setup();
     CHECK(!mcc_carveouts_ready && published_state_zero());
-    CHECK(mcc_t6032_range_allowed(0x800010000ULL, 0x1000));
+    CHECK(mcc_t6032_range_allowed(ram_base + 0x10000, 0x1000));
 
     publish_one(ram_base + 0x1000000, 0x4000);
     CHECK(!mcc_t6032_range_allowed(ram_base + 0x1000000, 0x1000));

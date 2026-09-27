@@ -1,0 +1,42 @@
+{
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "toolchain_record": "m1n1-cpu-build-2026-09-26.json",
+  "configuration": "default Makefile all; patches 0001 through 0012; CPU/frequency dispatch disabled",
+  "prior_patch_records": {
+    "path": "m1n1-cpufreq-status-build-2026-09-26.json",
+    "sha256": "e1c2873065537b739a6bb8c26c98650379d7cb196552142a973142db4db5e17c",
+    "scope": "patches 0001 through 0011 only; not prior artifact hashes"
+  },
+  "additional_patch": {
+    "path": "patches/m1n1/0012-decode-t6032-tz-relative-origin.patch",
+    "sha256": "8d4af887e4628a0f2479499f945cde340014bffe9bedf929805ecfabc38c5c94"
+  },
+  "build_script_sha256": "a5c4550f441e45a33de33a3d3e7c827d247dba0c77127d9d48e7f473c2cd0a8c",
+  "directory": "scratch/m1n1-firmware-patched.bs28PS",
+  "status": "pass",
+  "sha256": {
+    "m1n1.elf": "96fe14c49d5a6deb4e2173f821da298603c20f13784de4bac1b5ba67ff5d4211",
+    "m1n1-raw.elf": "fb4c946e5e5b41a0b0f14b5f0415fe28dc36acbb692372da43eeb20fb04ce4de",
+    "m1n1.macho": "9c5a950bdab9f474399329fe1356a45a786ef1739e49aaf17ac233b68df22b51",
+    "m1n1.bin": "e20b74009513ba624abe7a0607ff3f85f3d79bf3a4e6a159564a7572323eed70"
+  },
+  "host_validation": {
+    "status": "pass",
+    "patches_applied": "0001 through 0012",
+    "sanitizers": ["address", "undefined"],
+    "logs": [
+      "scratch/mcc-evidence/tz-origin-carveout-preflight.log",
+      "scratch/mcc-evidence/tz-origin-mapping-guard.log"
+    ],
+    "source_sha256": {
+      "scripts/test-m1n1-carveout-preflight.py": "e56c9759cf0acf91b8d46ab1fe1ea99a1a7077baccb5118649cae17917eb33c3",
+      "scripts/test-m1n1-mapping-guard.py": "9c0bab4a8031ee80a60a93c288af6ab212823c10f44839413c6a4c9e3f99378b",
+      "tests/m1n1-carveout-preflight.c": "83a0fa05285d878556a6ffd6b39d078ee7cb37a5d6492c8ae418f8531f533a94",
+      "tests/m1n1-mapping-guard.c": "df3fbafca054eea23b9f05151cd091deef0f9eac615ce7677fcaecbe45be5276"
+    },
+    "scope": "Source-extracted decoder, preflight and mapping guards with mocked hardware, heap and page-table effects"
+  },
+  "native_execution": false,
+  "mmio_testing": false,
+  "scope": "Offline build only; does not qualify hardware encoding, permissions, cache scope, boot entry or recovery"
+}
