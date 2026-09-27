@@ -108,10 +108,17 @@ frequency-control contract. Topology and PMGR feature flags alone cannot
 fill in the missing addresses, encoding, busy/status behavior and safe
 initial P-states.
 
-In the hash-matched Apple PMGR binary, the next bounded consumer traces are
+The initial bounded consumer traces in the hash-matched Apple PMGR binary were
 `_cpuComplexInit(CPUComplex*)` at `0xfffffe0009b897b0`,
 `_initPerfDomainInfo()` at `0xfffffe0009b8b764`, and `_setPerfState()` at
 `0xfffffe0009babf98`. Their relationship to the captured eight-byte
 `acc-clusters` records is **not established**. Trace the actual per-domain
 construction and its DT inputs before inventing a metadata schema or
 promoting copied family constants into a T6032 firmware table.
+
+Follow-up: the [DVFS register contract](m1n1-t6032-dvfs-contract.md) now
+traces the CPU-specific caller, ACC map selection, ADT translation and
+per-die mapping arithmetic, deriving six static candidates. The generic
+`_setPerfState` above is not the CPU path used for that conclusion. State
+index/default policy, APSC sequencing and early-boot safety remain open;
+no frequency driver or native dispatch has been enabled.

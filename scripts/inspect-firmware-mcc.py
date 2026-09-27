@@ -53,8 +53,10 @@ def decode_im4p(raw: bytes) -> bytes:
     return ctypes.string_at(buffer, count)
 
 
-def inspect_adt(data: bytes) -> dict:
+def selected_nodes(data: bytes, paths: tuple[str, ...]) -> dict[str, dict[str, bytes]]:
+    """Bounded ADT parser; callers must separately allowlist emitted properties."""
     require(0 < len(data) <= LIMIT, "ADT size outside limit")
+    require(bool(paths) and len(paths) == len(set(paths)), "invalid selected paths")
     selected: dict[str, dict[str, bytes]] = {}
     node_count = 0
 
@@ -86,7 +88,7 @@ def inspect_adt(data: bytes) -> dict:
         require("/" not in name and name, "invalid ADT node name")
         require(depth != 0 or name == "device-tree", "unexpected ADT root name")
         path = "/" if depth == 0 else parent.rstrip("/") + "/" + name
-        if path in ("/", "/chosen", "/arm-io/mcc"):
+        if path in paths:
             require(path not in selected, "duplicate selected ADT node")
             selected[path] = props
         for _ in range(nchild):
@@ -95,7 +97,12 @@ def inspect_adt(data: bytes) -> dict:
 
     consumed = parse_node(0, "")
     require(not any(data[consumed:]), "nonzero trailing ADT data")
-    require(set(selected) == {"/", "/chosen", "/arm-io/mcc"}, "missing identity or MCC node")
+    require(set(selected) == set(paths), "missing selected ADT node")
+    return selected
+
+
+def inspect_adt(data: bytes) -> dict:
+    selected = selected_nodes(data, ("/", "/chosen", "/arm-io/mcc"))
     root, chosen, mcc = (selected[p] for p in ("/", "/chosen", "/arm-io/mcc"))
     target = cstring(root.get("target-type", b""))
     require(target in BOARDS, "unsupported firmware target")

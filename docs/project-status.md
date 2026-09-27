@@ -17,7 +17,7 @@ not a fresh remote or live-machine check.
 | T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; ten-patch cross-build passes | Resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and T6032 payload/HV/proxy status propagation implemented offline | Validate native reset separately; no rollback or recoverable degraded-SMP claim |
 | MCC/cache initialization | Ten-patch offline baseline passes; protected-write path and inherited enable/clamp policy traced | Independent evidence needed for control-register scope and early-boot access; TZ, loader containment, DMA and native validation remain open |
-| Six-cluster frequency / DVFS | PMGR metadata captured; matching binary consumers located | Complete field/branch semantics before selecting bases/offsets; address die-1 performance metadata separately |
+| Six-cluster frequency / DVFS | Six static register candidates and request/busy encoding traced; offline collector tested | Resolve state-index policy, APSC waits and safe initial states/features before firmware changes; native access unvalidated |
 | Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
@@ -33,6 +33,7 @@ Details: [CPU work](m1n1-t6032-cpus.md),
 [runtime mapping guards](m1n1-t6032-mapping-guard.md),
 [startup contract](m1n1-t6032-startup.md),
 [PMGR metadata](m1n1-t6032-pmgr.md),
+[DVFS register contract](m1n1-t6032-dvfs-contract.md),
 [local PMGR binary evidence](m1n1-t6032-pmgr-binary.md),
 [32-CPU mask comparison](m1n1-t6032-cpu-masks.md),
 [mask contract and mode selection](m1n1-t6032-mask-contract.md),
