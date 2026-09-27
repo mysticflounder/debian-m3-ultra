@@ -34,7 +34,7 @@ class Tests(unittest.TestCase):
     def test_capture_and_privacy(self):
         tree, _, _ = fixture()
         report = AUDIT.audit_tree(tree)
-        self.assertEqual(report["schema_version"], 2)
+        self.assertEqual(report["schema_version"], 3)
         self.assertEqual(report["cluster_metadata"]["acc-cores"]["length"], 256)
         self.assertEqual(report["cluster_metadata"]["die-stride"]["length"], 8)
         self.assertEqual(report["cluster_metadata"]["cluster-ctl-offset"]["value_le_u32"], 0x18000)

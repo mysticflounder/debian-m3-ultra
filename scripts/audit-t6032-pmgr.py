@@ -18,13 +18,13 @@ SPEC.loader.exec_module(HELPER)
 AuditError = HELPER.AuditError
 
 FEATURES = (
-    "amx-thrtl", "apsc-snooze", "cpu-apsc", "cpu-fixed-freq-pll-relock",
+    "acc-harvesting", "amx-thrtl", "apsc-snooze", "cpu-apsc", "cpu-fixed-freq-pll-relock",
     "llc-thrtl", "ppt-thrtl",
 )
 # Shape constraints for the observed J575d six-cluster metadata, not MMIO semantics.
 RAW_FIELDS = {"acc-clusters": 48, "acc-cores": 256, "cluster-ctl-offset": 4,
               "clusters": 12, "die-stride": 8}
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 def child(parent: dict[str, Any], name: str) -> dict[str, Any]:

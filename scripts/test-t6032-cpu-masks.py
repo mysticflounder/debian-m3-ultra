@@ -31,11 +31,44 @@ def change_bytes(pmgr, offset, value):
 
 
 class Tests(unittest.TestCase):
+    def test_mode1_crosscheck_all_cpus(self):
+        _, cpus = fixture()
+        pmgr = json.loads((ROOT / "docs/inventory/t6032-pmgr-mode-2026-09-26.json").read_text())
+        result = MASKS.model(pmgr, cpus)
+        self.assertTrue(result["mode1_crosscheck_performed"])
+        self.assertEqual(result["legacy_mismatch_count"], 12)
+        for row in result["rows"]:
+            self.assertEqual(row["mode1_group_plus_4_mask"], row["candidate_group_plus_4_mask"])
+            self.assertEqual(row["mode1_cluster_masks"][row["cluster"]], row["candidate_cluster_mask"])
+            self.assertEqual(sum(int(mask, 16) != 0 for mask in row["mode1_cluster_masks"]), 1)
+
+    def test_mode1_wrong_selector_table_or_crosscheck_fails(self):
+        for mutation in ("mode", "raw-mode", "width", "offset", "overflow", "zero-shift"):
+            _, cpus = fixture()
+            pmgr = json.loads((ROOT / "docs/inventory/t6032-pmgr-mode-2026-09-26.json").read_text())
+            if mutation == "mode":
+                pmgr["features"]["acc-harvesting"]["value_le_u32"] = 2
+            elif mutation == "raw-mode":
+                pmgr["features"]["acc-harvesting"]["raw_hex"] = "02000000"
+            else:
+                value = bytearray.fromhex(pmgr["cluster_metadata"]["clusters"]["raw_hex"])
+                value[8 if mutation == "width" else 10] = (
+                    32 if mutation == "overflow" else 0 if mutation == "zero-shift" else 5)
+                pmgr["cluster_metadata"]["clusters"]["raw_hex"] = value.hex()
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                MASKS.model(pmgr, cpus)
+
+    def test_mode1_rejects_zero_multicore_and_out_of_range_inputs(self):
+        for mask in (0, -1, 3, 1 << 32, True):
+            with self.subTest(mask=mask), self.assertRaises(ValueError):
+                MASKS.mode1_single_cpu(mask, [4, 6, 6], [0, 4, 10])
+
     def test_all_32_masks_and_legacy_discrepancy(self):
         result = MASKS.model(*fixture())
         self.assertEqual(result["cpu_count"], 32)
         self.assertEqual(result["legacy_mismatch_count"], 12)
         self.assertEqual(len(result["legacy_alias_groups"]), 4)
+        self.assertFalse(result["mode1_crosscheck_performed"])
         for row in result["rows"]:
             expected_shift = (0, 4, 10)[row["cluster"]] + row["core"]
             self.assertEqual(row["candidate_group_plus_4_mask"], hex(1 << expected_shift))

@@ -1,5 +1,11 @@
 # T6032 CPU-mask comparison — 2026-09-26
 
+Follow-up: [mode selection and write-path evidence](m1n1-t6032-mask-contract.md)
+establishes captured `acc-harvesting=1`, independently reproduces the masks
+through the applicable non-2 branch, resolves the virtual write calls and
+identifies topology `+0x7c`. The original investigation below remains a
+record of the earlier mode-2-focused comparison, not the current gate list.
+
 This is an offline comparison, not firmware enablement or a native-start
 result. The [matching local PMGR binary](m1n1-t6032-pmgr-binary.md) supplies
 consumer evidence; a new [allowlisted capture](inventory/t6032-pmgr-cores-2026-09-26.json)
