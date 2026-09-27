@@ -47,9 +47,16 @@ static void mmu_rm_mapping(u64 from, size_t size);
 /* INSERT_MCC_SOURCE */
 
 static u64 mock_page_size;
-static u32 mock_start[PLANE_TZ_MAX_REGS], mock_end[PLANE_TZ_MAX_REGS];
-static bool mock_enabled[PLANE_TZ_MAX_REGS];
+#define TEST_TZ_PLANES 4
+static u32 mock_start_ctx[T6032_MCC_INSTANCE_COUNT][TEST_TZ_PLANES][PLANE_TZ_MAX_REGS];
+static u32 mock_end_ctx[T6032_MCC_INSTANCE_COUNT][TEST_TZ_PLANES][PLANE_TZ_MAX_REGS];
+static bool mock_enabled_ctx[T6032_MCC_INSTANCE_COUNT][TEST_TZ_PLANES][PLANE_TZ_MAX_REGS];
+static u8 mock_override[T6032_MCC_INSTANCE_COUNT][TEST_TZ_PLANES][PLANE_TZ_MAX_REGS];
+#define mock_start mock_start_ctx[0][0]
+#define mock_end mock_end_ctx[0][0]
+#define mock_enabled mock_enabled_ctx[0][0]
 static unsigned mock_reads, mock_removals, mock_heap_sets;
+static unsigned mock_read_log[1024];
 static u64 removed_start[PLANE_TZ_MAX_REGS * 4], removed_size[PLANE_TZ_MAX_REGS * 4];
 static u64 mock_heap_cursor, mock_heap_limit;
 u64 mock_payload_start;
@@ -73,13 +80,32 @@ static void heapblock_set_limit(void *limit)
 
 static u32 plane_read32(int mcc, int plane, u64 offset)
 {
-    if (mcc != 0 || plane != 0) abort();
+    if (mcc < 0 || mcc >= T6032_MCC_INSTANCE_COUNT || plane < 0 || plane >= TEST_TZ_PLANES)
+        abort();
+    if (!mcc_regs[mcc].tz)
+        abort();
     mock_reads++;
     for (u32 i = 0; i < PLANE_TZ_MAX_REGS; i++) {
-        u64 off = mcc_regs[0].tz->stride * i;
-        if (offset == mcc_regs[0].tz->start + off) return mock_start[i];
-        if (offset == mcc_regs[0].tz->end + off) return mock_end[i];
-        if (offset == mcc_regs[0].tz->enable + off) return mock_enabled[i];
+        u64 off = mcc_regs[mcc].tz->stride * i;
+        u8 override = mock_override[mcc][plane][i];
+        if (offset == mcc_regs[mcc].tz->start + off) {
+            if (mock_reads <= ARRAY_SIZE(mock_read_log))
+                mock_read_log[mock_reads - 1] = ((mcc * TEST_TZ_PLANES + plane) *
+                    PLANE_TZ_MAX_REGS + i) * 3;
+            return (override & 1) ? mock_start_ctx[mcc][plane][i] : mock_start[i];
+        }
+        if (offset == mcc_regs[mcc].tz->end + off) {
+            if (mock_reads <= ARRAY_SIZE(mock_read_log))
+                mock_read_log[mock_reads - 1] = ((mcc * TEST_TZ_PLANES + plane) *
+                    PLANE_TZ_MAX_REGS + i) * 3 + 1;
+            return (override & 2) ? mock_end_ctx[mcc][plane][i] : mock_end[i];
+        }
+        if (offset == mcc_regs[mcc].tz->enable + off) {
+            if (mock_reads <= ARRAY_SIZE(mock_read_log))
+                mock_read_log[mock_reads - 1] = ((mcc * TEST_TZ_PLANES + plane) *
+                    PLANE_TZ_MAX_REGS + i) * 3 + 2;
+            return (override & 4) ? mock_enabled_ctx[mcc][plane][i] : mock_enabled[i];
+        }
     }
     fprintf(stderr, "unexpected plane read 0x%llx\n", (unsigned long long)offset);
     abort();
@@ -96,9 +122,11 @@ static void mmu_rm_mapping(u64 from, size_t size)
 
 static void reset_fixture(u64 page_size)
 {
-    memset(mock_start, 0, sizeof(mock_start));
-    memset(mock_end, 0, sizeof(mock_end));
-    memset(mock_enabled, 0, sizeof(mock_enabled));
+    memset(mock_start_ctx, 0, sizeof(mock_start_ctx));
+    memset(mock_end_ctx, 0, sizeof(mock_end_ctx));
+    memset(mock_enabled_ctx, 0, sizeof(mock_enabled_ctx));
+    memset(mock_override, 0, sizeof(mock_override));
+    memset(mock_read_log, 0, sizeof(mock_read_log));
     memset(removed_start, 0, sizeof(removed_start));
     memset(removed_size, 0, sizeof(removed_size));
     mock_reads = mock_removals = mock_heap_sets = 0;
@@ -116,12 +144,124 @@ static void reset_fixture(u64 page_size)
     mcc_carveouts_ready = false;
     mcc_count = T6032_MCC_INSTANCE_COUNT;
     memset(mcc_regs_storage, 0, sizeof(mcc_regs_storage));
-    mcc_regs[0].tz = &t6031_tz_regs;
+    for (u32 i = 0; i < T6032_MCC_INSTANCE_COUNT; i++) {
+        mcc_regs[i].tz = &t6031_tz_regs;
+        mcc_regs[i].plane_count = TEST_TZ_PLANES;
+        mcc_regs[i].plane_stride = T6031_PLANE_STRIDE;
+    }
     mcc_carveout_count = 0;
     memset(mcc_carveouts, 0, sizeof(mcc_carveouts));
 }
 
+static void override_tz_context(u32 mcc, u32 plane, u32 slot, u32 first, u32 last,
+                                bool enabled, u8 fields)
+{
+    if (mcc >= T6032_MCC_INSTANCE_COUNT || plane >= TEST_TZ_PLANES ||
+        slot >= PLANE_TZ_MAX_REGS)
+        abort();
+    mock_start_ctx[mcc][plane][slot] = first;
+    mock_end_ctx[mcc][plane][slot] = last;
+    mock_enabled_ctx[mcc][plane][slot] = enabled;
+    mock_override[mcc][plane][slot] = fields;
+}
+
 #define CHECK(test) do { if (!(test)) { fprintf(stderr, "FAIL line %d: %s\n", __LINE__, #test); return 1; } } while (0)
+
+static int check_complete_read_log(void)
+{
+    unsigned seen[T6032_MCC_INSTANCE_COUNT][TEST_TZ_PLANES][PLANE_TZ_MAX_REGS][3] = {0};
+    CHECK(mock_reads == T6032_MCC_INSTANCE_COUNT * TEST_TZ_PLANES *
+          PLANE_TZ_MAX_REGS * 3);
+    for (unsigned n = 0; n < mock_reads; n++) {
+        unsigned key = mock_read_log[n];
+        unsigned slot = (key / 3) % PLANE_TZ_MAX_REGS;
+        unsigned context = key / (PLANE_TZ_MAX_REGS * 3);
+        unsigned plane = context % TEST_TZ_PLANES;
+        unsigned mcc = context / TEST_TZ_PLANES;
+        CHECK(mcc < T6032_MCC_INSTANCE_COUNT && plane < TEST_TZ_PLANES &&
+              key % 3 < 3);
+        seen[mcc][plane][slot][key % 3]++;
+    }
+    for (unsigned mcc = 0; mcc < T6032_MCC_INSTANCE_COUNT; mcc++)
+        for (unsigned plane = 0; plane < TEST_TZ_PLANES; plane++)
+            for (unsigned slot = 0; slot < PLANE_TZ_MAX_REGS; slot++)
+                for (unsigned field = 0; field < 3; field++)
+                    CHECK(seen[mcc][plane][slot][field] == 1);
+    return 0;
+}
+
+static int test_tz_consistency_scan(void)
+{
+    for (u64 page_size = 4096; page_size <= 16384; page_size *= 4) {
+        reset_fixture(page_size);
+        mock_start[0] = 0x1000; mock_end[0] = 0x1003; mock_enabled[0] = true;
+        CHECK(mcc_unmap_carveouts_t6032(mem_size_actual) == 0);
+        CHECK(check_complete_read_log() == 0);
+        CHECK(mock_removals == 4 && mock_heap_sets == 1 && mcc_carveout_count == 1);
+    }
+
+    reset_fixture(4096);
+    override_tz_context(T6032_MCC_INSTANCE_COUNT - 1, TEST_TZ_PLANES - 1,
+                        PLANE_TZ_MAX_REGS - 1, 0xdead, 0xbeef, false, 3);
+    CHECK(mcc_unmap_carveouts_t6032(mem_size_actual) == 0);
+    CHECK(mock_reads == T6032_MCC_INSTANCE_COUNT * TEST_TZ_PLANES *
+          PLANE_TZ_MAX_REGS * 3 && mock_removals == 0 && mock_heap_sets == 1 &&
+          mcc_carveout_count == 0);
+    return 0;
+}
+
+static int test_late_tz_mismatch(u8 field, bool baseline_enabled)
+{
+    reset_fixture(4096);
+    mock_start[0] = 0x1000;
+    mock_end[0] = 0x1003;
+    mock_enabled[0] = true;
+    if (baseline_enabled) {
+        mock_start[PLANE_TZ_MAX_REGS - 1] = 0x2000;
+        mock_end[PLANE_TZ_MAX_REGS - 1] = 0x2003;
+        mock_enabled[PLANE_TZ_MAX_REGS - 1] = true;
+    }
+    u32 first = baseline_enabled ? 0x2000 : 0;
+    u32 last = baseline_enabled ? 0x2003 : 0;
+    bool enabled = baseline_enabled;
+    if (field == 4 && !baseline_enabled) {
+        first = 0x2000;
+        last = 0x2003;
+    }
+    if (field == 1) first ^= 1;
+    if (field == 2) last ^= 1;
+    if (field == 4) enabled = !enabled;
+    override_tz_context(T6032_MCC_INSTANCE_COUNT - 1, TEST_TZ_PLANES - 1,
+                        PLANE_TZ_MAX_REGS - 1, first, last, enabled, field);
+    CHECK(mcc_unmap_carveouts_t6032(mem_size_actual) < 0);
+    CHECK(mock_reads == T6032_MCC_INSTANCE_COUNT * TEST_TZ_PLANES *
+          PLANE_TZ_MAX_REGS * 3 && mock_removals == 0 && mock_heap_sets == 0 &&
+          !mcc_carveouts_ready && mcc_carveout_count == 0);
+    for (u32 i = 0; i < ARRAY_SIZE(mcc_carveouts); i++)
+        CHECK(!mcc_carveouts[i].base && !mcc_carveouts[i].size);
+    return 0;
+}
+
+static int test_invalid_tz_descriptor_no_reads(void)
+{
+    for (unsigned variant = 0; variant < 3; variant++) {
+        reset_fixture(4096);
+        if (variant == 0)
+            mcc_regs[T6032_MCC_INSTANCE_COUNT - 1].plane_count = 3;
+        else if (variant == 1)
+            mcc_regs[T6032_MCC_INSTANCE_COUNT - 1].plane_stride = T6031_PLANE_STRIDE + 4;
+        else
+            mcc_regs[T6032_MCC_INSTANCE_COUNT - 1].tz = NULL;
+        CHECK(mcc_unmap_carveouts_t6032(mem_size_actual) < 0);
+        CHECK(mock_reads == 0 && mock_removals == 0 && mock_heap_sets == 0 &&
+              !mcc_carveouts_ready && mcc_carveout_count == 0);
+    }
+    reset_fixture(8192);
+    CHECK(mcc_unmap_carveouts_t6032(mem_size_actual) < 0);
+    CHECK(mock_reads == 0 && mock_removals == 0 && mock_heap_sets == 0 &&
+          !mcc_carveouts_ready && mcc_carveout_count == 0);
+    return 0;
+}
 
 static int expect_failure_no_effects_alias(u64 alias_size)
 {
@@ -132,7 +272,8 @@ static int expect_failure_no_effects_alias(u64 alias_size)
     }
     mcc_carveout_count = ARRAY_SIZE(mcc_carveouts);
     CHECK(mcc_unmap_carveouts_t6032(alias_size) < 0);
-    CHECK(mock_reads <= PLANE_TZ_MAX_REGS * 3 && mock_removals == 0 && mock_heap_sets == 0);
+    CHECK(mock_reads <= T6032_MCC_INSTANCE_COUNT * TEST_TZ_PLANES * PLANE_TZ_MAX_REGS * 3 &&
+          mock_removals == 0 && mock_heap_sets == 0);
     CHECK(mcc_carveout_count == 0 && mock_heap_limit == old_limit);
     for (u32 i = 0; i < ARRAY_SIZE(mcc_carveouts); i++)
         CHECK(!mcc_carveouts[i].base && !mcc_carveouts[i].size);
@@ -292,6 +433,12 @@ static int test_shifted_window_containment(void)
 int main(void)
 {
     /* The runner fails closed if the patch changes helper signatures/source shape. */
+    CHECK(test_tz_consistency_scan() == 0);
+    CHECK(test_late_tz_mismatch(4, true) == 0); /* enabled */
+    CHECK(test_late_tz_mismatch(1, true) == 0); /* first */
+    CHECK(test_late_tz_mismatch(2, true) == 0); /* last */
+    CHECK(test_late_tz_mismatch(4, false) == 0); /* disabled -> enabled */
+    CHECK(test_invalid_tz_descriptor_no_reads() == 0);
     reset_fixture(4096);
     CHECK(test_or_synthetic_window_rejected(0x100000000ULL) == 0);
     CHECK(test_or_synthetic_window_rejected(0x13f00000000ULL) == 0);
@@ -300,7 +447,8 @@ int main(void)
     CHECK(test_shifted_window_containment() == 0);
     mock_start[0] = 0x1000; mock_end[0] = 0x1003; mock_enabled[0] = true;
     CHECK(mcc_unmap_carveouts_t6032(mem_size_actual) == 0);
-    CHECK(mock_reads == 12 && mock_removals == 4 && mcc_carveout_count == 1);
+    CHECK(mock_reads == T6032_MCC_INSTANCE_COUNT * TEST_TZ_PLANES *
+          PLANE_TZ_MAX_REGS * 3 && mock_removals == 4 && mcc_carveout_count == 1);
     CHECK(mock_heap_sets == 1 && mock_heap_limit == ram_base + 0x1000000);
     CHECK(removed_start[0] == ram_base + 0x1000000 &&
           removed_start[1] == ((ram_base + 0x1000000) | REGION_RWX_EL0) &&
@@ -441,6 +589,7 @@ int main(void)
     chip_id = 0x6031;
     mock_start[0] = 0x1000; mock_end[0] = 0x1003; mock_enabled[0] = true;
     CHECK(mcc_unmap_carveouts() == 0 && mock_removals == 4 && mock_heap_sets == 0);
+    CHECK(mock_reads == PLANE_TZ_MAX_REGS * 3);
 
     reset_fixture(4096);
     mock_start[0] = 0x1000; mock_end[0] = 0x1003; mock_enabled[0] = true;
@@ -448,6 +597,6 @@ int main(void)
     mem_size_actual = 0x1200000;
     CHECK(expect_failure_no_effects() == 0);
 
-    puts("T6032 carveout preflight tests passed: fixed-origin decode, granules, aliases, overlap, heap/image guards, late failure, no-effects");
+    puts("T6032 carveout preflight tests passed: fixed-origin decode, 16x4 TZ consistency, granules, aliases, overlap, no-effects");
     return 0;
 }

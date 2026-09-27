@@ -8,6 +8,7 @@ six-patch CPU-inventory preflight series, seven-patch caller-status series,
 eight-patch MCC-layout series, nine-patch initial-carveout-preflight series,
 ten-patch runtime-mapping-guard series, and eleven-patch frequency-status series.
 2026-09-27: the twelve-patch fixed-TZ-origin series also compiles and links.
+The thirteen-patch cross-controller TZ consistency series also passes.
 This is a **build result,
 not a native boot result**. No artifact was installed or executed.
 
@@ -23,7 +24,8 @@ plus [`0008` MCC layout](../patches/m1n1/0008-validate-t6032-mcc-layout.patch)
 plus [`0009` carveout preflight](../patches/m1n1/0009-preflight-t6032-carveout-removal.patch)
 plus [`0010` runtime mapping guard](../patches/m1n1/0010-guard-t6032-runtime-mappings.patch)
 plus [`0011` frequency-init status](../patches/m1n1/0011-propagate-t6032-cpufreq-failures.patch)
-and [`0012` fixed TZ origin](../patches/m1n1/0012-decode-t6032-tz-relative-origin.patch).
+plus [`0012` fixed TZ origin](../patches/m1n1/0012-decode-t6032-tz-relative-origin.patch)
+and [`0013` TZ consistency](../patches/m1n1/0013-check-t6032-tz-plane-consistency.patch).
 The [initial build record](inventory/m1n1-cpu-build-2026-09-26.json) records
 baseline/capacity-only artifacts; the [cleanup-series build record](inventory/m1n1-cpu-cleanup-build-2026-09-26.json)
 records the two-patch build; the [startup-guard build record](inventory/m1n1-cpu-startup-build-2026-09-26.json)
@@ -36,7 +38,8 @@ records the eight-patch build; the [carveout build record](inventory/m1n1-carveo
 records the nine-patch build; the [runtime-mapping build record](inventory/m1n1-mapping-build-2026-09-26.json)
 records the ten-patch build; the [frequency-status build record](inventory/m1n1-cpufreq-status-build-2026-09-26.json)
 records the eleven-patch build; the [TZ-origin build record](inventory/m1n1-tz-origin-build-2026-09-27.json)
-records the twelve-patch build. These records include hashes and scratch
+records the twelve-patch build; the [TZ-consistency build record](inventory/m1n1-tz-consistency-build-2026-09-27.json)
+records the thirteen-patch build. These records include hashes and scratch
 locations. The recipe builds the default firmware configuration, not every
 optional feature combination. It does not introduce T6032 startup dispatch.
 
@@ -65,7 +68,7 @@ bash scripts/build-m1n1-cpu-offline.sh patched
 ```
 
 The script validates the source archive digest and Rust version, extracts a
-fresh scratch tree per run, applies all twelve patches only to the patched copy,
+fresh scratch tree per run, applies all thirteen patches only to the patched copy,
 sets a local version tag and passes `--offline --locked` to Cargo. Logs and
 artifacts are retained on failure or success. There is no install/boot step.
 The source archive stays unmodified. This is a repeatable build recipe, not

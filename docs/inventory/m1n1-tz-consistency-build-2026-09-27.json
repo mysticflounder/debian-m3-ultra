@@ -1,0 +1,49 @@
+{
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "toolchain_record": "m1n1-cpu-build-2026-09-26.json",
+  "configuration": "default Makefile all; patches 0001 through 0013; CPU/frequency dispatch disabled",
+  "prior_patch_records": {
+    "path": "m1n1-tz-origin-build-2026-09-27.json",
+    "sha256": "065fee71916964b48caadb32da993ee25499ed539819f41018eae8ba9fcf283b",
+    "scope": "patch 0012 and its referenced 0001..0011 record; not prior artifact hashes"
+  },
+  "additional_patch": {
+    "path": "patches/m1n1/0013-check-t6032-tz-plane-consistency.patch",
+    "sha256": "42c26c22cc555c5a717a7ce5584a25b1ebbc2ff213d675441c102be39c8e08ce"
+  },
+  "build_script_sha256": "9262396527e984c0d88c12d971719596451986819dce838e23d0d2a501a12291",
+  "directory": "scratch/m1n1-firmware-patched.CyvlHP",
+  "status": "pass",
+  "sha256": {
+    "m1n1.elf": "755e531ae4151f3d346b540675e85b46e78175bc9f65325a610338e904eae3ae",
+    "m1n1-raw.elf": "fafd48020b37ce70d2adba0e3c3bf32ea30a95083c06e22eef2ce36ddd2cba17",
+    "m1n1.macho": "1258458f0a9878ca5a92e18152ecb7641b20cbb7d1cdb3ca317f06eb68e906a5",
+    "m1n1.bin": "ea5878a14ea47747cbe31defec9d92e00423a516830a4bea981c1255068b81b5"
+  },
+  "host_tests": {
+    "status": "pass",
+    "patch_count": 13,
+    "sanitizers": "address,undefined; recovery disabled",
+    "source_sha256": {
+      "scripts/test-m1n1-carveout-preflight.py": "c19b0bc3f55f4ee5cb747c9fc7b8899a0bdf9c257cf579ad00561d4c9c2a5bf2",
+      "scripts/test-m1n1-mapping-guard.py": "97a03d3a819104eb9dada35569afb578ea2bd82086ee0c5becb1311a6ab98363",
+      "tests/m1n1-carveout-preflight.c": "70b50aeeae8be4bd92060e49b9f260434d049e26e7a40633ee9113d36b9e2055",
+      "tests/m1n1-mapping-guard.c": "2d660c899cdbba9d9b10871f5dff8b1d39ef98ade591a9151372506c5ff501eb"
+    },
+    "log_sha256": {
+      "scratch/mcc-evidence/tz-consistency-carveout-preflight.log": "303f9fd53d2a4abda5d8a8d5bd6c81454bedbbdbc9c90c2520c5470dd2bfe660",
+      "scratch/mcc-evidence/tz-consistency-mapping-guard.log": "f4952842d8622146837477c85ff541ca6d96f6b9d5f7e6ab56bad9c62c7c627a"
+    }
+  },
+  "mutation_check": {
+    "scope": "Scratch copy only; replace mismatch predicate with false, retaining all reads; unchanged host harness",
+    "result": "expected failure at late enable-mismatch rejection assertion",
+    "exit_code": 1,
+    "log": "scratch/mcc-evidence/tz-consistency-mutant.log",
+    "log_sha256": "5993ab5315652dccaf5fb5316a903e205b2cd316c3c9c61dd210f9668e074ef7"
+  },
+  "native_execution": false,
+  "mmio_testing": false,
+  "maximum_t6032_preflight_reads": 768,
+  "scope": "Offline build and mocked host tests only; additional controller/plane access remains unqualified and unauthorized"
+}

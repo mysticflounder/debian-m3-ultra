@@ -90,7 +90,7 @@ def materialize(tree: pathlib.Path) -> None:
         if not source.is_file() or source.read_bytes() != originals[relative]:
             fail(f"pinned source mismatch: {relative}")
         destination.write_bytes(originals[relative])
-    for index in range(1, 13):
+    for index in range(1, 14):
         matches = sorted(PATCH_DIR.glob(f"{index:04d}-*.patch"))
         if len(matches) != 1: fail(f"missing/ambiguous patch {index}: {matches}")
         result = run(["patch", "-p1", "--batch", "--forward", "-i", str(matches[0])], tree)
@@ -122,7 +122,7 @@ def source_fragment(mcc: str, memory: str, memory_h: str) -> tuple[str, str]:
                  "VADDR_L0_OFFSET_BITS", "VADDR_L1_ALIGN_MASK", "VADDR_L2_ALIGN_MASK",
                  "PTE_TARGET_MASK"):
         defines.append(extract_define(memory, name))
-    for name in ("PLANE_TZ_MAX_REGS", "T6032_MCC_INSTANCE_COUNT"):
+    for name in ("PLANE_TZ_MAX_REGS", "T6032_MCC_INSTANCE_COUNT", "T6031_PLANE_STRIDE"):
         defines.append(extract_define(mcc, name))
     for name in ("PTE_VALID", "PTE_ACCESS", "PTE_PXN", "PTE_UXN", "PTE_AP_RO",
                  "PTE_AP_EL0", "PTE_SH_OS", "PERM_RWX", "PERM_RW_EL0",

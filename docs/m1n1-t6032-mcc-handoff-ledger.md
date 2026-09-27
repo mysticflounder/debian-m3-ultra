@@ -14,6 +14,12 @@ eleven-patch snapshot. The twelve-patch version uses fixed-origin addition
 and rejects nonzero bits outside the 28-bit fields, retaining RAM containment.
 The access sequence and unresolved permission/scope gates below are unchanged.
 
+Further update: [0013 adds all-controller/plane consistency checks](m1n1-t6032-tz-consistency.md).
+The thirteen-patch preflight now samples all 64 contexts, up to 768 reads,
+and rejects disagreement before mapping/heap effects. Thus the single-context
+read count below is historical, not the current access plan. Every additional
+aperture still needs early-access qualification before native execution.
+
 ## Accesses and ordering in our source
 
 | Phase | Access / transformation | Guard and remaining limitation |

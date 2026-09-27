@@ -74,8 +74,15 @@ struct tz_regs *test_tz = &t6031_tz_regs;
 static unsigned page_effects, map_calls, cache_effects, remove_effects, panic_count;
 static unsigned heap_limit_sets, tz_reads;
 static u64 mock_heap_cursor, mock_heap_limit;
-static u32 mock_tz_start[PLANE_TZ_MAX_REGS], mock_tz_end[PLANE_TZ_MAX_REGS];
-static bool mock_tz_enabled[PLANE_TZ_MAX_REGS];
+#define TEST_TZ_PLANES 4
+static u32 mock_tz_start_ctx[16][TEST_TZ_PLANES][PLANE_TZ_MAX_REGS];
+static u32 mock_tz_end_ctx[16][TEST_TZ_PLANES][PLANE_TZ_MAX_REGS];
+static bool mock_tz_enabled_ctx[16][TEST_TZ_PLANES][PLANE_TZ_MAX_REGS];
+static u8 mock_tz_override[16][TEST_TZ_PLANES][PLANE_TZ_MAX_REGS];
+#define mock_tz_start mock_tz_start_ctx[0][0]
+#define mock_tz_end mock_tz_end_ctx[0][0]
+#define mock_tz_enabled mock_tz_enabled_ctx[0][0]
+static unsigned tz_read_log[1024];
 static u64 removed_base[PLANE_TZ_MAX_REGS * 4], removed_size[PLANE_TZ_MAX_REGS * 4];
 static bool mock_16k;
 static jmp_buf panic_env;
@@ -88,16 +95,30 @@ static void *heapblock_get_limit(void) { return (void *)(uintptr_t)mock_heap_lim
 static void heapblock_set_limit(void *limit) { mock_heap_limit = (u64)(uintptr_t)limit; heap_limit_sets++; }
 static u32 plane_read32(int mcc, int plane, u64 offset)
 {
-    if (mcc != 0 || plane != 0) abort();
+    if (mcc < 0 || mcc >= 16 || plane < 0 || plane >= TEST_TZ_PLANES || !mcc_regs[mcc].tz)
+        abort();
     tz_reads++;
-    u64 base = t6031_tz_regs.start;
     for (unsigned i = 0; i < PLANE_TZ_MAX_REGS; i++) {
-        u64 off = base + (u64)t6031_tz_regs.stride * i;
-        if (offset == off) return mock_tz_start[i];
-        if (offset == t6031_tz_regs.end + (u64)t6031_tz_regs.stride * i)
-            return mock_tz_end[i];
-        if (offset == t6031_tz_regs.enable + (u64)t6031_tz_regs.stride * i)
-            return mock_tz_enabled[i];
+        u64 off = (u64)mcc_regs[mcc].tz->stride * i;
+        u8 override = mock_tz_override[mcc][plane][i];
+        if (offset == mcc_regs[mcc].tz->start + off) {
+            if (tz_reads <= ARRAY_SIZE(tz_read_log))
+                tz_read_log[tz_reads - 1] = ((mcc * TEST_TZ_PLANES + plane) *
+                    PLANE_TZ_MAX_REGS + i) * 3;
+            return (override & 1) ? mock_tz_start_ctx[mcc][plane][i] : mock_tz_start[i];
+        }
+        if (offset == mcc_regs[mcc].tz->end + off) {
+            if (tz_reads <= ARRAY_SIZE(tz_read_log))
+                tz_read_log[tz_reads - 1] = ((mcc * TEST_TZ_PLANES + plane) *
+                    PLANE_TZ_MAX_REGS + i) * 3 + 1;
+            return (override & 2) ? mock_tz_end_ctx[mcc][plane][i] : mock_tz_end[i];
+        }
+        if (offset == mcc_regs[mcc].tz->enable + off) {
+            if (tz_reads <= ARRAY_SIZE(tz_read_log))
+                tz_read_log[tz_reads - 1] = ((mcc * TEST_TZ_PLANES + plane) *
+                    PLANE_TZ_MAX_REGS + i) * 3 + 2;
+            return (override & 4) ? mock_tz_enabled_ctx[mcc][plane][i] : mock_tz_enabled[i];
+        }
     }
     abort();
 }
@@ -159,12 +180,29 @@ static void reset_fixture(void)
     mcc_initialized = true;
     mcc_count = T6032_MCC_INSTANCE_COUNT;
     memset(mcc_regs, 0, sizeof(mcc_regs));
-    mcc_regs[0].tz = &t6031_tz_regs;
-    memset(mock_tz_start, 0, sizeof(mock_tz_start));
-    memset(mock_tz_end, 0, sizeof(mock_tz_end));
-    memset(mock_tz_enabled, 0, sizeof(mock_tz_enabled));
+    for (unsigned i = 0; i < 16; i++) {
+        mcc_regs[i].tz = &t6031_tz_regs;
+        mcc_regs[i].plane_count = TEST_TZ_PLANES;
+        mcc_regs[i].plane_stride = T6031_PLANE_STRIDE;
+    }
+    memset(mock_tz_start_ctx, 0, sizeof(mock_tz_start_ctx));
+    memset(mock_tz_end_ctx, 0, sizeof(mock_tz_end_ctx));
+    memset(mock_tz_enabled_ctx, 0, sizeof(mock_tz_enabled_ctx));
+    memset(mock_tz_override, 0, sizeof(mock_tz_override));
+    memset(tz_read_log, 0, sizeof(tz_read_log));
     memset(removed_base, 0, sizeof(removed_base));
     memset(removed_size, 0, sizeof(removed_size));
+}
+
+static void override_tz_context(unsigned mcc, unsigned plane, unsigned slot,
+                                u32 first, u32 last, bool enabled, u8 fields)
+{
+    if (mcc >= 16 || plane >= TEST_TZ_PLANES || slot >= PLANE_TZ_MAX_REGS)
+        abort();
+    mock_tz_start_ctx[mcc][plane][slot] = first;
+    mock_tz_end_ctx[mcc][plane][slot] = last;
+    mock_tz_enabled_ctx[mcc][plane][slot] = enabled;
+    mock_tz_override[mcc][plane][slot] = fields;
 }
 
 static void publish_one(u64 base, u64 size)
@@ -186,6 +224,75 @@ static bool published_state_zero(void)
 }
 
 #define CHECK(test) do { if (!(test)) { fprintf(stderr, "FAIL line %d: %s\n", __LINE__, #test); return 1; } } while (0)
+static void configure_one_tz(void);
+
+static int check_complete_tz_read_log(void)
+{
+    unsigned seen[16][TEST_TZ_PLANES][PLANE_TZ_MAX_REGS][3] = {0};
+    CHECK(tz_reads == 16 * TEST_TZ_PLANES * PLANE_TZ_MAX_REGS * 3);
+    for (unsigned n = 0; n < tz_reads; n++) {
+        unsigned key = tz_read_log[n];
+        unsigned slot = (key / 3) % PLANE_TZ_MAX_REGS;
+        unsigned context = key / (PLANE_TZ_MAX_REGS * 3);
+        unsigned plane = context % TEST_TZ_PLANES;
+        unsigned mcc = context / TEST_TZ_PLANES;
+        CHECK(mcc < 16 && plane < TEST_TZ_PLANES && key % 3 < 3);
+        seen[mcc][plane][slot][key % 3]++;
+    }
+    for (unsigned mcc = 0; mcc < 16; mcc++)
+        for (unsigned plane = 0; plane < TEST_TZ_PLANES; plane++)
+            for (unsigned slot = 0; slot < PLANE_TZ_MAX_REGS; slot++)
+                for (unsigned field = 0; field < 3; field++)
+                    CHECK(seen[mcc][plane][slot][field] == 1);
+    return 0;
+}
+
+static int test_tz_consistency_matrix(void)
+{
+    for (unsigned granule = 0; granule < 2; granule++) {
+        reset_fixture();
+        mock_page_size = granule ? 16384 : 4096;
+        mock_16k = granule;
+        configure_one_tz();
+        CHECK(mcc_unmap_carveouts_t6032(mem_size_actual) == 0);
+        CHECK(check_complete_tz_read_log() == 0 && remove_effects == 4 &&
+              heap_limit_sets == 1 && mcc_carveout_count == 1);
+    }
+
+    reset_fixture();
+    configure_one_tz();
+    override_tz_context(15, TEST_TZ_PLANES - 1, PLANE_TZ_MAX_REGS - 1,
+                        0x3000, 0x3003, true, 4);
+    CHECK(mcc_unmap_carveouts_t6032(mem_size_actual) < 0);
+    CHECK(tz_reads == 16 * TEST_TZ_PLANES * PLANE_TZ_MAX_REGS * 3 &&
+          remove_effects == 0 && heap_limit_sets == 0 && !mcc_carveouts_ready &&
+          mcc_carveout_count == 0);
+
+    reset_fixture();
+    override_tz_context(15, TEST_TZ_PLANES - 1, PLANE_TZ_MAX_REGS - 1,
+                        0xdead, 0xbeef, false, 3);
+    CHECK(mcc_unmap_carveouts_t6032(mem_size_actual) == 0 &&
+          tz_reads == 16 * TEST_TZ_PLANES * PLANE_TZ_MAX_REGS * 3 &&
+          remove_effects == 0 && heap_limit_sets == 1 && mcc_carveout_count == 0);
+    return 0;
+}
+
+static int test_tz_descriptor_rejection(void)
+{
+    for (unsigned variant = 0; variant < 3; variant++) {
+        reset_fixture();
+        if (variant == 0)
+            mcc_regs[15].plane_count = 3;
+        else if (variant == 1)
+            mcc_regs[15].plane_stride = T6031_PLANE_STRIDE + 4;
+        else
+            mcc_regs[15].tz = NULL;
+        CHECK(mcc_unmap_carveouts_t6032(mem_size_actual) < 0);
+        CHECK(tz_reads == 0 && remove_effects == 0 && heap_limit_sets == 0 &&
+              !mcc_carveouts_ready && mcc_carveout_count == 0);
+    }
+    return 0;
+}
 
 static void configure_one_tz(void)
 {
@@ -202,7 +309,8 @@ static int test_unmap_publication(void)
     CHECK(mcc_unmap_carveouts_t6032(mem_size_actual) == 0);
     CHECK(mcc_carveouts_ready && mcc_carveout_count == 1);
     CHECK(mcc_carveouts[0].base == ram_base + 0x2000000 && mcc_carveouts[0].size == 0x4000);
-    CHECK(tz_reads == 12 && remove_effects == 4 && heap_limit_sets == 1);
+    CHECK(tz_reads == 16 * TEST_TZ_PLANES * PLANE_TZ_MAX_REGS * 3 &&
+          remove_effects == 4 && heap_limit_sets == 1);
     CHECK(removed_base[0] == ram_base + 0x2000000 && removed_size[0] == 0x4000);
     CHECK(removed_base[1] == (ram_base | REGION_RWX_EL0) + 0x2000000);
     CHECK(removed_base[2] == (ram_base | REGION_RW_EL0) + 0x2000000);
@@ -238,7 +346,8 @@ static int test_unmap_publication(void)
     mcc_t6032_begin_carveout_setup();
     CHECK(mcc_unmap_carveouts_t6032(mem_size_actual) == 0);
     CHECK(mcc_carveouts_ready && mcc_carveout_count == 0);
-    CHECK(tz_reads == 12 && remove_effects == 0 && heap_limit_sets == 1);
+    CHECK(tz_reads == 16 * TEST_TZ_PLANES * PLANE_TZ_MAX_REGS * 3 &&
+          remove_effects == 0 && heap_limit_sets == 1);
 
     reset_fixture();
     mcc_t6032_begin_carveout_setup();
@@ -278,6 +387,8 @@ static int test_unmap_publication(void)
 
 int main(void)
 {
+    CHECK(test_tz_consistency_matrix() == 0);
+    CHECK(test_tz_descriptor_rejection() == 0);
     CHECK(test_unmap_publication() == 0);
     reset_fixture();
     for (unsigned i = 0; i < ARRAY_SIZE(mcc_carveouts); i++) {
@@ -388,6 +499,6 @@ int main(void)
     mmu_add_mapping(ram_base + 0x1000000, ram_base + 0x1000000, 0x1000, MAIR_IDX_NORMAL, PERM_RWX);
     CHECK(page_effects && !panic_count);
 
-    puts("T6032 mapping guard tests passed: lifecycle, geometry, physical overlap, aliases, descriptor/page effects, legacy");
+    puts("T6032 mapping guard tests passed: lifecycle, 16x4 TZ consistency, geometry, physical overlap, aliases, legacy");
     return 0;
 }

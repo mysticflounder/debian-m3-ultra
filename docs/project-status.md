@@ -14,9 +14,9 @@ not a fresh remote or live-machine check.
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff cleanup | Validated offline | Two separate patches, seven-case handoff suite and full firmware build pass; no native execution |
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
-| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; twelve-patch cross-build passes | Resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
+| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; thirteen-patch cross-build passes | Resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; T6032 frequency failure now rejects before SMP, nine sanitizer cases pass | Validate native reset separately; no rollback or recoverable degraded-SMP claim |
-| MCC/cache initialization | Fixed-origin T6032 TZ decoder implemented; twelve-patch cross-build and ASAN/UBSAN carveout/mapping suites pass | Validate actual handoff/encoding, controller agreement and aperture relationship; cache effects, early permissions and DMA remain unqualified |
+| MCC/cache initialization | Fixed-origin decoder plus all-controller/plane consistency preflight implemented; thirteen-patch cross-build and both sanitizer suites pass; mismatch mutation detected | Qualify all 64 sampled contexts before native access; actual handoff/encoding, aperture relationship, cache effects and DMA remain unresolved |
 | Six-cluster frequency / DVFS | Conditional routing and OSData provider traced; die-1 selectors 33/37/45 identified and captured; 61 input/adjacent tests pass | Resolve effective die-count writer/allocation contract, safe raw APSC/default indices and early-boot prerequisites; native dispatch disabled |
 | Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
@@ -39,6 +39,7 @@ Details: [CPU work](m1n1-t6032-cpus.md),
 [endpoint translation and RAM reconstruction](m1n1-t6032-boot-tz-translation.md),
 [TZ0 limit production and conditional inverse](m1n1-t6032-boot-tz-inputs.md),
 [fixed-origin T6032 decoder and mapped-RAM containment](m1n1-t6032-tz-origin.md),
+[all-controller/plane TZ consistency preflight](m1n1-t6032-tz-consistency.md),
 [boot-argument physical-base producer and copy path](m1n1-t6032-boot-arguments.md),
 [source-table merge and boot-stage boundaries](m1n1-t6032-boot-stage-boundaries.md),
 [LLB memory-table address publication](m1n1-t6032-llb-table-publication.md),
