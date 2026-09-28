@@ -232,6 +232,8 @@ def main() -> int:
             fail("startup metadata fixture is not 32 records")
         defines = [line for text in (smp, smp_header) for line in text.splitlines()
                    if line.startswith("#define ")]
+        if os.environ.get("TEST_MMU_SMP_GUARD") == "1":
+            defines.append("#define TEST_MMU_SMP_GUARD 1")
         defines += [line for line in soc.splitlines()
                     if re.match(r"#define\s+(?:S5L|S800|T[0-9]+)", line)]
         state_rows = ", ".join(
@@ -330,6 +332,9 @@ static int adt_get_reg(const void *tree, int *path, const char *prop, int index,
         completed = run([str(binary)], work)
         if completed.returncode:
             fail(f"status harness failed ({completed.returncode}):\n{completed.stdout}{completed.stderr}")
+        if (os.environ.get("TEST_MMU_SMP_GUARD") == "1" and
+                "SMP shared gate: both entry points reject" not in completed.stdout):
+            fail("SMP shared-gate execution marker missing")
         client = (PINNED / "proxyclient/m1n1/proxy.py").read_text(encoding="utf-8")
         if ("if status != self.S_OK:" not in client or
                 "raise ProxyRemoteError" not in client or

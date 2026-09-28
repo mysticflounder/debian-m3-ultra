@@ -54,7 +54,7 @@ leaves die-1 CPU release addresses for the loader to populate. The
 [M3 PMP proposal](https://github.com/AsahiLinux/linux/pull/525) explicitly
 reports testing only T6034. None supplies a verified T6032 early-boot recipe.
 
-## Next bounded offline task: SMP shared-memory compatibility
+## Completed compatibility experiment: SMP shared memory
 
 Sven Peter's
 [`f7124b8d42bcdd44131b4a455ad32e2f98fde166`](https://github.com/AsahiLinux/m1n1/commit/f7124b8d42bcdd44131b4a455ad32e2f98fde166)
@@ -65,9 +65,10 @@ Independent source review confirmed these changes, but no T6032 dispatch or
 native Ultra execution evidence. A subsequent
 [opt-in backport experiment](m1n1-smp-shared-experiment.md) now cross-builds
 against our pinned fourteen-patch tree. It adds local pointer-table and
-linker-alignment adaptations; the default series remains unchanged.
+linker-alignment adaptations. That historical experiment has been superseded
+by the [default backport plus mapping/startup guards](m1n1-smp-shared.md).
 
-The experiment tests compatibility in an isolated scratch source tree against our pinned
+The original experiment tests compatibility in an isolated scratch source tree against our pinned
 baseline plus patches 0001 through 0014. Check prerequisites and conflicts
 explicitly rather than assuming the newer commit applies alone. Verify:
 

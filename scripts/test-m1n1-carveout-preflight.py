@@ -18,6 +18,7 @@ ARCHIVE_SHA256 = "6425983260ab96d55c36fdaab3b456830c3bd80f06b7759a61ed2bcca924d9
 CLANG = shutil.which("clang")
 PATCH_DIR = ROOT / "patches/m1n1"
 SOURCE_FILES = {
+    "m1n1.ld", "m1n1-raw.ld",
     "src/mcc.c", "src/mcc.h", "src/memory.c", "src/memory.h",
     "src/heapblock.c", "src/heapblock.h", "src/xnuboot.h", "src/utils.h",
     "src/main.c", "src/kboot.c", "src/hv.c", "src/hv.h", "src/smp.c",
@@ -98,7 +99,7 @@ def materialize(tree: pathlib.Path) -> None:
         if not source.is_file() or source.read_bytes() != originals[relative]:
             fail(f"pinned source mismatch: {relative}")
         destination.write_bytes(originals[relative])
-    for index in range(1, 15):
+    for index in range(1, 17):
         matches = sorted(PATCH_DIR.glob(f"{index:04d}-*.patch"))
         if len(matches) != 1:
             fail(f"missing or ambiguous patch {index:04d}: {[p.name for p in matches]}")

@@ -1,5 +1,10 @@
 # SMP shared-memory backport experiment
 
+Historical record at commit `5435fd3`. The current default build now includes
+the [completed offline backport and mapping guards](m1n1-smp-shared.md).
+The commands and default/opt-in distinction below describe that earlier
+commit; `smp-shared` now builds the same sixteen-patch series as `patched`.
+
 2026-09-27. Offline build and host tests only. No firmware installation,
 native execution, MMIO probing, VM changes or disk changes.
 

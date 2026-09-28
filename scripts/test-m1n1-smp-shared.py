@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Host/source regression for the experimental m1n1 SMP-shared mapping.
+"""Host/source regression for the promoted m1n1 SMP-shared mapping.
 
 The MMU remap function is extracted from the materialized, hash-pinned source
 and executed against a recorder.  The recorder is deliberately the only host
@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import os
 import pathlib
 import re
 import shutil
@@ -104,15 +105,11 @@ def extract_define(source: str, name: str) -> str:
 
 def patch_paths() -> list[pathlib.Path]:
     patches = []
-    for index in range(1, 15):
+    for index in range(1, 17):
         matches = sorted(PATCH_DIR.glob(f"{index:04d}-*.patch"))
         if len(matches) != 1:
             fail(f"missing/ambiguous patch {index:04d}: {matches}")
         patches.append(matches[0])
-    matches = sorted((PATCH_DIR / "experimental").glob("0015-*.patch"))
-    if len(matches) != 1:
-        fail(f"missing/ambiguous experimental 0015 patch: {matches}")
-    patches.append(matches[0])
     return patches
 
 
@@ -127,7 +124,7 @@ def patch_input_paths(patches: list[pathlib.Path]) -> set[str]:
 
 
 def materialize_experiment(work: pathlib.Path, *, nested: bool = True) -> pathlib.Path:
-    """Build exactly pinned14 + experimental 0015 for this script/runners."""
+    """Build exactly pinned14 plus promoted patches 0015 and 0016."""
     if hashlib.sha256(ARCHIVE.read_bytes()).hexdigest() != ARCHIVE_SHA256:
         fail("pinned source archive hash mismatch")
     patches = patch_paths()
@@ -182,6 +179,9 @@ def mapping_audit(memory: str, memory_h: str) -> str:
         "PTE_AP_EL0", "PTE_PXN", "PTE_UXN", "REGION_RWX_EL0", "REGION_RW_EL0",
         "REGION_RX_EL1", "PERM_RW", "PERM_RW_EL0", "MAIR_IDX_DEVICE_nGnRnE",
     ))
+    ready = re.search(r"^static bool\s+mmu_smp_shared_ready_state\s*;", memory, re.MULTILINE)
+    if ready is not None:
+        definitions += "\n" + ready.group(0)
     return definitions
 
 
@@ -270,11 +270,16 @@ def build_harness(tree: pathlib.Path, memory: str, memory_h: str,
                   directory: pathlib.Path, tag: str = "smp-shared",
                   *, audit: bool = True, function_override: str | None = None) -> pathlib.Path:
     source = TEMPLATE.read_text(encoding="utf-8")
-    definitions = mapping_audit(memory, memory_h) if audit else "\n".join(
-        extract_define(memory_h, name) for name in (
+    if audit:
+        definitions = mapping_audit(memory, memory_h)
+    else:
+        definitions = "\n".join(extract_define(memory_h, name) for name in (
             "PTE_AP_EL0", "PTE_PXN", "PTE_UXN", "REGION_RWX_EL0", "REGION_RW_EL0",
             "REGION_RX_EL1", "PERM_RW", "PERM_RW_EL0", "MAIR_IDX_DEVICE_nGnRnE",
             "MAIR_IDX_NORMAL"))
+        ready = re.search(r"^static bool\s+mmu_smp_shared_ready_state\s*;", memory, re.MULTILINE)
+        if ready is not None:
+            definitions += "\n" + ready.group(0)
     source = source.replace("/* INSERT_MEMORY_DEFINES */", definitions)
     function = function_override or extract_function(memory, "static void mmu_remap_smp_shared(void)")
     source = source.replace("/* INSERT_MMU_REMAP_FUNCTION */", function)
@@ -373,7 +378,15 @@ def run_adjacent() -> None:
 
     status = load(ROOT / "scripts/test-m1n1-cpu-start-status.py", "smp_status")
     status.materialize = lambda work: materialize_experiment(work, nested=True)
-    status.main()
+    previous_guard = os.environ.get("TEST_MMU_SMP_GUARD")
+    os.environ["TEST_MMU_SMP_GUARD"] = "1"
+    try:
+        status.main()
+    finally:
+        if previous_guard is None:
+            os.environ.pop("TEST_MMU_SMP_GUARD", None)
+        else:
+            os.environ["TEST_MMU_SMP_GUARD"] = previous_guard
 
 
 def main() -> int:
@@ -406,7 +419,7 @@ def main() -> int:
         # The existing runners create their own temporary trees; each receives
         # this explicit materializer, so no default runner is silently reused.
         run_adjacent()
-    print("SMP-shared source/linker audit passed; adjacent pinned14+0015 harnesses passed")
+    print("SMP-shared source/linker audit passed; adjacent pinned14+0016 harnesses passed")
     return 0
 
 

@@ -19,6 +19,8 @@ typedef unsigned long size_t;
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define GENMASK(h, l) (((~0ULL) >> (63 - (h))) & (~0ULL << (l)))
 #define PTE_MAIR_IDX(i) ((i & 7) << 2)
+#define UNUSED(x) ((void)(x))
+void mmu_add_mapping(u64, u64, size_t, u8, u64);
 
 /* INSERT_GUARD_DEFS */
 

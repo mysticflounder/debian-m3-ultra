@@ -1,0 +1,129 @@
+{
+  "date": "2026-09-27",
+  "scope": "Offline SMP shared-memory implementation and guards; no native execution",
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "source_archive_sha256": "6425983260ab96d55c36fdaab3b456830c3bd80f06b7759a61ed2bcca924d973",
+  "build_mode": "patched",
+  "patch_count": 16,
+  "build_directory": "scratch/m1n1-firmware-patched.OF7aJV",
+  "patch_0015_0016_zero_fuzz": true,
+  "build_status": "pass",
+  "layout_audit": {
+    "status": "pass",
+    "selected_shared_objects": 9,
+    "shared_interval_size": "0x10000",
+    "artifacts": [
+      "m1n1.elf",
+      "m1n1-raw.elf",
+      "m1n1.macho"
+    ]
+  },
+  "review": {
+    "shared_state": "Normal initial-start/reset path traced; nine objects retained",
+    "mapping": "Independent semantic review found no concrete blocker; raw PA/perms and lower48 VA checks reviewed"
+  },
+  "safety": {
+    "native_tested": false,
+    "firmware_installed": false,
+    "mmio_probed": false,
+    "vm_changed": false,
+    "disks_changed": false,
+    "t6032_cpu_dispatch_enabled": false,
+    "t6032_dvfs_dispatch_enabled": false,
+    "backup_available": false
+  },
+  "limitations": [
+    "Host mocks do not validate MMIO, coherency or hardware ordering",
+    "Physical load alignment and boot-entry state remain unvalidated",
+    "Shared-state audit assumes normal initial startup, immutable preboot metadata and baseline CPU-feature equivalence",
+    "Direct privileged page-table writes or external TTBR replacement are outside the guard contract",
+    "CPU release, MCC/cache access and early DVFS still require independent resolution and native qualification"
+  ],
+  "patch_sha256": {
+    "patches/m1n1/0001-expand-cpu-capacity-and-fix-bounds.patch": "acd987129def9126035d384a6e9370d2f0077634b8298cc8f1f02fbb3c74e11c",
+    "patches/m1n1/0002-free-pruned-cpus-after-handoff.patch": "3fd3508335e9e7af0fffca054d0a718ec4056e9431a8413e8e5312653c9be5e0",
+    "patches/m1n1/0003-guard-secondary-start-prerequisites.patch": "2958b2b583841f0d8b049859a4e961fe59a1966252805855788d09186f0dded3",
+    "patches/m1n1/0004-abort-on-secondary-start-timeout.patch": "2e6061606f3dd08e8b69534a6fcb831963b7155ff34569441fff7d5297e2d41d",
+    "patches/m1n1/0005-t6032-cpu-start-masks.patch": "0c6b7da275569b6f2329736c89b620bbd6c834f8753ecd52fcacb73e6929d91c",
+    "patches/m1n1/0006-preflight-t6032-cpu-inventory.patch": "1e755adddc3c04493a39fae80150d6930baa9db6f49d3d3810810c82bef933ce",
+    "patches/m1n1/0007-propagate-t6032-cpu-start-failures.patch": "fabe6b87f536ac44323e945c266e5e88727bec2ebb4001ca220a54378dca06e5",
+    "patches/m1n1/0008-validate-t6032-mcc-layout.patch": "3ac58c2d4bf87f588b42a45411d58037b65d53958a6d20eb9ef52798322a1b11",
+    "patches/m1n1/0009-preflight-t6032-carveout-removal.patch": "0dba4d39a4b6da7075b87627bdd77a9fe65def3f75573336430eb7f1291c0e81",
+    "patches/m1n1/0010-guard-t6032-runtime-mappings.patch": "e77e9bf8a3e0fc5cae24405ed42ce9239a46018b372c04fc6db7c73c1ae99507",
+    "patches/m1n1/0011-propagate-t6032-cpufreq-failures.patch": "c3041620dfcf742333dfa6a8e58b64a4946c0f3c701e8bc60f64fc504f9b1918",
+    "patches/m1n1/0012-decode-t6032-tz-relative-origin.patch": "8d4af887e4628a0f2479499f945cde340014bffe9bedf929805ecfabc38c5c94",
+    "patches/m1n1/0013-check-t6032-tz-plane-consistency.patch": "42c26c22cc555c5a717a7ce5584a25b1ebbc2ff213d675441c102be39c8e08ce",
+    "patches/m1n1/0014-reject-uninitialized-t6032-mmu-entry.patch": "8171b99618f3d33a8ce5d9baf6cb7500c8dd87b49474c78be405a7c8d7add65a",
+    "patches/m1n1/0015-smp-shared-memory.patch": "6fc511478e6a8bf35a64a6832b47d22ddcd93b6c1aa0b4babd5bc2369f8a2b95",
+    "patches/m1n1/0016-protect-smp-shared-mappings.patch": "7902ab8feb3a8b0e4c52b13e6b40184b115ba8c76825a2dfeb67f92af6e44c17"
+  },
+  "source_sha256": {
+    "scripts/build-m1n1-cpu-offline.sh": "2eadc57e5679d314567a45fc4ebff4494b8d3c1942edcdd1df8d58d5b511ece1",
+    "scripts/audit-m1n1-smp-shared-elf.py": "4db323b6ff0965260dc93c68a9ae534490ae7474a7d5f696ed961f0d238d739c",
+    "scripts/test-m1n1-smp-shared.py": "6a4d03534c52af03a7a9afd11b97f719d54a682b48afc5081f03498bdbd71bf4",
+    "scripts/test-m1n1-smp-shared-guard.py": "fc3e9b86a4db99b8dd751abfea62578361ccd4370860a411e8ead1bbe397da3a",
+    "scripts/test-m1n1-mapping-guard.py": "a11b34a36688743d8d4702871145a8a7a9c1b6b12d2951b3f3326458c97712c9",
+    "scripts/test-m1n1-carveout-preflight.py": "fdd7e6ae8553c007a20ce0f2e194e6a286e964b55589deb05be0bb4f7e506f6d",
+    "tests/m1n1-smp-shared.c": "8f3a8f4fdaa9e3955e3d773d5e381b4865e8b3d52a2b015813385375f3dd9ba8",
+    "tests/m1n1-smp-shared-guard.c": "064311ebfd6ec258f2303cf70860fb653b5f58d36b0c2f7ffb4e7be5812b5b33",
+    "tests/m1n1-cpu-preflight.c": "cb7f21155ca8f7684564a3ce57377138db5350a8d6dc49245bf4071499e21851",
+    "tests/m1n1-cpu-start-status.c": "0dd9cfee8eb261cf80a7ed6a47cd1247196420ba5ae2245b2d66a52bb3d3f16a",
+    "tests/m1n1-mapping-guard.c": "afb760e5ef8d29ba4e05b40acca1f29b10df6ca2bd1c150e4edd89979cb0383b",
+    "scripts/test-m1n1-cpu-start-status.py": "7bca16166920af872a4c68c58731d4306badb5b84f11289d16e6e2922ceb52f5"
+  },
+  "artifact_sha256": {
+    "scratch/m1n1-firmware-patched.OF7aJV/m1n1-4184923ffb2dff079b384d6a32cc02142aa14572/build/m1n1.elf": "a2cb169a07845f34f9ffc037d72b725372f2ae463d6ae097004d361c10a33197",
+    "scratch/m1n1-firmware-patched.OF7aJV/m1n1-4184923ffb2dff079b384d6a32cc02142aa14572/build/m1n1-raw.elf": "aa9bc29c5122a404a4f45de70786219111ce92feaef4c208797ef82d1e3bd339",
+    "scratch/m1n1-firmware-patched.OF7aJV/m1n1-4184923ffb2dff079b384d6a32cc02142aa14572/build/m1n1.macho": "23b7618ef7fd0703fe1c347ef99a0d71666c9cb02ada27d91e382d6a0959cae1",
+    "scratch/m1n1-firmware-patched.OF7aJV/m1n1-4184923ffb2dff079b384d6a32cc02142aa14572/build/m1n1.bin": "9e5b465088e5a2a279de74501959fffb1bf4b026c25de4555006f1be41f073b5"
+  },
+  "log_sha256": {
+    "scratch/mcc-evidence/smp-finish-build.log": "49969c5fb211e23e37ed6472a27b0a026f48594b96118a60b022ec0d0490b0b7",
+    "scratch/mcc-evidence/smp-finish-layout.log": "724def6f0a26e4b43c1266402f3a2f5fa3c82c7df26916ff8aeaa6d80ce1c9ae",
+    "scratch/mcc-evidence/smp-finish-carveout-preflight-final.log": "303f9fd53d2a4abda5d8a8d5bd6c81454bedbbdbc9c90c2520c5470dd2bfe660",
+    "scratch/mcc-evidence/smp-finish-cpu-preflight-final.log": "ea7b0a828fb640ba587494bcfded0e07580e40a67734dfdf1999bda1d87c40e6",
+    "scratch/mcc-evidence/smp-finish-cpu-start-status-final.log": "4dea74bc2aaa8de28c93b2f0513668c984f7e21c38ca74033f8ea98b709fcddf",
+    "scratch/mcc-evidence/smp-finish-mapping-guard-final.log": "f4952842d8622146837477c85ff541ca6d96f6b9d5f7e6ab56bad9c62c7c627a",
+    "scratch/mcc-evidence/smp-finish-mmu-entry-final.log": "252ff1f3f8c762114338d63a352152c0a31e4f619537ac560201077d72460599",
+    "scratch/mcc-evidence/smp-finish-smp-shared-final.log": "19a7a3623cdc795c84f85386bfad37ef0f366757d683a1b9a4c068555c0e7f03",
+    "scratch/mcc-evidence/smp-finish-smp-shared-guard-final.log": "d9393e7d1cc72bbdc3db85952d4dc238345c532dffef5e3bcf298affe46534be",
+    "scratch/mcc-evidence/smp-finish-test-m1n1-board-handoff.log": "1676e13e964bd5fc36ae1b054da590df437b4f4d40478d7ef56231edb3c9bb69",
+    "scratch/mcc-evidence/smp-finish-test-m1n1-cpu-bounds.log": "e8282a59153cffb8b5b0f3425f8b876b6d6d639c5abae262aa849c2f3b17aaa1",
+    "scratch/mcc-evidence/smp-finish-test-m1n1-cpu-handoff.log": "e59be4008951fe9e743e7658a6c81636b6f8b2ab57e7ffc5009c694edc74836f",
+    "scratch/mcc-evidence/smp-finish-test-m1n1-cpu-startup.log": "c68fdacb16bc954a9db01c58611ae7ccd9aa7f2ea0f8ec0438315e6569a18378",
+    "scratch/mcc-evidence/smp-finish-test-m1n1-mcc-layout.log": "4d64569e05694dd75054e350d358a98870d06f0927594ad50080838d6be12583",
+    "scratch/mcc-evidence/smp-finish-cpufreq.log": "c0b3e53d2603c07eee121d13ebb75345960701b5e5c87e8029f228dd07978a3d"
+  },
+  "host_tests": {
+    "status": "pass",
+    "sanitizers": "address,undefined; recovery disabled",
+    "page_sizes": [
+      4096,
+      16384
+    ],
+    "guard_scope": "Source-extracted mapping wrappers and predicates; actual readiness reset/remap with injected mapping failures; actual SMP entry points with readiness denied; hardware and allocation helpers mocked",
+    "negative_controls": [
+      "wrong remap attribute",
+      "missing fourth remap",
+      "unshared stack-pointer table",
+      "unshared spin table",
+      "missing linker input"
+    ],
+    "adjacent_full_series": [
+      "mapping guard",
+      "MMU entry",
+      "carveout preflight",
+      "CPU-start status"
+    ],
+    "historical_regressions": [
+      "CPU bounds",
+      "CPU handoff",
+      "board DT handoff",
+      "CPU startup",
+      "MCC layout",
+      "cpufreq status",
+      "CPU preflight",
+      "CPU-start status"
+    ]
+  }
+}

@@ -18,6 +18,7 @@ PATCH_DIR = ROOT / "patches/m1n1"
 ARCHIVE_SHA256 = "6425983260ab96d55c36fdaab3b456830c3bd80f06b7759a61ed2bcca924d973"
 CLANG = shutil.which("clang")
 SOURCE_FILES = {
+    "m1n1.ld", "m1n1-raw.ld",
     "src/mcc.c", "src/mcc.h", "src/memory.c", "src/memory.h", "src/utils.h",
     "src/types.h", "src/cpu_regs.h", "src/xnuboot.h", "src/heapblock.h",
     "src/heapblock.c", "src/main.c", "src/kboot.c", "src/hv.c", "src/hv.h",
@@ -90,7 +91,7 @@ def materialize(tree: pathlib.Path) -> None:
         if not source.is_file() or source.read_bytes() != originals[relative]:
             fail(f"pinned source mismatch: {relative}")
         destination.write_bytes(originals[relative])
-    for index in range(1, 15):
+    for index in range(1, 17):
         matches = sorted(PATCH_DIR.glob(f"{index:04d}-*.patch"))
         if len(matches) != 1: fail(f"missing/ambiguous patch {index}: {matches}")
         result = run(["patch", "-p1", "--batch", "--forward", "-i", str(matches[0])], tree)
@@ -111,12 +112,28 @@ def source_fragment(mcc: str, memory: str, memory_h: str) -> tuple[str, str]:
         "bool mcc_t6032_range_allowed(",
         "int mcc_unmap_carveouts_t6032(",
     ))
-    memory_functions = "\n\n".join(extract_function(memory, signature) for signature in (
+    mapping_signatures = (
         "static bool mmu_t6032_mapping_allowed(",
         "int mmu_map(",
         "void mmu_add_mapping(",
         "void mmu_map_framebuffer(",
-    ))
+    )
+    shared_names = sorted(set(re.findall(
+        r"(?:static\s+)?[A-Za-z_]\w*\s+(mmu_\w*smp_shared\w*)\s*\(", memory)),
+        key=memory.find)
+    shared_signatures = []
+    for name in shared_names:
+        match = re.search(rf"(?:^|\n)((?:static\s+)?[A-Za-z_][\w\s\*]*\b{re.escape(name)}\s*\()", memory)
+        if match is None:
+            fail(f"missing shared helper signature: {name}")
+        shared_signatures.append(match.group(1))
+    shared_functions = [extract_function(memory, signature) for signature in shared_signatures]
+    memory_functions = "\n\n".join(shared_functions + [
+        extract_function(memory, signature) for signature in mapping_signatures
+    ])
+    ready = re.search(r"^static bool\s+mmu_smp_shared_ready_state\s*;", memory, re.MULTILINE)
+    if ready is not None:
+        memory_functions = ready.group(0) + "\n\n" + memory_functions
     defines = []
     for name in ("VADDR_L3_OFFSET_BITS", "VADDR_L2_OFFSET_BITS", "VADDR_L1_OFFSET_BITS",
                  "VADDR_L0_OFFSET_BITS", "VADDR_L1_ALIGN_MASK", "VADDR_L2_ALIGN_MASK",
@@ -125,9 +142,9 @@ def source_fragment(mcc: str, memory: str, memory_h: str) -> tuple[str, str]:
     for name in ("PLANE_TZ_MAX_REGS", "T6032_MCC_INSTANCE_COUNT", "T6031_PLANE_STRIDE"):
         defines.append(extract_define(mcc, name))
     for name in ("PTE_VALID", "PTE_ACCESS", "PTE_PXN", "PTE_UXN", "PTE_AP_RO",
-                 "PTE_AP_EL0", "PTE_SH_OS", "PERM_RWX", "PERM_RW_EL0",
-                 "MAIR_IDX_NORMAL", "MAIR_IDX_NORMAL_NC", "REGION_RWX_EL0",
-                 "REGION_RW_EL0", "REGION_RX_EL1"):
+                 "PTE_AP_EL0", "PTE_SH_OS", "PERM_RWX", "PERM_RW_EL0", "PERM_RW",
+                 "MAIR_IDX_DEVICE_nGnRnE", "MAIR_IDX_NORMAL", "MAIR_IDX_NORMAL_NC",
+                 "REGION_RWX_EL0", "REGION_RW_EL0", "REGION_RX_EL1"):
         defines.append(extract_define(memory_h, name))
     return mcc_defs + "\n\n" + "\n".join(defines), mcc_functions + "\n\n" + memory_functions
 
@@ -176,9 +193,19 @@ def main() -> int:
                 "    if (chip_id == T6032 && !mmu_t6032_mapping_allowed(addr, addr, size))\n"
                 '        panic("T6032: rejected framebuffer mapping 0x%lx (0x%zx)\\n", addr, size);\n'),
         }
+        smp_guard_additions = {
+            "void mmu_add_mapping(": (
+                "    if (!mmu_smp_shared_mapping_allowed(from, to, size, attribute_index, perms))\n"
+                '        panic("MMU: rejected SMP-shared mapping 0x%lx -> 0x%lx (0x%lx)\\n", from, to, size);\n'),
+            "void mmu_map_framebuffer(": (
+                "    if (!mmu_smp_shared_mapping_allowed(addr, addr, size, MAIR_IDX_NORMAL_NC, PERM_RW_EL0))\n"
+                '        panic("MMU: rejected SMP-shared framebuffer mapping 0x%lx (0x%zx)\\n", addr, size);\n'),
+        }
         for signature, addition in additions.items():
             body = extract_function(memory, signature)
             original = extract_function(original_memory, signature)
+            if signature in smp_guard_additions:
+                body = body.replace(smp_guard_additions[signature], "", 1)
             if body.count(addition) != 1 or body.replace(addition, "", 1) != original:
                 fail(f"legacy mapper changed beyond the T6032 guard: {signature}")
         unmap = extract_function(mcc, "int mcc_unmap_carveouts_t6032(")

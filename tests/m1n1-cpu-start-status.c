@@ -70,6 +70,18 @@ static int expect_reject(bool legacy)
 
 int main(void)
 {
+#ifdef TEST_MMU_SMP_GUARD
+    /* 0016 must reject both entry points before ADT/MMIO/allocation effects. */
+    mock_mmu_smp_start_allowed = false;
+    reset_fixture(); reset_status(); mark_sentinels();
+    if (smp_start_secondaries() != -1 || !no_hardware_effects() ||
+        !sentinels_intact() || adt_path_reads || adt_property_reads) return 40;
+    reset_fixture(); reset_status(); mark_sentinels();
+    if (smp_start_cpu(1, 0, 0, 0, 0, 0) || !no_hardware_effects() ||
+        !sentinels_intact() || adt_path_reads || adt_property_reads) return 41;
+    mock_mmu_smp_start_allowed = true;
+    puts("SMP shared gate: both entry points reject before startup side effects");
+#endif
     if (expect_reject(false) != -1 || !no_hardware_effects() || !sentinels_intact()) return 1;
     if (expect_reject(true) != 0) return 2;
 

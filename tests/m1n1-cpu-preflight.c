@@ -91,6 +91,14 @@ static u64 read64(u64 address) { (void)address; read64_count++; return (u64)_vec
 static void write64(u64 address, u64 value) { (void)address; (void)value; write64_count++; }
 static void write32(u64 address, u32 value) { (void)address; (void)value; write32_count++; }
 static void sysop(const char *op) { (void)op; sysop_count++; }
+/* 0016 adds this MMU lifecycle gate; the historical subset-9 harness keeps
+ * the legacy path enabled explicitly. */
+#ifdef TEST_MMU_SMP_GUARD
+static bool mock_mmu_smp_start_allowed = true;
+static bool mmu_smp_start_allowed(void) { return mock_mmu_smp_start_allowed; }
+#else
+static bool mmu_smp_start_allowed(void) { return true; }
+#endif
 static void udelay(unsigned usec) { (void)usec; }
 static void dc_civac_range(void *address, size_t size) { (void)address; (void)size; cache_count++; }
 static void *memalign(size_t alignment, size_t size)
