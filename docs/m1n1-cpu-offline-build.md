@@ -10,6 +10,9 @@ ten-patch runtime-mapping-guard series, and eleven-patch frequency-status series
 2026-09-27: the twelve-patch fixed-TZ-origin series also compiles and links.
 The thirteen-patch cross-controller TZ consistency series also passes.
 The fourteen-patch inherited-MMU entry guard series also passes.
+The opt-in [SMP shared-memory experiment](m1n1-smp-shared-experiment.md)
+also cross-builds; it adds an adapted patch 0015 without changing the default
+fourteen-patch series or enabling native T6032 dispatch.
 This is a **build result,
 not a native boot result**. No artifact was installed or executed.
 
@@ -69,6 +72,10 @@ After the preparation below, both commands are offline:
 bash scripts/build-m1n1-cpu-offline.sh baseline
 bash scripts/build-m1n1-cpu-offline.sh patched
 ```
+
+Use `bash scripts/build-m1n1-cpu-offline.sh smp-shared` only for the separate
+experimental series. The new patch must apply with zero fuzz; historical
+patches retain their established application settings.
 
 The script validates the source archive digest and Rust version, extracts a
 fresh scratch tree per run, applies all fourteen patches only to the patched copy,

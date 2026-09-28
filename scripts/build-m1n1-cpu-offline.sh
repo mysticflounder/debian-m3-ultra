@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 REV=4184923ffb2dff079b384d6a32cc02142aa14572
 MODE=${1:-patched}
-case "$MODE" in baseline|patched) ;; *) echo 'Usage: build-m1n1-cpu-offline.sh [baseline|patched]' >&2; exit 2 ;; esac
+case "$MODE" in baseline|patched|smp-shared) ;; *) echo 'Usage: build-m1n1-cpu-offline.sh [baseline|patched|smp-shared]' >&2; exit 2 ;; esac
 TOOLS="$ROOT/scratch/m1n1-build-tools"
 ARCHIVE="$ROOT/scratch/m1n1-cpu-audit/source.tar.gz"
 MAKE="$TOOLS/make-4.4.1/make"
@@ -28,6 +28,10 @@ PATCHES=(
     "$ROOT/patches/m1n1/0013-check-t6032-tz-plane-consistency.patch"
     "$ROOT/patches/m1n1/0014-reject-uninitialized-t6032-mmu-entry.patch"
 )
+# Explicit opt-in experiment: never alter the default fourteen-patch build.
+if [[ "$MODE" == smp-shared ]]; then
+    PATCHES+=("$ROOT/patches/m1n1/experimental/0015-smp-shared-memory.patch")
+fi
 
 if [[ $(uname -s) != Darwin || $(uname -m) != arm64 ]]; then
     echo 'This build recipe is validated only on Apple-arm64 macOS.' >&2
@@ -54,9 +58,13 @@ BUILD_DIR=$(mktemp -d "$ROOT/scratch/m1n1-firmware-$MODE.XXXXXX")
 printf 'Build directory: %s\n' "$BUILD_DIR"
 tar -xf "$ARCHIVE" -C "$BUILD_DIR"
 SOURCE="$BUILD_DIR/m1n1-$REV"
-if [[ "$MODE" == patched ]]; then
+if [[ "$MODE" != baseline ]]; then
     for cpu_patch in "${PATCHES[@]}"; do
-        (cd "$SOURCE" && patch -p1 --batch --forward -i "$cpu_patch") >> "$BUILD_DIR/patch.log" 2>&1
+        patch_options=(--batch --forward)
+        if [[ "$cpu_patch" == */experimental/* ]]; then
+            patch_options+=(--fuzz=0)
+        fi
+        (cd "$SOURCE" && patch -p1 "${patch_options[@]}" -i "$cpu_patch") >> "$BUILD_DIR/patch.log" 2>&1
     done
     shasum -a 256 "${PATCHES[@]}" > "$BUILD_DIR/PATCH_SHA256SUMS"
 fi

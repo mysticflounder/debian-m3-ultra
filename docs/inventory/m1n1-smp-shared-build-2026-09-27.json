@@ -1,0 +1,60 @@
+{
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "source_archive_sha256": "6425983260ab96d55c36fdaab3b456830c3bd80f06b7759a61ed2bcca924d973",
+  "upstream_reference": "f7124b8d42bcdd44131b4a455ad32e2f98fde166",
+  "configuration": "opt-in smp-shared; local patches 0001..0014 plus adapted experimental 0015; native T6032 CPU/frequency dispatch disabled",
+  "default_series_changed": false,
+  "prior_patch_manifest": "m1n1-mmu-entry-build-2026-09-27.json",
+  "additional_patch": {
+    "path": "patches/m1n1/experimental/0015-smp-shared-memory.patch",
+    "sha256": "9560fa7cab245afc7e6235feb4d1f2323e1c7c12c8c750e564734598e0f97f30",
+    "application": "zero fuzz for experimental patch; established settings for existing 14 patches"
+  },
+  "build_directory": "scratch/m1n1-firmware-smp-shared.RJLpRz",
+  "build_status": "pass",
+  "artifact_sha256": {
+    "m1n1.elf": "4d3d63aaf65e3da64e24a1059fdbf7b3cdac620deb778ba4fcd793415287888f",
+    "m1n1-raw.elf": "68d6fad2b53e4703021b434aec24ac9de1a6a7010d28e59bdf1df3d17700e4dd",
+    "m1n1.macho": "18d863b2b4c4e4b2592ca134897f5a823d5f749205045ba8149cdc8f648e0f06",
+    "m1n1.bin": "e184b0d320a6976da9ed280c5ac2d56d58d3407a52cd16e48a04f89b836e2b7b"
+  },
+  "source_sha256": {
+    "scripts/build-m1n1-cpu-offline.sh": "8322a7d07b1cb671c6247b9447fa457ae1fce6e54ff61ee9a76281353abad7be",
+    "scripts/audit-m1n1-smp-shared-elf.py": "4db323b6ff0965260dc93c68a9ae534490ae7474a7d5f696ed961f0d238d739c",
+    "scripts/test-m1n1-smp-shared.py": "e29a67bce985265fa4da9ead8d950ff5948b885b0ed753ab77dcd64b26b01ef5",
+    "tests/m1n1-smp-shared.c": "8f3a8f4fdaa9e3955e3d773d5e381b4865e8b3d52a2b015813385375f3dd9ba8"
+  },
+  "log_sha256": {
+    "scratch/mcc-evidence/smp-shared-layout-final.log": "724def6f0a26e4b43c1266402f3a2f5fa3c82c7df26916ff8aeaa6d80ce1c9ae",
+    "scratch/mcc-evidence/smp-shared-host-final.log": "804cec051f2c3d447e3932b54b7ea60d381b05138441b34e6e4e8cc9ab42761c"
+  },
+  "host_tests": {
+    "status": "pass",
+    "sanitizers": "address,undefined; recovery disabled",
+    "scope": "extracted remap function with recorder; source/linker checks and negative mutations; existing mapping, MMU lifecycle, carveout and CPU-start-status harnesses use experiment materializer",
+    "negative_recorder_mutations": ["wrong memory attribute", "missing fourth mapping"],
+    "negative_source_mutations": ["unshared EL3 stack pointer table", "unshared spin table", "missing linker input"]
+  },
+  "layout_audit": {
+    "status": "pass",
+    "artifacts": ["m1n1.elf", "m1n1-raw.elf", "m1n1.macho"],
+    "selected_shared_objects": 9,
+    "relative_shared_intervals": {
+      "m1n1.elf": ["0x80000", "0x90000"],
+      "m1n1-raw.elf": ["0x70000", "0x80000"]
+    },
+    "scope": "linked layout only; runtime physical relocation and actual carveouts not established"
+  },
+  "default_build_regression": {
+    "status": "pass",
+    "directory": "scratch/m1n1-firmware-patched.cK09dz",
+    "patch_count": 14,
+    "m1n1.macho_sha256": "8fad7cad00b4ee06d98445b7ceb90aeec543f758499d22e5d6303d7a291e8060",
+    "m1n1.bin_sha256": "39240041beddfee1ee0d121d384b9ee6257998e13a3414bad057e0fd0e0b71b5",
+    "comparison": "Mach-O and raw binary byte-identical to recorded 0014 artifacts; debug ELFs differ with build paths"
+  },
+  "native_execution": false,
+  "mmio_testing": false,
+  "vm_changes": false,
+  "promotion_to_default": false
+}

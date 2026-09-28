@@ -62,9 +62,12 @@ adds a 64-KiB-aligned `.data.smp_shared` section and maps it Device-nGnRnE
 through the identity mapping and three aliases. It moves CPU-startup shared
 state into that section and removes corresponding cache-maintenance calls.
 Independent source review confirmed these changes, but no T6032 dispatch or
-native Ultra execution evidence. The patch has not been integrated locally.
+native Ultra execution evidence. A subsequent
+[opt-in backport experiment](m1n1-smp-shared-experiment.md) now cross-builds
+against our pinned fourteen-patch tree. It adds local pointer-table and
+linker-alignment adaptations; the default series remains unchanged.
 
-Test compatibility in an isolated scratch source tree against our pinned
+The experiment tests compatibility in an isolated scratch source tree against our pinned
 baseline plus patches 0001 through 0014. Check prerequisites and conflicts
 explicitly rather than assuming the newer commit applies alone. Verify:
 

@@ -1,0 +1,151 @@
+Experimental adaptation of upstream m1n1 commit
+f7124b8d42bcdd44131b4a455ad32e2f98fde166 for the full14 local baseline.
+Original upstream change: Sven Peter <sven@svenpeter.dev> (MIT-licensed m1n1).
+Provenance: upstream section/mapping idea; AI-assisted Debian project work;
+not submitted upstream and not enabled by the default build.
+
+This focused backport keeps the pinned baseline's initial CPU-start/reset
+semantics and 32-CPU guards; it intentionally does not import the newer
+`smp_reset_stacks[]` re-entry implementation. The local adaptation additionally
+places both secondary stack-pointer tables in `.data.smp_shared`, because the
+secondary reads `secondary_stacks[smp_id()]` before enabling its MMU. The DATA
+alignment is performed before `_data_start` so Mach-O DATA vmaddr/vmsize do not
+include an unrepresented alignment gap. Only the two reset-pointer
+`dc_civac_range()` calls are removed; the existing `dsb sy` and all guards stay.
+
+Offline experiment only; no native safety claim.
+---
+
+--- a/m1n1.ld
++++ b/m1n1.ld
+@@ -158,8 +158,14 @@
+         . = ALIGN(0x4000);
+     } :rodata
+     _rodata_end = .;
++    /* Keep DATA vmaddr/vmsize rooted at the aligned output section. */
++    . = ALIGN(0x10000);
+     _data_start = .;
+-    .data : ALIGN(0x4000) {
++    .data : ALIGN(0x10000) {
++        _smp_shared_start = .;
++        *(.data.smp_shared)
++        . = ALIGN(0x10000);
++        _smp_shared_end = .;
+         *(.data)
+         *(.data.*)
+         . = ALIGN(8);
+--- a/m1n1-raw.ld
++++ b/m1n1-raw.ld
+@@ -53,8 +53,14 @@
+         . = ALIGN(0x4000);
+     } :rodata
+     _rodata_end = .;
++    /* Keep DATA rooted at the aligned output section. */
++    . = ALIGN(0x10000);
+     _data_start = .;
+-    .data : ALIGN(0x4000) {
++    .data : ALIGN(0x10000) {
++        _smp_shared_start = .;
++        *(.data.smp_shared)
++        . = ALIGN(0x10000);
++        _smp_shared_end = .;
+         *(.data)
+         *(.data.*)
+         . = ALIGN(8);
+--- a/src/memory.c
++++ b/src/memory.c
+@@ -483,7 +483,23 @@
+     dc_civac_range((void *)addr, size);
+     mmu_add_mapping(addr, addr, size, MAIR_IDX_NORMAL_NC, PERM_RW_EL0);
+ }
++
++static void mmu_remap_smp_shared(void)
++{
++    extern u8 _smp_shared_start[], _smp_shared_end[];
++    u64 base = (u64)_smp_shared_start;
++    u64 size = _smp_shared_end - _smp_shared_start;
+ 
++    /* Keep reset/SMP state uncached for MMU-off secondary accesses. */
++    mmu_add_mapping(base, base, size, MAIR_IDX_DEVICE_nGnRnE, PERM_RW);
++    mmu_add_mapping(base | REGION_RWX_EL0, base, size, MAIR_IDX_DEVICE_nGnRnE,
++                    PERM_RW_EL0);
++    mmu_add_mapping(base | REGION_RW_EL0, base, size, MAIR_IDX_DEVICE_nGnRnE,
++                    PERM_RW_EL0);
++    mmu_add_mapping(base | REGION_RX_EL1, base, size, MAIR_IDX_DEVICE_nGnRnE,
++                    PERM_RW_EL0);
++}
++
+ static void mmu_add_default_mappings(void)
+ {
+     ram_base = ALIGN_DOWN(cur_boot_args.phys_base, BIT(32));
+@@ -548,6 +564,7 @@
+      * Handle pmap-ranges
+      */
+     mmu_remap_ranges();
++    mmu_remap_smp_shared();
+     /* T6032: validate and remove carveouts after all default mappings, before MMU enable. */
+     if (chip_id == T6032 && mcc_unmap_carveouts_t6032(ram_size) < 0)
+         panic("T6032 carveout validation failed!\n");
+--- a/src/smp.c
++++ b/src/smp.c
+@@ -24,6 +24,9 @@
+ #define CPU_REG_CLUSTER GENMASK(10, 8)
+ #define CPU_REG_DIE     GENMASK(14, 11)
+ 
++/* Experimental: force reset/SMP control state through Device-nGnRnE mappings. */
++#define SMP_SHARED __attribute__((section(".data.smp_shared")))
++
+ #define RVBAR_LOCK BIT(0)
+ #define RVBAR_ADDR GENMASK(47, 12)
+ 
+@@ -35,27 +38,28 @@
+     u64 retval;
+ };
+ 
+-void *_reset_stack;
+-void *_reset_stack_el1;
++void *_reset_stack SMP_SHARED;
++void *_reset_stack_el1 SMP_SHARED;
+ 
+ #define DUMMY_STACK_SIZE 0x1000
+ u8 dummy_stack[DUMMY_STACK_SIZE];     // Highest EL
+ u8 dummy_stack_el1[DUMMY_STACK_SIZE]; // EL1 stack if EL3 exists
+ 
+-u8 *secondary_stacks[MAX_CPUS] = {dummy_stack};
+-u8 *secondary_stacks_el3[MAX_EL3_CPUS];
++/* The secondary reads these pointer tables before enabling its MMU. */
++u8 *secondary_stacks[MAX_CPUS] SMP_SHARED = {dummy_stack};
++u8 *secondary_stacks_el3[MAX_EL3_CPUS] SMP_SHARED;
+ 
+-static bool wfe_mode = false;
++static bool wfe_mode SMP_SHARED = false;
+ 
+-static int target_cpu;
++static int target_cpu SMP_SHARED;
+ static int cpu_nodes[MAX_CPUS];
+-static struct spin_table spin_table[MAX_CPUS];
++static struct spin_table spin_table[MAX_CPUS] SMP_SHARED;
+ static u64 pmgr_reg;
+ static u64 cpu_start_off;
+ 
+ extern u8 _vectors_start[0];
+-int boot_cpu_idx = -1;
+-u64 boot_cpu_mpidr = 0;
++int boot_cpu_idx SMP_SHARED = -1;
++u64 boot_cpu_mpidr SMP_SHARED = 0;
+ 
+ void smp_secondary_entry(void)
+ {
+@@ -291,12 +295,9 @@
+         _reset_stack = secondary_stacks_el3[index] + SECONDARY_STACK_SIZE; // EL3
+         _reset_stack_el1 = secondary_stacks[index] + SECONDARY_STACK_SIZE; // EL1
+ 
+-        dc_civac_range(&_reset_stack_el1, sizeof(void *));
+     } else
+         _reset_stack = secondary_stacks[index] + SECONDARY_STACK_SIZE;
+ 
+-    dc_civac_range(&_reset_stack, sizeof(void *));
+-
+     sysop("dsb sy");
+ 
+     if (cpu_features->apple_sysregs_unlocked) {
