@@ -1,8 +1,11 @@
 # T6032 CPU-release / early-DVFS evidence search
 
-2026-09-27. Research only. No native execution, register probing, boot-policy,
-firmware, disk or VM changes. Local implementation remains at the
-fourteen-patch offline-tested series; this search does not enable dispatch.
+Public-source research captured on 2026-09-27; not a fresh upstream check.
+No native execution, register probing, boot-policy, firmware, disk or VM
+changes. The search began against the fourteen-patch series; subsequent
+[SMP shared-memory work](m1n1-smp-shared.md) is now complete offline.
+See [project status](project-status.md) for the current build and next work.
+None of this enables T6032 dispatch.
 
 ## Bounded public-source check
 

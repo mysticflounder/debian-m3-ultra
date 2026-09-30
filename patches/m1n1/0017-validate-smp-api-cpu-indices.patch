@@ -1,0 +1,199 @@
+Validate CPU indices before indexed SMP state access.
+
+Reject negative indices in the C SMP API, validate before pointer formation,
+and keep proxy request arguments unsigned until they have passed the CPU bound.
+Invalid proxy operations retain the existing no-op/zero-return behavior.
+
+--- a/src/smp.c
++++ b/src/smp.c
+@@ -247,14 +247,14 @@ static bool smp_start_cpu(int index, int die, int cluster, int core, u64 impl, u
+ {
+     int i;
+ 
++    if (index < 0 || index >= MAX_CPUS)
++        return false;
++
+     if (!mmu_smp_start_allowed()) {
+         printf("SMP: refusing CPU start without a validated shared mapping\n");
+         return false;
+     }
+ 
+-    if (index >= MAX_CPUS)
+-        return false;
+-
+     if (has_el3() && index >= MAX_EL3_CPUS)
+         return false;
+ 
+@@ -342,7 +342,7 @@ static void smp_stop_cpu(int index, int die, int cluster, int core, u64 impl, u6
+ {
+     int i;
+ 
+-    if (index >= MAX_CPUS)
++    if (index < 0 || index >= MAX_CPUS)
+         return;
+ 
+     if (!spin_table[index].flag)
+@@ -611,7 +611,7 @@ void smp_stop_secondaries(bool deep_sleep)
+ 
+ void smp_send_ipi(int cpu)
+ {
+-    if (cpu >= MAX_CPUS)
++    if (cpu < 0 || cpu >= MAX_CPUS)
+         return;
+ 
+     u64 mpidr = spin_table[cpu].mpidr;
+@@ -624,7 +624,7 @@ void smp_send_ipi(int cpu)
+ 
+ void smp_call4(int cpu, void *func, u64 arg0, u64 arg1, u64 arg2, u64 arg3)
+ {
+-    if (cpu >= MAX_CPUS)
++    if (cpu < 0 || cpu >= MAX_CPUS)
+         return;
+ 
+     struct spin_table *target = &spin_table[cpu];
+@@ -652,7 +652,7 @@ void smp_call4(int cpu, void *func, u64 arg0, u64 arg1, u64 arg2, u64 arg3)
+ 
+ u64 smp_wait(int cpu)
+ {
+-    if (cpu >= MAX_CPUS)
++    if (cpu < 0 || cpu >= MAX_CPUS)
+         return 0;
+ 
+     struct spin_table *target = &spin_table[cpu];
+@@ -677,7 +677,7 @@ void smp_set_wfe_mode(bool new_mode)
+ 
+ bool smp_is_alive(int cpu)
+ {
+-    if (cpu >= MAX_CPUS)
++    if (cpu < 0 || cpu >= MAX_CPUS)
+         return false;
+ 
+     return spin_table[cpu].flag;
+@@ -685,7 +685,7 @@ bool smp_is_alive(int cpu)
+ 
+ uint64_t smp_get_mpidr(int cpu)
+ {
+-    if (cpu >= MAX_CPUS)
++    if (cpu < 0 || cpu >= MAX_CPUS)
+         return 0;
+ 
+     return spin_table[cpu].mpidr;
+@@ -693,11 +693,11 @@ uint64_t smp_get_mpidr(int cpu)
+ 
+ u64 smp_get_release_addr(int cpu)
+ {
+-    struct spin_table *target = &spin_table[cpu];
+-
+-    if (cpu >= MAX_CPUS)
++    if (cpu < 0 || cpu >= MAX_CPUS)
+         return 0;
+ 
++    struct spin_table *target = &spin_table[cpu];
++
+     target->args[0] = 0;
+     target->args[1] = 0;
+     target->args[2] = 0;
+
+--- a/src/proxy.c
++++ b/src/proxy.c
+@@ -351,42 +351,74 @@ int proxy_process(ProxyRequest *request, ProxyReply *reply)
+         case P_SMP_STOP_SECONDARIES:
+             smp_stop_secondaries(request->args[0]);
+             break;
+-        case P_SMP_CALL:
+-            smp_call4(request->args[0], (void *)request->args[1], request->args[2],
+-                      request->args[3], request->args[4], request->args[5]);
++        case P_SMP_CALL: {
++            if (request->args[0] >= MAX_CPUS)
++                break;
++            int cpu = request->args[0];
++            smp_call4(cpu, (void *)request->args[1], request->args[2], request->args[3],
++                      request->args[4], request->args[5]);
+             break;
+-        case P_SMP_CALL_SYNC:
+-            smp_call4(request->args[0], (void *)request->args[1], request->args[2],
+-                      request->args[3], request->args[4], request->args[5]);
+-            reply->retval = smp_wait(request->args[0]);
++        }
++        case P_SMP_CALL_SYNC: {
++            if (request->args[0] >= MAX_CPUS)
++                break;
++            int cpu = request->args[0];
++            smp_call4(cpu, (void *)request->args[1], request->args[2], request->args[3],
++                      request->args[4], request->args[5]);
++            reply->retval = smp_wait(cpu);
+             break;
+-        case P_SMP_WAIT:
+-            reply->retval = smp_wait(request->args[0]);
++        }
++        case P_SMP_WAIT: {
++            if (request->args[0] >= MAX_CPUS)
++                break;
++            int cpu = request->args[0];
++            reply->retval = smp_wait(cpu);
+             break;
++        }
+         case P_SMP_SET_WFE_MODE:
+             smp_set_wfe_mode(request->args[0]);
+             break;
+-        case P_SMP_IS_ALIVE:
+-            reply->retval = smp_is_alive(request->args[0]);
++        case P_SMP_IS_ALIVE: {
++            if (request->args[0] >= MAX_CPUS)
++                break;
++            int cpu = request->args[0];
++            reply->retval = smp_is_alive(cpu);
+             break;
+-        case P_SMP_CALL_EL1:
+-            smp_call4(request->args[0], el1_call, request->args[1], request->args[2],
+-                      request->args[3], request->args[4]);
++        }
++        case P_SMP_CALL_EL1: {
++            if (request->args[0] >= MAX_CPUS)
++                break;
++            int cpu = request->args[0];
++            smp_call4(cpu, el1_call, request->args[1], request->args[2], request->args[3],
++                      request->args[4]);
+             break;
+-        case P_SMP_CALL_EL1_SYNC:
+-            smp_call4(request->args[0], el1_call, request->args[1], request->args[2],
+-                      request->args[3], request->args[4]);
+-            reply->retval = smp_wait(request->args[0]);
++        }
++        case P_SMP_CALL_EL1_SYNC: {
++            if (request->args[0] >= MAX_CPUS)
++                break;
++            int cpu = request->args[0];
++            smp_call4(cpu, el1_call, request->args[1], request->args[2], request->args[3],
++                      request->args[4]);
++            reply->retval = smp_wait(cpu);
+             break;
+-        case P_SMP_CALL_EL0:
+-            smp_call4(request->args[0], el0_call, request->args[1], request->args[2],
+-                      request->args[3], request->args[4]);
++        }
++        case P_SMP_CALL_EL0: {
++            if (request->args[0] >= MAX_CPUS)
++                break;
++            int cpu = request->args[0];
++            smp_call4(cpu, el0_call, request->args[1], request->args[2], request->args[3],
++                      request->args[4]);
+             break;
+-        case P_SMP_CALL_EL0_SYNC:
+-            smp_call4(request->args[0], el0_call, request->args[1], request->args[2],
+-                      request->args[3], request->args[4]);
+-            reply->retval = smp_wait(request->args[0]);
++        }
++        case P_SMP_CALL_EL0_SYNC: {
++            if (request->args[0] >= MAX_CPUS)
++                break;
++            int cpu = request->args[0];
++            smp_call4(cpu, el0_call, request->args[1], request->args[2], request->args[3],
++                      request->args[4]);
++            reply->retval = smp_wait(cpu);
+             break;
++        }
+ 
+         case P_HEAPBLOCK_ALLOC:
+             reply->retval = (u64)heapblock_alloc(request->args[0]);
+

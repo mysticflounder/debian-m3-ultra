@@ -105,7 +105,7 @@ def extract_define(source: str, name: str) -> str:
 
 def patch_paths() -> list[pathlib.Path]:
     patches = []
-    for index in range(1, 17):
+    for index in range(1, 18):
         matches = sorted(PATCH_DIR.glob(f"{index:04d}-*.patch"))
         if len(matches) != 1:
             fail(f"missing/ambiguous patch {index:04d}: {matches}")
@@ -124,7 +124,7 @@ def patch_input_paths(patches: list[pathlib.Path]) -> set[str]:
 
 
 def materialize_experiment(work: pathlib.Path, *, nested: bool = True) -> pathlib.Path:
-    """Build exactly pinned14 plus promoted patches 0015 and 0016."""
+    """Build pinned14 plus SMP mapping and API guards 0015 through 0017."""
     if hashlib.sha256(ARCHIVE.read_bytes()).hexdigest() != ARCHIVE_SHA256:
         fail("pinned source archive hash mismatch")
     patches = patch_paths()
@@ -148,10 +148,10 @@ def materialize_experiment(work: pathlib.Path, *, nested: bool = True) -> pathli
             destination.write_bytes(data)
     for index, patch in enumerate(patches):
         # The pinned local series has historically needed patch's default
-        # context handling.  The new experiment itself is required to apply
-        # with zero fuzz, which is the backport boundary this test owns.
+        # context handling.  The promoted SMP patches and subsequent API
+        # guard must apply with zero fuzz.
         command = ["patch", "-p1", "--batch", "--forward", "-i", str(patch)]
-        if index == len(patches) - 1:
+        if index >= 14:
             command.insert(4, "--fuzz=0")
         result = run(command, tree)
         if result.returncode:
@@ -363,7 +363,7 @@ def load(path: pathlib.Path, name: str) -> ModuleType:
 
 
 def run_adjacent() -> None:
-    """Run existing source harnesses against this exact pinned14+0015 tree."""
+    """Run adjacent source harnesses against the complete default series."""
     mapping = load(ROOT / "scripts/test-m1n1-mapping-guard.py", "smp_mapping")
     mapping.materialize = lambda tree: materialize_experiment(tree, nested=False)
     mapping.main()
@@ -387,6 +387,9 @@ def run_adjacent() -> None:
             os.environ.pop("TEST_MMU_SMP_GUARD", None)
         else:
             os.environ["TEST_MMU_SMP_GUARD"] = previous_guard
+
+    indices = load(ROOT / "scripts/test-m1n1-smp-api-indices.py", "smp_api_indices")
+    indices.main()
 
 
 def main() -> int:
@@ -419,7 +422,7 @@ def main() -> int:
         # The existing runners create their own temporary trees; each receives
         # this explicit materializer, so no default runner is silently reused.
         run_adjacent()
-    print("SMP-shared source/linker audit passed; adjacent pinned14+0016 harnesses passed")
+    print("SMP-shared source/linker audit passed; adjacent full-series harnesses passed")
     return 0
 
 

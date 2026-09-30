@@ -1,0 +1,58 @@
+{
+  "date": "2026-09-30",
+  "scope": "Offline SMP CPU-index validation; no native execution",
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "source_archive_sha256": "6425983260ab96d55c36fdaab3b456830c3bd80f06b7759a61ed2bcca924d973",
+  "patch_count": 17,
+  "zero_fuzz_patches": [
+    "0015",
+    "0016",
+    "0017"
+  ],
+  "build_directory": "scratch/m1n1-firmware-patched.Q8C1Oz",
+  "build_status": "pass",
+  "tests": {
+    "api_indices": "pass",
+    "first16_negative_control": "specific UBSan invalid-index diagnostic and AddressSanitizer failure",
+    "missing_el0_sync_result_mutation": "rejected by designated case",
+    "unchecked_proxy_narrowing_mutation": "rejected by designated case",
+    "shared_and_adjacent": "pass",
+    "mapping_guard": "pass",
+    "shared_layout": "both ELF variants: nine objects in 64 KiB; Mach-O DATA extent pass"
+  },
+  "safety": {
+    "native_executed": false,
+    "firmware_installed": false,
+    "mmio_probed": false,
+    "vm_changed": false,
+    "disks_changed": false,
+    "t6032_cpu_dispatch_enabled": false,
+    "t6032_dvfs_dispatch_enabled": false
+  },
+  "limitations": [
+    "Host stubs do not validate hardware ordering or coherency.",
+    "Invalid SMP proxy indices retain no-op/status-zero/return-zero convention.",
+    "MMU/HV index consumers and their sentinel contracts are outside patch 0017.",
+    "CPU-release and early-DVFS native prerequisites remain unresolved."
+  ],
+  "sha256": {
+    "patches/m1n1/0017-validate-smp-api-cpu-indices.patch": "05a431e6cf17cdfd0ccfb5141953daa50317eaea856253e5fabf65355bf422e9",
+    "scripts/test-m1n1-smp-api-indices.py": "e4133fe6c825424acd1efa23b865ad616898746605cf1d47c2574427991d75ab",
+    "tests/m1n1-smp-api-indices.c": "07c730376b0651250c664410aad8fd3132c79a32ab27665609f3eb2de1f22f5e",
+    "scripts/build-m1n1-cpu-offline.sh": "78cfb545da5a205e63a68d78ca6d62559b7b141afbcc0b13c0fdbbd6900bc375",
+    "scripts/test-m1n1-smp-shared.py": "9cec9682fb92c750e0bc36d9106ae313d15a410b35a71f915808b3edfb24dc82",
+    "scripts/test-m1n1-smp-shared-guard.py": "fc14f31deb19c3dccf300c53dde44e5732b4dd2701a089bc975b527916d2bedd",
+    "scratch/m1n1-firmware-patched.Q8C1Oz/PATCH_SHA256SUMS": "b4973b79619883152de85eae3c7ced4320bf941446f12ab739ba4bda9f0fe19b",
+    "scratch/m1n1-smp-api-build-final-2026-09-30.log": "ecb12eb1164dd5e703f85db8f4a3b0ce8efd7a2e6b2d3e677b766249e3bae09b",
+    "scratch/m1n1-smp-api-test-2026-09-30.log": "d044574a030d143bc648685018f6031136a8fbc9aca79b615cbae75b1894b69c",
+    "scratch/m1n1-smp-api-adjacent-2026-09-30.log": "4d7dce4e1f911ad5cbf0d3d415f13ea455e75659c509a8f39c5ecc2abc822b73",
+    "scratch/m1n1-smp-api-guard-2026-09-30.log": "d9393e7d1cc72bbdc3db85952d4dc238345c532dffef5e3bcf298affe46534be",
+    "scratch/m1n1-smp-api-layout-final-2026-09-30.log": "724def6f0a26e4b43c1266402f3a2f5fa3c82c7df26916ff8aeaa6d80ce1c9ae"
+  },
+  "artifact_sha256": {
+    "m1n1.elf": "fdd6110710c255eebe177c12550d17b3ae7c9e6036da001910819a70724bd790",
+    "m1n1-raw.elf": "d5627b92260e4064467b6f2a8ad29fbb7acd37911b2ffb47d550fb11c5cf3b5e",
+    "m1n1.macho": "a972ba7a0fb90924fcf89b304f652ddeea5c85656aa825c0227982206301e4cf",
+    "m1n1.bin": "6bc4abd19e7f1f60514e2d321f8e3a7107295568e60f8e902e9ad86dc58fca2d"
+  }
+}

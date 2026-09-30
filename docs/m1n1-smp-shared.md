@@ -6,12 +6,14 @@ boot policy, partition or disk image was changed.
 
 ## Scope
 
-The default offline build uses pinned m1n1
+The recorded sixteen-patch build used pinned m1n1
 `4184923ffb2dff079b384d6a32cc02142aa14572` plus patches 0001–0016.
 Patch [0015](../patches/m1n1/0015-smp-shared-memory.patch) adapts the upstream
 shared-section design to our older dynamic-stack implementation. Patch
 [0016](../patches/m1n1/0016-protect-smp-shared-mappings.patch) protects that
 layout from later mapping changes and rejects unprepared MMU-on CPU startup.
+The current default additionally includes patch 0017 for CPU-index validation;
+see the follow-up below. The original sixteen-patch manifest is unchanged.
 The original [opt-in experiment](m1n1-smp-shared-experiment.md) and its
 manifest remain historical evidence, not the current default build record.
 
@@ -82,12 +84,12 @@ PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
 
 `smp-shared` remains a build-mode alias for the same patch series, with a
 different version tag. To reproduce the old experiment, use commit `5435fd3`
-in a separate worktree. Patches 0015–0016 apply with zero fuzz; historical
+in a separate worktree. Patches 0015–0017 apply with zero fuzz; historical
 patches retain their existing application settings.
 
 ## Validation record
 
-The default sixteen-patch cross-build passes. Both linked ELF variants place
+The recorded sixteen-patch cross-build passed. Both linked ELF variants place
 all nine objects inside the aligned 64-KiB interval, and the Mach-O DATA
 segment agrees with its linker-derived extent. The source/linker checks,
 wrong-attribute and missing-mapping negative controls, and adjacent mapping,
@@ -106,6 +108,46 @@ allocation, MMIO, cache, ADT and startup-state sentinels remain unchanged.
 The [completion manifest](inventory/m1n1-smp-shared-finish-2026-09-27.json)
 records source, patch, artifact and log hashes. These are host sanitizer
 tests and artifact inspections, not execution of the linked ARM firmware.
+
+## CPU-index follow-up (2026-09-30)
+
+Patch [0017](../patches/m1n1/0017-validate-smp-api-cpu-indices.patch)
+closes a separate indexing defect: the earlier upper-bound checks still
+accepted negative `int` CPU IDs. Six public SMP helpers and the private
+start/stop helpers now reject indices outside `[0, MAX_CPUS)` before array
+access. The release-address helper also validates before forming a pointer.
+Invalid start indices are rejected before consulting MMU readiness.
+
+The eight CPU-index-taking SMP proxy cases check the original `u64` argument
+before converting it to `int`, so values such as `2^32` cannot wrap to CPU 0.
+Invalid SMP proxy requests retain the previous no-op/zero-return convention;
+this patch does not introduce a new error status. Boolean/control operations
+such as stop-secondaries and WFE-mode selection are not index-validated.
+
+This is SMP API hardening, not a security boundary for the privileged proxy.
+Separate MMU/HV index consumers remain follow-up work. In particular, HV
+exit/unpin commands intentionally accept `-1`; any later ingress validation
+must preserve those sentinels rather than applying a blanket opcode check.
+
+The seventeen-patch cross-build and shared-layout audit pass. The new
+[host runner](../scripts/test-m1n1-smp-api-indices.py) executes extracted SMP
+functions and all eight indexed proxy cases with ASan/UBSan. It covers signed
+limits, CPUs 0/31, raw 64-bit wraparound, boot-CPU no-op behavior, non-boot calls,
+argument clearing and nonzero synchronous results. The first-sixteen-patch
+negative control must produce the specific invalid-index sanitizer diagnostic,
+not just any nonzero exit. Mutations dropping the EL0 synchronous result or
+the raw proxy bounds checks must fail their designated regression cases.
+The shared-memory runner includes this suite; adjacent mapping, MMU-entry,
+carveout and CPU-start-status tests also pass against the seventeen-patch tree.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python scripts/test-m1n1-smp-api-indices.py
+```
+
+The [follow-up build record](inventory/m1n1-smp-api-indices-2026-09-30.json)
+identifies the final patch, harnesses, cross-build and logs. Earlier draft
+builds are not validation records for the completed fix.
 
 ## Remaining native gates
 

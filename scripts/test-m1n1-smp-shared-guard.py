@@ -135,7 +135,12 @@ def audit_order(memory: str, smp: str) -> None:
     if start.find("mmu_smp_start_allowed") < 0 or start.find("mmu_smp_start_allowed") > start.find("int pmgr_path"):
         fail("SMP top-level start gate is not first")
     leaf = extract_function(smp, function_signature(smp, "smp_start_cpu"))
-    if leaf.find("mmu_smp_start_allowed") < 0 or leaf.find("mmu_smp_start_allowed") > leaf.find("if (index"):
+    gate = leaf.find("if (!mmu_smp_start_allowed())")
+    # Patch 0017 rejects an invalid signed index before consulting readiness.
+    # Permit only that side-effect-free prefix, not arbitrary earlier work.
+    prefix = " ".join(leaf[leaf.find("{") + 1:gate].split())
+    expected = "int i; if (index < 0 || index >= MAX_CPUS) return false;"
+    if gate < 0 or prefix != expected:
         fail("SMP CPU-leaf start gate is not before allocation/MMIO checks")
 
 

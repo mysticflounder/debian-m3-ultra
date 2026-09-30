@@ -4,11 +4,14 @@ Updated at task completion. Source/offline validation is not native-hardware
 validation. External PR, VM and MacBook states below are last recorded states,
 not a fresh remote or live-machine check.
 
-Current handoff: the SMP shared-memory fix is complete offline in `d484a58`,
-following the historical experiment in `5435fd3`. It is part of the default
-sixteen-patch build. Next is a bounded CPU-release/early-DVFS evidence review:
-resolve the entry-address, release-order and initialization prerequisites
-before proposing any dispatch change. This does not authorize native testing.
+Current handoff: the SMP shared-memory fix (`d484a58`), historical experiment
+(`5435fd3`) and documentation handoff (`0606fec`) were pushed before resuming.
+The next offline audit found and fixed signed CPU-index and proxy-narrowing
+defects in SMP helpers (patch 0017). The seventeen-patch cross-build, sanitizer
+tests, negative controls and shared-layout audit pass. Next: separately harden
+the MMU/HV index consumers while preserving their legitimate `-1` sentinels,
+then continue CPU-release/early-DVFS evidence work. Entry-address, release-order
+and initialization prerequisites remain unresolved; native testing is not authorized.
 
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
@@ -24,9 +27,9 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff cleanup | Validated offline | Two separate patches, seven-case handoff suite and full firmware build pass; no native execution |
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
-| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; sixteen-patch cross-build passes | Resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
-| Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; T6032 frequency failure now rejects before SMP, nine sanitizer cases pass | Validate native reset separately; no rollback or recoverable degraded-SMP claim |
-| MCC/cache initialization | SMP shared-memory fix included in the default sixteen-patch offline build; mapping/startup guards and nine-object layout audited | Native behavior unvalidated. All 64 controller/plane contexts, handoff/encoding, aperture relationship, cache effects and DMA still need hardware qualification |
+| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; seventeen-patch cross-build passes | Resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
+| Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; patch 0017 rejects signed SMP indices and proxy narrowing before indexed access; sanitizer suites pass | Next offline task: separate MMU/HV index hardening with sentinel preservation. Native reset remains unvalidated; no rollback or recoverable degraded-SMP claim |
+| MCC/cache initialization | SMP shared-memory fix retained in the default seventeen-patch offline build; mapping/startup guards and nine-object layout re-audited | Native behavior unvalidated. All 64 controller/plane contexts, handoff/encoding, aperture relationship, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | Conditional routing and OSData provider traced; die-1 selectors 33/37/45 identified and captured; 61 input/adjacent tests pass; Pro consult reviewed without resolving early-boot contract | Resolve effective die-count writer/allocation contract, safe raw APSC/default indices and early-boot prerequisites; native dispatch disabled |
 | Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
