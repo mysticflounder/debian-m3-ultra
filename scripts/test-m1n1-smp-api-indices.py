@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """ASan/UBSan regression for m1n1 SMP CPU-index validation.
 
-The runner materializes the pinned source, applies patches 0001--0016 and
-then 0017, extracts the actual SMP helpers and proxy cases into a small host
+The runner materializes the pinned source with patches 0001--0018,
+extracts the actual SMP helpers and proxy cases into a small host
 fixture, and executes boundary cases.  A first-16-patch build is also run as
 a negative control: its INT_MIN indexed access must trip ASan/UBSan.  Only
 host test binaries execute; firmware is not booted and MMIO uses mocks.
@@ -189,7 +189,7 @@ def main() -> int:
         if ("AddressSanitizer" not in baseline.stderr or
                 "runtime error: index -2147483648 out of bounds" not in baseline.stderr):
             fail(f"negative control failed for an unexpected reason:\n{baseline.stderr}")
-        patched_tree = materialize(work, 17)
+        patched_tree = materialize(work, 18)
         source = fixture(patched_tree)
         patched = compile_and_run(source, clang, work, "patched")
         if patched.returncode:

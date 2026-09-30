@@ -12,8 +12,8 @@ Patch [0015](../patches/m1n1/0015-smp-shared-memory.patch) adapts the upstream
 shared-section design to our older dynamic-stack implementation. Patch
 [0016](../patches/m1n1/0016-protect-smp-shared-mappings.patch) protects that
 layout from later mapping changes and rejects unprepared MMU-on CPU startup.
-The current default additionally includes patch 0017 for CPU-index validation;
-see the follow-up below. The original sixteen-patch manifest is unchanged.
+The current default additionally includes patches 0017–0018 for CPU-index
+validation; see the follow-ups below. The original sixteen-patch manifest is unchanged.
 The original [opt-in experiment](m1n1-smp-shared-experiment.md) and its
 manifest remain historical evidence, not the current default build record.
 
@@ -84,7 +84,7 @@ PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
 
 `smp-shared` remains a build-mode alias for the same patch series, with a
 different version tag. To reproduce the old experiment, use commit `5435fd3`
-in a separate worktree. Patches 0015–0017 apply with zero fuzz; historical
+in a separate worktree. Patches 0015–0018 apply with zero fuzz; historical
 patches retain their existing application settings.
 
 ## Validation record
@@ -125,11 +125,11 @@ this patch does not introduce a new error status. Boolean/control operations
 such as stop-secondaries and WFE-mode selection are not index-validated.
 
 This is SMP API hardening, not a security boundary for the privileged proxy.
-Separate MMU/HV index consumers remain follow-up work. In particular, HV
+The separate MMU/HV index consumers are covered by patch 0018 below. In particular, HV
 exit/unpin commands intentionally accept `-1`; any later ingress validation
 must preserve those sentinels rather than applying a blanket opcode check.
 
-The seventeen-patch cross-build and shared-layout audit pass. The new
+The recorded seventeen-patch cross-build and shared-layout audit passed. The
 [host runner](../scripts/test-m1n1-smp-api-indices.py) executes extracted SMP
 functions and all eight indexed proxy cases with ASan/UBSan. It covers signed
 limits, CPUs 0/31, raw 64-bit wraparound, boot-CPU no-op behavior, non-boot calls,
@@ -138,7 +138,7 @@ negative control must produce the specific invalid-index sanitizer diagnostic,
 not just any nonzero exit. Mutations dropping the EL0 synchronous result or
 the raw proxy bounds checks must fail their designated regression cases.
 The shared-memory runner includes this suite; adjacent mapping, MMU-entry,
-carveout and CPU-start-status tests also pass against the seventeen-patch tree.
+carveout and CPU-start-status tests also passed against the seventeen-patch tree.
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
@@ -148,6 +148,47 @@ PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
 The [follow-up build record](inventory/m1n1-smp-api-indices-2026-09-30.json)
 identifies the final patch, harnesses, cross-build and logs. Earlier draft
 builds are not validation records for the completed fix.
+
+## MMU/HV index follow-up (2026-09-30)
+
+Patch [0018](../patches/m1n1/0018-validate-mmu-hv-cpu-indices.patch)
+guards the MMU secondary-init, HV secondary-start and watchdog-start helpers
+before side effects. Pin accepts only `-1` or `[0, MAX_CPUS)`; exit resolves
+`-1` through `smp_id()` and then validates the resolved index before its array
+write. The existing signed-index check in `hv_switch_cpu()` is unchanged.
+
+All six corresponding proxy operations validate a snapshot of the raw `u64`
+index before conversion. Only pin and exit permit `UINT64_MAX`, translating it
+explicitly to `-1`. The pinned Python client masks negative request arguments
+to 64 bits (`proxyclient/m1n1/proxy.py`, `_request`), defaults `hv_exit_cpu()`
+to `-1`, and uses an explicit all-ones 64-bit value to unpin in
+`proxyclient/m1n1/hv/__init__.py`. A 32-bit all-ones value is not a supported
+sentinel alias. Invalid requests remain no-ops with the initialized zero return;
+valid switch requests retain their boolean return value.
+
+These checks address malformed indices, not CPU liveness, startup completion,
+arbitrary privileged memory access or native hardware correctness. No CPU/DVFS
+dispatch changes are included.
+
+The [MMU/HV host harness](../scripts/test-m1n1-hv-api-indices.py) extracts
+the six helper bodies and six proxy cases from the patched source, with the
+real opcode enum, CPU bound and watchdog timeout definition. ASan/UBSan tests
+cover signed limits, 64-bit wraparound, CPU 0/31, existing-pin removal,
+current-CPU resolution (including invalid results), unchanged state on invalid
+requests, valid helper/argument forwarding and the already-active watchdog.
+The first-seventeen-patch control reproduces the specific invalid-index fault
+in `hv_exit_cpu(INT_MIN)`. Mutations that mis-convert unpin, remove MMU proxy
+ingress validation or remove the exit guard are rejected by designated checks.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python scripts/test-m1n1-hv-api-indices.py
+```
+
+The shared-memory runner now includes both API suites; the eighteen-patch
+cross-build and nine-object ELF/Mach-O layout checks pass. The
+[build record](inventory/m1n1-hv-api-indices-2026-09-30.json) records hashes of
+the final patch, tests, artifacts and logs. These are offline results only.
 
 ## Remaining native gates
 

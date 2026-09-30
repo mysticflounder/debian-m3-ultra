@@ -1,0 +1,72 @@
+{
+  "date": "2026-09-30",
+  "scope": "Offline MMU/HV CPU-index and proxy-sentinel validation; no native execution",
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "source_archive_sha256": "6425983260ab96d55c36fdaab3b456830c3bd80f06b7759a61ed2bcca924d973",
+  "patch_count": 18,
+  "zero_fuzz_patches": [
+    "0015",
+    "0016",
+    "0017",
+    "0018"
+  ],
+  "build_directory": "scratch/m1n1-firmware-patched.w9TY96",
+  "build_status": "pass",
+  "tests": {
+    "mmu_hv_indices": "pass; six extracted helpers and six proxy cases",
+    "first17_negative_control": "hv_exit_cpu(INT_MIN): exact UBSan invalid-index diagnostic and AddressSanitizer failure",
+    "wrong_unpin_mutation": "rejected by designated case 70",
+    "unchecked_mmu_proxy_mutation": "rejected by designated case 60",
+    "missing_exit_guard_mutation": "specific invalid-index sanitizer failure",
+    "shared_and_adjacent": "pass; includes both SMP and MMU/HV API suites",
+    "mapping_guard": "pass",
+    "shared_layout": "nine objects in 64 KiB in both ELF variants; Mach-O DATA extent pass",
+    "independent_review": "source and harness review pass; standalone and full adjacent suites independently rerun"
+  },
+  "wire_contract": {
+    "ordinary_indices": "0..31",
+    "pin_exit_sentinel": "UINT64_MAX explicitly maps to -1",
+    "rejected_sentinel_alias": "UINT32_MAX",
+    "evidence": "Pinned proxyclient _request masks negative args to u64; hv_exit_cpu defaults to -1; HV setup explicitly unpins with 0xffffffffffffffff"
+  },
+  "safety": {
+    "native_executed": false,
+    "firmware_installed": false,
+    "mmio_probed": false,
+    "vm_changed": false,
+    "disks_changed": false,
+    "t6032_cpu_dispatch_enabled": false,
+    "t6032_dvfs_dispatch_enabled": false
+  },
+  "limitations": [
+    "Host stubs do not establish hardware correctness or ordering.",
+    "Index validation does not establish CPU liveness or startup completion.",
+    "Invalid proxy requests retain initialized status-zero/return-zero no-op semantics.",
+    "CPU-release and early-DVFS prerequisites remain unresolved."
+  ],
+  "sha256": {
+    "patches/m1n1/0018-validate-mmu-hv-cpu-indices.patch": "5dcc930715b348ce4757eb045f5d515194bf9fb7c1aa1214becb39691e5b6351",
+    "scripts/build-m1n1-cpu-offline.sh": "ef48dc5447a6a7a72c406013d0ba1ff1f3bb474a25497eefe56181dca157a9e7",
+    "scripts/test-m1n1-hv-api-indices.py": "0220dd3d35e1b0abcb23e9a63422dd1a4073aedbd05bc2428c8f6237058e04ed",
+    "scripts/test-m1n1-smp-api-indices.py": "269f14394b48588858d12bc9564e5fea3f8f817b78919f244f6ac638a6627a14",
+    "scripts/test-m1n1-smp-shared.py": "7d45f980101d46e478c21c7dea4da5cf5e7f85f958265ea2dee7382fb209a67b",
+    "scripts/test-m1n1-smp-shared-guard.py": "fc14f31deb19c3dccf300c53dde44e5732b4dd2701a089bc975b527916d2bedd",
+    "tests/m1n1-hv-api-indices.c": "457d27ddc255109cc75725c85e066e72c1d8e4f81b9ccdcf49ef60aca359411d",
+    "scratch/m1n1-firmware-patched.w9TY96/m1n1-4184923ffb2dff079b384d6a32cc02142aa14572/src/memory.c": "5296b5aa26f84a7c6f5b9596da42843ecac79c76f54a5008f59cafae574ebda9",
+    "scratch/m1n1-firmware-patched.w9TY96/m1n1-4184923ffb2dff079b384d6a32cc02142aa14572/src/hv.c": "66618cd65237b2df5ab37bf00750175c876d7298faa9a94d69a01cb6213b6e16",
+    "scratch/m1n1-firmware-patched.w9TY96/m1n1-4184923ffb2dff079b384d6a32cc02142aa14572/src/hv_wdt.c": "67d0b16b4a3c96ca30c8ca34c9d97cc867e3faf376697977ecdfd83bd009488e",
+    "scratch/m1n1-firmware-patched.w9TY96/m1n1-4184923ffb2dff079b384d6a32cc02142aa14572/src/proxy.c": "cda373555b086ca61b2fc42f4d3f5b8c45ffa1f00577bc4fbd23e2bdea73351d",
+    "scratch/m1n1-hv-api-build-2026-09-30.log": "25889f536f645f2d30c12323a9d9e8ecb96c8ba53245b9ab0441f9556d457752",
+    "scratch/m1n1-hv-api-test-2026-09-30.log": "ccb845a3acead94ff9ab43f8df426c6026312e9c51ca1b01c9e53a409fa00184",
+    "scratch/m1n1-hv-api-adjacent-2026-09-30.log": "5eab0790489266e39ce5e5680d73545db387bb525ed9a528406e7d4bbf335687",
+    "scratch/m1n1-hv-api-guard-2026-09-30.log": "d9393e7d1cc72bbdc3db85952d4dc238345c532dffef5e3bcf298affe46534be",
+    "scratch/m1n1-hv-api-layout-2026-09-30.log": "724def6f0a26e4b43c1266402f3a2f5fa3c82c7df26916ff8aeaa6d80ce1c9ae",
+    "scratch/m1n1-firmware-patched.w9TY96/PATCH_SHA256SUMS": "cf989cf6eb04bf2bf52c620f004ffda58663d1d48b237ea5d9282fd52df1b801"
+  },
+  "artifact_sha256": {
+    "m1n1.elf": "37adb1494c5049ae56b22b718318cfcebd8453b17a38fa980fed8e6000a65c06",
+    "m1n1-raw.elf": "9c5ee4a694652fb4252f641091446c6450cfebc42c89597b13379ad2149417dc",
+    "m1n1.macho": "85186e12e84a3e06bb888daa61084eb3cb055e99bdf5355167b08fae9ba34998",
+    "m1n1.bin": "04c97a2a1bcd9ebcbca77da1f2ec98f75ede5b609006a2cb292b3fa75ac3b67a"
+  }
+}

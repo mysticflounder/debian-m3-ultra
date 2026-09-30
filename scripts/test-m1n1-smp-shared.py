@@ -105,7 +105,7 @@ def extract_define(source: str, name: str) -> str:
 
 def patch_paths() -> list[pathlib.Path]:
     patches = []
-    for index in range(1, 18):
+    for index in range(1, 19):
         matches = sorted(PATCH_DIR.glob(f"{index:04d}-*.patch"))
         if len(matches) != 1:
             fail(f"missing/ambiguous patch {index:04d}: {matches}")
@@ -124,7 +124,7 @@ def patch_input_paths(patches: list[pathlib.Path]) -> set[str]:
 
 
 def materialize_experiment(work: pathlib.Path, *, nested: bool = True) -> pathlib.Path:
-    """Build pinned14 plus SMP mapping and API guards 0015 through 0017."""
+    """Build pinned14 plus SMP mapping and API guards 0015 through 0018."""
     if hashlib.sha256(ARCHIVE.read_bytes()).hexdigest() != ARCHIVE_SHA256:
         fail("pinned source archive hash mismatch")
     patches = patch_paths()
@@ -390,6 +390,8 @@ def run_adjacent() -> None:
 
     indices = load(ROOT / "scripts/test-m1n1-smp-api-indices.py", "smp_api_indices")
     indices.main()
+    hv_indices = load(ROOT / "scripts/test-m1n1-hv-api-indices.py", "hv_api_indices")
+    hv_indices.main()
 
 
 def main() -> int:
