@@ -1,8 +1,14 @@
-# Project status — 2026-09-27
+# Project status — 2026-09-30
 
 Updated at task completion. Source/offline validation is not native-hardware
 validation. External PR, VM and MacBook states below are last recorded states,
 not a fresh remote or live-machine check.
+
+Current handoff: the SMP shared-memory fix is complete offline in `d484a58`,
+following the historical experiment in `5435fd3`. It is part of the default
+sixteen-patch build. Next is a bounded CPU-release/early-DVFS evidence review:
+resolve the entry-address, release-order and initialization prerequisites
+before proposing any dispatch change. This does not authorize native testing.
 
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
