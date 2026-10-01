@@ -11,9 +11,13 @@ committed locally as `14605bf`, not pushed. The eighteen-patch cross-build,
 sanitizer suites, mutation controls and shared-layout audit pass. The subsequent
 [CPU callback trace](m1n1-t6032-startup.md#captured-runtime-callback-path--2026-09-30)
 identifies `function-enable_core`, its stored receiver and base-class forwarding
-path; 2,273 instruction words match the captured collection. The concrete target
-and callback data still need tracing. PMGR offset and conditional mask evidence
-are no longer classified as wholly unknown.
+path; 2,273 instruction words match the captured collection. A subsequent
+allowlisted capture resolves all 32 callback records to PMGR's parent identifier,
+the `Core` selector and `1<<cpu-id` masks. The specialized callback's static
+factory/initializer/vtable chain now reaches `enableCPUCores`; a separate
+1,478-word/twelve-fixup check passes. This is not a live callback trace or native
+boot validation. PMGR offset and conditional mask evidence are no longer
+classified as wholly unknown.
 The DVFS allocation follow-up distinguishes the initial performance-domain
 array from the later append-provider buffer; the effective multiplier's writer
 and value remain unresolved.
@@ -34,7 +38,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff cleanup | Validated offline | Two separate patches, seven-case handoff suite and full firmware build pass; no native execution |
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
-| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; eighteen-patch cross-build passes; runtime enable-core callback traced to provider boundary | Resolve concrete callback target/data, release sequencing and boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
+| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; eighteen-patch cross-build passes; captured callbacks statically linked through specialized handler to PMGR | Resolve release sequencing and boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; SMP and MMU/HV index/sentinel checks pass sanitizer and mutation regressions | Continue CPU-release evidence work. Native reset remains unvalidated; no rollback or recoverable degraded-SMP claim |
 | MCC/cache initialization | SMP shared-memory fix retained in the default eighteen-patch offline build; mapping/startup guards and nine-object layout re-audited | Native behavior unvalidated. All 64 controller/plane contexts, handoff/encoding, aperture relationship, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | Conditional routing and OSData provider traced; die-1 selectors 33/37/45 identified and captured; 61 input/adjacent tests pass; Pro consult reviewed without resolving early-boot contract | Resolve effective die-count writer/allocation contract, safe raw APSC/default indices and early-boot prerequisites; native dispatch disabled |

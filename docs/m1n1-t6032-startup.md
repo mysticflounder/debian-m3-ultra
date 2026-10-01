@@ -84,8 +84,9 @@ The wrapper does not forward its two incoming arguments or directly
 write RVBAR. That is **not** evidence that downstream code does neither. The
 base-class slot is resolved statically, not proof of the concrete runtime
 receiver class. `withProvider` includes target lookup and alternate construction
-paths; the actual provider object, callback data and final release handler still
-need tracing. This is a runtime callback path, not an early-boot recipe.
+paths; this initial checkpoint did not establish the provider, callback data or
+concrete handler. The follow-up below advances that link. This remains a runtime
+callback path, not an early-boot recipe.
 
 Reproduction: run `scratch/mcc-evidence/verify-cpu-release-callback.py` with
 the project's offline uv Python invocation. It verifies 2,273 instruction words
@@ -100,6 +101,63 @@ The collection SHA-256 is
 Independent receiver/prologue review agrees. These checks authenticate neither
 Apple's signature nor live PAC, and do not establish a current-host image match.
 No firmware was executed or register read.
+
+### Provider-name and callback-data follow-up
+
+A read-only, allowlisted IORegistry capture on J575d/T6032, macOS build
+`26A428`, now records all 32 CPU callback properties and the PMGR parent-key
+presence in [the callback inventory](inventory/t6032-cpu-enable-callbacks-2026-09-30.json).
+No raw registry dump was retained. Each `function-enable_core` is exactly
+12 bytes, interpreted as three little-endian 32-bit words:
+
+| Word | Captured value |
+| --- | --- |
+| 0 | `0x182`, matching `/arm-io/pmgr`'s `AAPL,phandle` |
+| 1 | `0x436f7265` (`Core` as a four-character integer selector) |
+| 2 | `1 << cpu-id`, including `0x80000000` for CPU 31 |
+
+`AppleARMFunction::getFunctionParentSymbol` calls the OSData byte accessor
+and loads word 0 at `0xfffffe0008c97ce4`. It formats that value using
+`IOFunctionParent%08X` (string VA `0xfffffe0007182fdf`).
+`registerFunctionParentInternal` reads the property through the imported
+`gIODTPHandleKey`, calls the same symbol helper at `0xfffffe0008c971ac`,
+and sets the resulting key on its second service argument at
+`0xfffffe0008c97224–0xfffffe0008c97234`. The queried AppleT6031PMGR service
+exposes `IOFunctionParent00000182`. Only the key's presence and serialized
+type are captured; its serialized bytes are not interpreted as an object.
+
+This links the captured callback's parent identifier to PMGR registration,
+without executing the callback. Metadata presence alone does not identify the
+function subclass or prove a live handler invocation. The following separate
+binary trace supplies the static subclass link:
+
+| Step | Captured binary evidence |
+| --- | --- |
+| Factory request | `withProvider` loads its factory symbol from `0xfffffe000cc00be0` at `0xfffffe0008c976e0`; PMGR's comparison imports that same global through chained reference `0xfffffe00082a39d8` |
+| `Core` selection | `ApplePMGR::callPlatformFunction` reads OSData word 1 at `0xfffffe0009b77f08`; selector comparisons at `0xfffffe0009b77f3c` and `0xfffffe0009b783e8` route `Core` to the specialized allocation/constructor at `0xfffffe0009b78410–0xfffffe0009b78418` |
+| Concrete vtable | Constructor `0xfffffe0009bbe904` installs `ApplePMGRFunctionEnableCPUCore`'s vtable address point (`0xfffffe000829b580+0x10`); slots `0x138` and `0x140` resolve to its initializer and callback |
+| Stored target and mask | Initializer `0xfffffe0009bbea10` calls the base initializer, casts its stored target to ApplePMGRBase and stores it at object `+0x28`; it reads OSData word 2 at `0xfffffe0009bbeaa8` and stores it at object `+0x30` |
+| Enable call | Callback `0xfffffe0009bbe9bc` computes `enable=(arg1!=0)`, loads the stored mask into `w1`, and calls target slot `0xa88` at `0xfffffe0009bbea00` |
+| PMGR target | AppleT6031PMGR's slot `0xa88` resolves to `ApplePMGR::enableCPUCores` at `0xfffffe0009b95c7c`, continuing into the previously traced `configMiscCores` path |
+
+If the factory allocation and initialization succeed on the traced PMGR path,
+the captured metadata produces a specialized callback forwarding
+`(1<<cpu-id, true)` for the CPU-start invocation. It does **not** use the base-class forwarding body as
+its callback. The fact that `enableCPUCores` itself calls slot `0xd20` is
+the next call in the chain, not a conflicting slot assignment; see the
+[mask/write-path contract](m1n1-t6032-mask-contract.md).
+Allocation/initialization success and actual runtime invocation are not
+observed here. This closes a static callback-to-PMGR link, not the native
+RVBAR, reset-entry, release-order or early-initialization gates.
+
+The local `scratch/mcc-evidence/verify-cpu-provider-evidence.py` checks
+1,478 instruction words, the format-string bytes, twelve chained references
+(including the concrete callback/PMGR slots and shared factory symbol), and all
+32 callback records. Its SHA-256 is
+`bdc8db520d7437de7e4f7f26646721e8cc67c7c2fbdc8e16b7d8dbf39b863804`;
+the report is `scratch/mcc-evidence/cpu-provider-evidence.json`.
+The live metadata build matches the recorded build label, not a newly
+established byte-for-byte match of the running kernel collection.
 
 ## Execution-level and stack contract
 
@@ -195,8 +253,8 @@ unsupported-chip return into a whole-boot safety gate.
 ## Missing evidence before enabling T6032 startup
 
 1. Complete the T6032 CPU-start contract beyond the statically corroborated
-   offset, die stride and conditional topology masks: identify the concrete
-   enable-core provider and data, establish whole-mask versus selected-cluster
+   offset, die stride, callback path and conditional topology masks: establish
+   whole-mask versus selected-cluster
    side effects, required release ordering/barriers and acknowledgement semantics.
 2. Native boot-stage feature/entry evidence: `CurrentEL`,
    `ID_AA64PFR0_EL1`, boot MPIDR, RVBAR writability/value, and secondary entry

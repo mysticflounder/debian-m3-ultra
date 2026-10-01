@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "capture_date": "2026-09-30",
+  "identity": {
+    "target": "J575d",
+    "chip_id": "0x6032"
+  },
+  "macos_build": "26A428",
+  "collector_sha256": "39844decc9f08cf879c4f6c9e2f912d55af79ca8787f36d64521a50745a2fd1c",
+  "pmgr_identifiers": {
+    "AAPL,phandle": {
+      "hex": "82010000",
+      "u32le": [
+        386
+      ]
+    },
+    "phandle": null,
+    "linux,phandle": null
+  },
+  "service_registration": {
+    "queried_class": "AppleT6031PMGR",
+    "parent_key": "IOFunctionParent00000182",
+    "parent_property_present": true,
+    "parent_property_serialized_type": "bytes"
+  },
+  "cpus": [
+    {
+      "cpu_id": 0,
+      "reg": 0,
+      "function_enable_core_hex": "8201000065726f4301000000"
+    },
+    {
+      "cpu_id": 1,
+      "reg": 1,
+      "function_enable_core_hex": "8201000065726f4302000000"
+    },
+    {
+      "cpu_id": 2,
+      "reg": 2,
+      "function_enable_core_hex": "8201000065726f4304000000"
+    },
+    {
+      "cpu_id": 3,
+      "reg": 3,
+      "function_enable_core_hex": "8201000065726f4308000000"
+    },
+    {
+      "cpu_id": 4,
+      "reg": 256,
+      "function_enable_core_hex": "8201000065726f4310000000"
+    },
+    {
+      "cpu_id": 5,
+      "reg": 257,
+      "function_enable_core_hex": "8201000065726f4320000000"
+    },
+    {
+      "cpu_id": 6,
+      "reg": 258,
+      "function_enable_core_hex": "8201000065726f4340000000"
+    },
+    {
+      "cpu_id": 7,
+      "reg": 259,
+      "function_enable_core_hex": "8201000065726f4380000000"
+    },
+    {
+      "cpu_id": 8,
+      "reg": 260,
+      "function_enable_core_hex": "8201000065726f4300010000"
+    },
+    {
+      "cpu_id": 9,
+      "reg": 261,
+      "function_enable_core_hex": "8201000065726f4300020000"
+    },
+    {
+      "cpu_id": 10,
+      "reg": 512,
+      "function_enable_core_hex": "8201000065726f4300040000"
+    },
+    {
+      "cpu_id": 11,
+      "reg": 513,
+      "function_enable_core_hex": "8201000065726f4300080000"
+    },
+    {
+      "cpu_id": 12,
+      "reg": 514,
+      "function_enable_core_hex": "8201000065726f4300100000"
+    },
+    {
+      "cpu_id": 13,
+      "reg": 515,
+      "function_enable_core_hex": "8201000065726f4300200000"
+    },
+    {
+      "cpu_id": 14,
+      "reg": 516,
+      "function_enable_core_hex": "8201000065726f4300400000"
+    },
+    {
+      "cpu_id": 15,
+      "reg": 517,
+      "function_enable_core_hex": "8201000065726f4300800000"
+    },
+    {
+      "cpu_id": 16,
+      "reg": 2048,
+      "function_enable_core_hex": "8201000065726f4300000100"
+    },
+    {
+      "cpu_id": 17,
+      "reg": 2049,
+      "function_enable_core_hex": "8201000065726f4300000200"
+    },
+    {
+      "cpu_id": 18,
+      "reg": 2050,
+      "function_enable_core_hex": "8201000065726f4300000400"
+    },
+    {
+      "cpu_id": 19,
+      "reg": 2051,
+      "function_enable_core_hex": "8201000065726f4300000800"
+    },
+    {
+      "cpu_id": 20,
+      "reg": 2304,
+      "function_enable_core_hex": "8201000065726f4300001000"
+    },
+    {
+      "cpu_id": 21,
+      "reg": 2305,
+      "function_enable_core_hex": "8201000065726f4300002000"
+    },
+    {
+      "cpu_id": 22,
+      "reg": 2306,
+      "function_enable_core_hex": "8201000065726f4300004000"
+    },
+    {
+      "cpu_id": 23,
+      "reg": 2307,
+      "function_enable_core_hex": "8201000065726f4300008000"
+    },
+    {
+      "cpu_id": 24,
+      "reg": 2308,
+      "function_enable_core_hex": "8201000065726f4300000001"
+    },
+    {
+      "cpu_id": 25,
+      "reg": 2309,
+      "function_enable_core_hex": "8201000065726f4300000002"
+    },
+    {
+      "cpu_id": 26,
+      "reg": 2560,
+      "function_enable_core_hex": "8201000065726f4300000004"
+    },
+    {
+      "cpu_id": 27,
+      "reg": 2561,
+      "function_enable_core_hex": "8201000065726f4300000008"
+    },
+    {
+      "cpu_id": 28,
+      "reg": 2562,
+      "function_enable_core_hex": "8201000065726f4300000010"
+    },
+    {
+      "cpu_id": 29,
+      "reg": 2563,
+      "function_enable_core_hex": "8201000065726f4300000020"
+    },
+    {
+      "cpu_id": 30,
+      "reg": 2564,
+      "function_enable_core_hex": "8201000065726f4300000040"
+    },
+    {
+      "cpu_id": 31,
+      "reg": 2565,
+      "function_enable_core_hex": "8201000065726f4300000080"
+    }
+  ],
+  "raw_registry_retained": false,
+  "register_access_performed": false
+}

@@ -79,10 +79,11 @@ map's virtual base plus the requested register offset.
 - MCC register semantics or six-cluster frequency initialization.
 
 T6032 dispatch therefore **remains disabled**. The host-side 32-CPU mask
-model and inconsistent-metadata rejection are complete offline. Next: trace
-the [enable-core callback target](m1n1-t6032-startup.md#captured-runtime-callback-path--2026-09-30)
-and establish release sequencing, alongside the independent early-boot and
-recovery gates, before proposing firmware writes.
+model and inconsistent-metadata rejection are complete offline. The
+[enable-core callback follow-up](m1n1-t6032-startup.md#provider-name-and-callback-data-follow-up)
+now statically links the captured callback data through its specialized handler
+to PMGR. Next: establish release sequencing, alongside the independent
+early-boot and recovery gates, before proposing firmware writes.
 
 Follow-up: the [32-CPU mask comparison](m1n1-t6032-cpu-masks.md) now joins
 all captured `acc-cores` records to the CPU inventory and demonstrates
