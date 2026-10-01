@@ -6,9 +6,14 @@ not a fresh remote or live-machine check.
 
 Current handoff: the SMP shared-memory fix (`d484a58`) and SMP index guards
 (`f51c869`) were pushed before this follow-up. Patch 0018 adds MMU/HV direct
-and proxy index validation, preserving canonical exit/unpin sentinels. The
-eighteen-patch cross-build, sanitizer suites, mutation controls and shared-layout
-audit pass. Next is CPU-release/early-DVFS evidence work.
+and proxy index validation, preserving canonical exit/unpin sentinels; it is
+committed locally as `14605bf`, not pushed. The eighteen-patch cross-build,
+sanitizer suites, mutation controls and shared-layout audit pass. The subsequent
+[CPU callback trace](m1n1-t6032-startup.md#captured-runtime-callback-path--2026-09-30)
+identifies `function-enable_core`, its stored receiver and base-class forwarding
+path; 2,273 instruction words match the captured collection. The concrete target
+and callback data still need tracing. PMGR offset and conditional mask evidence
+are no longer classified as wholly unknown.
 Entry-address, release-order and initialization prerequisites remain unresolved;
 native testing is not authorized.
 
@@ -26,7 +31,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff cleanup | Validated offline | Two separate patches, seven-case handoff suite and full firmware build pass; no native execution |
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
-| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; eighteen-patch cross-build passes | Resolve boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
+| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; eighteen-patch cross-build passes; runtime enable-core callback traced to provider boundary | Resolve concrete callback target/data, release sequencing and boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; SMP and MMU/HV index/sentinel checks pass sanitizer and mutation regressions | Continue CPU-release evidence work. Native reset remains unvalidated; no rollback or recoverable degraded-SMP claim |
 | MCC/cache initialization | SMP shared-memory fix retained in the default eighteen-patch offline build; mapping/startup guards and nine-object layout re-audited | Native behavior unvalidated. All 64 controller/plane contexts, handoff/encoding, aperture relationship, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | Conditional routing and OSData provider traced; die-1 selectors 33/37/45 identified and captured; 61 input/adjacent tests pass; Pro consult reviewed without resolving early-boot contract | Resolve effective die-count writer/allocation contract, safe raw APSC/default indices and early-boot prerequisites; native dispatch disabled |

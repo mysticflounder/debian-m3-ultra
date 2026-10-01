@@ -37,8 +37,11 @@ It is a gate within this function, **not** proof that the entire boot image
 has performed no earlier MMIO.
 
 T6031 and several explicitly listed chips select `0x88000`; T6032 is not
-among them. An ADT compatible string or the common two-die layout does not
-prove this offset is correct for Ultra. No production T6032 case is added.
+among them. Subsequent [captured PMGR binary analysis](m1n1-t6032-pmgr-binary.md)
+statically corroborates group 8 / map 0 / provider `reg[0]` / offset `0x88000`
+and the die stride `0x2000000000`. This is stronger evidence than a compatible
+string, but does not establish safe cold-boot access or release sequencing.
+No production T6032 case is added.
 
 For supported cases, `src/smp.c:308–394` builds the logical CPU table,
 finds the boot CPU from ADT `state="running"`, decodes each secondary's ADT
@@ -48,16 +51,55 @@ affinity, and obtains `cpu-impl-reg` (with an older `/arm-io/reg` fallback).
 | Operation | Pinned implementation |
 | --- | --- |
 | Die-relative start base | PMGR base + selected offset + die × `0x2000000000` |
-| System startup/status write | base + `0x4`, value `1 << (4 * cluster + core)` |
+| System startup/status write | base + `0x4`, legacy non-T6032 value `1 << (4 * cluster + core)`; local T6032 helper uses the captured topology model |
 | Core-start write | base + `0x8 + 4 * cluster`, value `1 << core` |
 | Acknowledgement wait | At most 100 iterations, each delaying 1,000 μs if not acknowledged |
 
 The die stride is defined in `src/pmgr.h:8`. Testing these calculations
 against mocked writes verifies the implementation, not the register
-semantics. In particular, six-core clusters produce overlapping bit positions
+semantics. In particular, the baseline formula produces overlapping bit positions
 in the system startup/status expression (cluster 1/core 4 and cluster 2/core
 0 both select bit 8). This is an unresolved semantics question, not proof of
-a hardware bug or grounds to replace the formula speculatively.
+a hardware bug or grounds to replace the formula speculatively. The subsequent
+[mask preflight](m1n1-t6032-mask-contract.md) implements the captured mode-1
+topology calculation offline; it does not enable register writes. Apple's path
+writes the system mask and every cluster slice, including zero slices, whereas
+the existing m1n1 release path writes the selected cluster only. Equivalence of
+those side effects and their required ordering remain unresolved.
+
+## Captured runtime callback path — 2026-09-30
+
+The captured AppleARMPlatform binary narrows the CPU-release investigation:
+
+| Anchor (unslid collection VA) | Static observation |
+| --- | --- |
+| `0xfffffe0008c946fc`, `0xfffffe0008c94700` | `AppleARMCPU::start(IOService*)` preserves provider in `x20` and `this` in `x19` |
+| `0xfffffe0008c94cf4`–`0xfffffe0008c94d04` | Looks up `function-enable_core` through `AppleARMFunction::withProvider`, then stores the result at `this+0xd8` |
+| `0xfffffe0007182746` | NUL-terminated `function-enable_core` string in the captured collection |
+| `0xfffffe0008c95ecc`–`0xfffffe0008c95f24` | `startCPU(unsigned long,unsigned long)` tests bit 0 of `this+0xea`; when clear, calls the stored object's virtual slot `0x140` with `(1,0,0)`, then returns zero |
+| `0xfffffe0007ff23f8` | Chained fixup for the base AppleARMFunction vtable slot (`vtable+0x10+0x140`) resolves to `callFunction` at `0xfffffe0008c97d30` |
+| `0xfffffe0008c97d30`–`0xfffffe0008c97d80` | Base `callFunction` forwards its three arguments in `x4`–`x6`, reads target/data from object offsets `0x10`/`0x18`, and tail-dispatches the target's virtual slot `0x6e8` |
+
+The wrapper does not forward its two incoming arguments or directly
+write RVBAR. That is **not** evidence that downstream code does neither. The
+base-class slot is resolved statically, not proof of the concrete runtime
+receiver class. `withProvider` includes target lookup and alternate construction
+paths; the actual provider object, callback data and final release handler still
+need tracing. This is a runtime callback path, not an early-boot recipe.
+
+Reproduction: run `scratch/mcc-evidence/verify-cpu-release-callback.py` with
+the project's offline uv Python invocation. It verifies 2,273 instruction words
+across four bounded extracts against both the inspection view and original
+collection, plus the property string and vtable chain membership. Its SHA-256 is
+`f5fb0e041a064b8c48324953761b02495fc903115546ea85c0cfe18b34b8056c`;
+the report is `scratch/mcc-evidence/cpu-release-callback-evidence.json`.
+The collection SHA-256 is
+`a24fefccc060854cecc996b40983499e1319008e4f16c0717a5fef6c4d4828dc`
+(125,992,960 bytes), with provenance recorded in the
+[PMGR inventory](inventory/t6032-pmgr-binary-2026-09-26.json).
+Independent receiver/prologue review agrees. These checks authenticate neither
+Apple's signature nor live PAC, and do not establish a current-host image match.
+No firmware was executed or register read.
 
 ## Execution-level and stack contract
 
@@ -152,8 +194,10 @@ unsupported-chip return into a whole-boot safety gate.
 
 ## Missing evidence before enabling T6032 startup
 
-1. A source-backed or safely validated T6032 CPU-start register contract,
-   including the start offset, per-die addressing and six-core status masks.
+1. Complete the T6032 CPU-start contract beyond the statically corroborated
+   offset, die stride and conditional topology masks: identify the concrete
+   enable-core provider and data, establish whole-mask versus selected-cluster
+   side effects, required release ordering/barriers and acknowledgement semantics.
 2. Native boot-stage feature/entry evidence: `CurrentEL`,
    `ID_AA64PFR0_EL1`, boot MPIDR, RVBAR writability/value, and secondary entry
    level. Host inventory and HVF guest values do not establish this contract.

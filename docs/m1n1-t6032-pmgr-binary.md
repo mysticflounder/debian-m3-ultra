@@ -67,10 +67,10 @@ map's virtual base plus the requested register offset.
 
 ## What this does not yet establish
 
-- The full CPU-release mask contract. Apple's implementation uses topology
-  fields rather than visibly computing `4*cluster+core`. We have not yet
-  proved equivalence or a bug in m1n1's formula. Bit overlap alone does not
-  prove a bug: the first register could control shared resources.
+- The full CPU-release side-effect and ordering contract. The subsequent
+  [mask preflight](m1n1-t6032-mask-contract.md) models the captured mode-1
+  topology and demonstrates 12 differences from the legacy formula, but does
+  not establish hardware semantics or equivalence of the complete write sequence.
 - Which metadata/mode branches execute for each of our 32 CPUs. A static
   path is not a runtime trace or proof that macOS runtime sequencing is
   sufficient during early boot.
@@ -78,10 +78,11 @@ map's virtual base plus the requested register offset.
   recovery readiness. No secondary was released by our code.
 - MCC register semantics or six-cluster frequency initialization.
 
-T6032 dispatch therefore **remains disabled**. Next: finish decoding the
-per-core/cluster mapping and derive all 32 expected masks in a host-side
-model, with explicit failure on inconsistent metadata, before proposing
-firmware writes. Then handle the independent early-boot/recovery gates.
+T6032 dispatch therefore **remains disabled**. The host-side 32-CPU mask
+model and inconsistent-metadata rejection are complete offline. Next: trace
+the [enable-core callback target](m1n1-t6032-startup.md#captured-runtime-callback-path--2026-09-30)
+and establish release sequencing, alongside the independent early-boot and
+recovery gates, before proposing firmware writes.
 
 Follow-up: the [32-CPU mask comparison](m1n1-t6032-cpu-masks.md) now joins
 all captured `acc-cores` records to the CPU inventory and demonstrates
