@@ -81,6 +81,36 @@ This establishes the field consumed by the mode-2 per-cluster path without
 using an ABI-mismatched public XNU struct. It is useful corroboration, not
 a reason to switch the observed board to mode 2.
 
+## Register-descriptor guard — 2026-09-30
+
+The bit-0 test of `this+0x5e10` in `configMiscCores`
+(`0xfffffe0009b9558c–0xfffffe0009b95598`) is a software descriptor
+availability check, not an independently established hardware-ready latch.
+`ApplePMGR::initRegGroup` (`0xfffffe0009b7c9ec`) computes a record at
+`this+0x5d48 + group*0x18`, stores byte `1` at record `+8`, then stores
+the supplied map and offset at `+0xc/+0x10`. Group 8 therefore places
+that byte at `this+0x5e10`.
+
+The T6031 initializer supplies `(group=8, map=0, offset=0x88000)` at
+`0xfffffe0009f5a400–0xfffffe0009f5a414`. Its incoming `this` is saved in
+`x19` and restored to `x0` for the call. The call reaches stub
+`0xfffffe0009f62f18`, whose GOT slot `0xfffffe00083669f8` resolves through
+the collection's fixup chain to `initRegGroup`. This confirms a software
+producer for the guard; it does not show when the live driver executes it.
+
+m1n1 need not reproduce this private PMGR object field. It still needs a
+supported mapped-register contract before release writes. Neither the
+descriptor bit nor this producer establishes hardware readiness, an
+acknowledgement protocol, safe cold-entry ordering or RVBAR/reset behavior.
+T6032 dispatch remains disabled.
+
+The local `scratch/mcc-evidence/cpu-release-sequence-guard-verifier.py`
+checks 35 instruction words across five bounded spans against the pinned
+collection and inspection views, plus the call/stub/fixup link. Its SHA-256 is
+`c601522d6bd8d7bcfc4f7f3519222e8223fd7e438499d94c2787debe2f8408ba`;
+the report is `scratch/mcc-evidence/cpu-release-sequence-guard-evidence.json`.
+No pointer authentication, firmware execution or MMIO is performed.
+
 ## Implementation boundary and reproduction
 
 Local patch [0005](../patches/m1n1/0005-t6032-cpu-start-masks.patch) adds a

@@ -18,6 +18,10 @@ factory/initializer/vtable chain now reaches `enableCPUCores`; a separate
 1,478-word/twelve-fixup check passes. This is not a live callback trace or native
 boot validation. PMGR offset and conditional mask evidence are no longer
 classified as wholly unknown.
+The [group-8 guard producer](m1n1-t6032-mask-contract.md#register-descriptor-guard--2026-09-30)
+is also traced: it marks a software register descriptor available, not hardware
+ready. Its private PMGR field need not be reproduced in m1n1; mapped-register
+availability and native release/reset sequencing still need qualification.
 The [DVFS producer follow-up](m1n1-t6032-dvfs-contract.md#die-count-producer-and-provider-ancestry--2026-09-30)
 locates the multiplier writer in `ApplePMGR::start`: default 1, overridden by
 an ancestor's `die-count` property. A same-snapshot allowlisted capture reports
