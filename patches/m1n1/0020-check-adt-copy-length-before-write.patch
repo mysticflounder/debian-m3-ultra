@@ -1,0 +1,22 @@
+Check ADT property length before copying through the C ABI.
+
+Reject mismatched caller buffers before the unchecked raw copy, preserving the
+existing BadLength/error and exact-length success conventions. Return success
+without dereferencing the destination for an exact zero-length property.
+
+--- a/rust/src/adt.rs
++++ b/rust/src/adt.rs
+@@ -959,6 +959,13 @@
+     let p = match n.named_prop(strname) {
+         Ok(prop) => prop,
+         Err(e) => return e as c_int,
+     };
+ 
++    if p.size as usize != len {
++        return AdtError::BadLength as c_int;
++    }
++    if len == 0 {
++        return 0;
++    }
++
+     match p.copy_raw(out as usize) {

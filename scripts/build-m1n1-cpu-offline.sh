@@ -32,6 +32,7 @@ PATCHES=(
     "$ROOT/patches/m1n1/0017-validate-smp-api-cpu-indices.patch"
     "$ROOT/patches/m1n1/0018-validate-mmu-hv-cpu-indices.patch"
     "$ROOT/patches/m1n1/0019-validate-aic-init-metadata.patch"
+    "$ROOT/patches/m1n1/0020-check-adt-copy-length-before-write.patch"
 )
 # smp-shared remains an alias for the current patched series.
 
@@ -63,7 +64,7 @@ SOURCE="$BUILD_DIR/m1n1-$REV"
 if [[ "$MODE" != baseline ]]; then
     for cpu_patch in "${PATCHES[@]}"; do
         patch_options=(--batch --forward)
-        if [[ "$cpu_patch" == */0015-* || "$cpu_patch" == */0016-* || "$cpu_patch" == */0017-* || "$cpu_patch" == */0018-* || "$cpu_patch" == */0019-* ]]; then
+        if [[ "$cpu_patch" == */0015-* || "$cpu_patch" == */0016-* || "$cpu_patch" == */0017-* || "$cpu_patch" == */0018-* || "$cpu_patch" == */0019-* || "$cpu_patch" == */0020-* ]]; then
             patch_options+=(--fuzz=0)
         fi
         (cd "$SOURCE" && patch -p1 "${patch_options[@]}" -i "$cpu_patch") >> "$BUILD_DIR/patch.log" 2>&1

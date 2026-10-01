@@ -16,6 +16,12 @@ to the default offline series, including runtime mapping and startup guards.
 adds signed CPU-index and pre-conversion proxy validation.
 Patch [0018](../patches/m1n1/0018-validate-mmu-hv-cpu-indices.patch) extends
 index validation to MMU/HV helpers while preserving exit/unpin sentinels.
+Patch [0019](../patches/m1n1/0019-validate-aic-init-metadata.patch) adds bounded
+AIC metadata checks; patch [0020](../patches/m1n1/0020-check-adt-copy-length-before-write.patch)
+rejects ADT copy-length mismatches before writing the destination. The default
+twenty-patch build and shared-layout audits pass. These fixes do not qualify
+the whole ADT parser or native interrupt/CPU-reset behavior; see the
+[SoC follow-up](m3-ultra-soc-status-2026-09-26.md#shared-adt-copy-contract--2026-09-30).
 The earlier [opt-in experiment](m1n1-smp-shared-experiment.md) is retained as
 historical evidence. Neither series enables native T6032 dispatch.
 This is a **build result,

@@ -7,7 +7,7 @@ not a fresh remote or live-machine check.
 Current handoff: the SMP shared-memory fix (`d484a58`) and SMP index guards
 (`f51c869`) were pushed before this follow-up. Patch 0018 adds MMU/HV direct
 and proxy index validation, preserving canonical exit/unpin sentinels; it is
-committed locally as `14605bf`, not pushed. The nineteen-patch cross-build,
+committed locally as `14605bf`, not pushed. The twenty-patch cross-build,
 sanitizer suites, mutation controls and shared-layout audit pass. The subsequent
 [CPU callback trace](m1n1-t6032-startup.md#captured-runtime-callback-path--2026-09-30)
 identifies `function-enable_core`, its stored receiver and base-class forwarding
@@ -48,10 +48,15 @@ defaults remain covered by the source-extracted host harness. The nineteen-patch
 cross-build and shared-layout audit pass. An allowlisted live capture confirms
 that macOS supplies both capability offsets and `aic-iack-offset`; the missing
 offset defect is not an observed failure on this Studio. No physical register
-was accessed. Next bounded work: fix the shared ADT copy helper's
-copy-before-length-check defect and audit its error-handling contract. AIC
-aperture/stride arithmetic and whole-boot failure propagation remain separate
-open items, alongside CPU release and early DVFS prerequisites.
+was accessed. Patch 0020 now fixes the shared ADT copy helper's
+copy-before-length-check defect. Its real-Rust ABI harness passes, with
+deterministic original-source and guard-removal negative controls. The
+[full20 follow-up](m3-ultra-soc-status-2026-09-26.md#shared-adt-copy-contract--2026-09-30)
+also verifies static reset-entry placement, without qualifying reset-time
+hardware behavior. Next primary work is the safe early-DVFS contract; actual
+CPU cold-entry observations need recovery readiness and native approval.
+ADT parser bounds, AIC aperture/stride arithmetic and whole-boot failure
+propagation remain separate open hardening items.
 
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
@@ -67,11 +72,11 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff cleanup | Validated offline | Two separate patches, seven-case handoff suite and full firmware build pass; no native execution |
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
-| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; nineteen-patch cross-build passes; captured callbacks statically linked through specialized handler to PMGR | Resolve release sequencing and boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
+| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; twenty-patch build and static reset-entry placement pass; callbacks linked to PMGR | Qualify cold reset, release sequencing and RVBAR behavior after backup/recovery readiness and native approval; dispatch remains disabled |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; SMP and MMU/HV index/sentinel checks pass sanitizer and mutation regressions | Continue CPU-release evidence work. Native reset remains unvalidated; no rollback or recoverable degraded-SMP claim |
-| MCC/cache initialization | SMP shared-memory fix retained in the default nineteen-patch offline build; mapping/startup guards and nine-object layout re-audited | Native behavior unvalidated. All 64 controller/plane contexts, handoff/encoding, aperture relationship, cache effects and DMA still need hardware qualification |
+| MCC/cache initialization | SMP shared-memory fix retained in the default twenty-patch offline build; mapping/startup guards and nine-object layout re-audited | Native behavior unvalidated. All 64 controller/plane contexts, handoff/encoding, aperture relationship, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | Conditional routing, OSData provider and die-count writer traced; live ancestor property is 2; die-1 selectors 33/37/45 captured; early-boot contract still open | Resolve safe raw APSC/default indices, feature/restore ordering and bounded failure handling; native dispatch disabled |
-| Native console / interrupts / DMA | AIC metadata rejection implemented and tested offline; allowlisted live offsets captured; hardware unvalidated | Repair global ADT copy API; audit AIC aperture/stride and failure propagation; validate final ADT and UART/AIC/DART on hardware only after safety gates |
+| Native console / interrupts / DMA | AIC metadata guards and shared ADT copy-length fix pass offline; live offsets captured; hardware unvalidated | Audit remaining ADT parser bounds, AIC aperture/stride and failure propagation; qualify final ADT and UART/AIC/DART only after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |

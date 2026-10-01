@@ -1,0 +1,52 @@
+{
+  "date": "2026-09-30",
+  "scope": "Offline shared ADT copy-length fix and static reset-entry placement",
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "source_archive_sha256": "6425983260ab96d55c36fdaab3b456830c3bd80f06b7759a61ed2bcca924d973",
+  "adt_source_sha256": "3771322ab6ab7b9c28807857fa77672ae6b09bb58588d46d94bc58f144afdd97",
+  "patch_count": 20,
+  "build_directory": "scratch/m1n1-firmware-patched.oTaCRx",
+  "build_status": "pass; same two known compiler warnings",
+  "tests": {
+    "adt_copy": "real Rust module and exported ABI; exact/zero success, short/long/zero-request mismatch preservation, missing-property error",
+    "negative_controls": "original source and removed guard each exit 1 with long mismatch modified destination",
+    "aic_regression": "pass; baseline and three mutations",
+    "shared_layout": "both ELF variants nine objects in 64 KiB; Mach-O DATA extent pass",
+    "reset_entry_placement": "vectors/reset C entry in executable LOAD; reset-stack pointer symbols in writable shared section"
+  },
+  "safety": {
+    "native_executed": false,
+    "firmware_installed": false,
+    "mmio_probed": false,
+    "vm_changed": false,
+    "disks_changed": false,
+    "t6032_cpu_dispatch_enabled": false,
+    "t6032_dvfs_dispatch_enabled": false
+  },
+  "limitations": [
+    "Host name-byte compatibility shim and aligned padded synthetic ADT; not a full parser safety proof.",
+    "Negative controls observe forbidden writes within oversized backing storage, not an allocation overflow or sanitizer finding.",
+    "Nonzero successful copy still requires a valid non-overlapping caller destination.",
+    "Reset-stack symbol addresses are pointer-variable locations, not runtime stack pointees.",
+    "RVBAR behavior, actual reset entry/acknowledgement and early DVFS remain unqualified."
+  ],
+  "sha256": {
+    "patches/m1n1/0020-check-adt-copy-length-before-write.patch": "69666690c7df34d748e1363afb27f7cb2e8418bb0e247ab9e8283c05ad7ea82b",
+    "scripts/test-m1n1-adt-copy.py": "f0a754bff9c0706fdeb0159775ded7bc128e84bf2ce7e12091eeb063401b0179",
+    "tests/m1n1-adt-copy.rs": "0536509c8cceadf48a8e48a16403b6e775db526b87288debc09914fed87eca12",
+    "scripts/build-m1n1-cpu-offline.sh": "7aba156261cd7afa37309f6490f511f9e6b817f8b1850675d35c19c0b3720f57",
+    "scratch/m1n1-adt-copy-test-2026-09-30.log": "c1a3e2f6ef074122c138723b8d51da732862779ec0f2cba58e70f3001f98b4e2",
+    "scratch/m1n1-adt-copy-build-2026-09-30.log": "15cc7667b0f58fe57e171423f8d25ecb57a5f25c0c220107b1bba5b3e66820ad",
+    "scratch/m1n1-adt-copy-layout-2026-09-30.log": "724def6f0a26e4b43c1266402f3a2f5fa3c82c7df26916ff8aeaa6d80ce1c9ae",
+    "scratch/m1n1-adt-copy-reset-placement-2026-09-30.log": "518c7f5075f9a4bbda5cd328714126f52fb04cdccce2839d0754db2c67bba3c3",
+    "scratch/verify-cpu-release-placement.py": "6fa17010670207cbb621795472e7f4029851f6a9ac8f4ea453116cb028269a44",
+    "scratch/m1n1-firmware-patched.oTaCRx/PATCH_SHA256SUMS": "04e648726bcbef29e5e21b0788a4f92bb684f75f5cad1e89552c3f862fa7cf95",
+    "scratch/m1n1-adt-copy-aic-regression-2026-09-30.log": "6f03f5df3b25dfc5c73e0c4dbceec586524b27d03fe11c1bcdefb69a4304ba99"
+  },
+  "artifact_sha256": {
+    "m1n1.elf": "55f6eaaabb48116cc470e621fcfe8a22c3c1747c4beb9bb90a1756efb21ccfd4",
+    "m1n1-raw.elf": "6a433b0ca4f192bc5db94cba69c0da4c0c432cef04a483af3f02c159d2eceab6",
+    "m1n1.macho": "8a7ac71a46b47b42704c6ca213c82b04603c562c7e8afe8d9703b5aa1ed30d84",
+    "m1n1.bin": "b7e48ed68b9ac7a1cab380596412d5130dfef7a4745805253dddfc71bd0277f6"
+  }
+}

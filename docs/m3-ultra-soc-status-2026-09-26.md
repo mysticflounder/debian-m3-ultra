@@ -212,6 +212,48 @@ local initialization rejection make the entire boot path fail closed:
 UART, AIC and DART hardware qualification remains gated on recovery readiness
 and separately approved native testing.
 
+## Shared ADT copy contract — 2026-09-30
+
+Patch `0020-check-adt-copy-length-before-write.patch` fixes the shared Rust
+`adt_getprop_copy()` entry point, separately from the AIC wrapper. It checks
+the property's full byte length before `copy_raw()`, returns the existing
+`BadLength` (`-20`) on a mismatch without changing the destination, and
+returns zero without dereferencing the destination for an exact zero-length
+property. Exact nonzero copies and existing lookup errors retain their ABI.
+Successful nonzero calls still require valid, non-overlapping destination
+storage; this is not a general validation of arbitrary caller pointers.
+
+`scripts/test-m1n1-adt-copy.py` compiles the full pinned `adt.rs` module on the
+host, with only the property-name `c_char` byte-view compatibility adjustment.
+The tests exercise the exported C-facing function using aligned, padded
+synthetic trees. Exact and zero-sized copies, shorter/longer properties,
+zero-length requests and missing properties pass. The original source and a
+removed-guard mutation each fail the designated long-mismatch check: an
+eight-byte backing buffer safely records a write beyond the requested four
+bytes. This is deterministic sentinel evidence, not a sanitizer-detected
+allocation overflow. The twenty-patch cross-build and both ELF/Mach-O shared
+layout audits pass; no artifact was installed or executed.
+The [validation inventory](inventory/m1n1-adt-copy-2026-09-30.json) records
+source, harness, build, placement-check and artifact hashes.
+
+Residual parser scope is explicit: the pinned `ADTProperty::fat_ptr()` uses
+incorrect DST length metadata (a Rust `char` array size plus only one size
+byte), and its size-bit check does not exclude bit 31. The padded host fixture
+does not qualify that parser for arbitrary malformed inputs. The optional
+virtio DT export also has an unchecked interrupt-property result; neither
+issue is repaired by patch 0020 or established as a current native M3 failure.
+
+The full20 reset-entry placement check finds `_vectors_start=0x4000`,
+`_el1_vectors_start=0x8800` and `_cpu_reset_c=0x30690` in an executable LOAD
+segment. The shared section is `[0x80000,0x90000)`; `_reset_stack=0x80918` and
+`_reset_stack_el1=0x80920` are writable **pointer variables**, not evidence of
+the runtime stack allocation addresses. These checks reveal no static
+placement contradiction. They do not establish live RVBAR identity, locks,
+writability or effect, entry `CurrentEL`/`MPIDR_EL1`, or release-to-acknowledgement
+timing. Those reset-time observations remain gated on recovery readiness and
+separate native-testing approval; another runtime topology capture cannot
+substitute for them.
+
 ## Development-host split
 
 Adam plans to move most project work to the MacBook to free Studio storage
