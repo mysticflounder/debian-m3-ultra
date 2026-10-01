@@ -121,6 +121,28 @@ PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
 
 ## Remaining gates
 
+### Inherited-state boundary — 2026-09-30
+
+The full20 source establishes a software-policy gate, not proof that every
+secondary release electrically requires a frequency write. The patched kernel
+payload calls `cpufreq_init()`, rejects a T6032 failure, then starts secondaries.
+By contrast, `hv_init()` calls `smp_start_secondaries()` without calling frequency
+initialization. Neither path establishes safe T6032 cold-reset behavior; the
+unsupported dispatch and existing rejection remain unchanged.
+
+A future primary-CPU-only diagnostic could explicitly leave the inherited
+frequency untouched while avoiding secondary release and Linux handoff. That
+would preserve an **unknown** state, not establish a supported inherited-state
+policy or complete the DVFS driver. It still needs a supported entry/console
+path, backup/recovery readiness and separate native approval. No such bypass,
+payload execution or register access was introduced by this audit.
+
+The six-cluster address/routing and request encoding traces are useful partial
+evidence. The unresolved requirement is their early-boot applicability plus
+safe state policy, ordering and completion behavior—not an absence of all
+register-map knowledge. Do not treat the current software rejection as an
+independent hardware specification, or treat its removal as validation.
+
 Resolve six-cluster/die routing, safe raw APSC/default indices, the
 `0x440f8` operation, feature ordering and bounded polling before adding
 frequency dispatch. MCC scope/protection, loader/DMA containment, boot entry

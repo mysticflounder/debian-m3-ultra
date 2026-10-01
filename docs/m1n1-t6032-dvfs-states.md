@@ -109,7 +109,67 @@ the five parameter-table words and the pending-method fixup. Its SHA-256 is
 `59c743dd72226aba31404e697d882c669a244a5c038c7096a349b3917dd40cf9`;
 the report is `scratch/dvfs-evidence/early-state-evidence.json`. These are
 static control-flow findings, not raw boot-state recommendations. The
-requested state's initialization-time producer remains unresolved.
+backing record's initialization is now identified below; the first state
+actually consumed on a particular cold boot remains unresolved.
+
+## Initial backing record and early-firmware metadata — 2026-09-30
+
+`ApplePMGR::initDriver` stores the record-array pointer at `this+0x6328`
+(`0xfffffe0009b7e888`) and, after rejecting null, clears `count * 0x118`
+bytes via the call at `0xfffffe0009b7e89c`. Its authenticated stub is
+`0xfffffe0009bd9f1c`; the checked collection fixup at `0xfffffe00082a3808`
+resolves to the kernel's `_bzero` at `0xfffffe000c636b40`.
+
+The selected record is computed as that array plus `index * 0x118` at
+`0xfffffe0009b7e998–0xfffffe0009b7e9a4`, then attached through the complex's
+`+0x50` field at `0xfffffe0009b7edd8`. This is the pointer loaded by the
+runtime consumer at `0xfffffe0009bae0a8`, which reads byte `+0xf` at
+`0xfffffe0009bae0e0`. The backing byte is zero immediately after the clear.
+This is not an exhaustive alias/later-write proof, a guarantee of its first
+consumed value, or a raw hardware default. In particular, software state zero
+must not be relabeled APSC index zero or copied into a new T6032 cluster table.
+
+The local `scratch/dvfs-evidence/initial-state-verify.py` compares all 37
+instruction words in six bounded spans with the pinned collection bytes,
+checks allocation/null-guard and stub instructions, resolves the `_bzero`
+fixup, and pins the symbol listing identifying its target. This is a bounded
+byte/dataflow check, not execution or exhaustive alias analysis.
+
+The pinned iBoot image supplies a separate bounded frequency-property path.
+At image-relative `0x3e1bc–0x3e274`, selectors passed to `0x693e8` correspond
+to the following subsequent property operations:
+
+| Selector | Property |
+| ---: | --- |
+| 0 | `clock-frequency` |
+| 2 | `memory-frequency` |
+| 3 | `bus-frequency` |
+| 1 | `peripheral-frequency` |
+| 4 | `fixed-frequency` |
+| 5 | `timebase-frequency` |
+
+The helper at `0x41880` stores the **returned value**, not the input selector,
+in a caller-stack slot before the property marshaller at `0x414b0`. The second
+name pointer is the string's end bound, not the next adjacent property name.
+Selectors 0–5 share the branch at `0x69474`, initialize a local result, call
+`0x164250` with operation `0x1500`/flags `0x10000`, and load that local output.
+This establishes bounded frequency-metadata plumbing, not an APSC index,
+voltage policy or register-programming sequence. Calls beyond these bounded
+spans are not claimed free of MMIO or other side effects.
+
+The local `scratch/dvfs-evidence/frequency-export-verify.py` checks 105
+instruction words against the pinned decoded iBoot bytes, all six strings,
+selector/property associations and the outlined helpers. The iBoot SHA-256 is
+`bed91c680ce5471ed1210be017ef9a33542e47c83bb7721f03e0aac209ca1c9e`.
+Neither this firmware trace nor the runtime zero-filled record supplies safe
+T6032 APSC/default indices. No native execution or frequency write was made.
+Both checks pass on rerun; source and local-artifact hashes are recorded in
+[the evidence inventory](inventory/t6032-dvfs-initial-state-2026-09-30.json).
+
+The next bounded trace is the operation `0x1500` record lookup through
+`0x164250`, `0x164154`, `0x163fa0` and `0x1641a4`: identify the first value
+source for this frequency-metadata request. Stop at an unresolved callback or
+side-effect boundary. Finding metadata alone will not establish APSC policy.
 
 ## Implications for early boot
 

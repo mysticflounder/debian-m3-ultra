@@ -1,0 +1,39 @@
+{
+  "date": "2026-09-30",
+  "scope": "Offline runtime record initialization and iBoot frequency metadata; not early hardware policy",
+  "inputs": {
+    "scratch/kernelcache-mac15j-offline.macho": "a24fefccc060854cecc996b40983499e1319008e4f16c0717a5fef6c4d4828dc",
+    "scratch/mcc-boot-reference/decoded-iboot/iBoot.j575d.RELEASE.bin": "bed91c680ce5471ed1210be017ef9a33542e47c83bb7721f03e0aac209ca1c9e"
+  },
+  "findings": {
+    "initial_record": "37 instruction words in six spans match disassembly/collection bytes; count * 0x118 bytes cleared through resolved _bzero; selected record attached at CPUComplex+0x50, consumer reads record+0xf",
+    "frequency_export": "105 instruction words across three spans match raw iBoot; six selector/property pairs and returned-value helper checked",
+    "inherited_state": "Patched kernel payload rejects T6032 cpufreq failure before SMP; hv_init has no cpufreq call. Neither proves electrical initialization requirements."
+  },
+  "limitations": [
+    "Initial software zero does not establish the first dynamically consumed state or any raw APSC/default index.",
+    "No exhaustive alias, subsequent-write or concurrency proof.",
+    "Frequency-property metadata is not a proven early register-programming policy; downstream callees are not claimed free of MMIO.",
+    "Inspection wrappers and resolved authenticated fixups are offline evidence, not live pointer authentication or execution.",
+    "Local scratch verifiers, reports and captured binaries are not distributed in this commit."
+  ],
+  "safety": {
+    "native_executed": false,
+    "firmware_installed": false,
+    "mmio_probed": false,
+    "vm_changed": false,
+    "disks_changed": false,
+    "t6032_cpu_dispatch_enabled": false,
+    "t6032_dvfs_dispatch_enabled": false
+  },
+  "sha256": {
+    "scratch/dvfs-evidence/initial-state-verify.py": "4c376b24f5230ff196f46adf3510ddf735a9f61c66f325121e0fa7df66f981a3",
+    "scratch/dvfs-evidence/initial-state-report.json": "7db3a8185b1d46cdcd89485eef2b81dc5a3d8bdb2a0c17ab831c303baa4e4467",
+    "scratch/dvfs-evidence/initial-state-stub.disasm": "579768975aa57608edcab3350bbf3c73678738cf31c594844d5024295cc2db90",
+    "scratch/mcc-evidence/cpu-provider-kernel.nm": "22dbe17c1fbf3a1b2f16f04300d5b9d808a4ab44198871e42074c9f20c316e48",
+    "scratch/dvfs-evidence/frequency-export-verify.py": "8ed6b53a5f34e7bf76263650483e1f56ad30b69732c9933dbca0ba0169263d1c",
+    "scratch/dvfs-evidence/frequency-export-evidence.json": "dd11dd693d651e2b8556ad69e4c2110bbe686331c13a110056f949b68fa4aa0d",
+    "scratch/dvfs-evidence/frequency-export-review.md": "37d0803dc37a2c78ab2590a3577809e8a66a985e264569b12ecb5290dee2c1c9",
+    "scratch/dvfs-evidence/initial-state-producer-review.md": "a982f82ed390b346794ec74cb69b2300a3105a7fd99cf8bc2fccbf1b4db1e383"
+  }
+}
