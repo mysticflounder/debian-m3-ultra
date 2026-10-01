@@ -14,6 +14,9 @@ identifies `function-enable_core`, its stored receiver and base-class forwarding
 path; 2,273 instruction words match the captured collection. The concrete target
 and callback data still need tracing. PMGR offset and conditional mask evidence
 are no longer classified as wholly unknown.
+The DVFS allocation follow-up distinguishes the initial performance-domain
+array from the later append-provider buffer; the effective multiplier's writer
+and value remain unresolved.
 Entry-address, release-order and initialization prerequisites remain unresolved;
 native testing is not authorized.
 

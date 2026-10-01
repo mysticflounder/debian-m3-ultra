@@ -218,14 +218,42 @@ captured inputs and this append logic predict:
 | 19 | 6 | 13 | 5 | 1 | 2 |
 
 This is a **conditional static reconstruction**, not six observed runtime
-records. In particular, the preceding allocation scan at
-`0xfffffe0009b7e8c0–0xfffffe0009b7e90c` walks the `this+0x6330` count
-without the outer loop's modulo, then multiplies its selected-record count
-by `this+0x631c` at `0xfffffe0009b7e914`. The effective multiplier,
-provider-buffer contract and allocation/topology bounds still need to be
-reconciled; the captured property alone is not proof of a runtime buffer
-overrun or of successful allocation. Do not substitute a hypothetical
-three-record provider or the six `acc-clusters` pairs for those inputs.
+records. The 2026-09-30 allocation follow-up distinguishes two arrays:
+
+- `initDriver` establishes `x20=this+0x5d80` at
+  `0xfffffe0009b7cb6c–0xfffffe0009b7cb7c`. At
+  `0xfffffe0009b7e850–0xfffffe0009b7e870`, it stores the descriptor count
+  in `this+0x6334` and its product with the existing `this+0x631c` in
+  `this+0x6330`. The first allocation, stored at `this+0x6328` at
+  `0xfffffe0009b7e888`, uses that product with stride `0x118` and precedes
+  the selected-mode scan.
+- The scan at `0xfffffe0009b7e8c0–0xfffffe0009b7e90c` walks the
+  `this+0x6330` count without the outer loop's modulo. The selected count
+  is multiplied by `this+0x631c` at `0xfffffe0009b7e914`, then stored in
+  the separate provider object's `+0x1b0` field. A second allocation at
+  `0xfffffe0009b7e91c–0xfffffe0009b7e93c` uses stride `0x8e08` and stores
+  its pointer at provider `+0x1a8`; `+0x1b0` resets to zero at
+  `0xfffffe0009b7e944` before appends.
+
+`0xfffffe0009b7e98c` loads the divisor for `q=n/d`, not an append.
+The topology-gated append is at `0xfffffe0009b7ef58–0xfffffe0009b7f0b0`,
+with the provider count increment at `0xfffffe0009b7f0a4–0xfffffe0009b7f0a8`.
+The effective `this+0x631c` producer/value, provider-buffer contract and
+allocation/topology bounds still need reconciliation; direct immediate-offset
+searches did not establish the writer, and bulk/computed writes remain possible.
+The next producer lead is earlier initialization of the `this+0x5d80` area.
+These are macOS driver-initialization observations, not firmware early-boot
+prerequisites or evidence of successful six-row construction. The captured
+property alone proves neither a runtime overrun nor safe capacity. Do not
+substitute a hypothetical three-record provider or the six `acc-clusters`
+pairs for those inputs.
+
+Allocation follow-up verification: four spans (171 instruction words) match
+the hash-pinned collection's ApplePMGR fileset child. The inspection-view bytes
+and the disassembled words were checked separately. Local reproduction artifacts:
+`scratch/dvfs-evidence/dvfs-allocation-next-bytecheck.py` and its `.json`
+report. The 20 DVFS-input tests pass. This verifies the static extraction, not
+the unresolved multiplier or hardware behavior.
 
 Validation for this routing follow-up: all nine bounded extract hashes
 and their 544 instruction words match the full collection; both inventory
