@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "capture_date": "2026-09-30",
+  "identity": {
+    "target": "J575d",
+    "chip_id": "0x6032"
+  },
+  "macos_build": "26A428",
+  "plane": "IOService",
+  "ancestry": [
+    {
+      "distance_from_pmgr_service": 0,
+      "class": "AppleT6031PMGR",
+      "die_count": {
+        "present": false
+      }
+    },
+    {
+      "distance_from_pmgr_service": 1,
+      "class": "AppleARMIODevice",
+      "die_count": {
+        "present": false
+      }
+    },
+    {
+      "distance_from_pmgr_service": 2,
+      "class": "AppleH15IO",
+      "die_count": {
+        "present": false
+      }
+    },
+    {
+      "distance_from_pmgr_service": 3,
+      "class": "IOPlatformDevice",
+      "die_count": {
+        "present": true,
+        "hex": "02000000",
+        "u32le": 2
+      }
+    }
+  ],
+  "provider_perf_domains": {
+    "distance_from_pmgr_service": 1,
+    "length": 364,
+    "raw_hex": "00040001000000002c010000534f43000000000000000000000000000101010200000000000000004543505500000000000000000000000002040003000000002c0100004443530000000000000000000000000005010105000000000000000050435055000000000000000000000000081000080000000000000000414e45000000000000000000000000000b04000b000000002c010000444953500000000000000000000000000d01010d000000000000000050435055310000000000000000000000000000200000000000000000504d502d534f43000000000000000000000000210000000000000000504d502d464142300000000000000000000000220000000000000000504d502d464142310000000000000000000000230000000000000000504d502d464142320000000000000000000000240000000000000000504d502d464142330000000000000000000000250000000000000000504d502d444353000000000000000000",
+    "sha256": "1e68aa6c1392b42df647a6b9a39a539bc0d46741e8601339c12053a1c9075258"
+  },
+  "collector_sha256": "690ed8fc60fc516b7a3cbf7f5af5b1e8b5fff55d54992370e02fa0b9d43d59fa",
+  "raw_registry_retained": false,
+  "mmio_access_performed": false,
+  "limits": "Registry ancestry and metadata, not private object memory or init-time state"
+}

@@ -18,9 +18,15 @@ factory/initializer/vtable chain now reaches `enableCPUCores`; a separate
 1,478-word/twelve-fixup check passes. This is not a live callback trace or native
 boot validation. PMGR offset and conditional mask evidence are no longer
 classified as wholly unknown.
-The DVFS allocation follow-up distinguishes the initial performance-domain
-array from the later append-provider buffer; the effective multiplier's writer
-and value remain unresolved.
+The [DVFS producer follow-up](m1n1-t6032-dvfs-contract.md#die-count-producer-and-provider-ancestry--2026-09-30)
+locates the multiplier writer in `ApplePMGR::start`: default 1, overridden by
+an ancestor's `die-count` property. A same-snapshot allowlisted capture reports
+`die-count=2` and 13 performance-domain descriptors. Another 1,083 instruction
+words and two base-class fixups match the pinned collection. Initialization-time
+execution remains unobserved; the conditional allocation scan reaches beyond
+the captured property, so its backing contract and exact capacity are not
+claimed. Reproducing this private macOS allocator is not an m1n1 prerequisite;
+safe raw APSC/default indices, feature ordering and failure handling remain open.
 Entry-address, release-order and initialization prerequisites remain unresolved;
 native testing is not authorized.
 
@@ -41,7 +47,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; eighteen-patch cross-build passes; captured callbacks statically linked through specialized handler to PMGR | Resolve release sequencing and boot-CPU RVBAR/entry/recovery gates before enabling dispatch |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; SMP and MMU/HV index/sentinel checks pass sanitizer and mutation regressions | Continue CPU-release evidence work. Native reset remains unvalidated; no rollback or recoverable degraded-SMP claim |
 | MCC/cache initialization | SMP shared-memory fix retained in the default eighteen-patch offline build; mapping/startup guards and nine-object layout re-audited | Native behavior unvalidated. All 64 controller/plane contexts, handoff/encoding, aperture relationship, cache effects and DMA still need hardware qualification |
-| Six-cluster frequency / DVFS | Conditional routing and OSData provider traced; die-1 selectors 33/37/45 identified and captured; 61 input/adjacent tests pass; Pro consult reviewed without resolving early-boot contract | Resolve effective die-count writer/allocation contract, safe raw APSC/default indices and early-boot prerequisites; native dispatch disabled |
+| Six-cluster frequency / DVFS | Conditional routing, OSData provider and die-count writer traced; live ancestor property is 2; die-1 selectors 33/37/45 captured; early-boot contract still open | Resolve safe raw APSC/default indices, feature/restore ordering and bounded failure handling; native dispatch disabled |
 | Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |

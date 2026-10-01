@@ -200,9 +200,9 @@ then reloaded for the `perf-domains` `safeMetaCast` at
 `0xfffffe0009b7e7f0–0xfffffe0009b7e7f4`. Checked fixups connect GOT
 `0xfffffe00082a3978` to `OSData::metaClass` and then `OSData::gMetaClass`;
 the two OSData vtable slots resolve to the named methods. This narrows the
-provider contract, not the effective private-object die count. The bounded
-search has not located that count's writer; its absence from that search
-is not proof that no writer exists.
+provider contract. The die-count writer has since been located in `start()`;
+the follow-up below separates that static producer from the unobserved
+initialization-time private-object value.
 
 If the effective descriptor count is 13, the outer multiplier is 2, the
 topology bound permits six appends, and initialization succeeds, the
@@ -238,10 +238,9 @@ records. The 2026-09-30 allocation follow-up distinguishes two arrays:
 `0xfffffe0009b7e98c` loads the divisor for `q=n/d`, not an append.
 The topology-gated append is at `0xfffffe0009b7ef58–0xfffffe0009b7f0b0`,
 with the provider count increment at `0xfffffe0009b7f0a4–0xfffffe0009b7f0a8`.
-The effective `this+0x631c` producer/value, provider-buffer contract and
-allocation/topology bounds still need reconciliation; direct immediate-offset
-searches did not establish the writer, and bulk/computed writes remain possible.
-The next producer lead is earlier initialization of the `this+0x5d80` area.
+The `this+0x631c` producer is now identified below. The initialization-time
+value, provider-buffer contract and allocation/topology bounds still need
+qualification; direct immediate-offset searches had missed a saved base pointer.
 These are macOS driver-initialization observations, not firmware early-boot
 prerequisites or evidence of successful six-row construction. The captured
 property alone proves neither a runtime overrun nor safe capacity. Do not
@@ -253,13 +252,71 @@ the hash-pinned collection's ApplePMGR fileset child. The inspection-view bytes
 and the disassembled words were checked separately. Local reproduction artifacts:
 `scratch/dvfs-evidence/dvfs-allocation-next-bytecheck.py` and its `.json`
 report. The 20 DVFS-input tests pass. This verifies the static extraction, not
-the unresolved multiplier or hardware behavior.
+the unobserved initialization-time multiplier or hardware behavior.
 
-Validation for this routing follow-up: all nine bounded extract hashes
+Earlier routing-follow-up validation: all nine bounded extract hashes
 and their 544 instruction words match the full collection; both inventory
 hashes, the property-name bytes and the six conditional rows were checked.
 The existing 7 PMGR and now 20 DVFS-input tests pass. These checks validate the
 recorded artifacts and input decoding, not runtime execution of the driver.
+
+### Die-count producer and provider ancestry — 2026-09-30
+
+The writer is in `ApplePMGR::start`, not a missing T6032-specific driver image:
+
+| Anchor | Static operation |
+| --- | --- |
+| `0xfffffe0009b74330` | Saves the incoming provider at `this+0x88` |
+| `0xfffffe0009b7466c–0xfffffe0009b7468c` | Forms `this+0x6214` and saves it at `sp+0x38` |
+| `0xfffffe0009b7498c` | Reloads that saved base into `x22`; therefore `x22+0x108` is `this+0x631c` |
+| `0xfffffe0009b749ac–0xfffffe0009b749b0` | Stores the default value `1` to that field |
+| `0xfffffe0009b749b4–0xfffffe0009b74a50` | Loads the incoming provider, follows two `getProvider()` calls and requests `die-count` on the resulting service |
+| `0xfffffe0009b74a60–0xfffffe0009b74a90` | On a successful OSData cast, reads its first u32 and overwrites `this+0x631c`; a missing/wrong-type property leaves the default |
+
+The property-name VA is `0xfffffe00076d19be`. The following `die-stride`
+lookup (`0xfffffe00076d19c8`) writes a different field, `this+0x6320`.
+Do not confuse `x22+0x108` with `this+0x108`: `x22` changes identity during
+`start()`, and the stack spill/reload is essential to this producer trace.
+
+The [allowlisted ancestry inventory](inventory/t6032-dvfs-provider-ancestry-2026-09-30.json)
+captures this IOService-plane chain on J575d/T6032, build `26A428`:
+
+`AppleT6031PMGR → AppleARMIODevice → AppleH15IO → IOPlatformDevice`
+
+The final service exposes `die-count=2`; the three preceding nodes do not.
+The same registry snapshot records 364 bytes of `perf-domains` on the incoming
+AppleARMIODevice provider: 13 descriptors, of which ordinals 1/3/6 select mode 1.
+Thus **if the captured provider wiring/properties apply during initialization
+and no later change intervenes**, the traced producer supplies multiplier 2
+and the outer count is 26. This is not a private-object read or a recorded
+driver-initialization execution.
+
+The non-modulo allocation scan would then request mode bytes at offsets
+`28*n+2`, for `n=0..25`. Thirteen of those offsets (366 through 702) lie
+outside the captured 364-byte property. We do not invent trailing records,
+assume zero padding, claim an exact selected count, or infer a live backing-
+allocation overrun. The backing contract and actual init-time execution remain
+unobserved. This unresolved macOS allocator detail is not itself a requirement
+to replicate for m1n1's raw-index early initialization. The port's remaining
+hardware-facing requirements are safe APSC/default indices, feature/restore
+ordering and bounded failure handling—not recreating Apple's private objects.
+
+Verification: `scratch/dvfs-evidence/verify-dvfs-producer.py` compares 1,083
+instruction words with the pinned collection, verifies the two property strings
+and two base-class method-slot fixups, checks the captured ancestry/descriptor
+inputs, and reports the conditional out-of-property offsets without reading
+any unknown bytes. Its SHA-256 is
+`e0630dc17b0ad471f92e4d7476c03f60729529efc2211746403d1ba899e3468c`; the local report is
+`scratch/dvfs-evidence/dvfs-producer-evidence.json`.
+The collector retains allowlisted fields only; full registry trees remain
+transient in memory. No MMIO, firmware execution or private driver-memory read
+was performed. Matching build labels do not establish a fresh byte-for-byte
+match between the captured collection and the running kernel.
+
+The producer checkpoint also passes all 20 DVFS-input, 11 collection-inspector
+and 7 fixup tests. Independent reviews checked the producer interpretation and
+the same-snapshot inventory/collector allowlist. These remain offline and
+read-only metadata checks, not native-hardware validation.
 
 ### Mode-2 corroboration, not the selected path
 
