@@ -66,6 +66,15 @@ index or the first state consumed on a cold boot. The
 also distinguishes m1n1's software rejection from a hardware requirement for
 frequency writes. No bypass or native dispatch was added.
 
+The [frequency-record follow-up](m1n1-t6032-dvfs-states.md#typed-frequency-record-consumer--2026-09-30)
+resolves operation `0x1500` to a unique inline constant `24,000,000` in the
+pinned iBoot registry. The static successful path supplies this same scalar
+to all six frequency metadata selectors; it is not a per-cluster state table.
+The metadata lead is closed, while safe early-DVFS policy remains unresolved.
+The next concrete offline implementation is the ADT property-view metadata
+defect: use the full declared payload length, not header size plus its first
+byte. This is separate from establishing end-to-end ADT buffer bounds.
+
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
 virtual hardware; it cannot validate the Studio's physical SoC initialization.
@@ -83,7 +92,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; twenty-patch build and static reset-entry placement pass; callbacks linked to PMGR | Qualify cold reset, release sequencing and RVBAR behavior after backup/recovery readiness and native approval; dispatch remains disabled |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; SMP and MMU/HV index/sentinel checks pass sanitizer and mutation regressions | Continue CPU-release evidence work. Native reset remains unvalidated; no rollback or recoverable degraded-SMP claim |
 | MCC/cache initialization | SMP shared-memory fix retained in the default twenty-patch offline build; mapping/startup guards and nine-object layout re-audited | Native behavior unvalidated. All 64 controller/plane contexts, handoff/encoding, aperture relationship, cache effects and DMA still need hardware qualification |
-| Six-cluster frequency / DVFS | Conditional routing and provider traced; initial software zero fill and iBoot frequency metadata checked; safe early hardware policy still open | Resolve safe raw APSC/default indices, feature/restore ordering and bounded failure handling; software zero is not a boot-state recommendation; native dispatch disabled |
+| Six-cluster frequency / DVFS | Conditional routing and provider traced; initial software zero fill checked; iBoot metadata source resolved to constant 24,000,000, not cluster states | Safe raw APSC/default indices, feature/restore ordering and bounded failure handling remain open; native dispatch disabled |
 | Native console / interrupts / DMA | AIC metadata guards and shared ADT copy-length fix pass offline; live offsets captured; hardware unvalidated | Audit remaining ADT parser bounds, AIC aperture/stride and failure propagation; qualify final ADT and UART/AIC/DART only after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |

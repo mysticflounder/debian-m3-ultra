@@ -166,12 +166,67 @@ T6032 APSC/default indices. No native execution or frequency write was made.
 Both checks pass on rerun; source and local-artifact hashes are recorded in
 [the evidence inventory](inventory/t6032-dvfs-initial-state-2026-09-30.json).
 
-The next bounded trace is the operation `0x1500` record lookup through
-`0x164250`, `0x164154`, `0x163fa0` and `0x1641a4`: identify the first value
-source for this frequency-metadata request. Stop at an unresolved callback or
-side-effect boundary. Finding metadata alone will not establish APSC policy.
+The operation `0x1500` record lookup is resolved below: its static source
+is a constant `24,000,000`, not a per-cluster state table.
 
 ## Implications for early boot
+
+### Typed frequency-record consumer — 2026-09-30
+
+The bounded operation path is `0x164250 -> 0x164154 -> 0x163fa0`
+(record lookup), followed by `0x1641a4` for a non-null matching record.
+`0x164154` saves the caller's output pointer and requested type across the
+lookup; for this nonzero `0x10000` request it compares the request against
+record byte `+6` shifted by 16. The caller's `x5` is not used as evidence for
+the selected record or value source.
+
+The consumer reads a descriptor at record `+4`. Its class field is masked
+with `0x0f000000`: class 1 uses a data pointer at record `+8`, class 2 has an
+authenticated callback path, and class 3 uses a separate selection helper.
+Other classes without bit 29 set use inline data at record `+8`; bit 29 has
+a separate bulk-copy path. These generic alternatives do not themselves
+identify the `0x1500` record's class.
+
+For descriptor type `0x10000`, the copy helper at `0x1645ec` selects the
+first signed jump-table entry at `0x164680`: offset `+12` from `0x164614`
+lands at `0x164620`, which loads and stores a 32-bit value. The successful
+consumer returns `w0=1`; the frequency result is delivered through the
+output pointer, not that Boolean return. The outer frequency helper then
+loads its local output as described above.
+
+The registry initializer at `0x163fa0` scans 97 entries of `0x20` bytes in
+`[0x2c0570, 0x2c1190)`. Subtracting the preferred image base from header
+offset `0x380` (`0x10071a94000`) places all 97 record pointers within the
+decoded file. There is exactly one ID `0x1500`, registry index `0x49`:
+
+- Preferred record address: `0x10071d3b4c8`; decoded-file offset: `0x2a74c8`.
+- First 16 bytes: `001500000000010000366e0100000000`.
+- Descriptor: `0x00010000` (class zero, inline 32-bit data).
+- Value at `+8`: `0x016e3600`, decimal **24,000,000**.
+- Flag byte `+7` is zero, so it is eligible for the first initialization pass.
+
+The first pass stores the record pointer into the lookup slot; the second
+pass only processes records with flag bit 4 set. The slot's preferred
+address is `0x10071e25350`, in runtime storage beyond the decoded file.
+That does not make the static record unavailable: the initializer's source
+registry is in the file. It does mean this trace does not prove that live
+initialization ran, succeeded, or left the slot/record unchanged.
+
+Combining this record with the consumer establishes the **static successful
+path**: selectors 0–5 obtain the same inline `24,000,000` value for their
+frequency-property exports. It is not a read of six cluster frequencies,
+a raw P-state table, or evidence of a clock/voltage programming sequence.
+This closes the metadata lead without supplying a safe early-DVFS policy.
+
+`scratch/dvfs-evidence/frequency-record-consumer.py` checks 219 instruction
+words across five lookup/consumer spans against the raw image plus the
+selected jump-table entry. `frequency-record-lookup.py` checks all 97
+rebased record headers, the exact matching record and 14 selected source
+instruction words. Both checks pass; hashes are in the evidence inventory
+linked above. This is offline control/data-flow evidence, not a live
+operation invocation.
+
+### Early initialization remains unresolved
 
 Pinned m1n1 has no CPU MHz conversion in its early initialization. Its
 T6031 table uses **raw hardware indices**: APSC 1 for all three clusters,

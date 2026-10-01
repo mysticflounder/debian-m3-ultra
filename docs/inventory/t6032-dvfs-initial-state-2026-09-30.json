@@ -8,6 +8,8 @@
   "findings": {
     "initial_record": "37 instruction words in six spans match disassembly/collection bytes; count * 0x118 bytes cleared through resolved _bzero; selected record attached at CPUComplex+0x50, consumer reads record+0xf",
     "frequency_export": "105 instruction words across three spans match raw iBoot; six selector/property pairs and returned-value helper checked",
+    "frequency_record": "Header preferred base rebases all 97 registry pointers; unique operation1500 record at raw2a74c8 has descriptor10000 and inline scalar24000000; first-pass eligible",
+    "frequency_record_checks": "219 lookup/consumer instruction words across five spans match raw bytes; typed-copy jump entry checked; separate lookup checker asserts14 source words and exact record bytes",
     "inherited_state": "Patched kernel payload rejects T6032 cpufreq failure before SMP; hv_init has no cpufreq call. Neither proves electrical initialization requirements."
   },
   "limitations": [
@@ -27,6 +29,11 @@
     "t6032_dvfs_dispatch_enabled": false
   },
   "sha256": {
+    "scratch/dvfs-evidence/frequency-record-consumer-review.md": "a94879729075462c7e25eb43abb4a447148ace29ad4c747c6af3c364fbbb503b",
+    "scratch/dvfs-evidence/frequency-record-consumer.py": "e88fe1588297a3885beb0e24775290d10f3069235413bb591e3a27cbd026d659",
+    "scratch/dvfs-evidence/frequency-record-consumer.json": "710a1bf7cd0b1936bdcb451b4513031de2b49c0830a74409dff5813dc734c166",
+    "scratch/dvfs-evidence/frequency-record-lookup.py": "3e85e640a975bc4e005742ae3d83775f0c5356b060abb73e46fbdd9b456ed966",
+    "scratch/dvfs-evidence/frequency-record-lookup.json": "df3067034dc23c4b3867e46dc11ce00b9805f3222fd56752f9f877954b47837a",
     "scratch/dvfs-evidence/initial-state-verify.py": "4c376b24f5230ff196f46adf3510ddf735a9f61c66f325121e0fa7df66f981a3",
     "scratch/dvfs-evidence/initial-state-report.json": "7db3a8185b1d46cdcd89485eef2b81dc5a3d8bdb2a0c17ab831c303baa4e4467",
     "scratch/dvfs-evidence/initial-state-stub.disasm": "579768975aa57608edcab3350bbf3c73678738cf31c594844d5024295cc2db90",
