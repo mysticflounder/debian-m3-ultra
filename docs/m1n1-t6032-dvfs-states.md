@@ -78,6 +78,39 @@ MHz-named getter, not measured rates or a boot-state recommendation. The
 collector itself remains a metadata report: it does not claim hardware
 validation or a supported runtime state count.
 
+## Runtime request producer — 2026-09-30
+
+`ApplePMGR::_updateCPUComplexPerfState` (`0xfffffe0009bae064`) does not
+supply a fixed APSC/default boot index. It loads the candidate from byte
+`+0xf` of the object pointed to by `CPUComplex+0x50`; incoming `w2`
+replaces that byte unless it is the `0xff` sentinel. A conditional cap
+can lower the candidate before dispatch. The preceding parameter scan can
+visit five entries, not four: its table contains `4,5,6,7,8`, and its
+counter starts at 4 but continues while subtraction has no borrow.
+
+The unequal-state path passes the domain byte from `CPUComplex+0x48` as
+`x1` at `0xfffffe0009bae200`, and the candidate `w20` as `x2` at
+`0xfffffe0009bae204`. The call at `0xfffffe0009bae214` uses vtable slot
+`+0xe40`, resolving to the previously traced T6031 `setPerfState` method.
+This connects runtime software-state requests to the conversion path; it
+does not establish a bootloader policy.
+
+An equal candidate and applied-state byte (`+0xc` of the same pointed-to
+object) skips `setPerfState`, but is **not an immediate no-op**. The path
+at `0xfffffe0009bae158–0xfffffe0009bae180` repeatedly calls slot `+0xe48`
+until return bit 0 clears. The checked slot resolves to
+`AppleT6031PMGR::perfStateChangePending` at `0xfffffe0009f5dba4`. There is
+no timeout in that local loop; neither its termination nor the live state
+is observed here. This does not justify copying an unbounded wait into m1n1.
+
+The local `scratch/dvfs-evidence/early-state-verify.py` checks all 301
+instruction words in the bounded function against the pinned collection,
+the five parameter-table words and the pending-method fixup. Its SHA-256 is
+`59c743dd72226aba31404e697d882c669a244a5c038c7096a349b3917dd40cf9`;
+the report is `scratch/dvfs-evidence/early-state-evidence.json`. These are
+static control-flow findings, not raw boot-state recommendations. The
+requested state's initialization-time producer remains unresolved.
+
 ## Implications for early boot
 
 Pinned m1n1 has no CPU MHz conversion in its early initialization. Its

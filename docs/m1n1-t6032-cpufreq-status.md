@@ -80,6 +80,45 @@ The eleven-patch default cross-build passes with the same two warnings as
 the ten-patch build. The existing SMP-status and runtime-mapping host suites
 also pass against their respective seven- and ten-patch materializers.
 
+## Driver-body host coverage — 2026-09-30
+
+[`test-m1n1-cpufreq-driver.py`](../scripts/test-m1n1-cpufreq-driver.py)
+adds a separate test of the real, hash-pinned `cpufreq.c` bodies rather than
+mocking `cpufreq_init()`. It strips platform includes and compiles the source
+with host MMIO/ADT/PMGR/polling mocks under ASan/UBSan. The eighteen-patch
+series does not modify this driver file; its SHA-256 is
+`d52a3c80a657485ba9288a91c7021fc90b4d1078f2e528091c212cd0f4b57b07`.
+
+The five contract cases cover:
+
+- T6032 initialization rejection and fixup skipping, with no MMIO events.
+- T6031's three-cluster operation order: APSC request/poll, feature operations
+  and waits, PMGR lookup, `0x440f8` restore write, then default request/poll.
+- The existing equal-requested-state path, which skips writing and polling
+  even when the mocked register also has the busy bit set.
+- Busy-timeout and feature-wait failure: later operations on that cluster
+  stop, but the outer loop still attempts the remaining clusters and reports
+  failure overall.
+
+Four controlled mutations must fail with the expected harness diagnostic and
+exit status: unsupported-chip dispatch, feature-failure rejection, outer-loop
+continuation and the restore write's position in the sequence. Compilation
+failure, a signal or an unrelated sanitizer failure is not accepted as a
+successful mutation check.
+
+These are source-behavior tests, not approval of that behavior as a T6032
+initialization policy. Poll completion and ADT/feature responses are simulated;
+write values, elapsed timeout duration, electrical effects and hardware
+readiness are not validated. The driver is unchanged. Its unsupported T6032
+path and patch 0011's caller rejection remain in place.
+
+Run independently of the nine-case caller harness:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python scripts/test-m1n1-cpufreq-driver.py
+```
+
 ## Remaining gates
 
 Resolve six-cluster/die routing, safe raw APSC/default indices, the

@@ -22,6 +22,9 @@ The [group-8 guard producer](m1n1-t6032-mask-contract.md#register-descriptor-gua
 is also traced: it marks a software register descriptor available, not hardware
 ready. Its private PMGR field need not be reproduced in m1n1; mapped-register
 availability and native release/reset sequencing still need qualification.
+The same mode-1 CPU-mask offsets fail the shared writer's `isPsReg` predicate,
+so its conditional readback wait is not a CPU-start acknowledgement for this
+path. That question is closed statically; native entry/reset is not.
 The [DVFS producer follow-up](m1n1-t6032-dvfs-contract.md#die-count-producer-and-provider-ancestry--2026-09-30)
 locates the multiplier writer in `ApplePMGR::start`: default 1, overridden by
 an ancestor's `die-count` property. A same-snapshot allowlisted capture reports
@@ -31,8 +34,19 @@ execution remains unobserved; the conditional allocation scan reaches beyond
 the captured property, so its backing contract and exact capacity are not
 claimed. Reproducing this private macOS allocator is not an m1n1 prerequisite;
 safe raw APSC/default indices, feature ordering and failure handling remain open.
+The [runtime state-producer trace](m1n1-t6032-dvfs-states.md#runtime-request-producer--2026-09-30)
+finds caller-controlled state and an equal-state pending loop, not a safe
+boot-state constant. A separate driver-body host harness now characterizes
+the current frequency-init rejection, sequencing and failure behavior.
 Entry-address, release-order and initialization prerequisites remain unresolved;
 native testing is not authorized.
+
+Next implementation: AIC3 input validation. The source-extracted host reproducer
+`scratch/aic-offset-repro.py` confirms that either missing `cap0-offset` or
+`maxnumirq-offset` leaves `-1` in use for a register-address calculation.
+This is not an observed host failure: the captured restore template has both
+offsets, but lacks `aic-iack-offset` and is not a complete final handoff ADT.
+No physical register was accessed by the reproducer.
 
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
@@ -52,7 +66,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; SMP and MMU/HV index/sentinel checks pass sanitizer and mutation regressions | Continue CPU-release evidence work. Native reset remains unvalidated; no rollback or recoverable degraded-SMP claim |
 | MCC/cache initialization | SMP shared-memory fix retained in the default eighteen-patch offline build; mapping/startup guards and nine-object layout re-audited | Native behavior unvalidated. All 64 controller/plane contexts, handoff/encoding, aperture relationship, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | Conditional routing, OSData provider and die-count writer traced; live ancestor property is 2; die-1 selectors 33/37/45 captured; early-boot contract still open | Resolve safe raw APSC/default indices, feature/restore ordering and bounded failure handling; native dispatch disabled |
-| Native console / interrupts / DMA | Source descriptions present; hardware unvalidated | Validate exact boot-chain integration, then UART/AIC/DART behavior after safety gates |
+| Native console / interrupts / DMA | Source descriptions present; hardware unvalidated; AIC3 missing-offset handling reproduces a base-minus-one read in host mocks | Fix and regression-test AIC metadata rejection offline; validate final ADT and UART/AIC/DART on hardware only after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |

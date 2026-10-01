@@ -111,6 +111,36 @@ collection and inspection views, plus the call/stub/fixup link. Its SHA-256 is
 the report is `scratch/mcc-evidence/cpu-release-sequence-guard-evidence.json`.
 No pointer authentication, firmware execution or MMIO is performed.
 
+## CPU-mask writes bypass the shared readback wait — 2026-09-30
+
+The conditional `waitReg32` call in the shared writer is not a generic
+CPU-release acknowledgement. The concrete mode-1 system/cluster calls
+(`0xfffffe0009b95960` and `0xfffffe0009b959c4`) use group 8's map 0 and
+offsets `0x88004` / `0x88008+4*cluster`. Map 0 forwards to the base writer.
+
+After its store, the base writer conditionally invokes virtual slot
+`+0x1070` (`0xfffffe0009b98678–0xfffffe0009b9869c`). The concrete T6031
+slot `0xfffffe00083666f0` resolves to `isPsReg` at
+`0xfffffe0009f6027c`. For map 0, that predicate accepts only offsets
+strictly below `0x671`. Consequently all three per-die cluster offsets and the
+system offset are rejected; the zero-result branch at
+`0xfffffe0009b986ac` skips the wait. This holds independently of the
+unobserved software flag at `this+0xb0`: a clear flag skips the wait
+earlier, and a set flag reaches the rejecting predicate.
+
+This closes the shared-writer wait question for the statically reconstructed
+mode-1 group-8 path. It does not prove that the core has started, that
+hardware needs no acknowledgement elsewhere, or that Apple's runtime
+sequence is sufficient for m1n1 cold entry. m1n1's software spin-table wait,
+RVBAR/reset path and fatal-timeout handling remain separate contracts.
+
+The local `scratch/mcc-evidence/cpu-release-wait-verifier.py` checks 123
+instruction words across eight spans and the relevant vtable fixups against
+the pinned collection. Its SHA-256 is
+`90c06253a0b7857fc9601c1f4afc12a823a52112a05a23aabab2b4332fb223cd`;
+the report is `scratch/mcc-evidence/cpu-release-wait-evidence.json`.
+No live register, private-object flag or boot argument was read.
+
 ## Implementation boundary and reproduction
 
 Local patch [0005](../patches/m1n1/0005-t6032-cpu-start-masks.patch) adds a
