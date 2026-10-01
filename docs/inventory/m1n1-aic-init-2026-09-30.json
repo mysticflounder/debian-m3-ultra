@@ -1,0 +1,53 @@
+{
+  "date": "2026-09-30",
+  "scope": "Offline AIC metadata validation; no native execution",
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "source_archive_sha256": "6425983260ab96d55c36fdaab3b456830c3bd80f06b7759a61ed2bcca924d973",
+  "aic_source_sha256": "a192556a285229af685faef3ebd9f3adb44dfcda2dde77093288a9acbd77b7b6",
+  "patch_count": 19,
+  "zero_fuzz_patches": ["0015", "0016", "0017", "0018", "0019"],
+  "build_directory": "scratch/m1n1-firmware-patched.HuejN9",
+  "build_status": "pass",
+  "tests": {
+    "aic_init": "pass under ASan/UBSan; synthetic ADT and MMIO",
+    "original_negative_control": "specific missing-capability rejection check",
+    "mutations": "three designated exit-1 failures: table length, record preflight, scalar exact length",
+    "cpufreq_driver": "pass including four mutation controls",
+    "smp_shared_and_adjacent": "pass",
+    "shared_layout": "both ELF variants: nine objects in 64 KiB; Mach-O DATA extent pass"
+  },
+  "safety": {
+    "native_executed": false,
+    "firmware_installed": false,
+    "mmio_probed": false,
+    "vm_changed": false,
+    "disks_changed": false,
+    "t6032_cpu_dispatch_enabled": false,
+    "t6032_dvfs_dispatch_enabled": false
+  },
+  "limitations": [
+    "Live IODeviceTree metadata is not the final native handoff ADT or register contents.",
+    "AIC aperture bounds, stride/address arithmetic and target semantics remain unqualified.",
+    "Local AIC rejection does not establish whole-boot failure propagation.",
+    "The shared Rust ADT copy helper remains unsafe for oversized properties outside the scoped AIC wrapper.",
+    "CPU release and early-DVFS prerequisites remain unresolved."
+  ],
+  "sha256": {
+    "patches/m1n1/0019-validate-aic-init-metadata.patch": "f297bfdf941bb054e8968b42681402ddb1bc721744b6477dbfa120344ef2bd43",
+    "scripts/test-m1n1-aic-init.py": "1aef0c8b46b6dab61739304cb7b1d14a0591603b629ebafa9a184f8190158baa",
+    "tests/m1n1-aic-init.c": "91a46bc307885a527c7b880f092ff51de655d6008fea45e28f2c2399da131648",
+    "scratch/m1n1-aic-init-test-2026-09-30.log": "6f03f5df3b25dfc5c73e0c4dbceec586524b27d03fe11c1bcdefb69a4304ba99",
+    "scripts/build-m1n1-cpu-offline.sh": "778c32f9785fc9217ef91b82de9d50251fa94c8809115bfe7c79491f68bdce96",
+    "scratch/m1n1-firmware-patched.HuejN9/PATCH_SHA256SUMS": "af6dcc2fc500aef7122290f0aa7d703376b3a3618082eb18fc5183871fc56767",
+    "scratch/m1n1-aic-init-build-2026-09-30.log": "c4e0722831b88b8f8f905b6d420eb63002fd63b5aa2d0e3073a5d5df3a1397c8",
+    "scratch/m1n1-aic-init-layout-2026-09-30.log": "724def6f0a26e4b43c1266402f3a2f5fa3c82c7df26916ff8aeaa6d80ce1c9ae",
+    "scratch/aic-adjacent-cpufreq-2026-09-30.log": "46300814796ffa11b1dfa5e130f9aebd6be4f1ee3a405c3c0da723703adc094f",
+    "scratch/aic-adjacent-smp-shared-2026-09-30.log": "5eab0790489266e39ce5e5680d73545db387bb525ed9a528406e7d4bbf335687"
+  },
+  "artifact_sha256": {
+    "m1n1.elf": "206cb01f701d747b7a1321d3c84ab96af0b44cbba4bbe1cc6cb8d29a5cd6bcde",
+    "m1n1-raw.elf": "988c3ed1b6f6096840e89daf1b5a6d8cbe1abf275df952130361754a8cf79650",
+    "m1n1.macho": "370ce2fcb57a3c57d8bcc1b57e40141fcf1fd4de38576cec274fbe51ae99285d",
+    "m1n1.bin": "1d4c109806e46675ce0cd91541f3631d25b3204b0e160f454bc0726e3b374009"
+  }
+}

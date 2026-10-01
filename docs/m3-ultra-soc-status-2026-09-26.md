@@ -158,6 +158,60 @@ RVBAR mismatch and allocation failures are now guarded by the separate local
 Neither the T6032 start-register contract nor native execution-level behavior
 is established; the four-CPU EL3 gate remains unchanged.
 
+## AIC metadata follow-up — 2026-09-30
+
+The pinned AIC3 initializer logs missing `cap0-offset` or `maxnumirq-offset`
+but continues with the `-1` sentinel in a register-address calculation.
+A source-extracted host reproducer confirms the invalid address using mocked
+reads; no hardware register was accessed. This is an input-validation defect,
+not evidence that the current Studio encounters it.
+
+The [allowlisted live metadata capture](inventory/t6032-aic-metadata-2026-09-30.json)
+identifies J575d/T6032 on macOS build `26A428`, with `aic,3`, capability offsets
+`4` and `12`, acknowledgement offset `0x40000`, configuration base `0x10000`
+and all three strides `0x4a00`. Its external-interrupt table is six bytes;
+only its length and digest were retained. Unlike the restore-device-tree
+template, the running macOS tree includes the acknowledgement offset.
+This is IODeviceTree metadata, not hardware register contents or proof of the
+final native m1n1 handoff ADT. The collector retained no raw registry dump.
+
+The source review also finds that Rust `adt_getprop_copy()` copies the actual
+property length before checking the requested length. A caller checking its
+error result can therefore still suffer an overlong-property overwrite.
+AIC scalar reads need a raw-property length check before copying; a global
+ADT API repair and its callers require a separate audit.
+
+Local patch `0019-validate-aic-init-metadata.patch` uses an exact-length reader
+for AIC scalar properties. It resolves both AIC3 capability offsets before
+either capability read and rejects missing, wrong-sized, negative or unaligned
+values. AIC2 retains its fixed capability offsets and configuration default.
+Optional configuration/stride properties retain their existing fallback rules,
+without copying malformed values. The external-interrupt table must contain
+complete three-byte records, and every die/IRQ pair is checked before the first
+configuration write. The target encoding is unchanged. A failed AIC2/3
+initializer retains the public entry point's existing pointer-clearing behavior.
+
+Validation is host-only: `scripts/test-m1n1-aic-init.py` extracts the pinned
+driver body, applies only patch 0019 with zero fuzz and runs the C harness under
+ASan/UBSan. It checks successful AIC1/2/3 initialization, malformed metadata and
+late invalid table records; the original source and deliberately removed guards
+must fail designated checks. The default nineteen-patch cross-build passes,
+with the same two known compiler warnings. Both ELF variants retain all nine
+shared objects inside the 64 KiB section, and the Mach-O DATA extent audit
+passes. The existing CPU-frequency and SMP/shared-memory regression suites also
+pass. Build artifacts were not installed or executed.
+The [validation inventory](inventory/m1n1-aic-init-2026-09-30.json) records
+source, patch, test and artifact hashes. The legacy copy-helper mock does not
+reproduce Rust's overwrite-on-wrong-length behavior; these tests validate the
+new AIC wrapper, not a repair of the shared Rust API.
+
+The bounded AIC work does not establish mapped-aperture limits, stride/address
+overflow safety, target-byte semantics or physical interrupt routing. Nor does
+local initialization rejection make the entire boot path fail closed:
+`aic_init()` returns void and downstream callers are not universally null-safe.
+UART, AIC and DART hardware qualification remains gated on recovery readiness
+and separately approved native testing.
+
 ## Development-host split
 
 Adam plans to move most project work to the MacBook to free Studio storage

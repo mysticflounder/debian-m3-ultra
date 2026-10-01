@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "capture_date": "2026-09-30",
+  "identity": {
+    "target": "J575d",
+    "chip_id": "0x6032"
+  },
+  "compatible": [
+    "aic,3"
+  ],
+  "macos_build": "26A428",
+  "fields": {
+    "aic-iack-offset": {
+      "present": true,
+      "length": 8,
+      "unsigned_le": 262144
+    },
+    "cap0-offset": {
+      "present": true,
+      "length": 4,
+      "unsigned_le": 4
+    },
+    "maxnumirq-offset": {
+      "present": true,
+      "length": 4,
+      "unsigned_le": 12
+    },
+    "extint-baseaddress": {
+      "present": true,
+      "length": 4,
+      "unsigned_le": 65536
+    },
+    "extintrcfg-stride": {
+      "present": true,
+      "length": 4,
+      "unsigned_le": 18944
+    },
+    "intmaskset-stride": {
+      "present": true,
+      "length": 4,
+      "unsigned_le": 18944
+    },
+    "intmaskclear-stride": {
+      "present": true,
+      "length": 4,
+      "unsigned_le": 18944
+    },
+    "aic-ext-intr-cfg": {
+      "present": true,
+      "length": 6,
+      "sha256": "f497abea578f21d47eda1ef167d15e0d6e44ab83c80e2df615e3b8e2f9a52e8f",
+      "length_multiple_of_3": true
+    }
+  },
+  "collector_sha256": "8be8c36d78deb716015f7c7ad887872a00589e5e1101794f4346ba651a9ced47",
+  "raw_registry_retained": false,
+  "mmio_access_performed": false,
+  "limits": "Live IODeviceTree metadata, not final m1n1 handoff ADT or hardware register contents"
+}
