@@ -60,27 +60,30 @@ This deliberately does not reserve 1 GiB up front or override an installed
 limit with legacy RAM metadata. A T6032 limit reflects the checked
 RAM/carveout preflight at publication time. These arithmetic checks do not prove
 that the declared physical range is mapped, powered or actually backed by RAM.
-They also do not independently synchronize later top-down reservations:
+Patch 0031 alone did not synchronize later top-down reservations:
 `display_init()` can enlarge a framebuffer with `top_of_memory_alloc()` after
 MMU/MCC initialization has published the limit. That allocation lowers
 `mem_size`, but does not lower the explicit limit. The fallback branch sees the
 reduced RAM end; the explicit-limit branch can still include that reservation.
-This is a conditional allocator-overlap issue, not fixed by patch 0031 and not
-asserted to occur on every native boot.
+This conditional allocator-overlap issue is addressed by comparison patch
+0032's [coordinated top-down reservation ceiling](m1n1-topdown-reservations.md).
+It is not asserted to occur on every native boot. The effective heap limit
+now retains live top-down reservations even if a requested limit is cleared
+or widened; the decompression helper uses that effective limit unchanged.
 
 ## Separate open issues
 
 | Issue | Why the output guard does not resolve it |
 | --- | --- |
 | Inline compressed input extent | A zero input length disables gzip source bounds; XZ substitutes a 4 GiB input capacity. An exact readable payload span must be established and threaded separately |
-| Later top-down reservations | An installed limit can predate framebuffer allocation. Upward/downward allocator bounds need coordinated reservation tracking |
+| Top-down physical eligibility | Patch 0032 coordinates upward/downward bounds, but does not establish physical backing, mapping or carveout eligibility; requested MCC/proxy limits remain independently mutable |
 | Source/output overlap | A finite output span alone does not prove separation from compressed input or other live allocations |
 | Initrd end and placement | The setter accepts a raw pointer/size, and chosen-property creation uses unchecked `start + size`; valid native addresses, reservations and the Linux window constraint still need checks |
 | Image/DTB staging | Alignment and declared sizes do not independently establish readable source backing or every native reservation |
 | Physical handoff | Offline source/layout tests cannot validate the real EL/MMU/cache/DMA/timer/release state |
 
-Next: reconcile later top-down reservations with the installed heap limit,
-and establish the exact inline payload extent and packaging/staging contract.
+Next: establish the exact inline payload extent and packaging/staging contract,
+and validate initrd end arithmetic and Linux's placement window.
 Add targeted bounds/placement checks with source-extracted fixtures.
 Keep native hardware qualification behind the recovery gates.
 
@@ -98,8 +101,16 @@ backing-store overflow. Heap/bootargs/payload-dispatch behavior is mocked.
 The final tree also passes the 90-case BUSY regression with two controls and
 four official-board handoff scenarios with two controls. The
 [inventory](inventory/m1n1-native-loader-2026-10-07.json) binds 232 inputs and
-artifacts, the exact execution records and source comparison. Native hardware
-behavior is not among these results.
+artifacts, the exact execution records and source comparison. This inventory
+records the full29 milestone's historical inputs; the builder has since gained
+the full30 mode. Native hardware behavior is not among these results.
+
+The subsequent [full30 milestone](m1n1-topdown-reservations.md) adds persistent
+reservation tracking and checked allocator arithmetic. It passes fifteen
+real-allocator/helper cases and two exact overlap controls, plus the same
+decoder/BUSY/board/layout regressions. Its separate
+[inventory](inventory/m1n1-topdown-reservations-2026-10-07.json) binds the updated
+builder and final sources. The 11:47:47 UTC upstream refresh is still unchanged.
 
 A fresh 11:09:01–11:09:02 UTC upstream check again found unchanged m1n1, Linux
 and QEMU default-branch revisions. No pinned revisions, external forks or

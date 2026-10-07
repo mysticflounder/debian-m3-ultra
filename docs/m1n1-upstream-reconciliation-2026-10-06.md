@@ -777,15 +777,38 @@ Linux and QEMU heads; no new source reconciliation or pin/fork change is needed
 for these revisions. There was no new VM, native boot, MMIO, firmware, raw-disk
 operation, submission or push.
 
-The output guard is not a complete allocator/loader qualification: later
-top-down framebuffer allocations can leave the published heap limit stale.
+The output guard alone is not a complete allocator/loader qualification: later
+top-down framebuffer allocations could leave the published heap limit stale.
 Exact readable input extent, overlap/reservations, initrd end/window checks,
 Image padding and physical entry remain separate open work.
 
+## Coordinated top-down reservations — 2026-10-07 UTC
+
+Comparison-only 0032 adds a separate non-increasing top-reservation ceiling;
+the effective heap limit is its minimum with any requested limit. Clearing or
+widening the requested limit cannot reopen live top-down reservations, while
+a stricter requested limit is preserved. Checked size/alignment/end arithmetic
+and cursor collision checks precede top-down RAM metadata and guard-state
+changes. First/later/zero placement and the single movable 16 KiB guard remain
+unchanged. Requested-limit diagnostics now avoid undefined pointer subtraction
+for NULL, pre-init and below-cursor values.
+
+Full30 build/layout passes with the same six warnings. Only heapblock.c/.h and
+utils.c differ among 215 canonical sources versus full29. Fifteen source-
+extracted real-allocator/helper cases, two exact cursor-overlap controls, and
+the decoder/BUSY/board regressions pass with clean sanitizers. See the
+[contract](m1n1-topdown-reservations.md) and separate
+[inventory](inventory/m1n1-topdown-reservations-2026-10-07.json). The 11:47:47 UTC
+official-API refresh again finds unchanged m1n1/Linux/QEMU heads. No fetch,
+rebase, pin/fork change, submission, push, VM or native action occurred.
+
+Physical top-down eligibility, input extent/separation, initrd placement and
+native entry remain unqualified. The reservation ceiling does not make mutable
+requested MCC/proxy limits into an immutable carveout policy.
+
 ## Remaining implementation order
 
-1. Coordinate the published upward-heap limit with later top-down allocations,
-   then establish exact readable inline input extent and native package/staging
+1. Establish exact readable inline input extent and native package/staging
    bounds using source-extracted fixtures. Do not confuse the finite output cap
    with complete physical-memory or native entry qualification.
 2. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
