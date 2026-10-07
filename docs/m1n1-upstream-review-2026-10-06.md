@@ -27,8 +27,10 @@ upstream, still needed, or requiring adaptation. Preserve the current pinned
 build as a comparison baseline and test a separate offline candidate.
 
 Follow-up: the [21-patch reconciliation](m1n1-upstream-reconciliation-2026-10-06.md)
-is complete; separate baseline and input-guard comparison builds pass.
-Retained SMP/MCC protections still need adaptation before a full candidate.
+is complete; the subsequent SMP/MCC/mapping/DVFS adaptation also accounts for
+every retained original guard. The 21-patch comparison build and linked-layout
+audit pass. Raw DVFS states, physical-input bounds and hardware qualification
+remain separate gates; no comparison artifact is boot-approved.
 
 Upstream also changed its license declarations. The
 [current README/license clarification](https://github.com/AsahiLinux/m1n1/commit/2460b604c6f016956ead711823605eea840c602e)

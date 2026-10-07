@@ -8,8 +8,8 @@ REV=2460b604c6f016956ead711823605eea840c602e
 ARCHIVE_SHA=aa0ffbeb7ae9cc0eb7a5653f44474e26f826809cf7f0564f8deb395d25203b01
 MODE=${1:-baseline}
 case "$MODE" in
-    baseline|adt|input-guards|smp-guards|memory-guards) ;;
-    *) echo 'Usage: build-m1n1-upstream-offline.sh [baseline|adt|input-guards|smp-guards|memory-guards]' >&2; exit 2 ;;
+    baseline|adt|input-guards|smp-guards|memory-guards|cpufreq-guards) ;;
+    *) echo 'Usage: build-m1n1-upstream-offline.sh [baseline|adt|input-guards|smp-guards|memory-guards|cpufreq-guards]' >&2; exit 2 ;;
 esac
 ARCHIVE="$ROOT/scratch/m1n1-upstream-audit/source-$REV.tar.gz"
 TOOLS="$ROOT/scratch/m1n1-build-tools"
@@ -21,10 +21,10 @@ PATCHES=(
     "$ROOT/patches/m1n1/0020-check-adt-copy-length-before-write.patch"
     "$ROOT/patches/m1n1/0021-fix-adt-property-view-length.patch"
 )
-if [[ "$MODE" == input-guards || "$MODE" == smp-guards || "$MODE" == memory-guards ]]; then
+if [[ "$MODE" == input-guards || "$MODE" == smp-guards || "$MODE" == memory-guards || "$MODE" == cpufreq-guards ]]; then
     PATCHES=("$ROOT/patches/m1n1/upstream-2460b60/0019-validate-aic-init-metadata.patch" "${PATCHES[@]}")
 fi
-if [[ "$MODE" == smp-guards || "$MODE" == memory-guards ]]; then
+if [[ "$MODE" == smp-guards || "$MODE" == memory-guards || "$MODE" == cpufreq-guards ]]; then
     # Base startup/index subset. memory-guards appends MCC/mapping protection
     # below; DVFS adaptation and native qualification remain separate.
     REVIEW_PATCHES="$ROOT/patches/m1n1/upstream-2460b60"
@@ -41,7 +41,7 @@ if [[ "$MODE" == smp-guards || "$MODE" == memory-guards ]]; then
         "$REVIEW_PATCHES/0022-contain-t6032-stop-reset-state.patch"
     )
 fi
-if [[ "$MODE" == memory-guards ]]; then
+if [[ "$MODE" == memory-guards || "$MODE" == cpufreq-guards ]]; then
     PATCHES+=(
         "$REVIEW_PATCHES/0008-validate-t6032-mcc-layout.patch"
         "$REVIEW_PATCHES/0009-preflight-t6032-carveout-removal.patch"
@@ -50,6 +50,12 @@ if [[ "$MODE" == memory-guards ]]; then
         "$REVIEW_PATCHES/0013-check-t6032-tz-plane-consistency.patch"
         "$REVIEW_PATCHES/0014-reject-uninitialized-t6032-mmu-entry.patch"
         "$REVIEW_PATCHES/0016-protect-smp-shared-mappings.patch"
+    )
+fi
+if [[ "$MODE" == cpufreq-guards ]]; then
+    PATCHES+=(
+        "$REVIEW_PATCHES/0011-propagate-t6032-cpufreq-failures.patch"
+        "$REVIEW_PATCHES/0023-contain-t6032-cpufreq-cluster-failures.patch"
     )
 fi
 
@@ -110,5 +116,7 @@ if [[ "$MODE" == smp-guards ]]; then
     printf 'MCC, SMP mapping/readiness and DVFS guards are not included yet.\n'
 elif [[ "$MODE" == memory-guards ]]; then
     printf 'DVFS failure propagation is not adapted; hardware contracts remain unqualified.\n'
+elif [[ "$MODE" == cpufreq-guards ]]; then
+    printf 'DVFS failure containment is included; raw states, physical inputs and hardware contracts remain unqualified.\n'
 fi
 cat "$BUILD_DIR/SHA256SUMS"

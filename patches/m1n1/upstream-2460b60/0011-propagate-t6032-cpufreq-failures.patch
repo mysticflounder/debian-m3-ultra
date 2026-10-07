@@ -1,0 +1,20 @@
+Local review patch: propagate T6032 cpufreq initialization failure
+Base: reviewed m1n1 2460b604c6f016956ead711823605eea840c602e, after adapted 0001..0010
+Provenance: AI-assisted Debian project work; not submitted upstream.
+
+Keep legacy cpufreq best-effort behavior for non-T6032 SoCs. For T6032 only,
+stop the kernel payload path before secondary startup when cpufreq
+initialization fails. The existing SMP, HV, and proxy caller contracts are
+unchanged; the cutoff is local to the native payload boot path.
+
+--- a/src/payload.c
++++ b/src/payload.c
+@@ -316,5 +316,7 @@
+     if (kernel && fdt) {
+-        cpufreq_init();
++        int cpufreq_status = cpufreq_init();
++        if (chip_id == T6032 && cpufreq_status < 0)
++            return -1;
+         if (smp_start_secondaries() < 0)
+             return -1;
+         mitigations_perform();

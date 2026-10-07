@@ -1,0 +1,22 @@
+Local review patch: stop T6032 DVFS setup after a cluster failure
+Base: reviewed m1n1 2460b604c6f016956ead711823605eea840c602e.
+Provenance: AI-assisted Debian project work; not submitted upstream.
+
+Stop before programming any later T6032 cluster when initialization fails.
+Other SoCs retain the existing best-effort loop and aggregate return status.
+This is failure containment, not rollback of earlier register writes or proof
+that the selected raw boot states and feature sequence are hardware-safe.
+
+--- a/src/cpufreq.c
++++ b/src/cpufreq.c
+@@ -532,6 +532,9 @@
+     bool err = false;
+     while (cluster->base) {
+-        err |= cpufreq_init_cluster(cluster++, features);
++        int status = cpufreq_init_cluster(cluster++, features);
++        if (chip_id == T6032 && status < 0)
++            return status;
++        err |= status;
+     }
+ 
+     return err ? -1 : 0;

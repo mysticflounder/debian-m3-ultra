@@ -460,3 +460,20 @@ The restore callers use runtime vptr slot `+0xcf8`, distinguished from the
 qualified base call's raw-vtable-symbol offset `+0xd08`.
 Restore templates cannot replace live tables, and runtime frequency conversion
 does not by itself validate m1n1's raw-index boot policy.
+
+## Reviewed-source follow-up — 2026-10-07
+
+Reviewed m1n1 `2460b604c6f016956ead711823605eea840c602e` now dispatches
+T6032 through six literal cluster bases, raw APSC index 1, ECPU default 5 and
+PCPU default 6, and the shared `t6030_features` table. Those source constants
+do not establish the unresolved early-state, feature/restore, voltage or
+register-access contracts above. In particular, `set_pstate()` bypasses its
+busy poll when the desired field already matches, even if busy is set.
+
+The [reviewed-source adaptation](m1n1-upstream-reconciliation-2026-10-06.md)
+retains 0011's T6032 payload cutoff and adds 0023's T6032-only first-cluster
+failure cutoff. These prevent secondary startup and later-cluster programming
+after a returned error; they do not undo prior writes. Legacy continuation
+and the proxy's returned-status contract remain unchanged. The default source
+pin and disabled native dispatch are unchanged; comparison artifacts are not
+boot-approved.

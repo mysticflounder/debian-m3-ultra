@@ -200,14 +200,68 @@ Comparison artifacts contain upstream native dispatch and remain **not
 boot-approved**. Cpufreq failure propagation (0011), early-DVFS contracts
 and the remaining physical-input/whole-boot gates are not complete.
 
+## DVFS adaptation follow-up — 2026-10-07
+
+Adapted 0011 now checks the native payload's `cpufreq_init()` result and
+stops T6032 before secondary startup on a negative result. Comparison-only
+0023 stops the T6032 cluster loop at its first negative result, before any
+later cluster is programmed. All other SoCs retain the best-effort loop and
+aggregate status. The proxy's existing returned-status contract is unchanged.
+Neither cutoff rolls back writes already performed on the failing or earlier
+clusters, and neither establishes a degraded-state recovery path.
+
+The reviewed source has six T6032 records with raw APSC index 1 and default
+indices 5 for ECPU / 6 for PCPU, sharing the six `t6030_features` records.
+Its local sequence is APSC request/poll, feature masks/APSC poll,
+`base + 0x440f8 = 1`, then default request/poll. The records do not prove
+safe initial states, direct-register access, per-complex feature policy,
+voltage behavior, restore prerequisites or barriers. Already-desired states
+currently bypass the busy poll; observing that branch in a mock does not
+qualify completion when busy was already set.
+
+```sh
+bash scripts/build-m1n1-upstream-offline.sh cpufreq-guards
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python scripts/test-m1n1-upstream-cpufreq.py
+```
+
+The complete adapted comparison stack has 21 patches: the 19 memory-stage
+patches plus 0011 and 0023. It accounts for every retained original guard;
+original 0002 and 0015 remain dropped only on the reviewed baseline because
+upstream supplies those changes. New 0022 and 0023 add containment for the
+current reset/stop and DVFS APIs. The full build and linked-layout audit pass
+with the same six upstream warnings. This is the complete adaptation of the
+existing guard series, not a fully qualified native candidate.
+
+The final source-extracted DVFS fixture passes 48 cases with ASan/UBSan.
+It checks the six cluster/feature records, enabled/disabled feature policies,
+exact request/mask/restore/poll order and arguments, preserved unrelated
+register bits, all 18 T6032 failure positions, legacy T6031 continuation and
+the actual driver-to-payload-prefix cutoff. Removed cluster fail-fast,
+payload cutoff and restore-write controls each fail at their designated
+assertion without sanitizer diagnostics. Five MCC/MMU/shared-mapping fixtures
+also pass on the complete 21-patch source. An independent rerun passes.
+The two unchanged pinned-source cpufreq suites pass as adjacent regressions.
+
+All 215 canonical files under `src/` and `rust/src/` are byte-equal between
+the final host tree and cross-build tree, excluding normal `.orig` patch
+backups. This covers the disjoint `0022`/input-patch ordering difference;
+the complete patch inventories and artifact hashes verify. The
+[DVFS adaptation inventory](inventory/m1n1-upstream-cpufreq-2026-10-07.json)
+records retained inputs, outputs and remaining gates. The new runner applies
+AIC/ADT guards but does not re-execute their behavior suites, and the raw SMP
+proxy-ingress gap remains structural. The executed boot caller is its
+extracted kernel-branch prefix, not the full native payload/main path.
+
 ## Remaining implementation order
 
-1. Retain cpufreq failure propagation (0011) while reviewing the new cluster/voltage
-   paths against the unresolved early-state contract.
-2. Assemble a fully guarded offline candidate and rerun dependency-specific
-   host regressions, complete cross-builds and linked-layout audits.
-3. Resolve remaining ADT physical bounds, AIC aperture/stride and whole-boot
-   failure propagation. Reconcile current kernel/board support for boot and I/O.
+1. Implement remaining ADT physical bounds, AIC aperture/stride and whole-boot
+   failure propagation, keeping the complete adapted stack under regression.
+2. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
+   pre-existing busy state, feature/restore prerequisites and voltage error policy.
+   Do not infer these from upstream constants or a successful mock build.
+3. Reconcile current kernel/board support and initialization dependencies for
+   native boot and storage/network I/O.
 4. Only after a verified backup, recovery readiness and separate native-test
    approval: qualify cold entry, RVBAR/release, MCC/cache/DVFS and UART/AIC/DART,
    then a RAM-only kernel boot and persistent storage/network bring-up.
