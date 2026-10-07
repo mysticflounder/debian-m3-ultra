@@ -96,7 +96,11 @@ eight-object/static-stack linked layout pass. New source-extracted SMP and
 MMU/HV host fixtures pass with ASan/UBSan and designated safe mutation
 controls; SMP raw proxy-index checks remain structural, not a newly executed
 ingress matrix. Deep-sleep and first-registration identity remain unqualified.
-The next primary task is mapping/readiness and MCC guards, then DVFS. The
+The mapping/readiness and MCC guards are also now adapted. The nineteen-patch
+comparison build, linked layout, five current-source MCC/MMU fixtures,
+bounded inherited-MMU mutation and source-scoped caller checks pass.
+Hardware MMIO/cache/TZ/reset contracts remain unqualified. The next primary
+task is cpufreq failure propagation (0011) and the early-DVFS contract. The
 default source pin and disabled native dispatch are unchanged. Upstream
 comparison artifacts contain its native T6032 dispatch and are not
 boot-approved or fully guarded.
@@ -116,11 +120,11 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff cleanup | Upstream supplies capacity/cleanup; missing half-open bounds adapted and built | Retain old baseline; native handoff still unvalidated |
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
-| T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed start/stop masks and caller guards adapted; new source-extracted host suites pass | Add remaining mapping/MCC/DVFS guards; qualify cold reset, release sequencing and RVBAR only after safety gates |
-| Secondary-start failure handling | RVBAR/start-timeout/status/index guards adapted; new stop/reset containment passes offline checks | Native reset/deep-sleep/first-registration identity still unqualified; no degraded-SMP recovery claim |
-| MCC/cache initialization | Old shared-memory/mapping guards validated; upstream backport redundant and new eight-object/static-stack layout audited | Rebase MCC/mapping guards; all 64 controller/plane contexts, cache effects and DMA still need hardware qualification |
-| Six-cluster frequency / DVFS | Conditional routing and provider traced; initial software zero fill checked; iBoot metadata source resolved to constant 24,000,000, not cluster states | Safe raw APSC/default indices, feature/restore ordering and bounded failure handling remain open; native dispatch disabled |
-| Native console / interrupts / DMA | AIC/ADT input guards pass old and new-source host suites and comparison builds; hardware unvalidated | Rebase remaining guards; implement ADT buffer-bound checks and AIC aperture/failure handling; qualify UART/AIC/DART after safety gates |
+| T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Complete DVFS adaptation; qualify cold reset, release sequencing and RVBAR only after safety gates |
+| Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
+| MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; nineteen-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
+| Six-cluster frequency / DVFS | Conditional routing/provider traced; initial zero fill and constant 24,000,000 metadata source checked; upstream tables available | Adapt 0011 failure propagation; safe raw APSC/default indices, feature/restore ordering and bounded failure handling remain open; native dispatch disabled |
+| Native console / interrupts / DMA | AIC/ADT input guards pass old and new-source host suites and comparison builds; hardware unvalidated | Implement ADT buffer-bound checks and AIC aperture/failure handling; qualify UART/AIC/DART after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |

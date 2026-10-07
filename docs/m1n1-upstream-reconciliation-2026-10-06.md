@@ -148,17 +148,67 @@ and armed-panic checks resolve the harness defect with both sanitizers
 enabled. Earlier diagnostic artifacts remain retained; no source/hardware
 alignment defect or native failure is inferred from that mock error.
 
+## Mapping/readiness and MCC adaptation follow-up
+
+The reviewed comparison now also retains 0008–0010, 0012–0014 and 0016.
+The original pinned patches and default source pin remain unchanged.
+
+0008 combines the formerly overlapping MCC dispatch/invalidation hunks and
+preserves current `mcc_init()` → `mmu_init()` → `aic_init()` → `smp_init()`
+caller order. 0009 now removes T6032 carveouts **after**
+`mmu_remap_smp_shared()`, the final current default-mapping stage. The fixed
+TZ origin, 28-bit field checks, all-controller/plane consistency, staged
+allocator/mapping effects and runtime mapping exclusions remain intact.
+0014 retains the inherited-MMU rejection and local initialization latch.
+0016 protects the four shared aliases and adapts readiness gates to the
+cached-CPU startup API, after index validation and before release-side work.
+
+```sh
+bash scripts/build-m1n1-upstream-offline.sh memory-guards
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python scripts/test-m1n1-upstream-memory-guards.py
+```
+
+The nineteen-patch comparison build passes with the same six upstream C
+warnings. Both ELF layouts and Mach-O coverage pass; all nineteen patch and
+four artifact hashes verify. Twelve relevant source files are byte-equal
+between the host-fixture tree and the complete cross-build tree, despite
+their disjoint input/state patch application order.
+
+Five current-source fixtures pass with ASan/UBSan: MCC layout/cache helpers,
+carveout preflight/plane consistency, runtime mappings, MMU entry/lifecycle
+and shared-mapping guards. A bounded inherited-MMU guard mutation fails at
+its designated assertion without sanitizer diagnostics. Source-scoped
+caller/order checks and five unchanged pinned-source adjacent suites pass.
+Independent review and a separate current-source rerun also pass. The
+runner never calls the legacy extractor materializers; their unchanged C
+fixtures are tied to the reviewed source constants. `.orig` offset backups
+are normal patch artifacts; `.rej` files are rejected.
+
+These fixture executions do not run the full startup/main path or physical
+MMIO. Caller coupling and cached-SMP readiness placement are structural
+checks; AIC/ADT patches are applied here but their behavior is covered by
+the separate input suites, not these five fixtures. The existing raw SMP
+proxy-ingress gap remains. No register scope/access safety, atomic TZ
+snapshot, cache/DMA coherence, CPU reset/deep-sleep sequence, or native
+recovery is established. The fixed decoder origin remains a traced software
+assumption, not a hardware qualification.
+
+Evidence is recorded in the
+[memory adaptation inventory](inventory/m1n1-upstream-memory-2026-10-06.json).
+Comparison artifacts contain upstream native dispatch and remain **not
+boot-approved**. Cpufreq failure propagation (0011), early-DVFS contracts
+and the remaining physical-input/whole-boot gates are not complete.
+
 ## Remaining implementation order
 
-1. Rebase mapping/readiness and MCC/carveout guards, preserving the exact
-   record offset, origin decoder, all-plane checks and MMU lifecycle.
-2. Retain cpufreq failure propagation while reviewing the new cluster/voltage
+1. Retain cpufreq failure propagation (0011) while reviewing the new cluster/voltage
    paths against the unresolved early-state contract.
-3. Assemble a fully guarded offline candidate and rerun dependency-specific
+2. Assemble a fully guarded offline candidate and rerun dependency-specific
    host regressions, complete cross-builds and linked-layout audits.
-4. Resolve remaining ADT physical bounds, AIC aperture/stride and whole-boot
+3. Resolve remaining ADT physical bounds, AIC aperture/stride and whole-boot
    failure propagation. Reconcile current kernel/board support for boot and I/O.
-5. Only after a verified backup, recovery readiness and separate native-test
+4. Only after a verified backup, recovery readiness and separate native-test
    approval: qualify cold entry, RVBAR/release, MCC/cache/DVFS and UART/AIC/DART,
    then a RAM-only kernel boot and persistent storage/network bring-up.
 
