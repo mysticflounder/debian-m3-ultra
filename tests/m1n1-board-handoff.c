@@ -1,4 +1,4 @@
-/* Host-only template: the runner inserts pinned dt_set_cpus(). */
+/* Host-only template: the runner inserts the selected dt_set_cpus(). */
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -10,11 +10,18 @@
 
 typedef uint8_t u8;
 typedef uint32_t u32;
-typedef uint64_t u64;
+typedef unsigned long u64;
+_Static_assert(sizeof(u64) == 8, "fixture requires m1n1's LP64 u64 ABI");
 
 #define MAX_CPUS 32
 #define SECONDARY_STACK_SIZE 0x10000
 #define MPIDR_EL1 0
+
+/* The old baseline reserves individual dynamic stacks; current upstream
+ * reserves its whole image, including static stacks, in another helper. */
+#ifndef BOARD_HANDOFF_STATIC_STACKS
+#define BOARD_HANDOFF_STATIC_STACKS 0
+#endif
 
 static void *dt;
 static u64 current_mpidr;
@@ -26,7 +33,9 @@ static int test_mismatch_cpu = -1;
 static uint32_t test_phandles[MAX_CPUS];
 static char test_cpu_names[MAX_CPUS][32];
 static u8 *secondary_stacks[MAX_CPUS];
+#if !BOARD_HANDOFF_STATIC_STACKS
 static u8 *secondary_stacks_el3[4];
+#endif
 static u8 stack_tokens[MAX_CPUS];
 static size_t tracked_allocations;
 #define TRACKED_MAX 8
@@ -91,10 +100,12 @@ static u64 test_mrs(unsigned reg)
 
 #define mrs(reg) test_mrs(reg)
 
+#if !BOARD_HANDOFF_STATIC_STACKS
 static bool has_el3(void)
 {
     return false;
 }
+#endif
 
 static bool smp_is_alive(int cpu)
 {
@@ -140,6 +151,11 @@ static int load_blob(const char *path)
     }
     free(input);
     fclose(file);
+#if BOARD_HANDOFF_STATIC_STACKS
+    /* Synthetic caller-owned reservation: dt_set_cpus must preserve it. */
+    if (fdt_add_mem_rsv(dt, 0x900000, 0x12345))
+        return -1;
+#endif
     return 0;
 }
 
@@ -252,7 +268,16 @@ static int validate_nodes_and_releases(int expected_live, int base_reservations)
         if (!release || len != (int)sizeof(*release) || fdt64_ld(release) != expected)
             return -1;
     }
-    if (live != expected_live || fdt_num_mem_rsv(dt) != base_reservations + live - 1)
+    int expected_reservations = base_reservations;
+#if !BOARD_HANDOFF_STATIC_STACKS
+    expected_reservations += live - 1;
+#else
+    uint64_t address, size;
+    if (base_reservations != 1 || fdt_get_mem_rsv(dt, 0, &address, &size) ||
+        address != 0x900000 || size != 0x12345)
+        return -1;
+#endif
+    if (live != expected_live || fdt_num_mem_rsv(dt) != expected_reservations)
         return -1;
     return 0;
 }

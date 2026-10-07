@@ -5,6 +5,10 @@ support at `2460b604c6f016956ead711823605eea840c602e`. This follow-up compares
 all 21 local patches against that exact source revision. The current default
 build remains pinned to `4184923ffb2dff079b384d6a32cc02142aa14572`.
 
+The initial disposition is amended by the later current-source tests below:
+0002 was incorrectly classified redundant and is restored as comparison-only
+0030. The current full comparison stack has 28 patches, not boot approval.
+
 This is Debian/project-fork work. No Asahi submission, source-pin replacement,
 firmware installation, MMIO probe, native execution, VM or disk change occurred.
 Upstream comparison artifacts contain upstream's T6032 dispatch and are
@@ -19,7 +23,7 @@ new data structures, call sites or patch dependencies—not force old hunks.
 | Patch | Disposition on reviewed upstream | Reason / required adaptation |
 | --- | --- | --- |
 | 0001 CPU capacity/bounds | Split/adapt | Capacity is already 32. Retain half-open bounds checks in `kboot.c` and moved `src/hv/hv.c`. |
-| 0002 pruned CPU cleanup | Drop | Both normal completion and no-CPU-map return now free the list. |
+| 0002 pruned CPU cleanup | Retain/adapt as 0030; corrected 2026-10-07 | The initial Drop classification was wrong: normal CPU-map success still omits the free; no-map/error exits already free it. |
 | 0003 startup prerequisites | Split/adapt | Heap-stack allocation guards are obsolete with static stacks. Retain the stop on locked/mismatched RVBAR. |
 | 0004 startup timeout | Retain/adapt | Upstream still continues after timeout; adapt non-returning containment to the new startup function. |
 | 0005 T6032 masks | Retain/adapt | Die offset and dispatch are upstream, but generic four-core mask spacing does not implement the metadata-validated 4/6/6 layout. Use cached `cpu_info` coordinates. |
@@ -226,13 +230,14 @@ PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
   uv run --no-project --offline --python 3.13 python scripts/test-m1n1-upstream-cpufreq.py
 ```
 
-The complete adapted comparison stack has 21 patches: the 19 memory-stage
+At this checkpoint the comparison stack had 21 patches: the 19 memory-stage
 patches plus 0011 and 0023. It accounts for every retained original guard;
-original 0002 and 0015 remain dropped only on the reviewed baseline because
-upstream supplies those changes. New 0022 and 0023 add containment for the
+original 0015 is supplied by upstream. Original 0002 was incorrectly dropped;
+the later board-handoff test below detects that omission and restores it as
+0030. New 0022 and 0023 add containment for the
 current reset/stop and DVFS APIs. The full build and linked-layout audit pass
-with the same six upstream warnings. This is the complete adaptation of the
-existing guard series, not a fully qualified native candidate.
+with the same six upstream warnings. This historical checkpoint did not fully
+adapt the existing guard series and was not a qualified native candidate.
 
 The final source-extracted DVFS fixture passes 48 cases with ASan/UBSan.
 It checks the six cluster/feature records, enabled/disabled feature policies,
@@ -568,13 +573,99 @@ No rollback of earlier writes or inherited-frequency bypass is added.
 The default pin/native-dispatch setting remains unchanged. No native boot,
 MMIO, firmware, VM or disk operation was performed.
 
+## Official J575d kernel/board handoff — 2026-10-07 UTC
+
+The exact official Linux `602042bf29f6efde39cfb5fdd9289bf4854bc0c5`
+[J575d source](https://github.com/torvalds/linux/blob/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/arch/arm64/boot/dts/apple/t6032-j575d.dts)
+and its recursively reachable includes are now retained separately from the
+older downstream fixture. The [source manifest](inventory/t6032-mainline-board-dt-sources-2026-10-07.json)
+locks all 14 files (100,560 bytes) to commit-qualified URLs and SHA-256 values.
+Clang preprocessing and DTC compilation succeed without warnings. This is
+not `dtbs_check`. The compiled topology agrees with the existing inventory:
+32 CPU ordinals, two dies and six clusters, `4E+6P+6P` on each die. Every CPU
+declares spin-table with a loader-filled release address; PSCI is not this
+board's Linux handoff mechanism.
+
+Current-source testing corrects the initial 0002 disposition: upstream still
+leaks the 128-byte pruning list on normal CPU-map completion. Comparison-only
+0030 adds the missing free before that return, without changing no-map/error
+returns or CPU release behavior. This is a minor cleanup, not a native-boot
+blocker. Upstream's static stacks are covered by a separate whole-image
+reservation path; the obsolete dynamic per-CPU reservation/free sequence is
+not restored.
+
+The [new harness](../scripts/test-m1n1-upstream-board-handoff.py) runs the actual
+current `dt_set_cpus()` and libfdt on the official board DT. Four sanitized
+scenarios pass: all 32 alive, dead CPU 24, dead cluster 5 and mismatched CPU 7.
+The static-stack fixture preserves a synthetic caller-owned reservation and
+checks release addresses, topology pruning and temporary-allocation cleanup.
+It does not execute the separate whole-image reservation helper. Removing
+normal cleanup or removing the release-address write compiles successfully
+but exits exactly 1 with the designated stderr transcript and no ASan/UBSan
+diagnostics. An independent frozen rerun passes. The LP64 fixture uses a
+64-bit `unsigned long` to match the ELF target's `uint64_t`/`%lx` convention;
+this is an explicit host ABI shim, not a production source rewrite.
+
+The 28-patch `board-handoff` cross-build and linked-layout audit pass with
+the same six existing C warnings. Only `src/kboot.c` differs from full27;
+the other 214 canonical C/Rust files are byte-identical. The old default-pin
+board suite also passes with fixture mode zero unchanged. The 90-case BUSY
+suite and its two controls pass again on full28. Other unchanged behavior
+suites are retained evidence, not newly rerun here. Final evidence is listed
+in the [board integration inventory](inventory/m1n1-upstream-board-handoff-2026-10-07.json).
+
+The requested fresh upstream check at 09:37:04 UTC finds m1n1 main
+`2460b604`, official Linux master `602042bf`, and both QEMU master endpoints
+`f9587d4` unchanged. Fresh raw source still lacks m1n1 0029/0030 and the
+three QEMU candidates. This is a default-branch/source freshness check,
+not an upstream merge or replacement-binary qualification; the inventory
+binds the retained API responses, headers and source captures.
+
+Source/configuration dependencies for the proposed RAM/serial kernel are:
+
+| Required path | Exact mainline match / configuration |
+| --- | --- |
+| CPU entry | ARM64/OF/SMP spin-table implementation; loader populates release addresses |
+| Interrupts | `apple,t8122-aic3` fallback; `ARCH_APPLE` selects `APPLE_AIC` |
+| Serial console / earlycon | `apple,s5l-uart`; built-in `SERIAL_SAMSUNG` and `SERIAL_SAMSUNG_CONSOLE` |
+| Power/reset | `apple,t8103-pmgr-pwrstate` fallback; `APPLE_PMGR_PWRSTATE` lives under `drivers/pmdomain/apple`, selected with `PM` |
+| UART clocks | Two fixed-clock references; ARM64/common-clock fixed-rate provider, not Samsung clocks or Apple NCO |
+| RAM userspace | `BLK_DEV_INITRD` and gzip decompression; separate diagnostic userspace still needed |
+
+The [candidate fragment](../configs/linux-j575d-ram-serial.fragment) is an input
+to a future real pinned-tree Kconfig run, **not a resolved `.config` or built
+kernel**. Absence of an explicit symbol in defconfig does not establish its
+resolved value. The official UART has no pinctrl or DART dependency; source
+driver matches do not qualify inherited power/clock state or an externally
+usable console transport.
+
+The actual official DT closure has no M3 cpufreq/OPP, CPU-capacity or
+performance-domain descriptions. Do not invent these values. DART's
+`t6031`/`t8110` compatible pair dispatches to an existing driver but is not
+admitted by the retained binding; that schema gap remains separate from the
+RAM/serial path and from physical DMA qualification.
+
+```sh
+bash scripts/build-m1n1-upstream-offline.sh board-handoff
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python \
+  scripts/test-m1n1-upstream-board-handoff.py \
+  --source-tree <full28-source-tree> --dt-root <official-Linux-closure> \
+  --manifest docs/inventory/t6032-mainline-board-dt-sources-2026-10-07.json
+```
+
+Default source/native-dispatch settings and working VMs are unchanged.
+No firmware, MMIO, native boot, disk or external submission operation occurred.
+
 ## Remaining implementation order
 
 1. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
    physical busy/completion semantics, feature/restore prerequisites and voltage error policy.
    Do not infer these from upstream constants or a successful mock build.
-2. Reconcile current kernel/board support and initialization dependencies for
-   native boot and storage/network I/O.
+2. Evaluate the candidate kernel config in a complete pinned Linux tree,
+   run real DT/schema checks, and build a diagnostic kernel/initramfs. Resolve
+   the DART binding gap and storage/network dependencies without inventing
+   missing CPU-frequency data.
 3. Only after a verified backup, recovery readiness and separate native-test
    approval: qualify cold entry, RVBAR/release, MCC/cache/DVFS and UART/AIC/DART,
    then a RAM-only kernel boot and persistent storage/network bring-up.

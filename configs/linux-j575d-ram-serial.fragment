@@ -1,0 +1,20 @@
+# Candidate fragment for Linux 602042bf29f6efde39cfb5fdd9289bf4854bc0c5.
+# Merge into ARCH=arm64 defconfig, then resolve with the actual Kconfig engine.
+# This is not an evaluated .config or evidence of a built/booted kernel.
+# No CPU OPP, voltage, capacity, or performance-domain values are invented.
+
+CONFIG_ARCH_APPLE=y
+CONFIG_APPLE_AIC=y
+
+# UART and AIC have PMGR power-domain references in the official J575d DT.
+# PMGR is selected by ARCH_APPLE when PM is enabled; require it built-in.
+CONFIG_PM=y
+CONFIG_APPLE_PMGR_PWRSTATE=y
+
+# Match apple,s5l-uart, including OF-selected earlycon and ttySAC console.
+CONFIG_SERIAL_SAMSUNG=y
+CONFIG_SERIAL_SAMSUNG_CONSOLE=y
+
+# RAM-only diagnostic userspace; no persistent device is selected here.
+CONFIG_BLK_DEV_INITRD=y
+CONFIG_RD_GZIP=y

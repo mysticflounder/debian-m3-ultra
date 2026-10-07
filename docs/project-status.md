@@ -198,6 +198,22 @@ to the preceding captures; no newer default-branch commit needs reconciliation.
 Next: exact official kernel/J575d source and configuration integration, without
 inventing OPP data or bypassing unresolved early-initialization gates.
 
+The [official J575d integration follow-up](m1n1-upstream-reconciliation-2026-10-06.md#official-j575d-kernelboard-handoff--2026-10-07-utc)
+now locks and compiles the exact 14-file mainline closure. Current m1n1 handoff
+tests pass four sanitized scenarios and two exact controls independently.
+Comparison-only 0030 corrects the earlier mistaken omission of normal pruning
+list cleanup; upstream's static-stack reservation scheme is preserved. Full28
+build/layout and the old board baseline/90-case BUSY regressions pass. The
+[kernel fragment](../configs/linux-j575d-ram-serial.fragment) remains a candidate,
+not a resolved config or Image. Mainline lacks M3 OPP/cpufreq data; DART has a
+binding gap despite a source-driver match. Next: real Kconfig/schema evaluation
+and diagnostic Image/initramfs build. Native power/clocks/console transport,
+CPU entry, interrupts and DMA remain unqualified.
+
+The requested 09:37:04 UTC upstream refresh finds the same m1n1/Linux/QEMU
+default-branch revisions. The fresh source check still lacks comparison
+patches 0029/0030 and all three QEMU candidates; no pins or forks were changed.
+
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
 virtual hardware; it cannot validate the Studio's physical SoC initialization.
@@ -210,8 +226,8 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | QEMU CPU feature coverage | Partial; separate from basic VM operation | Continue bounded feature probes where useful; do not treat optional gaps as bare-metal or VM blockers |
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
-| M3 m1n1 capacity / handoff cleanup | Upstream supplies capacity/cleanup; missing half-open bounds adapted and built | Retain old baseline; native handoff still unvalidated |
-| Exact T6032/J575d board DT | Validated offline; official Linux 7.3 DT source confirmed | Reconcile official DTS/bindings during kernel integration; retain handoff regressions, native behavior still unvalidated |
+| M3 m1n1 capacity / handoff cleanup | Capacity/bounds adapted; omitted normal cleanup restored as 0030; current-source host tests and full28 build/layout pass | Retain old baseline; static-stack lifecycle preserved, native handoff still unvalidated |
+| Exact T6032/J575d board DT | Exact official 14-file closure compiles; 32-CPU/two-die handoff cases and controls pass independently | Real Kconfig/schema and diagnostic kernel/initramfs build next; M3 OPP/cpufreq and DART binding gaps remain |
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |

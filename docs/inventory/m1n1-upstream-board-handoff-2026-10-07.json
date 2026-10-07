@@ -1,0 +1,529 @@
+{
+  "date_utc": "2026-10-07",
+  "status": "offline_pass_kernel_config_candidate_native_unqualified",
+  "parent_commit": "9b79d658cf94f4a1d0547295677c1ad21405c726",
+  "source_revision": "2460b604c6f016956ead711823605eea840c602e",
+  "patch_count": 28,
+  "patch": "patches/m1n1/upstream-2460b60/0030-free-cpu-map-pruning-list.patch",
+  "build_source_tree": "scratch/m1n1-upstream-board-handoff.D1YyQS/m1n1-2460b604c6f016956ead711823605eea840c602e",
+  "linux": {
+    "repository": "https://github.com/torvalds/linux",
+    "revision": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+    "source_root": "scratch/linux-j575d-mainline-602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+    "tracked_manifest": "docs/inventory/t6032-mainline-board-dt-sources-2026-10-07.json",
+    "closure_files": 14,
+    "closure_bytes": 100560,
+    "tracked_manifest_relation": "Semantically equal to raw source-manifest.json; JSON key order/format differ.",
+    "dtb_sha256": "a9bab156474d0024caebb3dbdac3031f5c1276a44fc37a5ba5ad1779d179c5c8",
+    "preprocessed_sha256": "cf99a711c2328f63d4f09b72f3823708968d306b6d52aef39f1ba6498096d65c"
+  },
+  "scope": {
+    "native_execution": false,
+    "physical_mmio": false,
+    "firmware_changes": false,
+    "disk_changes": false,
+    "vm_changes": false,
+    "push": false,
+    "default_pin_changed": false,
+    "default_native_dispatch": "disabled",
+    "comparison_native_dispatch": "present upstream; not boot-approved",
+    "purpose": "Exact official J575d DT/current dt_set_cpus integration and candidate RAM/serial kernel dependency closure; not a kernel build or native boot."
+  },
+  "semantics": {
+    "correction": "Original 0002 was incorrectly dropped during reconciliation. Current upstream frees no-map/error exits, but normal CPU-map success still leaked the pruning list. 0030 restores that one normal-path free.",
+    "severity": "Minor temporary allocation leak, not a demonstrated native boot blocker.",
+    "stack_lifecycle": "Preserve current static-stack/whole-image reservation design; no obsolete per-CPU stack allocation/reservation path reintroduced.",
+    "fixture_mode": "BOARD_HANDOFF_STATIC_STACKS defaults to 0 for old baseline. Mode 1 preserves a synthetic caller-owned reservation; it does not execute the whole-image reservation helper.",
+    "host_abi_shim": "Fixture u64 is 64-bit unsigned long to match ELF-target uint64_t/%lx. macOS uint64_t is unsigned long long. Strict host compile also includes stdlib.h for libfdt strtoul; no production rewrite.",
+    "hardware_model": "Actual extracted dt_set_cpus and current libfdt; mocked SMP liveness/MPIDRs/release addresses. No physical routing or release semantics established."
+  },
+  "validation": {
+    "cross_build": "PASS; full28 zero-fuzz comparison stack, same six existing C warnings.",
+    "linked_layout": "PASS; both ELF variants: eight shared objects, 64 KiB shared range, two static stacks; Mach-O DATA interval.",
+    "source_equality": "PASS; 214 of 215 canonical C/Rust files unchanged versus full27; only src/kboot.c differs.",
+    "board_topology": "32 CPU ordinals, two dies, six clusters of 4E+6P+6P per die; official spin-table release properties present.",
+    "baseline_scenarios": [
+      "alive32: 32 alive CPUs, six clusters, no tracked allocations",
+      "dead-cpu24: 31 alive CPUs, six clusters, no tracked allocations",
+      "dead-cluster5: 26 alive CPUs, five clusters, no tracked allocations",
+      "mismatch-cpu7: expected -1 and diagnostic, no tracked allocations"
+    ],
+    "negative_controls": "Missing normal free and missing release write each compile with exit 0, then run with exact expected exit 1/stderr and no ASan/UBSan diagnostics.",
+    "host_runs": [
+      {
+        "directory": "scratch/m1n1-mainline-board-handoff.czngc85g",
+        "manifest": "scratch/m1n1-mainline-board-handoff.czngc85g/execution-manifest.json",
+        "source_snapshot": "scratch/m1n1-mainline-board-handoff.czngc85g/source-snapshot.json",
+        "baseline_cases": 4,
+        "negative_controls": 2,
+        "executions": [
+          {
+            "label": "cpp",
+            "returncode": 0,
+            "expected_returncode": 0
+          },
+          {
+            "label": "dtc",
+            "returncode": 0,
+            "expected_returncode": 0
+          },
+          {
+            "label": "baseline-compile",
+            "returncode": 0,
+            "expected_returncode": 0
+          },
+          {
+            "label": "baseline-run",
+            "returncode": 0,
+            "expected_returncode": 0,
+            "generated_source_sha256": "1b2fec949e4b44629058de51ac995bc8125844c06c0c9e65e93c48f62035a099",
+            "binary_sha256": "a482cbf41520469243bf0e1f49dc66c2d7922abe9ddce27062522da3eb32f5f4"
+          },
+          {
+            "label": "missing-cleanup-compile",
+            "returncode": 0,
+            "expected_returncode": 0
+          },
+          {
+            "label": "missing-cleanup-run",
+            "returncode": 1,
+            "expected_returncode": 1,
+            "generated_source_sha256": "861762a747c538b86f711864bc2383915d91a0a173aa31c204f558a87c8b073d",
+            "binary_sha256": "ab56401f465ebdf1a6876fe4f7f1d16ef814d67c2ddc493e3ad12f725953ebae"
+          },
+          {
+            "label": "missing-release-compile",
+            "returncode": 0,
+            "expected_returncode": 0
+          },
+          {
+            "label": "missing-release-run",
+            "returncode": 1,
+            "expected_returncode": 1,
+            "generated_source_sha256": "984b4696002c60a3914609feafdce6c5de5bdae3db41705af3b4227042ca6490",
+            "binary_sha256": "ff146795fbef5a4d672aa151af043173b9f511e21bbd680d90f51aba9ad12097"
+          }
+        ]
+      },
+      {
+        "directory": "scratch/m1n1-mainline-board-handoff.0qj6z66g",
+        "manifest": "scratch/m1n1-mainline-board-handoff.0qj6z66g/execution-manifest.json",
+        "source_snapshot": "scratch/m1n1-mainline-board-handoff.0qj6z66g/source-snapshot.json",
+        "baseline_cases": 4,
+        "negative_controls": 2,
+        "executions": [
+          {
+            "label": "cpp",
+            "returncode": 0,
+            "expected_returncode": 0
+          },
+          {
+            "label": "dtc",
+            "returncode": 0,
+            "expected_returncode": 0
+          },
+          {
+            "label": "baseline-compile",
+            "returncode": 0,
+            "expected_returncode": 0
+          },
+          {
+            "label": "baseline-run",
+            "returncode": 0,
+            "expected_returncode": 0,
+            "generated_source_sha256": "1b2fec949e4b44629058de51ac995bc8125844c06c0c9e65e93c48f62035a099",
+            "binary_sha256": "079d27b24788f8ccaf7643fe10555d7be644297976f4a6d08046a8066d1aee4e"
+          },
+          {
+            "label": "missing-cleanup-compile",
+            "returncode": 0,
+            "expected_returncode": 0
+          },
+          {
+            "label": "missing-cleanup-run",
+            "returncode": 1,
+            "expected_returncode": 1,
+            "generated_source_sha256": "861762a747c538b86f711864bc2383915d91a0a173aa31c204f558a87c8b073d",
+            "binary_sha256": "aee5fce35fc4b9e2f8db59c868fc81105e592ac61915c1667409df0cc180a464"
+          },
+          {
+            "label": "missing-release-compile",
+            "returncode": 0,
+            "expected_returncode": 0
+          },
+          {
+            "label": "missing-release-run",
+            "returncode": 1,
+            "expected_returncode": 1,
+            "generated_source_sha256": "984b4696002c60a3914609feafdce6c5de5bdae3db41705af3b4227042ca6490",
+            "binary_sha256": "662d7be67d70def2ea83a67d1cfc77834fa76ecb11ef4f86c0634a448aa54447"
+          }
+        ]
+      }
+    ],
+    "checksums": {
+      "final_host_nested": 122,
+      "host_checks_per_run": 61,
+      "host_per_run_breakdown": {
+        "source_inputs": 23,
+        "official_dt_files": 14,
+        "dtb_and_preprocessed": 2,
+        "stdout_and_stderr": 16,
+        "generated_sources_and_binaries": 6
+      },
+      "patch_manifest": 28,
+      "build_artifacts": 4,
+      "top_level_inputs": 75
+    },
+    "adjacent": {
+      "old_default_pin_board": "PASS; four scenarios with unchanged default fixture mode. Retained console log only; generated temporary binaries were deleted by the old runner.",
+      "full28_dvfs_busy": "PASS; 90 cases and two exact negative controls. Execution manifest and production-source checksums retained under scratch/m1n1-upstream-cpufreq-busy.vphq3090.",
+      "other_behavior_suites": "Not rerun in this checkpoint; unchanged source comparison and previous inventories are retained evidence."
+    }
+  },
+  "kernel_candidate": {
+    "fragment": "configs/linux-j575d-ram-serial.fragment",
+    "kconfig_resolved": false,
+    "image_built": false,
+    "initramfs_built": false,
+    "dtbs_check_run": false,
+    "dependencies": "ARM64/OF/SMP spin-table, Apple AIC, PM-enabled Apple PMGR power/reset domains, Samsung UART/console/OF earlycon, fixed-rate clocks, gzip initrd.",
+    "no_defconfig_inference": "A symbol absent from textual defconfig is not proven disabled in resolved Kconfig.",
+    "dt_gaps": "Official closure has no M3 cpufreq/OPP/capacity/performance-domains. DART t6031/t8110 fallback driver matches, but retained binding does not admit the pair.",
+    "io_scope": "UART source path has no DART/NCO/pinctrl dependency. Physical inherited power/clocks and usable console transport remain unqualified."
+  },
+  "upstream": {
+    "checked_utc": "2026-10-07T09:37:04Z",
+    "m1n1": "2460b604c6f016956ead711823605eea840c602e",
+    "linux": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+    "qemu_github_mirror": "f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c",
+    "qemu_gitlab": "f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c",
+    "result": "All four default-branch heads unchanged; fresh raw source still lacks m1n1 0029/0030 and the three QEMU candidate fixes. No fetch/rebase/pin changes."
+  },
+  "remaining": [
+    "Evaluate fragment in a complete pinned Linux Kconfig tree; run relevant DT schema validation.",
+    "Build diagnostic Image and initramfs without changing the working VM.",
+    "Keep missing M3 OPP/cpufreq descriptions and DART binding extension separate from physical DVFS/DMA qualification.",
+    "Qualify native CPU entry, cache/MCC, interrupts, power/clocks, console transport and later storage/network only after verified backup, recovery readiness and separate native-test approval."
+  ],
+  "inputs": [
+    {
+      "path": "scripts/build-m1n1-upstream-offline.sh",
+      "sha256": "e0448e92f86f035245df762d59afa7223b147f38b648ba40a83dc1440a79e911"
+    },
+    {
+      "path": "tests/m1n1-board-handoff.c",
+      "sha256": "a4006dc1457a3f6bb9fb1ec7534ce74f4ff2b2929a0a11bd2023162986ef9a28"
+    },
+    {
+      "path": "patches/m1n1/upstream-2460b60/0030-free-cpu-map-pruning-list.patch",
+      "sha256": "ae9d8fa53f6e6eedfae0c2488ad8d4450c665140bc90625f4658ba8bcf089893"
+    },
+    {
+      "path": "scripts/test-m1n1-upstream-board-handoff.py",
+      "sha256": "998ea46300e0cf7d0a1bf5555876d7926f63b09c61fd2df6f3cc149ed9d56ee2"
+    },
+    {
+      "path": "configs/linux-j575d-ram-serial.fragment",
+      "sha256": "3f45e0b1f134f6ad25be002ac9b458f0e68a4f8becf69953357c2777efe39994"
+    },
+    {
+      "path": "docs/inventory/t6032-mainline-board-dt-sources-2026-10-07.json",
+      "sha256": "554f6225810b34b2edf5a29ec9823e920569334b4f8bc104ea2ec5e9ca0e8319"
+    },
+    {
+      "path": "scratch/linux-j575d-mainline-602042bf29f6efde39cfb5fdd9289bf4854bc0c5/source-manifest.json",
+      "sha256": "330de97ef3b3634b773d3f6a2c6ea8314460bbd84b2f50c2320c6a74bf65704a"
+    },
+    {
+      "path": "scratch/m1n1-upstream-board-handoff.D1YyQS/build.log",
+      "sha256": "8bfe12ab00b476853f6a04dfdae9f063a9825976da6f3e5dadca8a9bd900e92c"
+    },
+    {
+      "path": "scratch/m1n1-upstream-board-handoff.D1YyQS/patch.log",
+      "sha256": "3d2a1851c992461dc8511007d3c5272817f01f77cad4de12ab78b6391958c76b"
+    },
+    {
+      "path": "scratch/m1n1-upstream-board-handoff.D1YyQS/PATCH_SHA256SUMS",
+      "sha256": "b3f6ed5832fce2f7f6c11bb73b5cbfc72069274cbe3af1465b2b03a870bbc385"
+    },
+    {
+      "path": "scratch/m1n1-upstream-board-handoff.D1YyQS/SHA256SUMS",
+      "sha256": "684b6fc44703bed965821f7479fc26c005bfd4a82f8fa419ea6a588f5a2c4018"
+    },
+    {
+      "path": "scratch/upstream-board-handoff-build-terminal-2026-10-07.log",
+      "sha256": "e0b2bbc023619e07d7fdba81bf140e634a00e044da33c40c3de2d192c6255172"
+    },
+    {
+      "path": "scratch/upstream-board-handoff-layout-2026-10-07.log",
+      "sha256": "e31d75ea557e7da5d4253ff1663cd1c2dec61f4ff7005b8cf9f5951931fd42d7"
+    },
+    {
+      "path": "scratch/upstream-board-handoff-source-equality-2026-10-07.log",
+      "sha256": "534346ed1fdc9dc91cacb6086d44ab8ab879ac876e6b8ddf6900415284bdd4c3"
+    },
+    {
+      "path": "scratch/upstream-aic-boot-cutoff-source-files-2026-10-07.txt",
+      "sha256": "dde43d866c940fb5efbc95bac07dee69ed1e94263b0e6031149e9ee9e92b20ae"
+    },
+    {
+      "path": "scratch/upstream-board-handoff-old-baseline-regression-2026-10-07.log",
+      "sha256": "1676e13e964bd5fc36ae1b054da590df437b4f4d40478d7ef56231edb3c9bb69"
+    },
+    {
+      "path": "scratch/upstream-board-handoff-final-review-2026-10-07.md",
+      "sha256": "d1bccbd0afd996cf1036a9218c8e894ed7a5a66293716b3b70b977509c7b3794"
+    },
+    {
+      "path": "scratch/t6032-mainline-dt-audit-2026-10-07.md",
+      "sha256": "0cfacb50f8f6abd257ab43ecb61c7a008306689bde7031f380fe4387b55d649c"
+    },
+    {
+      "path": "scratch/t6032-kernel-config-audit-2026-10-07.md",
+      "sha256": "57422abdcfd8fedf709ba94f7f7e6ba985996a521ef8be5b9a9197309c802330"
+    },
+    {
+      "path": "scratch/upstream-board-handoff-host-checksums-final-2026-10-07.log",
+      "sha256": "73556f1092a5e0d87039c2cac598c12fde954ca52f0b3c17689df9c6f4e4627a"
+    },
+    {
+      "path": "scratch/upstream-board-handoff-patch-checksums-final-2026-10-07.log",
+      "sha256": "a3124b4cc8a56684e852c8870519b36f0fcc711612d1464c1cb769742693548d"
+    },
+    {
+      "path": "scratch/upstream-board-handoff-build-checksums-final-2026-10-07.log",
+      "sha256": "dc1c834a3398d0361a8275331ec797511ab0d4604dc8e90ff066c63bb33b3866"
+    },
+    {
+      "path": "scratch/m1n1-mainline-board-handoff.czngc85g/execution-manifest.json",
+      "sha256": "a92dd6f9870fcb67b600f1962a17b6dadf36c7db85c8b3dbb40b477cc96c0e21"
+    },
+    {
+      "path": "scratch/m1n1-mainline-board-handoff.czngc85g/source-snapshot.json",
+      "sha256": "f648c3cb787183fc8c303fb643fa6919b4fea650d3935285e5b44fd2105d25cf"
+    },
+    {
+      "path": "scratch/m1n1-mainline-board-handoff.czngc85g/PATCH_SHA256SUMS",
+      "sha256": "b3f6ed5832fce2f7f6c11bb73b5cbfc72069274cbe3af1465b2b03a870bbc385"
+    },
+    {
+      "path": "scratch/m1n1-mainline-board-handoff.0qj6z66g/execution-manifest.json",
+      "sha256": "49cdd8d35417ef2e6d8a287d21687930351ec969149e4c4ead8175007251f7b6"
+    },
+    {
+      "path": "scratch/m1n1-mainline-board-handoff.0qj6z66g/source-snapshot.json",
+      "sha256": "f648c3cb787183fc8c303fb643fa6919b4fea650d3935285e5b44fd2105d25cf"
+    },
+    {
+      "path": "scratch/m1n1-mainline-board-handoff.0qj6z66g/PATCH_SHA256SUMS",
+      "sha256": "b3f6ed5832fce2f7f6c11bb73b5cbfc72069274cbe3af1465b2b03a870bbc385"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.vphq3090/execution-manifest.jsonl",
+      "sha256": "c0ccbf159d8a8578fff654f7833fac50fdc1746bd908815feb951f1200c60610"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.vphq3090/production-snapshot-sha256.txt",
+      "sha256": "a5c186f47334f61fb800b03cf1421a90fa55acc57af673cf4c48620d40c12dd4"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/arch/arm64/Kconfig",
+      "sha256": "4a7f7eb39adc7a6c338e95fdde7e3c87a0f9dd64c39a971a857895ec57dd3f21"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/arch/arm64/Kconfig.headers",
+      "sha256": "4fd037d0b521ec02c6cf1372a48f55af123dbf2c2042932a4d97593605047c58"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/arch__arm64__Kconfig.platforms",
+      "sha256": "f1a787b9201e8199a70fc2050aaf757c1c5ee24e3c480ea82c1ea48726a30d92"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/arch__arm64__Kconfig.platforms.headers",
+      "sha256": "0fff1a1d69f07a72c1c62b09256503ee70fd0d9bc52b600c96afbdda47e25ecc"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/arch__arm64__configs__defconfig",
+      "sha256": "268a6cc72d1d92affb546a69932594622656b9415c8407277cf0d3aacad7b57e"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/arch__arm64__configs__defconfig.headers",
+      "sha256": "4836a954ecfdf60dfa2c91a579752b357893e9085c3bfee69f5e7f6a73cef310"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/arch/arm64/kernel/smp_spin_table.c",
+      "sha256": "20071a155b1df92d8f8d55b17cbd0e149a05a5a685283f5d955bd78126697aeb"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/arch/arm64/kernel/smp_spin_table.c.headers",
+      "sha256": "af3b38586d162b3e6985acd9bcbd010cddd8f97bbe04341fba713f59e64e97b7"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers/irqchip/Kconfig",
+      "sha256": "b30db8d42247d9d425c6c97ab5438125a44f7e5dc97f6e89197f3194d6ffb33c"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers/irqchip/Kconfig.headers",
+      "sha256": "85e4c1e55b997cfccc47038145c008c53e2084d4ca9433b1e9e9f6ada84da897"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers/irqchip/irq-apple-aic.c",
+      "sha256": "d52ff497371f81b94af730792c9ea9fb2bf24d99cf7df6e8985351dd331c2287"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers/irqchip/irq-apple-aic.c.headers",
+      "sha256": "2de06aaca8b4d112016b277c5c698f4d4d8d79e2285884b80872a08933aae296"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers/tty/serial/Kconfig",
+      "sha256": "a93243e822eb803efbdfd578f71b3a6bb98a280ece14f6efe1997d0f875f91cb"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers/tty/serial/Kconfig.headers",
+      "sha256": "f7381b602f408f6cf5cd4bcdfadf0aa4c7e8d30544eb78cbbdc1994f77c6a628"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers__tty__serial__samsung_tty.c",
+      "sha256": "5baab0faaf3fd854a82fed9279f853de8e840d6f8bbe25852eb7089e89aced8f"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers__tty__serial__samsung_tty.c.headers",
+      "sha256": "cedf8808ac3325206f881eaafe1b058c096f094f02cb5fa2f302c99b5d9f3bec"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers__pmdomain__apple__Kconfig",
+      "sha256": "2128f1335c9ac6edb66db751a98158c7814b434a6af66682afbe4c02b007972c"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers__pmdomain__apple__Kconfig.headers",
+      "sha256": "2cd086cad6a32558c4cda852e0a01083aa7548a67a7cf555f731e573c1696ccd"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers__pmdomain__apple__pmgr-pwrstate.c",
+      "sha256": "4b0adc3013e2fabe9ca1cb8228f8f6b7934af4b667f7f0f893b675102d8710df"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers__pmdomain__apple__pmgr-pwrstate.c.headers",
+      "sha256": "430442fb6518479e0f433645d805c2e763ac34e13445e49cd5b668c8f4ea7438"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers/clk/Makefile",
+      "sha256": "62027aaba3711002dba55673b797fb9e62afd773886317275542f4695a1bfa5c"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers/clk/Makefile.headers",
+      "sha256": "a668a6c74e36ece4bd1eef83facbe36a4eb33025a635aefecc07c421e80800b3"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers__clk__clk-fixed-rate.c",
+      "sha256": "c44c1547f51eeea099293949c9c3b818ad80b7dcd6b172806afb26a685bae659"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/drivers__clk__clk-fixed-rate.c.headers",
+      "sha256": "5955bde3a1dbb8457bea80eb22c6729dfd0d41165ee81a04bc351efaea6d50f2"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/usr__Kconfig",
+      "sha256": "ceb24f86e07a622a44146d824636ba3d63b9991643502a9f2f9dac218f612fbb"
+    },
+    {
+      "path": "scratch/linux-j575d-driver-config-602042bf/usr__Kconfig.headers",
+      "sha256": "6ef5395846a6bdc43fbd1fdd3420f94b8bc1b374d3c3a102c04d586617e654ac"
+    },
+    {
+      "path": "scratch/linux-j575d-mainline-602042bf29f6efde39cfb5fdd9289bf4854bc0c5/bindings-manifest.tsv",
+      "sha256": "8e8c1b6465392c3777201ecda7972df4b3ba065723cfde4afe50666c98e91063"
+    },
+    {
+      "path": "scratch/linux-j575d-mainline-602042bf29f6efde39cfb5fdd9289bf4854bc0c5/Documentation/devicetree/bindings/arm/apple.yaml",
+      "sha256": "3a63b89d44f0c92dd73f725707ae1a73481ef5ac228cf8a5bf5b99878f8fb4c5"
+    },
+    {
+      "path": "scratch/linux-j575d-mainline-602042bf29f6efde39cfb5fdd9289bf4854bc0c5/Documentation/devicetree/bindings/iommu/apple,dart.yaml",
+      "sha256": "aecb2ab67765aa88c255a8c04fd8158f30226a0989a1148c699104a1fea8be43"
+    },
+    {
+      "path": "scratch/linux-j575d-mainline-602042bf29f6efde39cfb5fdd9289bf4854bc0c5/Documentation/devicetree/bindings/interrupt-controller/apple,aic2.yaml",
+      "sha256": "cb3cad28b8c448d203733377284429a3a4b0e310b6875f2ccc36304a96ba33a0"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07.md",
+      "sha256": "de5e82f04315be586de65bd825c1b03e887eb323f07ca28c76984d3163582504"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07/m1n1-main-api.json",
+      "sha256": "c7bf0ba8bf7867d1cdf8a4edf3855df81be210c5a6565a5d0025f53026657b36"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07/m1n1-main-api.headers",
+      "sha256": "5d98ad9381baa9f798e14db8f31165f737e3dda152842da40396653f125df602"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07/linux-master-api.json",
+      "sha256": "44db8e396edc1e202d6a8d50576cd40710e5687061a463f4ecf7d5fc88cb9240"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07/linux-master-api.headers",
+      "sha256": "782697f6c6df995072f3bbe700b39cdb1ba9ab9932fb44df44d0e3cf4c80d503"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07/qemu-mirror-api.json",
+      "sha256": "f5dca4de165eb98bba92b0fe96e6dd7b6938b09d1b0a4c8731ec07cbd3ce1ccb"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07/qemu-mirror-api.headers",
+      "sha256": "ad81ee1f3ff3a70457e89576405f09111e7f38c3e2b6c3bcec928bc5871c6726"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07/qemu-gitlab-master-api.json",
+      "sha256": "86c41af4707e07efa5f7503a543c1bcfc3711792f66423bf7eb4fcfde9ac3b9c"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07/qemu-gitlab-master-api.headers",
+      "sha256": "ac2f49ff570f04497aac419d7c48db5d5beea97532a1a18ad7e64b6148669eae"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07/src__kboot.c-2460b604c6f016956ead711823605eea840c602e",
+      "sha256": "e723057dc2658e26c65c3817fe285a5470273545a9a3cd5e20ffc7fab480f9e4"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07/src__kboot.c-2460b604c6f016956ead711823605eea840c602e.headers",
+      "sha256": "a34fb844f36f290cdc54857e12f3407499f5178f0aab2008055f349e1b7f77be"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07/src__cpufreq.c-2460b604c6f016956ead711823605eea840c602e",
+      "sha256": "35253fe452b819791be5c318de387cfc0b3bde61d8f9b4bf03cab4697651530e"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07/src__cpufreq.c-2460b604c6f016956ead711823605eea840c602e.headers",
+      "sha256": "00ef3a79e9df5af99cb112302fbf8c693149a351a71ff54bcfd9f925488d5dbb"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07/qemu-hvf-f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c.c",
+      "sha256": "a7042f2931316c38204a175a90e15139aa5c88f9edd2da55752535e83bb8552b"
+    },
+    {
+      "path": "scratch/upstream-refresh-final-2026-10-07/qemu-hvf-f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c.headers",
+      "sha256": "e4377a21f7a0aaf741b691ab91b8f0d83592d903af6d03c64c08056a8eb721c3"
+    }
+  ],
+  "build_artifacts": [
+    {
+      "path": "scratch/m1n1-upstream-board-handoff.D1YyQS/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1.elf",
+      "sha256": "4aa775d727cf2f37b6bbd0b0c7a88cac87cf1f381616937eb8a80579305805ab"
+    },
+    {
+      "path": "scratch/m1n1-upstream-board-handoff.D1YyQS/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1-raw.elf",
+      "sha256": "359c1210393de2f4a07dfbb9f21cd697eb4a027e006c0c3977de02d8b9ec7c47"
+    },
+    {
+      "path": "scratch/m1n1-upstream-board-handoff.D1YyQS/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1.macho",
+      "sha256": "d7947040a6db8cbc0e89e20535d948f696aa4d56ecfc9db5cb312a3b57c0361d"
+    },
+    {
+      "path": "scratch/m1n1-upstream-board-handoff.D1YyQS/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1.bin",
+      "sha256": "532b485732909b504a4f37053ee69e394c4ef6782c9c512daf28c4c18a0cd409"
+    }
+  ]
+}

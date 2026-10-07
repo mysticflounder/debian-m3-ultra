@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/torvalds/linux",
+  "commit": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+  "source_files": [
+    {
+      "local": "arch/arm64/boot/dts/apple/t6032-j575d.dts",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/arch/arm64/boot/dts/apple/t6032-j575d.dts",
+      "sha256": "bec007849d7ba900e65bad9e660a98a9e865908001b13cd57ce5fb9a14117993"
+    },
+    {
+      "local": "arch/arm64/boot/dts/apple/t6032.dtsi",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/arch/arm64/boot/dts/apple/t6032.dtsi",
+      "sha256": "14d37c88fb06f2c86c795bb3b46322dfadcba064a87a1d6bdc2dd8796b4c4cf0"
+    },
+    {
+      "local": "include/dt-bindings/gpio/gpio.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/include/dt-bindings/gpio/gpio.h",
+      "sha256": "5423b3866877ead0920ec978b5b072f06087443033a72445b39faed8f288ddc1"
+    },
+    {
+      "local": "include/dt-bindings/interrupt-controller/apple-aic.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/include/dt-bindings/interrupt-controller/apple-aic.h",
+      "sha256": "6a67506ab5333d6e552b3a656e03b34f9769af5c88cf7202b1458e1ba5067f25"
+    },
+    {
+      "local": "include/dt-bindings/interrupt-controller/irq.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/include/dt-bindings/interrupt-controller/irq.h",
+      "sha256": "392400a309a54ea5b1a2ac2e52773d3ab68e07323109b9aed88a69fedc74e082"
+    },
+    {
+      "local": "include/dt-bindings/pinctrl/apple.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/include/dt-bindings/pinctrl/apple.h",
+      "sha256": "2079cb60617b0bb054e2e9e346ec6f5b3fdf8b4464ac9da89e09655e3af183b0"
+    },
+    {
+      "local": "include/dt-bindings/phy/phy.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/include/dt-bindings/phy/phy.h",
+      "sha256": "1bd66286362f02487d3b5eeefb4be3221b949b1eecbfc4ca717fbbbe5e8a61be"
+    },
+    {
+      "local": "include/dt-bindings/spmi/spmi.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/include/dt-bindings/spmi/spmi.h",
+      "sha256": "c2952b040e5c24726c423e52ba939d389141ff27eb2307fb3888657b455e2b9b"
+    },
+    {
+      "local": "arch/arm64/boot/dts/apple/multi-die-cpp.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/arch/arm64/boot/dts/apple/multi-die-cpp.h",
+      "sha256": "692ecc0cb7340122da7a558e02ac6c70ed2e49811136d58c4b21d82e8e79abc3"
+    },
+    {
+      "local": "arch/arm64/boot/dts/apple/t6031-base.dtsi",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/arch/arm64/boot/dts/apple/t6031-base.dtsi",
+      "sha256": "0efbda77b89002b2100c2b286241b66f5ab429f617241bf6920af3c0cc7c1924"
+    },
+    {
+      "local": "arch/arm64/boot/dts/apple/t6031-die0.dtsi",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/arch/arm64/boot/dts/apple/t6031-die0.dtsi",
+      "sha256": "4f2d6a78f52d209d96204ab966fee109e5b8614ff612c9ba536da9d167c7b4e4"
+    },
+    {
+      "local": "arch/arm64/boot/dts/apple/t6031-dieX.dtsi",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/arch/arm64/boot/dts/apple/t6031-dieX.dtsi",
+      "sha256": "304fbc07659cb3c797787da5cf8c67ad0836747664df5e29e9294e26eae20f8f"
+    },
+    {
+      "local": "arch/arm64/boot/dts/apple/t6031-pmgr.dtsi",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/arch/arm64/boot/dts/apple/t6031-pmgr.dtsi",
+      "sha256": "2fbe8cd26bae6ec1b2062b6defb97d5eddd7f3e3aecd870cfdf60aa9609493a5"
+    },
+    {
+      "local": "arch/arm64/boot/dts/apple/t6031-gpio-pins.dtsi",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/arch/arm64/boot/dts/apple/t6031-gpio-pins.dtsi",
+      "sha256": "dab9cb02386274233c0980060f7912763427c248f74a31c181555383625429aa"
+    }
+  ]
+}
