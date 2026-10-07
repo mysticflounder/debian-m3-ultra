@@ -1,0 +1,18 @@
+Local review patch: stop before release on a mismatched locked RVBAR
+Base: reviewed m1n1 2460b604c6f016956ead711823605eea840c602e, after adapted 0001
+Provenance: AI-assisted Debian project work; not submitted upstream.
+
+Retain the pre-release stop from the old pinned patch. Upstream now supplies
+static stacks, so its obsolete allocation hunks are intentionally omitted.
+This comparison series is not boot-approved; upstream T6032 dispatch remains.
+
+--- a/src/smp.c
++++ b/src/smp.c
+@@ -166,6 +166,7 @@
+         (read64(cpu->impl_reg) & RVBAR_ADDR) != (u64)_vectors_start) {
+         printf("Failed! \n    RVBAR (=0x%lx) is locked and differs from entry point (=0x%lx)\n",
+                read64(cpu->impl_reg) & RVBAR_ADDR, (u64)_vectors_start);
++        return;
+     }
+ 
+     printf("Starting CPU %d (%d:%d:%d)... ", index, cpu->die, cpu->cluster, cpu->core);

@@ -1,0 +1,40 @@
+Local review patch: contain uncertain T6032 stop/reset transitions
+Base: reviewed m1n1 2460b604c6f016956ead711823605eea840c602e with adapted SMP/index guards
+Provenance: AI-assisted Debian project work; not submitted upstream.
+
+A normal-stop timeout leaves the acknowledgement flag set. On T6032, enter
+the non-returning panic path instead of allowing a later startup/handoff to
+accept that flag. Preserve legacy stop-timeout continuation on other SoCs.
+Do not clear or reuse a possibly live CPU's published reset/spin state.
+
+Before reset-entry indexed publication, reject an out-of-range index. On
+T6032, also reject an unmatched MPIDR that would overwrite a previously
+registered fallback slot. A never-registered initial-entry slot remains
+allowed; no ADT-to-MPIDR encoding or native entry sequence is invented here.
+Deep-sleep's presumed-stop delay and physical reset/identity behavior remain
+unqualified. This comparison series is not a boot-approved native candidate.
+
+--- a/src/smp.c
++++ b/src/smp.c
+@@ -94,6 +94,12 @@
+         }
+     }
+ 
++    if (index < 0 || index >= MAX_CPUS)
++        panic("SMP: invalid reset-entry index %d\n", index);
++    if (chip_id == T6032 && smp_reset_stacks[index].mpidr != ~0ULL &&
++        smp_reset_stacks[index].mpidr != mpidr)
++        panic("SMP: unknown MPIDR 0x%lx would overwrite CPU %d reset state\n", mpidr, index);
++
+     smp_reset_stacks[index].stack = (u64)secondary_stacks[index] + SECONDARY_STACK_SIZE;
+     smp_reset_stacks[index].mpidr = mpidr;
+     sysop("dsb sy");
+@@ -407,6 +413,9 @@
+ 
+     if (i >= 50) {
++        /* Do not let a later start accept the old flag after an unconfirmed stop. */
++        if (chip_id == T6032)
++            panic("SMP: CPU %d stop timed out; refusing to reuse live state\n", index);
+         printf("Failed!\n");
+     } else {
+         printf("  Stopped.\n");

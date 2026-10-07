@@ -1,0 +1,125 @@
+Validate MMU and hypervisor CPU indices on upstream m1n1
+2460b604c6f016956ead711823605eea840c602e.
+
+Reject invalid signed indices before side effects. Proxy request arguments
+remain unsigned until they pass the CPU bound. Only pin/exit preserve the
+intentional all-ones u64 sentinel, translated explicitly to signed -1.
+Invalid proxy requests remain no-ops with the initialized zero return.
+The HV sources are now under src/hv/.
+
+diff --git a/src/memory.c b/src/memory.c
+--- a/src/memory.c
++++ b/src/memory.c
+@@ -646,6 +646,9 @@
+ 
+ void mmu_init_secondary(int cpu)
+ {
++    if (cpu < 0 || cpu >= MAX_CPUS)
++        return;
++
+     smp_call4(cpu, mmu_secondary_setup, 0, 0, 0, 0);
+     smp_wait(cpu);
+ }
+diff --git a/src/hv/hv.c b/src/hv/hv.c
+--- a/src/hv/hv.c
++++ b/src/hv/hv.c
+@@ -336,5 +336,8 @@
+ 
+ void hv_start_secondary(int cpu, void *entry, u64 regs[4])
+ {
++    if (cpu < 0 || cpu >= MAX_CPUS)
++        return;
++
+     printf("HV: Initializing secondary %d\n", cpu);
+     iodev_console_flush();
+@@ -357,7 +360,10 @@
+ void hv_exit_cpu(int cpu)
+ {
+     if (cpu == -1)
+         cpu = smp_id();
+ 
++    if (cpu < 0 || cpu >= MAX_CPUS)
++        return;
++
+     printf("HV: Requesting exit of CPU#%d from the guest\n", cpu);
+     hv_should_exit[cpu] = true;
+@@ -401,5 +407,8 @@
+ 
+ void hv_pin_cpu(int cpu)
+ {
++    if (cpu < -1 || cpu >= MAX_CPUS)
++        return;
++
+     hv_pinned_cpu = cpu;
+ }
+diff --git a/src/hv/hv_wdt.c b/src/hv/hv_wdt.c
+--- a/src/hv/hv_wdt.c
++++ b/src/hv/hv_wdt.c
+@@ -148,5 +148,8 @@
+ 
+ void hv_wdt_start(int cpu)
+ {
++    if (cpu < 0 || cpu >= MAX_CPUS)
++        return;
++
+     if (hv_wdt_active)
+         return;
+diff --git a/src/proxy.c b/src/proxy.c
+--- a/src/proxy.c
++++ b/src/proxy.c
+@@ -319,5 +319,7 @@
+             mmu_restore(request->args[0]);
+             break;
+         case P_MMU_INIT_SECONDARY:
+-            mmu_init_secondary(request->args[0]);
++            if (request->args[0] >= MAX_CPUS)
++                break;
++            mmu_init_secondary((int)request->args[0]);
+             break;
+@@ -521,23 +521,41 @@
+                                          request->args[3]);
+             break;
+         case P_HV_WDT_START:
+-            hv_wdt_start(request->args[0]);
++            if (request->args[0] >= MAX_CPUS)
++                break;
++            hv_wdt_start((int)request->args[0]);
+             break;
+         case P_HV_START_SECONDARY:
+-            hv_start_secondary(request->args[0], (void *)request->args[1], &request->args[2]);
++            if (request->args[0] >= MAX_CPUS)
++                break;
++            hv_start_secondary((int)request->args[0], (void *)request->args[1], &request->args[2]);
+             break;
+         case P_HV_SWITCH_CPU:
+-            reply->retval = hv_switch_cpu(request->args[0]);
++            if (request->args[0] >= MAX_CPUS)
++                break;
++            reply->retval = hv_switch_cpu((int)request->args[0]);
+             break;
+         case P_HV_SET_TIME_STEALING:
+             hv_set_time_stealing(request->args[0], request->args[1]);
+             break;
+         case P_HV_PIN_CPU:
+-            hv_pin_cpu(request->args[0]);
++            {
++                u64 raw_cpu = request->args[0];
++                if (raw_cpu >= MAX_CPUS && raw_cpu != (u64)-1)
++                    break;
++                int cpu = raw_cpu == (u64)-1 ? -1 : (int)raw_cpu;
++                hv_pin_cpu(cpu);
++            }
+             break;
+         case P_HV_WRITE_HCR:
+             hv_write_hcr(request->args[0]);
+             break;
+         case P_HV_EXIT_CPU:
+-            hv_exit_cpu(request->args[0]);
++            {
++                u64 raw_cpu = request->args[0];
++                if (raw_cpu >= MAX_CPUS && raw_cpu != (u64)-1)
++                    break;
++                int cpu = raw_cpu == (u64)-1 ? -1 : (int)raw_cpu;
++                hv_exit_cpu(cpu);
++            }
+             break;

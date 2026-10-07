@@ -8,8 +8,8 @@ REV=2460b604c6f016956ead711823605eea840c602e
 ARCHIVE_SHA=aa0ffbeb7ae9cc0eb7a5653f44474e26f826809cf7f0564f8deb395d25203b01
 MODE=${1:-baseline}
 case "$MODE" in
-    baseline|adt|input-guards) ;;
-    *) echo 'Usage: build-m1n1-upstream-offline.sh [baseline|adt|input-guards]' >&2; exit 2 ;;
+    baseline|adt|input-guards|smp-guards) ;;
+    *) echo 'Usage: build-m1n1-upstream-offline.sh [baseline|adt|input-guards|smp-guards]' >&2; exit 2 ;;
 esac
 ARCHIVE="$ROOT/scratch/m1n1-upstream-audit/source-$REV.tar.gz"
 TOOLS="$ROOT/scratch/m1n1-build-tools"
@@ -21,8 +21,25 @@ PATCHES=(
     "$ROOT/patches/m1n1/0020-check-adt-copy-length-before-write.patch"
     "$ROOT/patches/m1n1/0021-fix-adt-property-view-length.patch"
 )
-if [[ "$MODE" == input-guards ]]; then
+if [[ "$MODE" == input-guards || "$MODE" == smp-guards ]]; then
     PATCHES=("$ROOT/patches/m1n1/upstream-2460b60/0019-validate-aic-init-metadata.patch" "${PATCHES[@]}")
+fi
+if [[ "$MODE" == smp-guards ]]; then
+    # Startup/index subset only; MCC, mapping/readiness and DVFS guards are
+    # still awaiting adaptation. This is not a complete guarded candidate.
+    REVIEW_PATCHES="$ROOT/patches/m1n1/upstream-2460b60"
+    PATCHES=(
+        "$REVIEW_PATCHES/0001-fix-half-open-cpu-bounds.patch"
+        "$REVIEW_PATCHES/0003-guard-secondary-start-prerequisites.patch"
+        "$REVIEW_PATCHES/0004-abort-on-secondary-start-timeout.patch"
+        "$REVIEW_PATCHES/0005-t6032-cpu-start-masks.patch"
+        "$REVIEW_PATCHES/0006-preflight-t6032-cpu-inventory.patch"
+        "$REVIEW_PATCHES/0007-propagate-t6032-cpu-start-failures.patch"
+        "$REVIEW_PATCHES/0017-validate-smp-api-cpu-indices.patch"
+        "$REVIEW_PATCHES/0018-validate-mmu-hv-cpu-indices.patch"
+        "${PATCHES[@]}"
+        "$REVIEW_PATCHES/0022-contain-t6032-stop-reset-state.patch"
+    )
 fi
 
 if [[ $(uname -s) != Darwin || $(uname -m) != arm64 ]]; then
@@ -78,4 +95,7 @@ shasum -a 256 "$SOURCE/build/m1n1.elf" "$SOURCE/build/m1n1-raw.elf" \
     "$SOURCE/build/m1n1.macho" "$SOURCE/build/m1n1.bin" > "$BUILD_DIR/SHA256SUMS"
 printf 'Offline upstream %s build passed. Artifacts: %s/build\n' "$MODE" "$SOURCE"
 printf 'Comparison artifacts only: native execution is not approved.\n'
+if [[ "$MODE" == smp-guards ]]; then
+    printf 'MCC, SMP mapping/readiness and DVFS guards are not included yet.\n'
+fi
 cat "$BUILD_DIR/SHA256SUMS"

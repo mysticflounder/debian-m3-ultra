@@ -1,0 +1,25 @@
+Local adaptation for upstream m1n1 2460b604c6f016956ead711823605eea840c602e.
+
+Upstream already raises MAX_CPUS to 32 in src/smp_asm.h. Retain only the
+half-open bounds needed by fixed-size arrays: MAX_CPUS is not a valid index.
+The HV source moved under src/hv.
+
+--- a/src/hv/hv.c
++++ b/src/hv/hv.c
+@@ -389,6 +389,6 @@
+ bool hv_switch_cpu(int cpu)
+ {
+-    if (cpu > MAX_CPUS || cpu < 0 || !hv_started_cpus[cpu]) {
++    if (cpu >= MAX_CPUS || cpu < 0 || !hv_started_cpus[cpu]) {
+         printf("HV: CPU #%d is inactive or invalid\n", cpu);
+         return false;
+     }
+--- a/src/kboot.c
++++ b/src/kboot.c
+@@ -587,5 +587,5 @@
+         if (strncmp(name, "cpu@", 4))
+             goto next_node;
+ 
+-        if (cpu > MAX_CPUS)
++        if (cpu >= MAX_CPUS)
+             bail_cleanup("Maximum number of CPUs exceeded, consider increasing MAX_CPUS\n");

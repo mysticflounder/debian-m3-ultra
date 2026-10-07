@@ -96,20 +96,69 @@ Prepared toolchains and extracted sysroots remain trusted local inputs, as
 in the original recipe. This is not a hermetic or cross-host bit-reproducibility
 claim. Preserve the upstream license notices and existing Debian provenance.
 
-## Next implementation order
+## Startup/index adaptation follow-up
 
-1. Rebase the retained SMP protections onto cached CPU records and static
-   stacks: half-open bounds, RVBAR stop, timeout containment, metadata-validated masks,
-   complete inventory, status propagation and direct/proxy index checks.
-2. Rebase mapping/readiness and MCC/carveout guards, preserving the exact
+The startup/index adaptation is now implemented in the reviewed comparison
+series: 0001, 0003–0007 and 0017–0018. The original pinned patches remain
+unchanged. New comparison-only 0022 contains additional stop/reset transitions.
+
+T6032 preflight now accepts the cached CPU/node arrays only after every one
+of the 32 records passes; it skips the legacy scalar/fallback parser afterward.
+This is all-or-nothing validation, not concurrent atomic publication. Start
+and stop both use the captured mode-1 4/6/6 layout and packed shifts 0/4/10.
+Status propagation follows the current payload, proxy and relocated HV paths.
+
+0022 makes a T6032 normal-stop timeout non-returning without clearing or
+reusing published state. Reset entry checks its index before array access and
+rejects an unknown MPIDR that would overwrite an already registered T6032
+fallback slot. First registration into the upstream `~0ULL` sentinel slot
+remains allowed; no ADT-to-MPIDR encoding is invented. Deep sleep's presumed
+10 ms stop and the identity/entry sequence of an unregistered slot remain
+native-unqualified. Panic containment is not proof that a late core stopped
+or that hardware recovery works.
+
+```sh
+bash scripts/build-m1n1-upstream-offline.sh smp-guards
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python scripts/test-m1n1-upstream-smp.py
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python scripts/test-m1n1-upstream-hv-api-indices.py
+```
+
+`smp-guards` applies those nine startup/index/state patches plus 0019–0021
+(twelve total). Its complete build and both ELF/Mach-O layout checks pass,
+with the same six upstream C warnings. It does **not** include adapted MCC,
+mapping/readiness or DVFS guards and is not a fully guarded or boot-approved
+candidate. The current-source MMU/HV fixture and three safe raw-ingress/sentinel
+mutation controls pass. The SMP host suite also passes with ASan/UBSan,
+five function-scoped structural controls and seven executed, designated
+failure controls. It extracts current init/start/stop/reset-entry helpers,
+uses source constants and captured CPU affinities, and tests caller status
+cutoffs. Its raw SMP proxy-index coverage is structural; the separately
+executed MMU/HV ingress matrix is not a substitute for that matrix.
+Six unchanged pinned-source SMP/cpufreq suites and the three upstream
+AIC/ADT suites also pass. Evidence, patch/artifact identities and qualified
+gaps are recorded in the
+[SMP adaptation inventory](inventory/m1n1-upstream-smp-2026-10-06.json).
+
+The mock stop-status getter initially returned the host RVBAR/vector value
+for `impl_reg + 0x100`, causing a false timeout and an unexpected jump into
+an expired test frame. Separate status behavior, an aligned vector fixture
+and armed-panic checks resolve the harness defect with both sanitizers
+enabled. Earlier diagnostic artifacts remain retained; no source/hardware
+alignment defect or native failure is inferred from that mock error.
+
+## Remaining implementation order
+
+1. Rebase mapping/readiness and MCC/carveout guards, preserving the exact
    record offset, origin decoder, all-plane checks and MMU lifecycle.
-3. Retain cpufreq failure propagation while reviewing the new cluster/voltage
+2. Retain cpufreq failure propagation while reviewing the new cluster/voltage
    paths against the unresolved early-state contract.
-4. Assemble a fully guarded offline candidate and rerun dependency-specific
+3. Assemble a fully guarded offline candidate and rerun dependency-specific
    host regressions, complete cross-builds and linked-layout audits.
-5. Resolve remaining ADT physical bounds, AIC aperture/stride and whole-boot
+4. Resolve remaining ADT physical bounds, AIC aperture/stride and whole-boot
    failure propagation. Reconcile current kernel/board support for boot and I/O.
-6. Only after a verified backup, recovery readiness and separate native-test
+5. Only after a verified backup, recovery readiness and separate native-test
    approval: qualify cold entry, RVBAR/release, MCC/cache/DVFS and UART/AIC/DART,
    then a RAM-only kernel boot and persistent storage/network bring-up.
 

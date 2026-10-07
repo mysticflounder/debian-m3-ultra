@@ -89,10 +89,17 @@ classifies all 21: CPU cleanup and the shared-memory backport are redundant;
 capacity/stack patches must be split to retain bounds and RVBAR protection.
 The remaining protections are not supplied by upstream. Separate unmodified
 and three-input-guard builds pass, as do the current-source AIC/ADT host suites.
-The next primary task is adapting retained SMP guards to cached CPU records
-and static stacks, followed by MCC/mapping/DVFS guards. The default source pin
-and disabled native dispatch are unchanged. Upstream comparison artifacts
-contain its native T6032 dispatch and are not boot-approved or fully guarded.
+The startup/index guards are now adapted to cached CPU records and static
+stacks. Comparison-only 0022 also contains T6032 normal-stop timeout and
+reset-entry indexed-state hazards. The twelve-patch comparison build and
+eight-object/static-stack linked layout pass. New source-extracted SMP and
+MMU/HV host fixtures pass with ASan/UBSan and designated safe mutation
+controls; SMP raw proxy-index checks remain structural, not a newly executed
+ingress matrix. Deep-sleep and first-registration identity remain unqualified.
+The next primary task is mapping/readiness and MCC guards, then DVFS. The
+default source pin and disabled native dispatch are unchanged. Upstream
+comparison artifacts contain its native T6032 dispatch and are not
+boot-approved or fully guarded.
 This takes priority over further private-firmware tracing.
 
 Here, **native validation means bare-metal execution**, outside macOS, not
@@ -107,10 +114,10 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | QEMU CPU feature coverage | Partial; separate from basic VM operation | Continue bounded feature probes where useful; do not treat optional gaps as bare-metal or VM blockers |
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
-| M3 m1n1 capacity / handoff cleanup | Old pinned series validated offline; upstream now supplies capacity and cleanup | Rebase only missing half-open bounds; retain the old baseline for comparison |
+| M3 m1n1 capacity / handoff cleanup | Upstream supplies capacity/cleanup; missing half-open bounds adapted and built | Retain old baseline; native handoff still unvalidated |
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
-| T6032 SoC identity / CPU startup | Old pinned masks/preflight/caller guards validated offline; new upstream supplies dispatch/offsets but not these protections | Adapt guards to cached CPU records/static stacks; then qualify cold reset, release sequencing and RVBAR after safety gates |
-| Secondary-start failure handling | Old pre-release/timeout/status/index protections pass offline tests; new call sites identified | Rebase protections without obsolete allocation logic. Native reset unvalidated; no degraded-SMP recovery claim |
+| T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed start/stop masks and caller guards adapted; new source-extracted host suites pass | Add remaining mapping/MCC/DVFS guards; qualify cold reset, release sequencing and RVBAR only after safety gates |
+| Secondary-start failure handling | RVBAR/start-timeout/status/index guards adapted; new stop/reset containment passes offline checks | Native reset/deep-sleep/first-registration identity still unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | Old shared-memory/mapping guards validated; upstream backport redundant and new eight-object/static-stack layout audited | Rebase MCC/mapping guards; all 64 controller/plane contexts, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | Conditional routing and provider traced; initial software zero fill checked; iBoot metadata source resolved to constant 24,000,000, not cluster states | Safe raw APSC/default indices, feature/restore ordering and bounded failure handling remain open; native dispatch disabled |
 | Native console / interrupts / DMA | AIC/ADT input guards pass old and new-source host suites and comparison builds; hardware unvalidated | Rebase remaining guards; implement ADT buffer-bound checks and AIC aperture/failure handling; qualify UART/AIC/DART after safety gates |

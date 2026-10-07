@@ -1,0 +1,18 @@
+Local review patch: contain a secondary-start acknowledgement timeout
+Base: reviewed m1n1 2460b604c6f016956ead711823605eea840c602e, after adapted 0003
+Provenance: AI-assisted Debian project work; not submitted upstream.
+
+Retain the non-returning post-release containment. Static stacks do not make
+it safe to reuse target_cpu or reset pointers while a released CPU is late.
+The existing 100 ms poll is unchanged. Applies to every supported SoC.
+No native execution or late-core/reset correctness is established here.
+
+--- a/src/smp.c
++++ b/src/smp.c
+@@ -207,4 +207,5 @@
+     if (i >= 100)
+-        printf("Failed!\n");
++        /* A late CPU can still consume target_cpu and the shared reset stacks. */
++        panic("SMP: CPU %d start timed out; refusing to reuse reset state\n", index);
+     else
+         printf("  Started.\n");

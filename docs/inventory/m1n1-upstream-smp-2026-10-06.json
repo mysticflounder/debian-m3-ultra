@@ -1,0 +1,159 @@
+{
+  "date": "2026-10-06",
+  "scope": "Retained SMP startup/index protections adapted to reviewed upstream, with comparison-only stop/reset containment. Offline host-mock and build evidence; not a complete guarded/native candidate.",
+  "pinned_default_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "reviewed_revision": "2460b604c6f016956ead711823605eea840c602e",
+  "archive_sha256": "aa0ffbeb7ae9cc0eb7a5653f44474e26f826809cf7f0564f8deb395d25203b01",
+  "archive_members_verified": {
+    "src/smp.c": "4b000be8d4e6437fc24351a57db5277785cc2e427045fb45d1750b158f2b8766",
+    "src/smp_asm.h": "2afe4c4ac4cd696a2d020fcef5621aa1ac66c2e7edcaaaef11f17df17cc696bd"
+  },
+  "patch_order": [
+    "patches/m1n1/upstream-2460b60/0001-fix-half-open-cpu-bounds.patch",
+    "patches/m1n1/upstream-2460b60/0003-guard-secondary-start-prerequisites.patch",
+    "patches/m1n1/upstream-2460b60/0004-abort-on-secondary-start-timeout.patch",
+    "patches/m1n1/upstream-2460b60/0005-t6032-cpu-start-masks.patch",
+    "patches/m1n1/upstream-2460b60/0006-preflight-t6032-cpu-inventory.patch",
+    "patches/m1n1/upstream-2460b60/0007-propagate-t6032-cpu-start-failures.patch",
+    "patches/m1n1/upstream-2460b60/0017-validate-smp-api-cpu-indices.patch",
+    "patches/m1n1/upstream-2460b60/0018-validate-mmu-hv-cpu-indices.patch",
+    "patches/m1n1/upstream-2460b60/0019-validate-aic-init-metadata.patch",
+    "patches/m1n1/0020-check-adt-copy-length-before-write.patch",
+    "patches/m1n1/0021-fix-adt-property-view-length.patch",
+    "patches/m1n1/upstream-2460b60/0022-contain-t6032-stop-reset-state.patch"
+  ],
+  "smp_host_patch_order": [
+    "patches/m1n1/upstream-2460b60/0001-fix-half-open-cpu-bounds.patch",
+    "patches/m1n1/upstream-2460b60/0003-guard-secondary-start-prerequisites.patch",
+    "patches/m1n1/upstream-2460b60/0004-abort-on-secondary-start-timeout.patch",
+    "patches/m1n1/upstream-2460b60/0005-t6032-cpu-start-masks.patch",
+    "patches/m1n1/upstream-2460b60/0006-preflight-t6032-cpu-inventory.patch",
+    "patches/m1n1/upstream-2460b60/0007-propagate-t6032-cpu-start-failures.patch",
+    "patches/m1n1/upstream-2460b60/0017-validate-smp-api-cpu-indices.patch",
+    "patches/m1n1/upstream-2460b60/0018-validate-mmu-hv-cpu-indices.patch",
+    "patches/m1n1/upstream-2460b60/0022-contain-t6032-stop-reset-state.patch"
+  ],
+  "build": {
+    "directory": "scratch/m1n1-upstream-smp-guards.rl2dys",
+    "status": "PASS",
+    "mode": "smp-guards",
+    "patch_count": 12,
+    "warnings": "Six upstream C warnings, same as unmodified and input-guard comparison builds.",
+    "artifact_sha256": {
+      "scratch/m1n1-upstream-smp-guards.rl2dys/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1.elf": "35b6d6057e722d606eeba4f8be42ad6c352b171cb7dc7bdf3caf6a4202ada6d8",
+      "scratch/m1n1-upstream-smp-guards.rl2dys/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1-raw.elf": "af35e7a198e468af49c59f3a66e742c8d79d02fd93cbfea39ca504e76fde4170",
+      "scratch/m1n1-upstream-smp-guards.rl2dys/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1.macho": "cbae4a9ea8dbc00efcaa9cf8900cd85f01af711ec81a3f939a95e30a4db6034e",
+      "scratch/m1n1-upstream-smp-guards.rl2dys/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1.bin": "14e37780bdbb2c3b327419f7463e130a692af81c1b12154fdbf4e590a76289e1"
+    }
+  },
+  "tests": {
+    "smp": {
+      "status": "PASS",
+      "log": "scratch/upstream-smp-host-final-2026-10-06.log",
+      "retained_work": "scratch/upstream-smp-host/run-fa6la4pq",
+      "sanitizers": [
+        "AddressSanitizer",
+        "UndefinedBehaviorSanitizer"
+      ],
+      "structural_controls": 5,
+      "runtime_mutation_controls": 7,
+      "scope": "Source-extracted current initialization, startup, stop, reset entry and direct SMP APIs with captured inventory and mock ADT/register/time operations. Payload/HV status checks extracted; SMP raw proxy guards checked structurally, not executed as a full ingress matrix."
+    },
+    "mmu_hv": {
+      "status": "PASS",
+      "log": "scratch/upstream-hv-indices-final-2026-10-06.log",
+      "retained_work": "scratch/upstream-hv-indices-d21161a1",
+      "retained_source": "scratch/upstream-smp-host/run-n86aj6yl/m1n1-2460b604c6f016956ead711823605eea840c602e",
+      "runtime_mutation_controls": 3,
+      "scope": "Six current helpers and six proxy cases; valid/invalid signed and raw-u64 indices plus explicit all-ones pin/exit sentinels. Reuses the unchanged C fixture without materializing old sources."
+    },
+    "layout": {
+      "status": "PASS",
+      "log": "scratch/upstream-smp-layout-2026-10-06.log",
+      "profile": "reviewed-upstream-2460b604c6f016956ead711823605eea840c602e",
+      "scope": "Both ELFs: eight objects in a 64KiB shared section plus two static stack arrays; Mach-O DATA virtual/file coverage."
+    },
+    "pinned_adjacent_regressions": {
+      "status": "PASS",
+      "directory": "scratch/upstream-smp-adjacent.RAistX",
+      "count": 6,
+      "scope": "Unchanged pinned CPU-startup/status, SMP-index/shared-memory, and cpufreq-status/driver regressions."
+    },
+    "upstream_input_regressions": {
+      "status": "PASS",
+      "log": "scratch/upstream-smp-input-regressions-2026-10-06.log",
+      "count": 3,
+      "scope": "Reviewed-source AIC and ADT original/baseline/mutation controls, separately materialized. Full integration evidence is the 12-patch cross-build, not a hardware test."
+    },
+    "independent_review": {
+      "status": "PASS_WITH_EXPLICIT_GAPS",
+      "reports": [
+        "scratch/upstream-smp-core-review.md",
+        "scratch/upstream-smp-final-review.md"
+      ]
+    },
+    "syntax": "bash -n for builder and Python 3.13 py_compile for both new runners PASS."
+  },
+  "safety": {
+    "native_executed": false,
+    "mmio_probed": false,
+    "firmware_installed": false,
+    "vm_changed": false,
+    "physical_disks_changed": false,
+    "default_source_pin_changed": false,
+    "default_t6032_cpu_dvfs_dispatch_enabled": false,
+    "comparison_artifacts_contain_upstream_t6032_dispatch": true,
+    "comparison_artifacts_boot_approved": false,
+    "full_guarded_candidate_complete": false
+  },
+  "limitations": [
+    "Retained mapping/readiness, MCC and early-DVFS guards still require adaptation before a complete guarded comparison candidate.",
+    "Mock tests and source-extracted helpers do not validate register scope, early-access safety, CPU release/reset ordering, cache coherence or native SMP.",
+    "SMP raw proxy ingress validation is structural only in the new runner; direct SMP APIs are executed, and MMU/HV raw ingress has a separate executed matrix.",
+    "Upstream deep-sleep stop path still assumes stopped after 10ms; first registration into an unregistered reset slot does not prove the correct CPU identity or arrival order.",
+    "Inventory preflight publishes only after all validation succeeds; memcpy is not claimed to be concurrency-atomic.",
+    "Test-only preflight entry counter is transparent instrumentation; it does not change the validation algorithm.",
+    "Toolchain/cache/sysroot contents are trusted local inputs, not fully hash-pinned.",
+    "Scratch evidence is retained locally, not tracked. The earlier reconciliation inventory records its own historical commit snapshot and is not rewritten to describe this follow-up."
+  ],
+  "sha256": {
+    "patches/m1n1/upstream-2460b60/0001-fix-half-open-cpu-bounds.patch": "15db11a2faae2e2d7319cad98e61889bfc2e5dde3133152a3408912bcd3e8ade",
+    "patches/m1n1/upstream-2460b60/0003-guard-secondary-start-prerequisites.patch": "8cc90f06d0bc1867a8f175cefdd7ea28870388b71e19e3b4b7ea9acc4d02d3ec",
+    "patches/m1n1/upstream-2460b60/0004-abort-on-secondary-start-timeout.patch": "1b727c8b215fc16eb56b985b3adfbc4119a79f7f6cd3d0af61f17b349c58b49f",
+    "patches/m1n1/upstream-2460b60/0005-t6032-cpu-start-masks.patch": "d2b35641b013e2b70bb36f8b3c4ca4e84fec6fe35e164bf83e2dadb5a5a8ee61",
+    "patches/m1n1/upstream-2460b60/0006-preflight-t6032-cpu-inventory.patch": "33ee94ece094eea314748dd0f44dfb2d2f593d987668f7bb552a002938a96b62",
+    "patches/m1n1/upstream-2460b60/0007-propagate-t6032-cpu-start-failures.patch": "a10b8dc03105e4ffb4e9823c751d8cb2b605d8c94c8085d5df8fa3e31b5c820d",
+    "patches/m1n1/upstream-2460b60/0017-validate-smp-api-cpu-indices.patch": "a1823a4e60e953fa22abc92963c65bc653fb3beede07662df059652ffb5ea84f",
+    "patches/m1n1/upstream-2460b60/0018-validate-mmu-hv-cpu-indices.patch": "9ab5b94b793904c5e11dc415d779607f4d3ce4e71d3dcfb84abfc8d4f8627dde",
+    "patches/m1n1/upstream-2460b60/0019-validate-aic-init-metadata.patch": "2a9288eef62f7eea83c19db1dc465e7fb213bbe755f2f4bd76f92923931fdc1d",
+    "patches/m1n1/0020-check-adt-copy-length-before-write.patch": "69666690c7df34d748e1363afb27f7cb2e8418bb0e247ab9e8283c05ad7ea82b",
+    "patches/m1n1/0021-fix-adt-property-view-length.patch": "e5d7cb03c43aa15a1fcef9492425d63df2533e90489d6f4d233fd145c46458a9",
+    "patches/m1n1/upstream-2460b60/0022-contain-t6032-stop-reset-state.patch": "b240e732adb2b763b1c21d9086f5d8b00aa01d83e668b7a14fe0d4792f731be9",
+    "scripts/build-m1n1-upstream-offline.sh": "d9f228b6867bc8d40ba3c7ff56d3c0121b9b3bbb497bdf8bd23f0404b310f0ec",
+    "scripts/test-m1n1-upstream-smp.py": "0044852b0d75dd4cca92d05d8628fb41350d8057b402e5a56be0ef5f851c15df",
+    "tests/m1n1-upstream-smp.c": "d0f4a2aad0b059a4d70170c2a00af709ffb1c3d767e3d156680b7ebe595d6a68",
+    "scripts/test-m1n1-upstream-hv-api-indices.py": "927887e221bbf3d0bd43ade980092bbb2f0fdb3a983feb92e412b2112603228a",
+    "scripts/test-m1n1-hv-api-indices.py": "0220dd3d35e1b0abcb23e9a63422dd1a4073aedbd05bc2428c8f6237058e04ed",
+    "tests/m1n1-hv-api-indices.c": "457d27ddc255109cc75725c85e066e72c1d8e4f81b9ccdcf49ef60aca359411d",
+    "docs/m1n1-upstream-reconciliation-2026-10-06.md": "aba1a284026af41a8586090a1791cc898e0e54903d3189db75619704b98ce77c",
+    "docs/project-status.md": "deaeabb1684bf379b7bcedc5efccfceb84ad14d3a0836db4d9745ea75f47056a",
+    "docs/inventory/t6032-cpus-2026-09-26.json": "f2dfc7dde8b1892128e7a762a8941df58f335534fa061f522d26424e36f2d1b5",
+    "scratch/upstream-smp-build-2026-10-06.log": "bdc7c80c8aef5af9d9061f8786106eb3ea48d5084f25e5e30bfa2d909c25f859",
+    "scratch/upstream-smp-host-final-2026-10-06.log": "b3da45edd34031644a5381c92a6f8ebd4f90cc6658d91b0c890855f6b364b1f7",
+    "scratch/upstream-hv-indices-final-2026-10-06.log": "24396dd48a849b763e8a3ce92779e4ba347a56bfa05a6de45d33c53d2db15362",
+    "scratch/upstream-smp-layout-2026-10-06.log": "e31d75ea557e7da5d4253ff1663cd1c2dec61f4ff7005b8cf9f5951931fd42d7",
+    "scratch/upstream-smp-input-regressions-2026-10-06.log": "6f39b507e3821fe378cfa1aed6d35851b667aaa2ae50bbab47ff0d74b69552b8",
+    "scratch/upstream-smp-core-review.md": "2d9244027169854312a2c5ee679e0636107de727eaae535aebc064382a6cfe21",
+    "scratch/upstream-smp-final-review.md": "678a2f0366f12474e8f2a8d45ac15aadc7e1ba3df3e79e95626ef486423b0ef7",
+    "scratch/upstream-smp-adjacent.RAistX/cpu-startup.log": "c68fdacb16bc954a9db01c58611ae7ccd9aa7f2ea0f8ec0438315e6569a18378",
+    "scratch/upstream-smp-adjacent.RAistX/cpu-start-status.log": "4dea74bc2aaa8de28c93b2f0513668c984f7e21c38ca74033f8ea98b709fcddf",
+    "scratch/upstream-smp-adjacent.RAistX/smp-api-indices.log": "d044574a030d143bc648685018f6031136a8fbc9aca79b615cbae75b1894b69c",
+    "scratch/upstream-smp-adjacent.RAistX/smp-shared-guard.log": "d9393e7d1cc72bbdc3db85952d4dc238345c532dffef5e3bcf298affe46534be",
+    "scratch/upstream-smp-adjacent.RAistX/cpufreq-status.log": "c0b3e53d2603c07eee121d13ebb75345960701b5e5c87e8029f228dd07978a3d",
+    "scratch/upstream-smp-adjacent.RAistX/cpufreq-driver.log": "46300814796ffa11b1dfa5e130f9aebd6be4f1ee3a405c3c0da723703adc094f",
+    "scratch/m1n1-upstream-smp-guards.rl2dys/build.log": "a8f69b1ac5dde7a7833b97c1d256e04c76ee3f7fd0ff85445bedf72401c0d3ed",
+    "scratch/m1n1-upstream-smp-guards.rl2dys/patch.log": "cee0038c9512a3bf9c3bf103a1079f0dc329b33061852fef8b54079c138cb30b",
+    "scratch/m1n1-upstream-smp-guards.rl2dys/PATCH_SHA256SUMS": "6a9ceb5bbb44e073132957e1f39e5ec736eee8657f209ed07670ffd9e85cec44",
+    "scratch/m1n1-upstream-smp-guards.rl2dys/SHA256SUMS": "0927ba26563f537c43da45d6f7080b7392efeae0d7e71be8c1cb9e6c104bf1e5"
+  }
+}
