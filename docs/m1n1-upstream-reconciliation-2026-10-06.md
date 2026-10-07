@@ -377,16 +377,86 @@ bash scripts/build-m1n1-upstream-offline.sh aic-guards
 
 This does not prove power state, physical mapping, cross-bank non-overlap,
 HW_STATE-per-die placement, IRQ routing/target semantics or native boot.
-The next required cutoff is in `main.c`: it currently ignores the void
-`aic_init()` result and continues into `smp_init()`. Quiet no-op runtime
+At the 24-patch checkpoint, `main.c` ignores the void `aic_init()` result
+and continues into `smp_init()`. Quiet no-op runtime
 helpers are not a successful interrupt-controller initialization contract.
 HV trace null/divisor/die/bitmap-index guards are separate follow-ups.
 Default source pin/native dispatch remain unchanged; comparison
 artifacts are not boot-approved. No physical MMIO, VM, disk or firmware changes.
 
+## AIC startup failure cutoff — 2026-10-07 UTC
+
+Comparison-only 0027 makes `aic_init()` return zero on initialization success
+and negative with the public `aic` pointer cleared on every failure. The sole
+caller, normal `m1n1_main()` startup, consumes the status immediately after
+`mmu_init()` and before `smp_init()`, using the existing noreturn
+`panic("AIC initialization failed!\n")` convention. Failed initialization
+cannot enter SMP or subsequent payload/proxy/next-stage actions on this path.
+Private aperture storage is not required to be zero on every failure exit;
+the cleared public pointer prevents access to it.
+
+The cutoff is shared by all normal AIC1/2/3 startup, not T6032-only. Those
+paths share the unconditional initializer and downstream interrupt/IPI/HV
+consumers; keeping failed initialization nonfatal on other SoCs would retain
+the same invalid boot state. Valid legacy initialization remains unchanged,
+and the existing explicit `BRINGUP` bypass is unchanged. There is no other
+C initializer caller or Rust/Python/proxy initializer ABI to update. The
+prototype changes in `aic.h`; guarded runtime helper semantics do not change.
+
+The complete 25-patch comparison cross-build and shared-layout audit pass
+with the same six existing C warnings. Unchanged ADT/relocation,
+48-case DVFS/payload and five MCC/MMU fixtures pass on the complete source;
+all 215 canonical C/Rust files match the build and both adjacent test trees.
+The MCC caller-order audit now recognizes `aic_init()` rather than only the
+old void-call spelling, so both historical and checked calls retain its
+ordering check. Runtime cutoff coverage is separate from that structural audit.
+
+The final main and independent caller-suite runs pass with ASan/UBSan:
+normal startup and `BRINGUP`, the retained seven-group aperture baseline,
+status/failure/reinitialization checks, and four designated mutation controls.
+The real AIC driver and `m1n1_main` prefix from `firmware_init()` through
+`run_actions()` are compiled with bounded host mocks. Synthetic AIC1/2/3
+combinations use production T6032/T6031/T6020 constants; they are not captured
+hardware capabilities. Failed startup asserts the exact panic, null AIC,
+no SMP/actions, and no later initializer events. `BRINGUP` asserts that AIC
+was not called, rather than merely checking the absence of SMP calls.
+Removing the status result/cutoff, moving the cutoff after SMP, or calling
+AIC from `BRINGUP` must exit exactly 1 with a designated stderr witness and
+no sanitizer/runtime diagnostic. This is four new controls, not a rerun of
+the four aperture-arithmetic mutations from the preceding checkpoint.
+
+All 215 canonical source files also match both final caller-suite trees.
+The build and host materializers use the same 25 patches in slightly different
+orders: host SMP 0022 precedes input guards 0019/0020/0021, whereas the build
+places it afterward. The inventory records both orders and the byte-equality
+checks, rather than assuming identical order. Unchanged production headers,
+the separate Darwin-adjusted host types, production SoC constants, full source,
+extracted prefix, compiler arguments, exit codes, hashes and logs are retained
+in each 57-file final run. The
+[startup cutoff inventory](inventory/m1n1-upstream-aic-boot-cutoff-2026-10-07.json)
+records the final evidence and remaining gates.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python \
+  scripts/test-m1n1-upstream-aic-boot-cutoff.py
+bash scripts/build-m1n1-upstream-offline.sh boot-guards
+```
+
+This is an initialization-status/control-flow contract, not proof of register
+availability, native reboot/recovery, SMP release, interrupt delivery or a
+working native Debian boot. The startup prefix does not qualify other entry
+points or the full next-stage tail. The separate SMP policy retains legacy
+one-core/proxy continuation and T6032 downstream readiness rejection; this
+patch does not make `smp_init()` failure fatal in `main` or claim degraded-SMP
+recovery on T6032.
+HV tracing still needs its own null/divisor/die/bitmap ingress guards.
+Default source pin/native dispatch remain unchanged; these comparison
+artifacts are not boot-approved. No physical MMIO, VM, disk or firmware changes.
+
 ## Remaining implementation order
 
-1. Address whole-boot failure propagation and remaining AIC/HV caller guards,
+1. Address remaining AIC/HV caller guards and startup failure propagation,
    keeping the complete adapted stack under
    regression. Do not confuse declared bounds with physical mapping qualification.
 2. Continue early-DVFS qualification: six-complex/die routing, safe raw states,

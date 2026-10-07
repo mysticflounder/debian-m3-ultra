@@ -130,7 +130,9 @@ def audit_contracts(tree: pathlib.Path, baseline: dict[str, str], smp) -> None:
     if not re.search(r'if \(chip_id == T6032\)\s*\{\s*if \(mcc_init\(\) < 0\)'
                      r'\s*panic\("T6032 MCC initialization failed!\\n"\);', main):
         raise RuntimeError("T6032 main MCC failure cutoff missing")
-    order(main, "mcc_init()", "mmu_init();", "aic_init();", "smp_init()")
+    # Accept both the legacy void call and the checked status-producing call.
+    # The AIC caller suite independently executes its failure cutoff.
+    order(main, "mcc_init()", "mmu_init();", "aic_init()", "smp_init()")
     boot = body("kboot", "kboot_boot")
     order(boot, "int mcc_ret = mcc_enable_cache();",
           "if (chip_id == T6032 && mcc_ret < 0)", "tunables_apply_static(")

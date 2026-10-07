@@ -1,0 +1,92 @@
+Expose AIC initialization failure and stop normal startup before SMP.
+
+Return zero only with initialized public AIC state, negative with aic NULL
+on failure. Consume that status in the shared non-BRINGUP startup path:
+AIC1/2/3 consumers all require valid interrupt/IPI state. Successful legacy
+initialization and the explicit BRINGUP bypass are unchanged. This uses the
+existing panic/reboot convention; it does not qualify physical register
+availability or the native recovery path. No proxy or Rust ABI is changed.
+
+--- a/src/aic.c
++++ b/src/aic.c
+@@ -221,7 +221,7 @@
+     return 0;
+ }
+ 
+-void aic_init(void)
++int aic_init(void)
+ {
+     aic = NULL;
+     aic_aperture = 0;
+@@ -230,7 +230,7 @@
+ 
+     if (node < 0) {
+         printf("AIC node not found!\n");
+-        return;
++        return -1;
+     }
+ 
+     if (adt_is_compatible(adt, node, "aic,1")) {
+@@ -241,26 +241,26 @@
+         aic = &aic3;
+     } else {
+         printf("AIC: Error: Unsupported version\n");
+-        return;
++        return -1;
+     }
+ 
+     if (adt_get_reg(adt, path, "reg", 0, &aic->base, &aic_aperture)) {
+         printf("Failed to get AIC reg property!\n");
+         aic = NULL;
+-        return;
++        return -1;
+     }
+     if (!aic->base || (aic->base & 3) || !aic_aperture ||
+         aic_aperture > UINT64_MAX - aic->base) {
+         printf("AIC: invalid register aperture\n");
+         aic = NULL;
+-        return;
++        return -1;
+     }
+ 
+     if (aic->version == 1) {
+         if (!aic_range(0, AIC_REG_SIZE)) {
+             printf("AIC: incomplete fixed register aperture\n");
+             aic = NULL;
+-            return;
++            return -1;
+         }
+         printf("AIC: Version 1 @ 0x%lx\n", aic->base);
+         aic->nr_irq = FIELD_GET(AIC_INFO_NR_HW, read32(aic->base + AIC_INFO));
+@@ -280,6 +280,7 @@
+         if (ret < 0)
+             aic = NULL;
+     }
++    return aic ? 0 : -1;
+ }
+ 
+ void aic_set_sw(int irq, bool active)
+--- a/src/aic.h
++++ b/src/aic.h
+@@ -37,7 +37,8 @@
+ 
+ extern struct aic *aic;
+ 
+-void aic_init(void);
++/* Returns zero on initialization success, negative with aic cleared on failure. */
++int aic_init(void);
+ void aic_set_sw(int irq, bool active);
+ void aic_write(u32 reg, u32 val);
+ uint32_t aic_ack(void);
+--- a/src/main.c
++++ b/src/main.c
+@@ -161,7 +161,8 @@
+         mcc_init();
+     }
+     mmu_init();
+-    aic_init();
++    if (aic_init() < 0)
++        panic("AIC initialization failed!\n");
+     smp_init();
+ #endif
+     wdt_disable();
