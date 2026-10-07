@@ -1,0 +1,140 @@
+{
+  "date": "2026-10-06",
+  "scope": "All21patches disposition; unmodified and3inputguard offline comparison builds, not a complete guarded/native candidate.",
+  "pinned_default_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "reviewed_revision": "2460b604c6f016956ead711823605eea840c602e",
+  "archive_sha256": "aa0ffbeb7ae9cc0eb7a5653f44474e26f826809cf7f0564f8deb395d25203b01",
+  "archive_members_verified": {
+    "src/smp.c": "4b000be8d4e6437fc24351a57db5277785cc2e427045fb45d1750b158f2b8766",
+    "src/smp_asm.h": "2afe4c4ac4cd696a2d020fcef5621aa1ac66c2e7edcaaaef11f17df17cc696bd",
+    "src/aic.c": "9f55456f1d2fb0adae555a3a6ef4af7794b07c1b9af3106a430223025f57cbcf",
+    "rust/src/adt.rs": "5e40126dddc35bbbf5b5715f29dcb42de2a0207ca64cbadc0a936abb09724184"
+  },
+  "patch_dispositions": {
+    "drop_on_reviewed_source": [
+      "0002",
+      "0015"
+    ],
+    "split_adapt": [
+      "0001",
+      "0003"
+    ],
+    "retain_adapt_or_follow_adapted_dependencies": [
+      "0004",
+      "0005",
+      "0006",
+      "0007",
+      "0008",
+      "0009",
+      "0010",
+      "0011",
+      "0012",
+      "0013",
+      "0014",
+      "0016",
+      "0017",
+      "0018",
+      "0019"
+    ],
+    "retain_unchanged_in_order": [
+      "0020",
+      "0021"
+    ]
+  },
+  "candidate_patch_order": [
+    "upstream-2460b60/0019",
+    "0020",
+    "0021"
+  ],
+  "builds": {
+    "baseline": {
+      "directory": "scratch/m1n1-upstream-baseline.KpbhXh",
+      "status": "PASS",
+      "warnings": "Six upstream C warnings, identical in baseline and input-guards builds.",
+      "artifact_sha256": {
+        "m1n1.elf": "dd421de2c5f1760f0d13aee10086ca67e35a2cac0b2794532f926caa8d1a81dc",
+        "m1n1-raw.elf": "2534e6e9cf7268dcc26fe1ef75d4b47e8367504cde3a343e1246204686651a4e",
+        "m1n1.macho": "3f0068e13fe968b1a624ad304f3573cac38523dff27b097fe3175d194cd33f41",
+        "m1n1.bin": "5a5606550494158165c78d6fc77e9bb7316d0d99c543c321bfcf556da6c7467a"
+      }
+    },
+    "input_guards": {
+      "directory": "scratch/m1n1-upstream-input-guards.FloIcD",
+      "status": "PASS",
+      "warnings": "Six upstream C warnings, identical in baseline and input-guards builds.",
+      "artifact_sha256": {
+        "m1n1.elf": "1bdfd78f1a4420114f6d5f462ecf630d6dbfd7fdcb7cd1faed10004912b7d1c5",
+        "m1n1-raw.elf": "5b2e77ac4aa294e8cdb518c586352ad868d6787e8ed2b40acf944111f6bc507e",
+        "m1n1.macho": "3c51ef145f9a7ae0d992fbc2127551598e6d2043a1256984259e544f9032e2ce",
+        "m1n1.bin": "84a920d3426ff594dc3b8854a27548ef108d8ba5393dd38637f1a229dc256dbb"
+      }
+    }
+  },
+  "tests": {
+    "input_guards": "All original AIC/ADT host runner hash checks, materialization, baselines and negative/mutation controls PASS on reviewed source.",
+    "reviewed_layout": "Both comparison builds: eight shared objects in64KiB plus2MiB/256KiB static stacks in.bss; both ELFs and Mach-O PASS.",
+    "pinned_layout_regression": "Old full21build nSEOUv: unchanged defaultnineobject profile PASS.",
+    "layout_negative_controls": "Wrong profile/artifact pairs and mutated source alignment/dimensions fail closed with designated diagnostics.",
+    "syntax": "bash-n and Python3.13py_compile PASS."
+  },
+  "safety": {
+    "native_executed": false,
+    "mmio_probed": false,
+    "firmware_installed": false,
+    "vm_changed": false,
+    "physical_disks_changed": false,
+    "default_source_pin_changed": false,
+    "default_t6032_cpu_dvfs_dispatch_enabled": false,
+    "comparison_artifacts_contain_upstream_t6032_dispatch": true,
+    "comparison_artifacts_boot_approved": false,
+    "full_guarded_candidate_complete": false
+  },
+  "limitations": [
+    "Source-layout parsing is structural; source/archive identity verified separately by inventory and archive-member equality.",
+    "Toolchain/cache/sysroot contents are trusted local inputs, not fully hash-pinned.",
+    "Only input guards rebased so far; retained SMP/MMU/MCC/DVFS protections still need adaptation.",
+    "Linked layout and host fixtures do not qualify hardware access, reset entry, CPU release, cache/DVFS effects or native Debian boot."
+  ],
+  "sha256": {
+    "scripts/build-m1n1-upstream-offline.sh": "d182321d8528bcb831278314e77b0d110c2bd781cc81b849ac2710a6cafc6d8f",
+    "scripts/test-m1n1-upstream-input-guards.py": "69f8408991a1e80e8a32bb24d4ef2233ce2ff1f34b2c98b09047897559326c08",
+    "scripts/audit-m1n1-smp-shared-elf.py": "7c46ceefef7e058f59fe61e03db14df46e12670f097e48a3832e12fb1d60875b",
+    "scripts/build-m1n1-cpu-offline.sh": "b8d77aa0c1cb12e125cff2bfb074af15d32f8252adc5cfc8d320aba3292aa75c",
+    "patches/m1n1/upstream-2460b60/0019-validate-aic-init-metadata.patch": "2a9288eef62f7eea83c19db1dc465e7fb213bbe755f2f4bd76f92923931fdc1d",
+    "patches/m1n1/0019-validate-aic-init-metadata.patch": "f297bfdf941bb054e8968b42681402ddb1bc721744b6477dbfa120344ef2bd43",
+    "patches/m1n1/0020-check-adt-copy-length-before-write.patch": "69666690c7df34d748e1363afb27f7cb2e8418bb0e247ab9e8283c05ad7ea82b",
+    "patches/m1n1/0021-fix-adt-property-view-length.patch": "e5d7cb03c43aa15a1fcef9492425d63df2533e90489d6f4d233fd145c46458a9",
+    "scripts/test-m1n1-adt-view.py": "8d4ff158368c070d332ff4867559a2d478e8e27e47aea64a76caf888a8beb7b9",
+    "scripts/test-m1n1-adt-copy.py": "b70f67b473c60266ca5d8385e101e5977fa81283414c96122ee0385143bf7609",
+    "scripts/test-m1n1-aic-init.py": "1aef0c8b46b6dab61739304cb7b1d14a0591603b629ebafa9a184f8190158baa",
+    "tests/m1n1-adt-view.rs": "b24d1522ea5ed22b921cd33fae69be2532b2cf6f533a7df1ea4c42b628938685",
+    "tests/m1n1-adt-copy.rs": "0536509c8cceadf48a8e48a16403b6e775db526b87288debc09914fed87eca12",
+    "tests/m1n1-aic-init.c": "91a46bc307885a527c7b880f092ff51de655d6008fea45e28f2c2399da131648",
+    "scratch/m1n1-upstream-audit/source-2460b604c6f016956ead711823605eea840c602e.tar.gz": "aa0ffbeb7ae9cc0eb7a5653f44474e26f826809cf7f0564f8deb395d25203b01",
+    "scratch/m1n1-upstream-audit/m1n1-2460b604c6f016956ead711823605eea840c602e/src/smp.c": "4b000be8d4e6437fc24351a57db5277785cc2e427045fb45d1750b158f2b8766",
+    "scratch/m1n1-upstream-audit/m1n1-2460b604c6f016956ead711823605eea840c602e/src/smp_asm.h": "2afe4c4ac4cd696a2d020fcef5621aa1ac66c2e7edcaaaef11f17df17cc696bd",
+    "scratch/m1n1-upstream-audit/m1n1-2460b604c6f016956ead711823605eea840c602e/src/aic.c": "9f55456f1d2fb0adae555a3a6ef4af7794b07c1b9af3106a430223025f57cbcf",
+    "scratch/m1n1-upstream-audit/m1n1-2460b604c6f016956ead711823605eea840c602e/rust/src/adt.rs": "5e40126dddc35bbbf5b5715f29dcb42de2a0207ca64cbadc0a936abb09724184",
+    "scratch/upstream-reconcile-smp.md": "0e7a092e7d7f7922ab8ed96414252888feeb95148741aef7407ce005c8083805",
+    "scratch/upstream-reconcile-mcc-dvfs.md": "9f4ee7202ec14c9b8665945da2744ca8889b2818d51a0e44a6132a59d3fc6da4",
+    "scratch/upstream-reconcile-adt-aic/reports/adt-aic-disposition.md": "f440cc29091f2de386ad07e449f6c36b97cfe6945a71b5229feab6ac7cf94f08",
+    "scratch/upstream-builder-review.md": "8d6d70dc0067e418f0070122932595bc63adaa62916786e3fd6932e1280d5694",
+    "scratch/upstream-shared-layout/reports/profile-audit.md": "af926d506b75aa75bad96b4a790428ac85da75ae19ec31de72458bade5785e0f",
+    "scratch/m1n1-upstream-audit/baseline-build-2026-10-06.log": "547a832ee58225a366a62cadc5bd2f4c66d6b3e13d5d51a343b1688c5704d12a",
+    "scratch/m1n1-upstream-audit/input-guards-build-2026-10-06.log": "062e9be7a43e55174a62de986590718514be2ee44d18a0ab490fc11be0655e67",
+    "scratch/m1n1-upstream-audit/input-guards-test-2026-10-06.log": "6f39b507e3821fe378cfa1aed6d35851b667aaa2ae50bbab47ff0d74b69552b8",
+    "scratch/m1n1-upstream-audit/baseline-layout-2026-10-06.log": "e31d75ea557e7da5d4253ff1663cd1c2dec61f4ff7005b8cf9f5951931fd42d7",
+    "scratch/m1n1-upstream-audit/input-guards-layout-2026-10-06.log": "e31d75ea557e7da5d4253ff1663cd1c2dec61f4ff7005b8cf9f5951931fd42d7",
+    "scratch/m1n1-upstream-audit/pinned-layout-regression-2026-10-06.log": "724def6f0a26e4b43c1266402f3a2f5fa3c82c7df26916ff8aeaa6d80ce1c9ae",
+    "scratch/upstream-shared-layout/logs/negative-source-alignment.log": "b9d4342aa6b705fb8224673170b8994409f8f145157d3c25455bc33a2b4f7d81",
+    "scratch/upstream-shared-layout/logs/negative-source-dimensions.log": "027af047d6a4074229a3dd561276ba9a1886ef5f50c2a11d79a5e72e86afb7bb",
+    "scratch/upstream-shared-layout/logs/negative-pinned-on-upstream.log": "e7c59698be6d7be643f94a3d533cdd57fabefc8c2d1bf82ed9fdde814d7b75bf",
+    "scratch/upstream-shared-layout/logs/negative-upstream-on-pinned.log": "a64eeb6f99ca20b4a28c6f86b46772abb759d5005574db8a8f8095689f84870a",
+    "scratch/m1n1-upstream-baseline.KpbhXh/build.log": "a2d8ccbb920c5629b57aef4f8fa401ee075a83bcd4fb8c2b9ff489db71145fa0",
+    "scratch/m1n1-upstream-baseline.KpbhXh/SHA256SUMS": "8e1ed9f2d2450fddac90424f11b5b2e323e309ba0f6e0882e8fd94e14873dc5f",
+    "scratch/m1n1-upstream-input-guards.FloIcD/build.log": "45bf582d5a75c9c5cc6c6a49a4c2c0dd5aa1f5f713ac838137a3e0074e1c31c2",
+    "scratch/m1n1-upstream-input-guards.FloIcD/SHA256SUMS": "7f36150d87d3f19833c6818d937a8c5349bb88429bc40f597b961d968396b94f",
+    "scratch/m1n1-upstream-input-guards.FloIcD/patch.log": "894e2191ea7efea79c8276193c0a9606b87a87270b3ee0ba1ee2ecabf9c98c2b",
+    "scratch/m1n1-upstream-input-guards.FloIcD/PATCH_SHA256SUMS": "12588ca08e8f95a71da24ff04be440d1c39b1813d9e90705e005afc9f959bfa5"
+  }
+}

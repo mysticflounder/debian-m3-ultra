@@ -54,7 +54,7 @@ copy-before-length-check defect. Its real-Rust ABI harness passes, with
 deterministic original-source and guard-removal negative controls. The
 [full20 follow-up](m3-ultra-soc-status-2026-09-26.md#shared-adt-copy-contract--2026-09-30)
 also verifies static reset-entry placement, without qualifying reset-time
-hardware behavior. Next primary work is the safe early-DVFS contract; actual
+hardware behavior. The safe early-DVFS contract remains open; actual
 CPU cold-entry observations need recovery readiness and native approval.
 ADT parser bounds, AIC aperture/stride arithmetic and whole-boot failure
 propagation remain separate open hardening items.
@@ -84,10 +84,16 @@ End-to-end ADT buffer bounds remain the next parser requirement.
 The [October 6 upstream review](m1n1-upstream-review-2026-10-06.md) found
 44 commits since our pinned baseline, including T6032/M3 Ultra support and
 overlapping SMP startup/shared-state changes. Our ADT fixes remain needed.
-The next primary task is to classify all local patches against that new
-baseline and test a separate offline candidate; the current source pin and
-disabled native dispatch are unchanged. This takes priority over further
-private-firmware tracing until the new source paths have been reconciled.
+The [patch reconciliation](m1n1-upstream-reconciliation-2026-10-06.md) now
+classifies all 21: CPU cleanup and the shared-memory backport are redundant;
+capacity/stack patches must be split to retain bounds and RVBAR protection.
+The remaining protections are not supplied by upstream. Separate unmodified
+and three-input-guard builds pass, as do the current-source AIC/ADT host suites.
+The next primary task is adapting retained SMP guards to cached CPU records
+and static stacks, followed by MCC/mapping/DVFS guards. The default source pin
+and disabled native dispatch are unchanged. Upstream comparison artifacts
+contain its native T6032 dispatch and are not boot-approved or fully guarded.
+This takes priority over further private-firmware tracing.
 
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
@@ -101,13 +107,13 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | QEMU CPU feature coverage | Partial; separate from basic VM operation | Continue bounded feature probes where useful; do not treat optional gaps as bare-metal or VM blockers |
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
-| M3 m1n1 capacity / handoff cleanup | Validated offline | Two separate patches, seven-case handoff suite and full firmware build pass; no native execution |
+| M3 m1n1 capacity / handoff cleanup | Old pinned series validated offline; upstream now supplies capacity and cleanup | Rebase only missing half-open bounds; retain the old baseline for comparison |
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
-| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; twenty-one-patch build and static reset-entry placement pass; callbacks linked to PMGR | Qualify cold reset, release sequencing and RVBAR behavior after backup/recovery readiness and native approval; dispatch remains disabled |
-| Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; SMP and MMU/HV index/sentinel checks pass sanitizer and mutation regressions | Continue CPU-release evidence work. Native reset remains unvalidated; no rollback or recoverable degraded-SMP claim |
-| MCC/cache initialization | SMP shared-memory fix retained in the default twenty-one-patch offline build; mapping/startup guards and nine-object layout re-audited | Native behavior unvalidated. All 64 controller/plane contexts, handoff/encoding, aperture relationship, cache effects and DMA still need hardware qualification |
+| T6032 SoC identity / CPU startup | Old pinned masks/preflight/caller guards validated offline; new upstream supplies dispatch/offsets but not these protections | Adapt guards to cached CPU records/static stacks; then qualify cold reset, release sequencing and RVBAR after safety gates |
+| Secondary-start failure handling | Old pre-release/timeout/status/index protections pass offline tests; new call sites identified | Rebase protections without obsolete allocation logic. Native reset unvalidated; no degraded-SMP recovery claim |
+| MCC/cache initialization | Old shared-memory/mapping guards validated; upstream backport redundant and new eight-object/static-stack layout audited | Rebase MCC/mapping guards; all 64 controller/plane contexts, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | Conditional routing and provider traced; initial software zero fill checked; iBoot metadata source resolved to constant 24,000,000, not cluster states | Safe raw APSC/default indices, feature/restore ordering and bounded failure handling remain open; native dispatch disabled |
-| Native console / interrupts / DMA | AIC metadata guards and ADT copy/view/template-flag fixes pass offline; live offsets captured; hardware unvalidated | Reconcile new upstream first; implement ADT buffer-bound checks; audit AIC aperture/stride and failure propagation; qualify UART/AIC/DART after safety gates |
+| Native console / interrupts / DMA | AIC/ADT input guards pass old and new-source host suites and comparison builds; hardware unvalidated | Rebase remaining guards; implement ADT buffer-bound checks and AIC aperture/failure handling; qualify UART/AIC/DART after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
