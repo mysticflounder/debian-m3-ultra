@@ -184,6 +184,20 @@ initial GitLab/GitHub discrepancy: both now report `f9587d4045c67cd0d8d8bdcd5d0b
 Its checked HVF source still lacks our three candidates. The pin remains unchanged.
 See the [freshness correction](m1n1-upstream-review-2026-10-06.md#second-freshness-check--2026-10-07-utc).
 
+Comparison-only 0029 now drains an inherited T6032 BUSY state before sampling
+or changing a p-state request, rereads the completed state and preserves the
+post-write wait. The 27-patch build/layout checks, 90-case source-extracted
+ASan/UBSan suite and two exact mutation controls pass, including an independent
+frozen rerun. Existing cluster fail-fast and payload cutoff are preserved.
+See the [BUSY follow-up](m1n1-upstream-reconciliation-2026-10-06.md#inherited-dvfs-busy-drain--2026-10-07-utc)
+and [inventory](inventory/m1n1-upstream-cpufreq-busy-2026-10-07.json).
+This is not atomic hardware exclusion or qualification of raw indices,
+routing, feature/restore or DVC policy. Default native dispatch remains off.
+The additional 08:54 UTC upstream ref check finds all four API bodies identical
+to the preceding captures; no newer default-branch commit needs reconciliation.
+Next: exact official kernel/J575d source and configuration integration, without
+inventing OPP data or bypassing unresolved early-initialization gates.
+
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
 virtual hardware; it cannot validate the Studio's physical SoC initialization.
@@ -201,7 +215,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
-| Six-cluster frequency / DVFS | 0011 payload cutoff and 0023 first-cluster failure containment adapted; 25-patch build and 48-case driver/payload mock suite pass | Safe raw APSC/default indices, pre-existing busy state, routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
+| Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | Prior ADT/AIC startup suites pass; optional HV trace guards pass final sanitized tests, independent rerun and 26-patch build/layout | Early-DVFS/kernel integration next. Physical mapping/aliasing, register semantics and UART/AIC/DART behavior still need qualification |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |

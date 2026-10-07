@@ -217,7 +217,8 @@ Its local sequence is APSC request/poll, feature masks/APSC poll,
 safe initial states, direct-register access, per-complex feature policy,
 voltage behavior, restore prerequisites or barriers. Already-desired states
 currently bypass the busy poll; observing that branch in a mock does not
-qualify completion when busy was already set.
+qualify completion when busy was already set. This describes the 21-patch
+checkpoint; the later BUSY-drain follow-up below changes that branch.
 
 ```sh
 bash scripts/build-m1n1-upstream-offline.sh cpufreq-guards
@@ -507,10 +508,70 @@ source pin/native dispatch remain unchanged, and comparison artifacts remain
 not boot-approved. Fresh upstream checks and the resolved QEMU ref discrepancy
 are recorded in the [upstream review](m1n1-upstream-review-2026-10-06.md#second-freshness-check--2026-10-07-utc).
 
+## Inherited DVFS BUSY drain — 2026-10-07 UTC
+
+Comparison-only 0029 waits for T6032's inherited `CLUSTER_PSTATE_BUSY`
+before the first request-state read in `set_pstate()`. A failed wait returns
+`-1` before that read or any request write. A successful wait is followed by
+a fresh read, so completing a prior transition can change whether a new
+request is needed. Existing request encoding, unrelated bits and post-write
+completion polling are preserved. Other chips do not take the new branch.
+The six cluster records and feature/restore sequence are unchanged; both
+APSC and default requests use this helper. Existing 0023 cluster fail-fast
+and 0011 payload rejection remain in place.
+
+The [static Apple write-path trace](m1n1-t6032-dvfs-contract.md#transition-waits-and-conditional-error-check)
+shows a pre-existing BUSY-bit wait before a request. Its unbounded loop is
+not copied. m1n1 retains `CLUSTER_SWITCH_TIMEOUT = 400`; the actual `poll64`
+implementation performs 399 loop samples on timeout, with a delay after each
+unsuccessful sample. This is a bounded polling attempt, not a guaranteed
+400-microsecond wall-time limit.
+
+The 27-patch `cpufreq-busy` cross-build and linked-layout audit pass with
+the same six existing C warnings. Of the 215 canonical C/Rust files, only
+`src/cpufreq.c` differs from the preceding full26 tree; the other 214 are
+byte-identical. Older behavior results are retained evidence, not newly
+rerun suites on this changed driver.
+
+The new source-extracted driver/payload-prefix harness passes 90 cases under
+ASan/UBSan: six-cluster busy/idle requests, a completion changing the desired
+state in both directions, exact pre/post-poll metadata and preserved request
+bits, feature-on/off initialization, failure injection at every poll in those
+two initialization transcripts, T6031 compatibility and payload pre/post-wait
+failure cutoff. Removing the prewait or moving the read before it compiles
+successfully but exits exactly 1 with its designated stderr assertion and no
+sanitizer diagnostics. These are mocked polling results, not execution of the
+real register-read/delay loop or the full native payload.
+
+The independent frozen rerun passes the same 90 cases and both controls.
+Final parent evidence is `scratch/m1n1-upstream-cpufreq-busy.p7na49_4/`,
+independent evidence is `scratch/m1n1-upstream-cpufreq-busy.8yvn8epn/`, and
+the review is `scratch/dvfs-busy-implementation-review-2026-10-07.md`.
+The [BUSY inventory](inventory/m1n1-upstream-cpufreq-busy-2026-10-07.json)
+records source identities, manifests and build artifacts. This task does not
+newly rerun the older 48-case driver suite or the unchanged ADT/AIC/MCC suites.
+
+```sh
+bash scripts/build-m1n1-upstream-offline.sh cpufreq-busy
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python \
+  scripts/test-m1n1-upstream-cpufreq-busy.py --source-tree <full27-source-tree>
+```
+
+This closes one software sequencing gap, not the early-DVFS hardware
+contract. The prewait is not atomic exclusion against a new hardware/APSC
+transaction. Safe raw APSC/default indices, physical die/cluster routing,
+APSC bit-7 semantics, feature/ACC restore prerequisites and DVC/error policy
+remain unqualified. T6032's source records specify zero explicit voltage
+control offsets; that does not establish the electrical voltage policy.
+No rollback of earlier writes or inherited-frequency bypass is added.
+The default pin/native-dispatch setting remains unchanged. No native boot,
+MMIO, firmware, VM or disk operation was performed.
+
 ## Remaining implementation order
 
 1. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
-   pre-existing busy state, feature/restore prerequisites and voltage error policy.
+   physical busy/completion semantics, feature/restore prerequisites and voltage error policy.
    Do not infer these from upstream constants or a successful mock build.
 2. Reconcile current kernel/board support and initialization dependencies for
    native boot and storage/network I/O.

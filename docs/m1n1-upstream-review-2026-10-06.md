@@ -113,3 +113,17 @@ with raw source in `scratch/upstream-hv-aic-main-raw-2026-10-07.c` and
 `scratch/upstream-refresh-2026-10-07-followup.md`; its earlier hand-authored
 summaries are not primary full-response evidence. The HV trace inventory
 records the retained identities. No fetch, pin update or submission occurred.
+
+### DVFS freshness recheck — 2026-10-07 08:54 UTC
+
+The additional requested check retains four new HTTP-200 API bodies and
+headers. m1n1 remains `2460b604c6f016956ead711823605eea840c602e`, Linux remains
+`602042bf29f6efde39cfb5fdd9289bf4854bc0c5`, and both QEMU remotes remain
+`f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c`. Each body is byte-identical to
+the preceding exact capture. This ref-only check found no newer default-branch
+change to reconcile; it does not inspect unmerged work. The earlier raw-source
+checks remain applicable at those unchanged commits.
+
+Evidence: `scratch/upstream-dvfs-refresh-2026-10-07.md` and the paired
+`scratch/upstream-dvfs-ref-*-2026-10-07.{json,headers}` responses. Pins, working
+VMs and submission status remain unchanged.

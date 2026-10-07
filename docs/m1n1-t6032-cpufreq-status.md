@@ -148,3 +148,15 @@ Resolve six-cluster/die routing, safe raw APSC/default indices, the
 frequency dispatch. MCC scope/protection, loader/DMA containment, boot entry
 and recovery remain independent native-execution gates. This patch closes
 one ignored-error path; it does not establish bare-metal readiness.
+
+## Current comparison-source checkpoint — 2026-10-07 UTC
+
+The unsupported-dispatch statements above describe the retained `4184923`
+baseline, not the reviewed `2460b604` source. The latter supplies all six
+T6032 clusters. The comparison stack now adds a T6032-only bounded BUSY
+drain before sampling or changing each p-state request, followed by a fresh
+read and the preserved post-write poll. See the
+[BUSY follow-up](m1n1-upstream-reconciliation-2026-10-06.md#inherited-dvfs-busy-drain--2026-10-07-utc)
+for its software tests and limitations. The default pin and disabled native
+dispatch remain unchanged; source support does not qualify safe raw indices,
+register routing, feature/restore prerequisites or voltage/error policy.

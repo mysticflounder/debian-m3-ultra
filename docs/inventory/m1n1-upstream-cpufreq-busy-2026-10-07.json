@@ -1,0 +1,294 @@
+{
+  "date_utc": "2026-10-07",
+  "status": "offline_pass_native_unqualified",
+  "parent_commit": "3c466b2",
+  "source_revision": "2460b604c6f016956ead711823605eea840c602e",
+  "patch_count": 27,
+  "patch": "patches/m1n1/upstream-2460b60/0029-drain-t6032-pstate-busy.patch",
+  "build_source_tree": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/m1n1-2460b604c6f016956ead711823605eea840c602e",
+  "scope": {
+    "native_execution": false,
+    "physical_mmio": false,
+    "firmware_changes": false,
+    "disk_changes": false,
+    "vm_changes": false,
+    "push": false,
+    "default_pin_changed": false,
+    "default_native_dispatch": "disabled",
+    "comparison_native_dispatch": "present upstream; not boot-approved",
+    "purpose": "T6032 inherited BUSY drain before request sampling; not qualification of physical DVFS safety."
+  },
+  "validation": {
+    "cross_build": "PASS; full27 zero-fuzz comparison stack, same six existing C warnings",
+    "linked_layout": "PASS; both ELF variants: eight shared objects, 64 KiB shared range and two static stacks; Mach-O DATA interval",
+    "host_runs": [
+      {
+        "directory": "scratch/m1n1-upstream-cpufreq-busy.p7na49_4",
+        "manifest": "scratch/m1n1-upstream-cpufreq-busy.p7na49_4/execution-manifest.jsonl",
+        "baseline_cases": 90,
+        "executions": [
+          {
+            "label": "cpufreq-busy-baseline",
+            "compile_returncode": 0,
+            "run_returncode": 0,
+            "expected_failure": null,
+            "generated_source_sha256": "5063c5cf1035833436ec21b3c69ed97c48fccf159b9b3b8d65eab8cc4c80eaa8",
+            "binary_sha256": "b7c03f49b03fb29607eeae322fa07dcf8ead2a9ac9fca2b213f3ed1cf01f391b"
+          },
+          {
+            "label": "cpufreq-busy-missing-prewait",
+            "compile_returncode": 0,
+            "run_returncode": 1,
+            "expected_failure": "T6032 equal busy state was not waited and reread",
+            "generated_source_sha256": "b7e98fc8525e5b26839d383af540cfbed5d55890f33d7162cf9ed7d43ebcc4a4",
+            "binary_sha256": "39135fa3d9613565ad33329e6e045a415ec99f62f0b96866a86bdf1541288d24"
+          },
+          {
+            "label": "cpufreq-busy-stale-read-order",
+            "compile_returncode": 0,
+            "run_returncode": 1,
+            "expected_failure": "T6032 prewait/read order mismatch",
+            "generated_source_sha256": "b4bb4a610f3d7c7044dd972cddffec108152f8b804ab2cf7f9dc1280bbe7f277",
+            "binary_sha256": "4f89cf75b9582385d3ac715d8cfbb096544c13d61bc16858c4741f5b9bba21c4"
+          }
+        ]
+      },
+      {
+        "directory": "scratch/m1n1-upstream-cpufreq-busy.8yvn8epn",
+        "manifest": "scratch/m1n1-upstream-cpufreq-busy.8yvn8epn/execution-manifest.jsonl",
+        "baseline_cases": 90,
+        "executions": [
+          {
+            "label": "cpufreq-busy-baseline",
+            "compile_returncode": 0,
+            "run_returncode": 0,
+            "expected_failure": null,
+            "generated_source_sha256": "5063c5cf1035833436ec21b3c69ed97c48fccf159b9b3b8d65eab8cc4c80eaa8",
+            "binary_sha256": "805c2b985e56c651af44a4fc68fa9754d17ec1bb8404a0aac1d7c9d2cd5087e0"
+          },
+          {
+            "label": "cpufreq-busy-missing-prewait",
+            "compile_returncode": 0,
+            "run_returncode": 1,
+            "expected_failure": "T6032 equal busy state was not waited and reread",
+            "generated_source_sha256": "b7e98fc8525e5b26839d383af540cfbed5d55890f33d7162cf9ed7d43ebcc4a4",
+            "binary_sha256": "d92a15420671bbbbc15385b35b3e089722eacc783e5f8fd003a7af87d4c9f307"
+          },
+          {
+            "label": "cpufreq-busy-stale-read-order",
+            "compile_returncode": 0,
+            "run_returncode": 1,
+            "expected_failure": "T6032 prewait/read order mismatch",
+            "generated_source_sha256": "b4bb4a610f3d7c7044dd972cddffec108152f8b804ab2cf7f9dc1280bbe7f277",
+            "binary_sha256": "0801b657c26f43e149593ee55de67ba1be25772820e88711485e7f5192918b46"
+          }
+        ]
+      }
+    ],
+    "host_scope": "Actual cpufreq.c body/source constants and extracted payload kernel prefix, mocked MMIO/poll results; not full native payload or real read/delay polling loop.",
+    "sanitizers": "ASan/UBSan, nonrecovering; baseline run 0, both controls compile 0/run exactly 1/exact designated stderr/no sanitizer diagnostic.",
+    "coverage": [
+      "Six-cluster equal/different BUSY and idle requests, completion changing DESIRED1 in both directions, fresh-read write/no-write decisions.",
+      "Pre/post poll address, BUSY mask, target and timeout metadata; preserved unrelated request bits.",
+      "Feature-on/off initialization, deterministic transcripts and failures at every poll in those two exercised transcripts; no events after failed poll.",
+      "T6031 equal/unequal legacy behavior; T6032 payload cutoff for prewait and postwait failures, T6031 continuation."
+    ],
+    "source_comparison": "214 of 215 canonical C/Rust files byte-identical to full26; only src/cpufreq.c changed.",
+    "adjacent_regressions": "Older 48-case DVFS and unchanged ADT/AIC/MCC suites retained, not newly rerun for this task.",
+    "verified_host_artifacts": 36,
+    "verified_build_artifacts": 4,
+    "verified_patch_checksums": 27,
+    "verified_inventory_inputs": 38
+  },
+  "semantics": [
+    "T6032-only prewait occurs before first read; successful completion is sampled again.",
+    "Existing post-write polling, request encoding, cluster fail-fast and payload cutoff remain.",
+    "Actual poll64 timeout 400 gives 399 loop samples/delays on timeout, not a hard 400-microsecond bound.",
+    "No rollback of prior writes, inherited-frequency bypass, new raw indices or voltage policy."
+  ],
+  "upstream": {
+    "fetch_utc": "2026-10-07T08:54:19Z (GitLab completed 08:54:20Z)",
+    "m1n1_main": "2460b604c6f016956ead711823605eea840c602e",
+    "linux_master": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+    "qemu_master_both_refs": "f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c",
+    "findings": "All four HTTP-200 bodies identical to prior exact captures; no new default-branch change. Ref-only recheck; earlier commit-qualified source evidence retained, no exhaustive unmerged-series audit or pin change."
+  },
+  "remaining": [
+    "Physical die/cluster routing, safe raw APSC/default indices, APSC bit-7 semantics and feature/ACC restore prerequisites.",
+    "Atomic exclusion against new hardware/APSC transitions and DVC/voltage error policy are not established by the prewait.",
+    "Official Linux/J575d exact source/configuration integration and serial/RAM diagnostic kernel qualification.",
+    "Native cache/DMA/interrupt/storage/network qualification; verified backup, recovery readiness and separate native-test approval."
+  ],
+  "inputs": [
+    {
+      "path": "patches/m1n1/upstream-2460b60/0029-drain-t6032-pstate-busy.patch",
+      "sha256": "cefdf072c6a12a99a5eb2af22d9492c0b62369a9af30a9e646832690fba9b885"
+    },
+    {
+      "path": "scripts/build-m1n1-upstream-offline.sh",
+      "sha256": "37dab7e31eeee8bdf478fbe10bbf1827989556ab0a6ea43eab77c0e04f2e3660"
+    },
+    {
+      "path": "scripts/test-m1n1-upstream-cpufreq-busy.py",
+      "sha256": "870b0446c7ba7951f6441db3bc947c9dd47e33f2bf98fc19f290742018c42699"
+    },
+    {
+      "path": "tests/m1n1-upstream-cpufreq-busy.c",
+      "sha256": "d0c40e81d01c0d9d4fe80522e9dfaf7260b565150aa5d2602fb5032d14c5537f"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/m1n1-2460b604c6f016956ead711823605eea840c602e/src/cpufreq.c",
+      "sha256": "06b3bd9d9e29ec1eceb630928e521d1f3e3579555388b884f029731f569c213b"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/m1n1-2460b604c6f016956ead711823605eea840c602e/src/payload.c",
+      "sha256": "9531ef7cfc0f29d1e5252fbe68eb25de6306887efacf4d4ce5a5fdaa7373d67d"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/m1n1-2460b604c6f016956ead711823605eea840c602e/src/proxy.c",
+      "sha256": "257fda736784262560fe891a7d33ebe6dbcd5b39a1ab3eeb49cf1509df8fef24"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/m1n1-2460b604c6f016956ead711823605eea840c602e/src/types.h",
+      "sha256": "98095acbf20bedcb1d25e4a054493efd62923c9bb4991b673da47c24b2cce4a5"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/m1n1-2460b604c6f016956ead711823605eea840c602e/src/soc.h",
+      "sha256": "c6bcf891716f184f8f355f479e3f69c7e3e49cd1a88ec599f827110d7f84fbdb"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/m1n1-2460b604c6f016956ead711823605eea840c602e/src/firmware.h",
+      "sha256": "e1c036e304a0e94f20c4b2d8e6f819252be95ea7b95bae51491ae2b0123203c3"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/m1n1-2460b604c6f016956ead711823605eea840c602e/src/utils.h",
+      "sha256": "6477d2b03c7c59d337885b22add67322009df6cbe566481e3c967adf558910f4"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/m1n1-2460b604c6f016956ead711823605eea840c602e/src/utils.c",
+      "sha256": "0361304388c7b42de38bc6be8717f25f48e59fb8c513712ee202c2d698a2ac5c"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/build.log",
+      "sha256": "5630b9d11d7a33deca65d75696f8f0190c63a0b4a16e57a595b0ff5a2da7e38d"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/patch.log",
+      "sha256": "674ddaa8a19ad931426d21b23215ac63ffde8eee168dfb19d5112bba5ba3ba13"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/PATCH_SHA256SUMS",
+      "sha256": "49dda90e627dd0915414c13bb84d6dec374914c457f972b5d309cc0dcaf71794"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/SHA256SUMS",
+      "sha256": "b8005a3ca0bddcc86e5b033b078c519f264adf10a0aa73435e10125bc6b42dfa"
+    },
+    {
+      "path": "scratch/upstream-dvfs-busy-build-terminal-2026-10-07.log",
+      "sha256": "26747eeca95ce535409d9dd78eeab78d3915085ee617ed4d37944db481637540"
+    },
+    {
+      "path": "scratch/upstream-dvfs-busy-layout-2026-10-07.log",
+      "sha256": "e31d75ea557e7da5d4253ff1663cd1c2dec61f4ff7005b8cf9f5951931fd42d7"
+    },
+    {
+      "path": "scratch/upstream-dvfs-busy-source-equality-2026-10-07.log",
+      "sha256": "95513c4236238249eda4ffa32a12e0cda0e680d2bb5a91c38a3d2835dcff6134"
+    },
+    {
+      "path": "scratch/upstream-aic-boot-cutoff-source-files-2026-10-07.txt",
+      "sha256": "dde43d866c940fb5efbc95bac07dee69ed1e94263b0e6031149e9ee9e92b20ae"
+    },
+    {
+      "path": "scratch/dvfs-busy-implementation-review-2026-10-07.md",
+      "sha256": "bd934cc5b8c26ad3bac2be7b26b29e8065453c6661a7e6bf558b6930b5cddd70"
+    },
+    {
+      "path": "scratch/dvfs-six-cluster-contract-audit-2026-10-07.md",
+      "sha256": "fe0d594c1869bf0e7dd52c643486d2928bf0dcc8886baf5fa31c7289b050ec75"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.p7na49_4/execution-manifest.jsonl",
+      "sha256": "ea2cafd63b1593b55a2de6bc9c2a9b4dec5a74d8cf7d1d84f8647b6b2f40abc0"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.p7na49_4/production-snapshot-sha256.txt",
+      "sha256": "167291c1362950231824d5bbbfbee9e6adb4d19cfbe5424e233b046a3b343eb3"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.8yvn8epn/execution-manifest.jsonl",
+      "sha256": "8bfccefd5c923873163a2536b69ff2f410bd36b46913f5f60f0a013c1dc202b0"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.8yvn8epn/production-snapshot-sha256.txt",
+      "sha256": "167291c1362950231824d5bbbfbee9e6adb4d19cfbe5424e233b046a3b343eb3"
+    },
+    {
+      "path": "scratch/upstream-dvfs-ref-m1n1-2026-10-07.json",
+      "sha256": "7d069eb7ca8a2e96d4aadcb116c4475154ae900da9dc0bbb762fa0fa4fb52399"
+    },
+    {
+      "path": "scratch/upstream-dvfs-ref-m1n1-2026-10-07.headers",
+      "sha256": "de5dd984e3f52082bb375d58d131fed7981f595bbea0c648a6c0844818f61d07"
+    },
+    {
+      "path": "scratch/upstream-dvfs-ref-linux-2026-10-07.json",
+      "sha256": "5bbaf09e3cfb64db0995595a81c099d3b4dba1f453b2710925f9e117a58dd40f"
+    },
+    {
+      "path": "scratch/upstream-dvfs-ref-linux-2026-10-07.headers",
+      "sha256": "716fd15c8ada933808dc7ff40437d2ce304a0aa42cd1a89cf6f0c6f240030401"
+    },
+    {
+      "path": "scratch/upstream-dvfs-ref-qemu-mirror-2026-10-07.json",
+      "sha256": "4630c41923e144aa3b6f4ce5f805f4e5089ce7940228b5d43caf8c9b35be93d7"
+    },
+    {
+      "path": "scratch/upstream-dvfs-ref-qemu-mirror-2026-10-07.headers",
+      "sha256": "fb3ea850868b6e13214761df88cd762cd452ab48b2cc79c9c9290d4f9b3e7623"
+    },
+    {
+      "path": "scratch/upstream-dvfs-ref-qemu-gitlab-2026-10-07.json",
+      "sha256": "86c41af4707e07efa5f7503a543c1bcfc3711792f66423bf7eb4fcfde9ac3b9c"
+    },
+    {
+      "path": "scratch/upstream-dvfs-ref-qemu-gitlab-2026-10-07.headers",
+      "sha256": "ba045ff2ca16c001f0a1295dd3d676109dcc0110cf96239b9660200a8a72610c"
+    },
+    {
+      "path": "scratch/upstream-dvfs-refresh-2026-10-07.md",
+      "sha256": "e3fd76b16050a249415b962bd65605781934d120f2d3f74d9c82268c644942f7"
+    },
+    {
+      "path": "scratch/dvfs-busy-host-checksums-final-2026-10-07.log",
+      "sha256": "e66fe9f5d176b82bc00ee057439cab9e5c342510fbaa3502736a9b34c0b85303"
+    },
+    {
+      "path": "scratch/dvfs-busy-patch-checksums-final-2026-10-07.log",
+      "sha256": "22b1dbe0df90edd9beb26fe5ae79b99e7dfd765fc2367a89a843bc4bd3a91e3c"
+    },
+    {
+      "path": "scratch/dvfs-busy-build-checksums-final-2026-10-07.log",
+      "sha256": "620c0237df00a7bcbaf6651869c52d8f182e0d6ac943cfa7b70b3a14663b748a"
+    }
+  ],
+  "build_artifacts": [
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1.elf",
+      "sha256": "ab82aef9999c965611d8db8e5c9a3b3df8c02da974e3d11874cc982490fcc30a"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1-raw.elf",
+      "sha256": "07b8f7569eb04dcdf5723e5326ed9d2dbefa4925f10f2dc317a39c564b176ed6"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1.macho",
+      "sha256": "115d969785efce9c118f8edeee72a8397705baafc47b83448d9a60b81d459f9c"
+    },
+    {
+      "path": "scratch/m1n1-upstream-cpufreq-busy.4xxOvh/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1.bin",
+      "sha256": "553aabde232128308fe0742c45bc1a61ab6bf2675ca989d8eeb35a3c74f549cc"
+    }
+  ]
+}
