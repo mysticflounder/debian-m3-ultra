@@ -84,3 +84,32 @@ Evidence: `scratch/upstream-freshness-m1n1-2026-10-07.md`,
 `scratch/upstream-freshness-kernel-qemu-2026-10-07.md` and
 `scratch/upstream-freshness-kernel-qemu/`. No source upgrade, fetch/merge,
 external submission, native execution, VM or disk change was performed.
+
+### Second freshness check — 2026-10-07 UTC
+
+Fresh official API reads again resolve m1n1 `main` to `2460b604` and Linux
+`master` to `602042bf29f6efde39cfb5fdd9289bf4854bc0c5`. The m1n1
+[HV AIC trace source](https://github.com/AsahiLinux/m1n1/blob/2460b604c6f016956ead711823605eea840c602e/src/hv/hv_aic.c)
+still contains the NULL/divisor, die-partition and bitmap-bound defects;
+comparison-only patch 0028 remains needed. Linux's unchanged head does not
+qualify native boot or replace the kernel/board integration work.
+
+The initial QEMU refresh returned conflicting refs from the
+[official GitHub mirror ref](https://api.github.com/repos/qemu/qemu/git/ref/heads/master)
+and the
+[GitLab branch API](https://gitlab.com/api/v4/projects/qemu-project%2Fqemu/repository/branches/master)
+(`f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c` versus `d7a65d1793...`).
+Later exact retained responses resolve **both** refs to `f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c`,
+superseding the earlier `3377670e...` default-branch freshness assertion.
+Its [commit-qualified HVF source](https://github.com/qemu/qemu/blob/f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c/target/arm/hvf/hvf.c)
+still lacks our PMINTENCLR, PSCI and SDK27 candidate changes. This is source
+evidence, not an exhaustive pending-series audit or ancestry comparison.
+Neither response changes the project pin or working VM; rebase and replacement
+qualification remain separate tasks.
+
+Exact API bodies/headers are retained as `scratch/upstream-hv-ref-*-2026-10-07.*`,
+with raw source in `scratch/upstream-hv-aic-main-raw-2026-10-07.c` and
+`scratch/upstream-hv-qemu-hvf-f9587d-2026-10-07.c`. The bounded report is
+`scratch/upstream-refresh-2026-10-07-followup.md`; its earlier hand-authored
+summaries are not primary full-response evidence. The HV trace inventory
+records the retained identities. No fetch, pin update or submission occurred.

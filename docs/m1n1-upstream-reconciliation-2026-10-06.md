@@ -450,21 +450,71 @@ points or the full next-stage tail. The separate SMP policy retains legacy
 one-core/proxy continuation and T6032 downstream readiness rejection; this
 patch does not make `smp_init()` failure fatal in `main` or claim degraded-SMP
 recovery on T6032.
-HV tracing still needs its own null/divisor/die/bitmap ingress guards.
+At that checkpoint, HV tracing still needs its own null/divisor/die/bitmap guards.
 Default source pin/native dispatch remain unchanged; these comparison
 artifacts are not boot-approved. No physical MMIO, VM, disk or firmware changes.
 
+## Optional HV IRQ-trace guards — 2026-10-07 UTC
+
+Comparison-only `0028-bound-hv-aic-tracing.patch` guards `hv_trace_irq()` and
+its event callback. NULL/zero/oversized initialized geometry is rejected before
+division or bitmap use. Global numbers partition by initialized `max_irq`;
+`nr_die` and `nr_irq` bound actual requests. The subtraction check
+`count <= nr_irq - local` rejects cross-die ranges and makes local loop-end
+overflow unreachable. No physical register layout is inferred from `max_die`.
+
+Event die/IRQ fields are bounded before bitmap access. Invalid initialized
+state rejects before the mocked/real `hv_pa_rw` call; a malformed decoded
+event is ignored after the existing successful passthrough read. Hook failure
+returns false before bitmap mutation, and a subsequent request can retry.
+Valid zero-count starts remain successful no-ops that may install the hook.
+The `regs.reg_size` hook extent, exact flag-switch behavior and process-lifetime
+hook policy are unchanged; this does not expand the hook to the full aperture.
+
+Python's actual `trace_irq()` method now checks proxy success before changing
+its local IRQ/tracer maps and raises `RuntimeError` explicitly, rather than
+relying on an assertion. Post-success Python ADT/tracer rollback, raw proxy
+u64-to-u32 argument narrowing, static AIC reinitialization and callback
+concurrency remain separate lifecycle/transport contracts. Only exactly
+`IRQTRACE_IRQ` sets the C bitmap, while Python still uses a bit test; that
+pre-existing flags mismatch is intentionally not changed here.
+
+The 26-patch `hv-guards` cross-build and linked-layout audit pass with the same
+six existing C warnings and no additional warnings. The source-extracted
+ASan/UBSan fixture passes geometry, global range, hook retry and event tests.
+Three safe mutation controls fail with exact designated exit-1 witnesses, not
+sanitizer failures. Python map stability is tested on rejected requests using
+the source-extracted production method under optimization modes 0 and 1,
+with four checks per mode. A fresh independent final rerun passes the same suite.
+Final run identities and their hashes
+are recorded in the [HV trace inventory](inventory/m1n1-upstream-hv-aic-trace-2026-10-07.json).
+
+Of the 215 canonical C/Rust files, only `src/hv/hv_aic.c` differs from the
+qualified 25-patch source; the other 214 are byte-identical. Prior adjacent
+ADT/DVFS/MCC results are retained evidence, **not newly rerun** for this task.
+The new source also changes the Python caller, exercised separately above.
+
+```sh
+bash scripts/build-m1n1-upstream-offline.sh hv-guards
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python \
+  scripts/test-m1n1-upstream-hv-aic-trace.py --source-tree <full26-source-tree>
+```
+
+This is optional HV tracing correctness, **not a native Linux boot prerequisite**.
+No physical MMIO, native boot, VM, disk or firmware changes occurred. The default
+source pin/native dispatch remain unchanged, and comparison artifacts remain
+not boot-approved. Fresh upstream checks and the resolved QEMU ref discrepancy
+are recorded in the [upstream review](m1n1-upstream-review-2026-10-06.md#second-freshness-check--2026-10-07-utc).
+
 ## Remaining implementation order
 
-1. Address remaining AIC/HV caller guards and startup failure propagation,
-   keeping the complete adapted stack under
-   regression. Do not confuse declared bounds with physical mapping qualification.
-2. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
+1. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
    pre-existing busy state, feature/restore prerequisites and voltage error policy.
    Do not infer these from upstream constants or a successful mock build.
-3. Reconcile current kernel/board support and initialization dependencies for
+2. Reconcile current kernel/board support and initialization dependencies for
    native boot and storage/network I/O.
-4. Only after a verified backup, recovery readiness and separate native-test
+3. Only after a verified backup, recovery readiness and separate native-test
    approval: qualify cold entry, RVBAR/release, MCC/cache/DVFS and UART/AIC/DART,
    then a RAM-only kernel boot and persistent storage/network bring-up.
 

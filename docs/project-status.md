@@ -128,8 +128,8 @@ from the official checked source. Official Linux 7.3-rc6/master contains
 T6032/J575d DTS/bindings, to be used during kernel/board integration; this is
 not native boot evidence. AIC aperture/stride validation is now complete for
 the declared register window, with the hardware qualifications below. AIC
-startup failure propagation is implemented in the comparison stack; remaining
-local HV trace guards are next. The
+startup failure propagation is implemented in the comparison stack; local
+HV trace guards are now complete offline in the follow-up below. The
 default source pin and disabled native dispatch are unchanged. Upstream
 comparison artifacts contain its native T6032 dispatch and are not
 boot-approved or fully hardware-qualified. The full original guard adaptation
@@ -158,7 +158,31 @@ designated ASan/UBSan mutation controls. Their 215 canonical source files also
 match the build. The
 [startup cutoff inventory](inventory/m1n1-upstream-aic-boot-cutoff-2026-10-07.json)
 records distinct build/host patch orders and retained evidence. HV trace-index
-guards and other startup contracts remain separate. No native execution or MMIO.
+guards and other startup contracts remain separate at that checkpoint. No native
+execution or MMIO.
+
+Comparison-only 0028 now validates optional HV IRQ-trace geometry before
+division or bitmap access, partitions global IRQs by initialized `max_irq`,
+rejects cross-die ranges, bounds event fields and handles hook failure before
+bitmap mutation. Python rejects a failed proxy request before changing its
+local maps, without relying on `assert`. Valid zero-count requests, flag
+semantics and the existing event-hook extent/lifecycle are preserved. The
+26-patch cross-build and linked-layout audit pass with the same six known C
+warnings. Final host tests and an independent rerun pass the C baseline and
+three exact exit-1 mutation controls under ASan/UBSan, plus four Python
+map-stability checks in each optimization mode (0 and 1). See the
+[HV trace inventory](inventory/m1n1-upstream-hv-aic-trace-2026-10-07.json).
+Of the 215 canonical C/Rust files, only `src/hv/hv_aic.c` differs
+from the qualified 25-patch source; the other 214 are byte-identical. This is
+optional HV work, not a native Linux boot prerequisite. The next native-boot
+implementation priorities remain early-DVFS contracts and kernel/board
+integration, followed by qualified console/interrupt/DMA bring-up.
+
+The second read-only upstream check finds unchanged m1n1/Linux heads and the
+HV trace defects still upstream. Exact follow-up responses resolve QEMU's
+initial GitLab/GitHub discrepancy: both now report `f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c`.
+Its checked HVF source still lacks our three candidates. The pin remains unchanged.
+See the [freshness correction](m1n1-upstream-review-2026-10-06.md#second-freshness-check--2026-10-07-utc).
 
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
@@ -178,7 +202,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | 0011 payload cutoff and 0023 first-cluster failure containment adapted; 25-patch build and 48-case driver/payload mock suite pass | Safe raw APSC/default indices, pre-existing busy state, routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
-| Native console / interrupts / DMA | ADT declared bounds/relocation, AIC aperture/stride and pre-SMP startup cutoff pass host suites, independent rerun and 25-patch build | Next: local HV trace guards. Physical mapping/aliasing, register semantics and UART/AIC/DART behavior still need qualification |
+| Native console / interrupts / DMA | Prior ADT/AIC startup suites pass; optional HV trace guards pass final sanitized tests, independent rerun and 26-patch build/layout | Early-DVFS/kernel integration next. Physical mapping/aliasing, register semantics and UART/AIC/DART behavior still need qualification |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |

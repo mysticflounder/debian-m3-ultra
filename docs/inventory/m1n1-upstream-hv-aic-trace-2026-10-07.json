@@ -1,0 +1,241 @@
+{
+  "date_utc": "2026-10-07",
+  "status": "offline_pass_native_unqualified",
+  "parent_commit": "44fe061",
+  "source_revision": "2460b604c6f016956ead711823605eea840c602e",
+  "patch_count": 26,
+  "patch": "patches/m1n1/upstream-2460b60/0028-bound-hv-aic-tracing.patch",
+  "build_source_tree": "scratch/m1n1-upstream-hv-guards.KwNYGo/m1n1-2460b604c6f016956ead711823605eea840c602e",
+  "scope": {
+    "native_execution": false,
+    "physical_mmio": false,
+    "firmware_changes": false,
+    "disk_changes": false,
+    "vm_changes": false,
+    "push": false,
+    "default_pin_changed": false,
+    "comparison_native_dispatch": "present upstream; not boot-approved",
+    "purpose": "Optional HV IRQ-trace safety, not a native Linux boot prerequisite."
+  },
+  "validation": {
+    "cross_build": "PASS; 26 zero-fuzz patches, same six existing C warnings",
+    "linked_layout": "PASS; both ELF variants: eight shared objects, 64 KiB shared range and two static stacks; Mach-O DATA interval",
+    "primary_manifest": "scratch/hv-aic-trace-tests/run-f8702873b2db/manifest.json",
+    "independent_manifest": "scratch/hv-aic-trace-tests/run-0b1260d4d89f/manifest.json",
+    "host_c": "Source-extracted ASan/UBSan baseline exit 0; three safe mutations compile 0, exit exactly 1 at designated stderr assertions.",
+    "controls": [
+      {
+        "name": "event-die-bound",
+        "witness": "FAIL: invalid event geometry emitted an event"
+      },
+      {
+        "name": "map-failure-ignored",
+        "witness": "FAIL: failed hv_map_hook mutated trace state"
+      },
+      {
+        "name": "wrong-die-bound",
+        "witness": "FAIL: invalid global IRQ start was accepted"
+      }
+    ],
+    "python": "Actual production trace_irq method; optimization modes 0 and 1, four checks per mode: enable/disable maps and tracers, exact proxy arguments and seeded 0/-1 rejection without mutation.",
+    "source_comparison": "214 of 215 canonical C/Rust files byte-identical to qualified full25; only src/hv/hv_aic.c changed. Python caller changed separately.",
+    "adjacent_regressions": "Prior full25 ADT/DVFS/MCC results retained; not newly rerun for this task.",
+    "host_artifact_verification": "16 source/binary checksums checked against both final manifests.",
+    "build_artifact_verification": "Four retained cross-build artifacts verified.",
+    "patch_verification": "26 retained patch checksums verified."
+  },
+  "compatibility": [
+    "Initialized max_irq remains the global IRQ die stride; nr_die/nr_irq bound actual requests.",
+    "Zero-count request succeeds for a valid start and may install the hook.",
+    "Cross-die requests reject; no newly supported range splitting.",
+    "Hook extent remains regs.reg_size (including existing AIC2/3 event+4 convention).",
+    "C flag-switch and process-lifetime static hook semantics remain unchanged.",
+    "Invalid controller state rejects before passthrough; decoded invalid events are ignored after successful passthrough."
+  ],
+  "upstream": {
+    "m1n1_main": "2460b604c6f016956ead711823605eea840c602e",
+    "linux_master": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+    "qemu_master_observed_both_refs": "f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c",
+    "provenance": "Exact retained curl response bodies/headers supersede initial summary-only conflicting QEMU ref evidence.",
+    "findings": "m1n1 HV trace defects remain unfixed; three QEMU HVF candidate fixes remain absent from checked source. No exhaustive pending-series audit, fetch/rebase or pin change."
+  },
+  "remaining": [
+    "Physical mapping, register semantics, interrupts, DMA and native boot remain unqualified.",
+    "Early-DVFS raw states, busy/routing, feature/restore prerequisites and voltage policy are next, followed by kernel/board integration.",
+    "Raw proxy u64 argument narrowing, static AIC reinit and callback concurrency are separate contracts.",
+    "Python post-success ADT/tracer rollback and pre-existing cross-layer flag mismatch are not fixed.",
+    "Verified backup, recovery readiness and separate native-test approval remain required."
+  ],
+  "inputs": [
+    {
+      "path": "patches/m1n1/upstream-2460b60/0028-bound-hv-aic-tracing.patch",
+      "sha256": "ac4513687c92c679ebc28967fd9d89f77352a78e286eae6203434cecfcead993"
+    },
+    {
+      "path": "scripts/build-m1n1-upstream-offline.sh",
+      "sha256": "c22abc3dc1aa9ca47292d787880c5973d18dbc30fca4822982f6a7206699d5ab"
+    },
+    {
+      "path": "scripts/test-m1n1-upstream-hv-aic-trace.py",
+      "sha256": "4d25e377ffa6da516b6c136fd35208c1da705a4aa50ab0146693e4b488857216"
+    },
+    {
+      "path": "tests/m1n1-hv-aic-trace.c",
+      "sha256": "9fa96fc997448ad65f5dba0d132718126cbc78dbd977c92b0c9455392765bce0"
+    },
+    {
+      "path": "scratch/m1n1-upstream-hv-guards.KwNYGo/m1n1-2460b604c6f016956ead711823605eea840c602e/src/hv/hv_aic.c",
+      "sha256": "b9a7e874f878d0b7e8ef6e49ab0cee0d989a7f8390f5dc11ecc6ec9b2d858f14"
+    },
+    {
+      "path": "scratch/m1n1-upstream-hv-guards.KwNYGo/m1n1-2460b604c6f016956ead711823605eea840c602e/proxyclient/m1n1/hv/__init__.py",
+      "sha256": "669efdc7784dd1e9b12823f6491fddd0c20fee1e285ca82b7701741274e4bf05"
+    },
+    {
+      "path": "scratch/m1n1-upstream-hv-guards.KwNYGo/build.log",
+      "sha256": "7263b1bf1c2ff54c8ecbbad5141b45cfa6bbc229e90ada38a91bcdf2eaf81af6"
+    },
+    {
+      "path": "scratch/m1n1-upstream-hv-guards.KwNYGo/patch.log",
+      "sha256": "e24a43ab33458c2895f521aed9971f0f161e72a735acacacc40b7d7593fa034b"
+    },
+    {
+      "path": "scratch/m1n1-upstream-hv-guards.KwNYGo/PATCH_SHA256SUMS",
+      "sha256": "e046b8abad9d749b823fbcc22b5aeffbf8fc4862389b8ae7929e017189649ae6"
+    },
+    {
+      "path": "scratch/m1n1-upstream-hv-guards.KwNYGo/SHA256SUMS",
+      "sha256": "3382fc5123ed1c718aee1e11dff5896a8e58a8738845e20ec2915703dfae921c"
+    },
+    {
+      "path": "scratch/upstream-hv-aic-build-terminal-2026-10-07.log",
+      "sha256": "16f2badf0b589c179df19717312ead3897d4949cef395817952d7c432ef62576"
+    },
+    {
+      "path": "scratch/upstream-hv-aic-layout-2026-10-07.log",
+      "sha256": "e31d75ea557e7da5d4253ff1663cd1c2dec61f4ff7005b8cf9f5951931fd42d7"
+    },
+    {
+      "path": "scratch/upstream-hv-aic-source-equality-2026-10-07.log",
+      "sha256": "2cb732de8fe287d33cc21a3c9298f5e69fa261290685e5944cb65ebf697e238b"
+    },
+    {
+      "path": "scratch/upstream-hv-aic-source-differences-2026-10-07.log",
+      "sha256": "01bd7e193f131a0f6dfafef71195db37a532f50f6d55513319d7e4488a64f282"
+    },
+    {
+      "path": "scratch/upstream-hv-aic-host-final-terminal-2026-10-07.log",
+      "sha256": "1042119f821821cee551bac1453579f0b3904020a53665f3fc33128788538faf"
+    },
+    {
+      "path": "scratch/upstream-hv-aic-host-artifacts-2026-10-07.sha256",
+      "sha256": "f8f4b7625025968510904a82a6f733184a5dd63b266b159ac09e12a5e6de5c41"
+    },
+    {
+      "path": "scratch/upstream-hv-aic-host-artifacts-verification-2026-10-07.log",
+      "sha256": "7a11a5f841e04dfb27f01b637258a466754d3912c667e509206300c61a5be18f"
+    },
+    {
+      "path": "scratch/upstream-hv-aic-patch-verification-2026-10-07.log",
+      "sha256": "b92e07a805fe9a36bb27ee858e5bb1af0d10f3ea3abbde32ece566c0b7a64ed1"
+    },
+    {
+      "path": "scratch/upstream-hv-aic-build-artifacts-verification-2026-10-07.log",
+      "sha256": "5f57e94d503421f4150364b17a575683d31010935a44b7d8af0a9ccca1b0192d"
+    },
+    {
+      "path": "scratch/upstream-hv-aic-trace-final-review-terminal-2026-10-07.log",
+      "sha256": "853990536a91c9dcc144deae1ea01426935a21472e69fd45ce6b36009179a318"
+    },
+    {
+      "path": "scratch/hv-aic-trace-tests/run-f8702873b2db/manifest.json",
+      "sha256": "cf60a6b6667daab1276172130b3142203f6f7bf96ed2023288cc7937c843c029"
+    },
+    {
+      "path": "scratch/hv-aic-trace-tests/run-0b1260d4d89f/manifest.json",
+      "sha256": "1a237bb4ecaf85f629e5cf5888029a18b55f10b9aeac4329d7573733bdc365e0"
+    },
+    {
+      "path": "scratch/hv-aic-trace-contract-audit-2026-10-07.md",
+      "sha256": "1a0479db5dcd2185b6a8011530897b6428f5dd0a2388048503bd8efa0c90d3ee"
+    },
+    {
+      "path": "scratch/hv-aic-trace-implementation-review-2026-10-07.md",
+      "sha256": "b5ff81fc417595d08bc0f0dc528b8f7679fd76e615865a5fe823bd6fb1a2bdce"
+    },
+    {
+      "path": "scratch/hv-aic-trace-final-independent-review-2026-10-07.md",
+      "sha256": "29e8b55ff15cecb756914a7e6156bf5958f88d00acba751a49943d85150d76e5"
+    },
+    {
+      "path": "scratch/upstream-refresh-2026-10-07-followup.md",
+      "sha256": "593989e01cf7d8d4302762c2aa861178e25e7522549c641dc8d9874d0c72e961"
+    },
+    {
+      "path": "scratch/upstream-hv-ref-m1n1-2026-10-07.json",
+      "sha256": "7d069eb7ca8a2e96d4aadcb116c4475154ae900da9dc0bbb762fa0fa4fb52399"
+    },
+    {
+      "path": "scratch/upstream-hv-ref-m1n1-2026-10-07.headers",
+      "sha256": "daf72adef7845306fd0ee6bd303b111a662c98866daf63d6244199be8b5d02ac"
+    },
+    {
+      "path": "scratch/upstream-hv-ref-linux-2026-10-07.json",
+      "sha256": "5bbaf09e3cfb64db0995595a81c099d3b4dba1f453b2710925f9e117a58dd40f"
+    },
+    {
+      "path": "scratch/upstream-hv-ref-linux-2026-10-07.headers",
+      "sha256": "643364580b741313023657ce524068da74a82f817b5af21e513535855ecc3c0a"
+    },
+    {
+      "path": "scratch/upstream-hv-ref-qemu-mirror-2026-10-07.json",
+      "sha256": "4630c41923e144aa3b6f4ce5f805f4e5089ce7940228b5d43caf8c9b35be93d7"
+    },
+    {
+      "path": "scratch/upstream-hv-ref-qemu-mirror-2026-10-07.headers",
+      "sha256": "d0376c1946c36330ce34932a3012bc115b8aa4fdd91ca48b3e5a4aeeba26b6b6"
+    },
+    {
+      "path": "scratch/upstream-hv-ref-qemu-gitlab-2026-10-07.json",
+      "sha256": "86c41af4707e07efa5f7503a543c1bcfc3711792f66423bf7eb4fcfde9ac3b9c"
+    },
+    {
+      "path": "scratch/upstream-hv-ref-qemu-gitlab-2026-10-07.headers",
+      "sha256": "0feeefaa84442d323294e3e64d3b607a1c7cb9dee2fc5abd538e62e984067c33"
+    },
+    {
+      "path": "scratch/upstream-hv-aic-main-raw-2026-10-07.c",
+      "sha256": "bd88dadbb39c773fac6eb42fff65439ebebf4b4e673170f6b8fb32c2f08b09b0"
+    },
+    {
+      "path": "scratch/upstream-hv-qemu-hvf-f9587d-2026-10-07.c",
+      "sha256": "a7042f2931316c38204a175a90e15139aa5c88f9edd2da55752535e83bb8552b"
+    },
+    {
+      "path": "scratch/upstream-hv-qemu-hvf-f9587d-2026-10-07.headers",
+      "sha256": "731760a4d1000c8bda221688972c7f6102d6fcfc22ced5e40f55beb37163b5cb"
+    },
+    {
+      "path": "docs/inventory/m1n1-upstream-aic-boot-cutoff-2026-10-07.json",
+      "sha256": "5004c0942f0eba0a5687da098b3a8ca6c54758292eaf638517431de5811df415"
+    }
+  ],
+  "build_artifacts": [
+    {
+      "path": "scratch/m1n1-upstream-hv-guards.KwNYGo/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1.elf",
+      "sha256": "fdb98bae193c6a841b12b26c09d0c001dde84c777666882953c70581e2662c8b"
+    },
+    {
+      "path": "scratch/m1n1-upstream-hv-guards.KwNYGo/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1-raw.elf",
+      "sha256": "bded970425d3ae155b2bbc7dd101eb8d7bf377708b60ed21d99fc49e2402b20e"
+    },
+    {
+      "path": "scratch/m1n1-upstream-hv-guards.KwNYGo/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1.macho",
+      "sha256": "c99525110da01e9124102cd30733447814595241e4787fd09772c31f529734fe"
+    },
+    {
+      "path": "scratch/m1n1-upstream-hv-guards.KwNYGo/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1.bin",
+      "sha256": "547d2526c83fe9692acede58cc3a4af4cd07b9606d83cb025c584615de6528c4"
+    }
+  ]
+}
