@@ -4,6 +4,12 @@ Updated at task completion. Source/offline validation is not native-hardware
 validation. External PR, VM and MacBook states below are last recorded states,
 not a fresh remote or live-machine check.
 
+Scope: this is functional Debian/M3 Ultra SoC bring-up, not security work.
+Report and record security findings, distinguishing verified issues from
+suspicions, and advise Adam whether an issue should be opened. Security fixes
+and additional hardening are outside this project's implementation scope and
+are not boot-completion gates. Do not file issues or disclosures without approval.
+
 Current handoff: the SMP shared-memory fix (`d484a58`) and SMP index guards
 (`f51c869`) were pushed before this follow-up. Patch 0018 adds MMU/HV direct
 and proxy index validation, preserving canonical exit/unpin sentinels; it is
@@ -279,10 +285,20 @@ external forks, submissions or native configuration changed.
 The cached DART/NVMe/SART/mailbox/PMGR compatible arrays already select official
 fallback implementations. Resolved kernel outputs have PMGR built in and
 DART/NVMe/mailbox/SART as modules. This is source/build availability, not T6032
-hardware qualification. Candidate-only DT build/schema/probe-eligibility work
-is appropriate next; an alias copying older hardware data would add no evidence.
+hardware qualification. The candidate DT was rebuilt byte-identically and its
+sorted decompilation matches. DTC reported six warnings; offline full schema
+validation emitted 431 diagnostic lines despite returning zero, so this is
+not a clean schema pass. DART/mailbox/SART/NVMe compatible declarations and
+NVMe's three power domains need integration work. The selected drivers remain
+unbuilt modules: no `.ko`, `modules.alias` or `modules.dep` artifacts are present,
+and the diagnostic initramfs has no module loader. Build and package these
+dependencies next; an alias copying older hardware data would add no evidence.
 The candidate NVMe node uses SART/mailbox/power/reset and has no `iommus`
 property, so DART is not assumed to be every storage node's dependency.
+
+The 14:04:34 UTC official-API refresh returned HTTP 200 for all four endpoints;
+m1n1 `2460b604`, Linux `602042bf`, and QEMU `f9587d40` remain unchanged from
+13:24:05 UTC. No upstream updates were applied.
 
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
@@ -296,15 +312,15 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | QEMU CPU feature coverage | Partial; separate from basic VM operation | Continue bounded feature probes where useful; do not treat optional gaps as bare-metal or VM blockers |
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
-| M3 m1n1 capacity / handoff / loader | 0031–0034 output/allocator/input/seek guards pass full32 build/layout and sanitized codec/range/control regressions | Complete parser/failure cutoff and producer-backed staging/initrd checks; preserve baseline/static stacks; native backing/handoff unvalidated |
+| M3 m1n1 capacity / handoff / loader | Retained full32 comparison builds and host regressions pass; no native boot | Functional Image/DTB/initrd staging and handoff; security findings are report-only, not bring-up gates |
 | Exact T6032/J575d board DT | Exact closure, resolved 16 KiB config, real schema, Image/DTB and reproducible diagnostic initramfs pass | Loader/native qualification next; official DT lacks M3 frequency, DART and intended storage/network descriptions |
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
-| Native console / interrupts / DMA | Offline ADT/AIC/HV guards pass; UART/AIC/PMGR descriptions checked; cached DART fallback matches official driver | Build/schema/probe-check candidate DT; physical layout/aliasing, power/clocks, IRQ and DMA still need qualification |
+| Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; candidate DART fallback matches; DT compiles but schema diagnostics remain | Build required drivers; qualify physical layout, power/clocks, IRQ and DMA on native hardware |
 | RAM-only Linux diagnostic boot | Exact 16 KiB kernel/initramfs HVF boot passed previously; loader output/allocator/declared-input guards pass offline; native boot not attempted | Native backing/placement and early initialization remain open; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | Hardware bring-up pending; cached NVMe/SART/mailbox/PMGR fallbacks match official drivers | Candidate-only DT/module integration next; qualify hardware contracts and storage/network only after early boot |
+| NVMe / USB / Ethernet | Candidate DT rebuild passes; full schema diagnostics and missing module artifacts remain; native bring-up pending | Build/package drivers and resolve DT dependencies; qualify storage/network hardware after early boot |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |

@@ -146,11 +146,28 @@ source backing or prove every other codec operation safe.
 | Image/DTB staging | Alignment and declared sizes do not independently establish readable source backing or every native reservation |
 | Physical handoff | Offline source/layout tests cannot validate the real EL/MMU/cache/DMA/timer/release state |
 
-Next: bound the complete dispatcher/object parser and propagate rejection;
-establish exact producer-backed payload and staging spans, and validate initrd
-end arithmetic and Linux's placement window.
-Add targeted bounds/placement checks with source-extracted fixtures.
-Keep native hardware qualification behind the recovery gates.
+Next: establish a working Image/DTB/initrd package and native placement contract,
+then bring up the required SoC drivers. Native hardware qualification remains
+behind the backup/recovery and approval gates. Defensive parser hardening and
+security fixes are outside project scope; report findings rather than making
+them prerequisites for bring-up.
+
+## Report-only issue candidates
+
+On 2026-10-07, a host fixture demonstrated that the retained full32 loader
+advances 64 bytes for a signature whose declared handoff span is only 12 bytes.
+The fixture has 128 bytes of actual backing; this proves a declared-boundary
+violation, not an out-of-bounds crash, exploit, or native failure. The original
+dispatcher also uses a null result for both malformed input and normal package
+termination, allowing previously collected boot state to remain usable.
+
+These are issue candidates, not established security vulnerabilities. A
+security report needs the affected upstream behavior and a relevant input/trust
+boundary established first; no additional hardening or exploit investigation is
+planned here. Evidence is retained in
+[the issue-candidate record](inventory/m1n1-loader-issue-candidates-2026-10-07.json).
+No upstream issue has been opened. Tell Adam if the evidence warrants filing;
+do not submit an issue or disclosure without approval.
 
 ## Offline validation — 2026-10-07 UTC
 

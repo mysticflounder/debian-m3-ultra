@@ -877,18 +877,23 @@ has SART/mailbox/power/reset dependencies, without an `iommus` property.
 
 ## Remaining implementation order
 
-1. Bound the complete payload dispatcher/object parser, propagate rejection,
-   and check initrd end arithmetic and the shared 1 GiB-aligned, at-most-32 GiB
-   kernel/initrd window. Establish trustworthy producer-backed package/staging
-   spans; finite declared input/output bounds do not qualify physical backing.
+Security fixes and additional hardening are outside this Debian bring-up
+project's scope. Report and record findings, and advise Adam whether an upstream
+issue is warranted; do not make them boot-completion gates or file without approval.
+
+1. Build and package the DART/NVMe/mailbox/SART dependencies selected by the
+   resolved kernel config. Candidate DT compilation succeeds, but full schema
+   diagnostics remain and no module artifacts or loader are packaged. Resolve
+   DT/driver integration without claiming older fallback matches prove T6032 hardware.
 2. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
    physical busy/completion semantics, feature/restore prerequisites and voltage error policy.
    Do not infer these from upstream constants or a successful mock build.
-3. Use the validated artifacts for Image/DTB staging checks and candidate-only
-   downstream DART, PMGR and storage/network descriptions. Official Linux lacks
+3. Establish working Image/DTB/initrd packaging, native RAM placement and the
+   Linux kernel/initrd window, plus candidate-only DART, PMGR and storage/network
+   descriptions. Official Linux lacks
    T6032 DART/NVMe nodes; cached candidates already match fallback drivers, but
-   their metadata is not a hardware specification. Build/schema/probe-check
-   the candidate before proposing driver data. Do not copy t6000/t8110/t8103
+   their metadata is not a hardware specification. Candidate schema/module
+   integration is incomplete. Do not copy t6000/t8110/t8103
    register formats as T6032 support or invent frequency/stream/power data.
 4. Only after a verified backup, recovery readiness and separate native-test
    approval: qualify cold entry, RVBAR/release, MCC/cache/DVFS and UART/AIC/DART,

@@ -1,0 +1,34 @@
+{
+  "recorded_date": "2026-10-07",
+  "scope": "Report-only observations; security fixes and hardening are outside the Debian M3 SoC bring-up project.",
+  "confirmed_security_vulnerability": false,
+  "upstream_issue_opened": false,
+  "filing_recommendation": "No security filing recommendation yet: relevant trust boundary and security impact are unestablished. Notify Adam if evidence warrants an issue; obtain approval before any submission or disclosure.",
+  "observations": [
+    {
+      "id": "signature-declared-span",
+      "classification": "host-verified declared-boundary violation; security impact unestablished",
+      "source": "scratch/m1n1-upstream-xz-seek-guards.m9h56j/m1n1-2460b604c6f016956ead711823605eea840c602e/src/payload.c",
+      "source_sha256": "39dd637c06938dec8559008f2890bd15925b367e8c517f66dcbced2a53258e35",
+      "upstream_base": "2460b604c6f016956ead711823605eea840c602e",
+      "local_patch_prefix_count": 32,
+      "witness": "m1n1_sig with encoded size 64, handoff extent 12 and actual backing 128 returns an advance beyond the declared extent",
+      "evidence": "scratch/m1n1-payload-parser-tests-2026-10-07/run-4tz4qksk/baseline/run.stderr",
+      "evidence_sha256": "5c76d7108afce47e941d9fe3528aad132800eeac8580e63b8d000113f5585f43",
+      "exact_stderr": "DESIGNATED_BASELINE_UNBOUNDED_DISPATCH\n",
+      "expected_exit": 1,
+      "limitations": "Fully backed host fixture; no native crash, exploit, attacker-controlled producer or security boundary established. No fix retained in the active patch stack."
+    },
+    {
+      "id": "malformed-or-terminal-null",
+      "classification": "source-observed error/termination ambiguity; security impact unestablished",
+      "source": "scratch/m1n1-upstream-xz-seek-guards.m9h56j/m1n1-2460b604c6f016956ead711823605eea840c602e/src/payload.c",
+      "source_sha256": "39dd637c06938dec8559008f2890bd15925b367e8c517f66dcbced2a53258e35",
+      "observation": "load_one_payload uses NULL for malformed input and intentional terminal markers; payload_run subsequently evaluates kernel, FDT and chainload state",
+      "limitations": "No native failure or security impact established. Inline raw Images intentionally terminate parsing; image_size is a memory footprint, not an exact file length."
+    }
+  ],
+  "native_tested": false,
+  "hardware_changed": false,
+  "firmware_or_disk_changed": false
+}
