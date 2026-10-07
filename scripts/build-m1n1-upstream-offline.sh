@@ -8,11 +8,13 @@ REV=2460b604c6f016956ead711823605eea840c602e
 ARCHIVE_SHA=aa0ffbeb7ae9cc0eb7a5653f44474e26f826809cf7f0564f8deb395d25203b01
 MODE=${1:-baseline}
 INCLUDE_INPUT_GUARDS=false
+INCLUDE_XZ_SEEK_GUARDS=false
 case "$MODE" in
     # Reuse the complete top-down prefix; restore the artifact mode below.
     payload-input-guards) MODE=topdown-guards; INCLUDE_INPUT_GUARDS=true ;;
+    xz-seek-guards) MODE=topdown-guards; INCLUDE_INPUT_GUARDS=true; INCLUDE_XZ_SEEK_GUARDS=true ;;
     baseline|adt|input-guards|smp-guards|memory-guards|cpufreq-guards|adt-bounds|aic-guards|boot-guards|hv-guards|cpufreq-busy|board-handoff|payload-guards|topdown-guards) ;;
-    *) echo 'Usage: build-m1n1-upstream-offline.sh [baseline|adt|input-guards|smp-guards|memory-guards|cpufreq-guards|adt-bounds|aic-guards|boot-guards|hv-guards|cpufreq-busy|board-handoff|payload-guards|topdown-guards|payload-input-guards]' >&2; exit 2 ;;
+    *) echo 'Usage: build-m1n1-upstream-offline.sh [baseline|adt|input-guards|smp-guards|memory-guards|cpufreq-guards|adt-bounds|aic-guards|boot-guards|hv-guards|cpufreq-busy|board-handoff|payload-guards|topdown-guards|payload-input-guards|xz-seek-guards]' >&2; exit 2 ;;
 esac
 ARCHIVE="$ROOT/scratch/m1n1-upstream-audit/source-$REV.tar.gz"
 TOOLS="$ROOT/scratch/m1n1-build-tools"
@@ -99,6 +101,11 @@ fi
 if [[ "$INCLUDE_INPUT_GUARDS" == true ]]; then
     PATCHES+=("$REVIEW_PATCHES/0033-bound-compressed-input-and-consumption.patch")
     MODE=payload-input-guards
+fi
+
+if [[ "$INCLUDE_XZ_SEEK_GUARDS" == true ]]; then
+    PATCHES+=("$REVIEW_PATCHES/0034-check-xz-input-seeks.patch")
+    MODE=xz-seek-guards
 fi
 
 if [[ $(uname -s) != Darwin || $(uname -m) != arm64 ]]; then

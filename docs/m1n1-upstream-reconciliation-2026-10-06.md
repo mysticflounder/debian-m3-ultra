@@ -7,7 +7,8 @@ build remains pinned to `4184923ffb2dff079b384d6a32cc02142aa14572`.
 
 The initial disposition is amended by the later current-source tests below:
 0002 was incorrectly classified redundant and is restored as comparison-only
-0030. The current full comparison stack has 28 patches, not boot approval.
+0030. That checkpoint had 28 patches; the latest full comparison stack below
+has 32, not boot approval.
 
 This is Debian/project-fork work. No Asahi submission, source-pin replacement,
 firmware installation, MMIO probe, native execution, VM or disk change occurred.
@@ -842,10 +843,41 @@ forward arithmetic can replace it. No unconditional all-reads-bounded claim.
 Overlap rejection may follow heap alignment; truncated decoding can write
 bounded partial output but cannot finalize. No transactional whole-boot claim.
 
+## Checked XZ seek / range follow-up — 2026-10-07 UTC
+
+Comparison-only 0034 replaces wrapping forward-seek addition and encoded
+negative lengths with checked remaining-length comparisons and explicit
+rewinds. It checks dependent position queries and size-only skips, propagates
+range-refill failure while preserving buffered decoding at the endpoint, fixes
+the five-byte range-limit calculation, and widens the compressed-chunk count
+to retain the legal 65,536 boundary. Raw chunk sizes were already wide enough.
+
+The full32 `xz-seek-guards` offline build/layout and sanitized actual-code
+fixtures pass. Four exact negative controls witness the original wrap, removed
+forward/rewind guards and an unmigrated caller. Real compressed/raw streams,
+tail consumption, empty-stream rewind, malformed inputs and range-state probes
+are covered. A synthetic 65,536 compressed-size packet tests only metadata and
+size-query accounting, not valid entropy decoding. Existing payload, allocator,
+BUSY and board regressions pass. The separate
+[inventory](inventory/m1n1-xz-seek-2026-10-07.json) binds final evidence.
+No physical-backing, whole-parser or universal-codec safety claim is made.
+
+The 13:24:05 UTC official-API refresh found unchanged m1n1/Linux/QEMU heads
+against the 12:28:21 UTC checkpoint. No new commits needed adaptation; pins,
+forks and submissions remain unchanged.
+
+The cached candidate compatible arrays require a corrected interpretation:
+their absent `apple,t6031-*` primary IDs do not prevent binding when the
+`t8110` DART, `t8103` NVMe/PMGR, `t6000` SART and ASC-v4 mailbox fallback IDs
+already match official driver tables. Resolved outputs have PMGR built in and
+DART/NVMe/SART/mailbox as modules. This neither establishes T6032 hardware
+equivalence nor supplies the missing official board nodes. No alias or copied
+hardware-ops patch is justified by these arrays alone. The cached NVMe node
+has SART/mailbox/power/reset dependencies, without an `iommus` property.
+
 ## Remaining implementation order
 
-1. Harden XZ forward/backward seeks, then bound the complete payload
-   dispatcher/object parser, propagate rejection,
+1. Bound the complete payload dispatcher/object parser, propagate rejection,
    and check initrd end arithmetic and the shared 1 GiB-aligned, at-most-32 GiB
    kernel/initrd window. Establish trustworthy producer-backed package/staging
    spans; finite declared input/output bounds do not qualify physical backing.
@@ -854,8 +886,9 @@ bounded partial output but cannot finalize. No transactional whole-boot claim.
    Do not infer these from upstream constants or a successful mock build.
 3. Use the validated artifacts for Image/DTB staging checks and candidate-only
    downstream DART, PMGR and storage/network descriptions. Official Linux lacks
-   T6032 DART/NVMe nodes and matching candidate-compatible bindings; cached DT
-   metadata is not a hardware specification. Do not copy t6000/t8110/t8103
+   T6032 DART/NVMe nodes; cached candidates already match fallback drivers, but
+   their metadata is not a hardware specification. Build/schema/probe-check
+   the candidate before proposing driver data. Do not copy t6000/t8110/t8103
    register formats as T6032 support or invent frequency/stream/power data.
 4. Only after a verified backup, recovery readiness and separate native-test
    approval: qualify cold entry, RVBAR/release, MCC/cache/DVFS and UART/AIC/DART,

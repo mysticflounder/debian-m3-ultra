@@ -206,10 +206,11 @@ list cleanup; upstream's static-stack reservation scheme is preserved. Full28
 build/layout and the old board baseline/90-case BUSY regressions pass. The
 [kernel fragment](../configs/linux-j575d-ram-serial.fragment) was still a candidate
 at that checkpoint; the follow-up below supplies the resolved config and Image.
-Mainline lacks M3 OPP/cpufreq data. The downstream DART compatible pair has a
-binding gap, but the actual official DTB has no DART nodes and does not exercise
-that gap. Native power/clocks/console transport, CPU entry, interrupts and DMA
-remain unqualified.
+Mainline lacks M3 OPP/cpufreq data. The cached downstream DART array's primary
+`apple,t6031-dart` ID is absent, but its `apple,t8110-dart` fallback matches the
+official driver; the earlier binding-gap claim was incorrect. The official DTB
+has no DART nodes and does not exercise that fallback. Native register-layout,
+power/clocks/console transport, CPU entry, interrupts and DMA remain unqualified.
 
 The requested 09:37:04 UTC upstream refresh finds the same m1n1/Linux/QEMU
 default-branch revisions. The fresh source check still lacks comparison
@@ -251,7 +252,7 @@ helper cases, 25 wrapper scenarios and six exact controls. Patch 0033 uses a
 checked finite declared handoff bound, rejects compressed source/output overlap
 before decoding and corrects XZ's nonzero-capacity consumption result. Explicit
 gzip prefix APIs preserve strict existing APIs while supporting a payload tail.
-Pre-existing XZ seek-wrap arithmetic remains separate hardening work. The
+At the full31 checkpoint, XZ seek-wrap arithmetic remained separate work. The
 allocator/BUSY/board regressions remain green; the separate
 [inventory](inventory/m1n1-compressed-input-2026-10-07.json) binds final evidence.
 The fresh 12:28:21 UTC official-API check still finds unchanged heads. No pins,
@@ -260,6 +261,28 @@ No native boot or new VM was attempted. Exact producer-backed input extent,
 complete parser bounds/failure handling, initrd placement, physical backing
 and entry remain separate open work; requested
 MCC/proxy limits are not made immutable by the reservation ceiling.
+
+Full32's [checked XZ seeks](m1n1-native-loader.md#checked-xz-seeks-and-range-decoder-failures)
+now separate forward seeks from checked rewinds, propagate failed position
+queries/skips, reject failed range refills without breaking buffered endpoint
+decoding, and preserve the legal compressed-chunk count of 65,536. The offline
+cross-build/layout and actual-code sanitized fixtures pass, including four exact
+negative controls, real compressed/raw streams, a size-only 65,536 metadata
+packet and range-state boundary probes. Payload, allocator, BUSY and board
+regressions remain green. The new [inventory](inventory/m1n1-xz-seek-2026-10-07.json)
+binds final source/build/test evidence separately from earlier checkpoints.
+
+The 13:24:05 UTC upstream refresh found unchanged official m1n1, Linux and both
+QEMU mirror heads; no new commits were available to reconcile. No source pins,
+external forks, submissions or native configuration changed.
+
+The cached DART/NVMe/SART/mailbox/PMGR compatible arrays already select official
+fallback implementations. Resolved kernel outputs have PMGR built in and
+DART/NVMe/mailbox/SART as modules. This is source/build availability, not T6032
+hardware qualification. Candidate-only DT build/schema/probe-eligibility work
+is appropriate next; an alias copying older hardware data would add no evidence.
+The candidate NVMe node uses SART/mailbox/power/reset and has no `iommus`
+property, so DART is not assumed to be every storage node's dependency.
 
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
@@ -273,15 +296,15 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | QEMU CPU feature coverage | Partial; separate from basic VM operation | Continue bounded feature probes where useful; do not treat optional gaps as bare-metal or VM blockers |
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
-| M3 m1n1 capacity / handoff / loader | 0031–0033 output/allocator/declared-input guards pass full31 build/layout; real-codec, allocator/BUSY/board cases and exact controls pass | Harden XZ seeking, then complete parser/failure cutoff and producer-backed staging/initrd checks; preserve baseline/static stacks; native backing/handoff unvalidated |
+| M3 m1n1 capacity / handoff / loader | 0031–0034 output/allocator/input/seek guards pass full32 build/layout and sanitized codec/range/control regressions | Complete parser/failure cutoff and producer-backed staging/initrd checks; preserve baseline/static stacks; native backing/handoff unvalidated |
 | Exact T6032/J575d board DT | Exact closure, resolved 16 KiB config, real schema, Image/DTB and reproducible diagnostic initramfs pass | Loader/native qualification next; official DT lacks M3 frequency, DART and intended storage/network descriptions |
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
-| Native console / interrupts / DMA | Offline ADT/AIC/HV guards pass; kernel built-ins and actual UART/AIC/PMGR schema descriptions checked | No DART nodes exercised. Physical mapping/aliasing, power/clocks, IRQ and DMA behavior still need qualification |
+| Native console / interrupts / DMA | Offline ADT/AIC/HV guards pass; UART/AIC/PMGR descriptions checked; cached DART fallback matches official driver | Build/schema/probe-check candidate DT; physical layout/aliasing, power/clocks, IRQ and DMA still need qualification |
 | RAM-only Linux diagnostic boot | Exact 16 KiB kernel/initramfs HVF boot passed previously; loader output/allocator/declared-input guards pass offline; native boot not attempted | Native backing/placement and early initialization remain open; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
+| NVMe / USB / Ethernet | Hardware bring-up pending; cached NVMe/SART/mailbox/PMGR fallbacks match official drivers | Candidate-only DT/module integration next; qualify hardware contracts and storage/network only after early boot |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |

@@ -101,18 +101,44 @@ following payload without treating the capacity-end bytes as the footer.
 The original gzip/raw-deflate APIs retain their strict and legacy behavior;
 only the payload wrapper opts into prefix decoding.
 
-These finite capacities are not a proof of every decoder-internal read:
-pre-existing XZ `BfSeek` arithmetic can wrap near the 32-bit endpoint, and
-intentional unsigned rewinds prevent a naive checked-add repair. Reduced
-`BfTell()` results can also pass the wrapper's consumption check. Explicit
-forward/backward seek hardening remains a separate prerequisite.
+These finite capacities alone are not a proof of every decoder-internal read.
+The pre-existing XZ seek-wrap and intentional unsigned-rewind behavior required
+the separate repair below; the wrapper's consumption check was not enough.
+
+## Checked XZ seeks and range-decoder failures
+
+Comparison patch 0034 checks `Offset <= SoftLimit <= Size` and forward lengths
+against `SoftLimit - Offset`, avoiding 32-bit addition wrap. The two intentional
+backwards movements now use a separately checked `BfRewind`. Failed seeks and
+limit changes preserve the offset/limit; XZ position queries and size-only skips
+must succeed before dependent accounting is committed.
+
+Range initialization checks its five initial bytes and computes the remaining
+chunk end after those bytes. Failed refills are sticky failures rather than
+synthetic zero bytes. Buffered final-symbol decoding at `position == Limit`
+remains allowed; requiring another byte at that boundary fails. The compressed
+chunk count is widened so encoded `0xffff + 1` remains 65,536. Raw chunk counts
+were already wide enough.
+
+The full32 `xz-seek-guards` build and linked-layout audit pass. Sanitized host
+tests exercise actual input-buffer/range-decoder code, real compressed/raw XZ,
+tail consumption, empty-stream rewind, truncation and footer rejection, and four
+exact negative controls. A synthetic compressed-size-65,536 packet exercises
+the metadata/size-only seek path, **not entropy decoding of a valid compressed
+packet**. Range-state probes test endpoint buffering and failed-refill atomicity.
+The near-`UINT32_MAX` endpoint fixture uses a real demand-backed host mapping;
+it does not require a 4 GiB physical buffer or access to the Studio's hardware.
+
+The separate [XZ evidence ledger](inventory/m1n1-xz-seek-2026-10-07.json)
+records these inputs and regressions. These checks do not establish physical
+source backing or prove every other codec operation safe.
 
 ## Separate open issues
 
 | Issue | Why the output guard does not resolve it |
 | --- | --- |
 | Inline compressed input extent | 0033 establishes a finite declared handoff bound; exact readable file extent and physical backing still require a trustworthy producer contract |
-| Decoder-internal arithmetic | Existing XZ forward-seek arithmetic can wrap; explicit backward operations and checked forward bounds are still needed |
+| Decoder-internal arithmetic | 0034 resolves the reviewed XZ seek/rewind, range-refill and chunk-width defects; other decoder operations are not universally proven safe |
 | Top-down physical eligibility | Patch 0032 coordinates upward/downward bounds, but does not establish physical backing, mapping or carveout eligibility; requested MCC/proxy limits remain independently mutable |
 | Source/output overlap | 0033 rejects compressed-source/output capacity overlap; eligibility and separation from other live reservations remain separate |
 | Complete payload parser | Dispatcher headers, variables and remaining object spans are not bounded by these decoder guards; failure cutoff is not yet a whole-boot transaction |
@@ -120,8 +146,7 @@ forward/backward seek hardening remains a separate prerequisite.
 | Image/DTB staging | Alignment and declared sizes do not independently establish readable source backing or every native reservation |
 | Physical handoff | Offline source/layout tests cannot validate the real EL/MMU/cache/DMA/timer/release state |
 
-Next: harden XZ forward/backward seek arithmetic, then bound the complete
-dispatcher/object parser and propagate rejection;
+Next: bound the complete dispatcher/object parser and propagate rejection;
 establish exact producer-backed payload and staging spans, and validate initrd
 end arithmetic and Linux's placement window.
 Add targeted bounds/placement checks with source-extracted fixtures.
