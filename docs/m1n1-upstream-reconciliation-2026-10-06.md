@@ -746,16 +746,55 @@ The final command alone boots the retained, hash-checked artifacts in the
 RAM-only virtual target, with a thirty-second readiness bound.
 No persistent VM, native MMIO, boot policy, partition or raw disk was changed.
 
+## Native loader destination bounds — 2026-10-07 UTC
+
+The [loader contract](m1n1-native-loader.md) reconciles the validated Image,
+official DTB, initramfs, inline-payload ordering and Linux entry requirements.
+The documented compressed-or-last kernel packaging rule is preserved; this
+work does not classify an unsupported `Image + DTB + initramfs` package as a
+new loader defect or create a native boot package.
+
+Comparison-only 0031 fixes a source-demonstrated destination-capacity gap:
+gzip/XZ received a 1 GiB bound despite a possibly smaller heap span, and the
+allocator checked the decoded allocation only after writes. The shared helper
+now validates aligned cursor/limit arithmetic before decoding, caps output at
+the remaining published span or checked legacy RAM end, and preserves actual
+length finalization rather than reserving 1 GiB in advance.
+
+Full29 `payload-guards` builds and linked layout pass with the same six existing
+C warnings. Only `src/payload.c` differs among 215 canonical sources versus
+full28. Real pinned decoders pass ten helper and sixteen wrapper cases; four
+original/dropped-cap controls produce exact exit-1 witnesses with clean
+sanitizers and deliberately oversized backing. Tests include the actual
+inline size-zero path, not just known-length compressed files. Heap, bootargs
+and payload dispatch remain mocks. The final tree also passes 90 BUSY cases
+with two controls and four official-board scenarios with two controls.
+The [inventory](inventory/m1n1-native-loader-2026-10-07.json) binds 232 inputs
+and artifacts, including the original/updated sources and execution manifests.
+
+The fresh 11:09:01–11:09:02 UTC upstream check again finds the same m1n1,
+Linux and QEMU heads; no new source reconciliation or pin/fork change is needed
+for these revisions. There was no new VM, native boot, MMIO, firmware, raw-disk
+operation, submission or push.
+
+The output guard is not a complete allocator/loader qualification: later
+top-down framebuffer allocations can leave the published heap limit stale.
+Exact readable input extent, overlap/reservations, initrd end/window checks,
+Image padding and physical entry remain separate open work.
+
 ## Remaining implementation order
 
-1. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
+1. Coordinate the published upward-heap limit with later top-down allocations,
+   then establish exact readable inline input extent and native package/staging
+   bounds using source-extracted fixtures. Do not confuse the finite output cap
+   with complete physical-memory or native entry qualification.
+2. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
    physical busy/completion semantics, feature/restore prerequisites and voltage error policy.
    Do not infer these from upstream constants or a successful mock build.
-2. Use the validated diagnostic artifacts to reconcile the loader's
-   Image/DTB/initrd placement
-   contract, downstream DART binding and absent storage/network descriptions,
+3. Use the validated diagnostic artifacts to complete native Image/DTB/initrd
+   placement checks, downstream DART binding and absent storage/network descriptions,
    without inventing missing CPU-frequency data.
-3. Only after a verified backup, recovery readiness and separate native-test
+4. Only after a verified backup, recovery readiness and separate native-test
    approval: qualify cold entry, RVBAR/release, MCC/cache/DVFS and UART/AIC/DART,
    then a RAM-only kernel boot and persistent storage/network bring-up.
 

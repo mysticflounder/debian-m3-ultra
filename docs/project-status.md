@@ -232,6 +232,15 @@ The passing recipe uses QEMU's launch-time virt DTB and PL011 earlycon; the
 earlier no-serial external-DTB run is retained. No physical J575d DTB or
 m1n1 runs in this guest, so this is artifact validation, not native validation.
 
+The [native-loader audit and destination guard](m1n1-native-loader.md) now pass
+a full29 comparison build/layout, real gzip/XZ tests (10 helper and 16 wrapper
+cases, four exact controls) and current-source BUSY/board regressions. The
+[loader inventory](inventory/m1n1-native-loader-2026-10-07.json) binds 232 inputs
+and artifacts. The fresh 11:09 UTC upstream refresh is again unchanged.
+No native boot or new VM was attempted. Later top-down framebuffer reservations
+can leave the published heap limit stale; allocator coordination, exact inline
+input bounds, initrd placement and physical entry remain separate open work.
+
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
 virtual hardware; it cannot validate the Studio's physical SoC initialization.
@@ -244,14 +253,14 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | QEMU CPU feature coverage | Partial; separate from basic VM operation | Continue bounded feature probes where useful; do not treat optional gaps as bare-metal or VM blockers |
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
-| M3 m1n1 capacity / handoff cleanup | Capacity/bounds adapted; omitted normal cleanup restored as 0030; current-source host tests and full28 build/layout pass | Retain old baseline; static-stack lifecycle preserved, native handoff still unvalidated |
+| M3 m1n1 capacity / handoff / loader | Capacity/cleanup and 0031 gzip/XZ output bounds pass full29 build/layout, 26 source-extracted cases and four exact controls | Coordinate later top-down reservations and exact input/placement bounds; preserve old baseline and static-stack lifecycle; native handoff unvalidated |
 | Exact T6032/J575d board DT | Exact closure, resolved 16 KiB config, real schema, Image/DTB and reproducible diagnostic initramfs pass | Loader/native qualification next; official DT lacks M3 frequency, DART and intended storage/network descriptions |
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | Offline ADT/AIC/HV guards pass; kernel built-ins and actual UART/AIC/PMGR schema descriptions checked | No DART nodes exercised. Physical mapping/aliasing, power/clocks, IRQ and DMA behavior still need qualification |
-| RAM-only Linux diagnostic boot | Exact 16 KiB kernel/initramfs boot passes under HVF with four virtual CPUs; native boot not attempted | Virtual artifact sanity is separate; early initialization, loader placement and recovery/native approval remain gates |
+| RAM-only Linux diagnostic boot | Exact 16 KiB kernel/initramfs HVF boot passed previously; loader output guard/audit now pass offline; native boot not attempted | Native allocator/placement and early initialization remain open; verified backup/recovery and separate approval are required |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
