@@ -1,4 +1,4 @@
-# Project status — 2026-10-06
+# Project status — 2026-10-07 UTC
 
 Updated at task completion. Source/offline validation is not native-hardware
 validation. External PR, VM and MacBook states below are last recorded states,
@@ -56,8 +56,9 @@ deterministic original-source and guard-removal negative controls. The
 also verifies static reset-entry placement, without qualifying reset-time
 hardware behavior. The safe early-DVFS contract remains open; actual
 CPU cold-entry observations need recovery readiness and native approval.
-ADT parser bounds, AIC aperture/stride arithmetic and whole-boot failure
-propagation remain separate open hardening items.
+ADT parser bounds were a separate follow-up, completed for the handoff-declared
+extent below. AIC aperture/stride arithmetic and whole-boot failure propagation
+remain open hardening items.
 
 The [early-DVFS follow-up](m1n1-t6032-dvfs-states.md#initial-backing-record-and-early-firmware-metadata--2026-09-30)
 identifies the runtime record's initial zero fill and separately checks six
@@ -79,7 +80,8 @@ including deterministic original/mutation controls. See the
 [ADT view follow-up](m3-ultra-soc-status-2026-09-26.md#adt-property-view-length--2026-10-06).
 The actual Rust parser also traverses the captured restore template's 771
 nodes and 9,999 properties, including 69 template-marked properties, offline.
-End-to-end ADT buffer bounds remain the next parser requirement.
+The declared-span follow-up below adds ADT buffer bounds; physical mapping and
+Rust lifetime/aliasing remain separate requirements.
 
 The [October 6 upstream review](m1n1-upstream-review-2026-10-06.md) found
 44 commits since our pinned baseline, including T6032/M3 Ultra support and
@@ -105,8 +107,27 @@ and linked layout pass. The 48-case driver/payload mock fixture, three safe
 mutation controls, five full-stack MCC/MMU fixtures and independent rerun
 pass. All 215 canonical C/Rust source files match the cross-build tree.
 Hardware MMIO/cache/TZ/reset and early-DVFS contracts remain
-unqualified. The next primary implementation task is ADT physical-span
-validation, followed by AIC aperture/stride and whole-boot failure handling. The
+unqualified. ADT declared-span checks (0024) and early handoff relocation checks
+(0025) now pass the 23-patch cross-build and linked-layout audit, with the same
+six upstream C warnings and no additional warnings. Exact/truncated fixtures,
+all C offset wrappers, bounded paths, twelve payload-size/flag copy/view/set
+regressions and the captured J575d tree pass. Three Rust guard-removal controls
+fail at designated assertions without panic; fourteen C relocation cases and
+four controls pass under ASan/UBSan. An independent final rerun passes. The
+complete 23-patch source also passes the 48-case DVFS mock suite, its three
+controls and five MCC/MMU fixtures. All 215 canonical C/Rust files agree across
+the build, primary host, reviewer and adjacent-regression trees. The
+[declared-span inventory](inventory/m1n1-upstream-adt-bounds-2026-10-07.json)
+records evidence and remaining contracts. This validates the handoff-declared
+extent and arithmetic, not the physical allocation/mapping, Rust static
+aliasing, caller-owned C buffers or raw C property macro.
+
+The [upstream refresh](m1n1-upstream-review-2026-10-06.md#freshness-follow-up--2026-10-07-utc)
+finds no newer m1n1 default-branch changes; all three QEMU fixes remain absent
+from the official checked source. Official Linux 7.3-rc6/master contains
+T6032/J575d DTS/bindings, to be used during kernel/board integration; this is
+not native boot evidence. The next primary implementation task is AIC
+aperture/stride validation, followed by whole-boot failure handling. The
 default source pin and disabled native dispatch are unchanged. Upstream
 comparison artifacts contain its native T6032 dispatch and are not
 boot-approved or fully hardware-qualified. The full original guard adaptation
@@ -126,12 +147,12 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff cleanup | Upstream supplies capacity/cleanup; missing half-open bounds adapted and built | Retain old baseline; native handoff still unvalidated |
-| Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
+| Exact T6032/J575d board DT | Validated offline; official Linux 7.3 DT source confirmed | Reconcile official DTS/bindings during kernel integration; retain handoff regressions, native behavior still unvalidated |
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
-| MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; nineteen-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
-| Six-cluster frequency / DVFS | 0011 payload cutoff and 0023 first-cluster failure containment adapted; 21-patch build and 48-case driver/payload mock suite pass | Safe raw APSC/default indices, pre-existing busy state, routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
-| Native console / interrupts / DMA | AIC/ADT input guards pass old and new-source host suites and comparison builds; hardware unvalidated | Implement ADT buffer-bound checks and AIC aperture/failure handling; qualify UART/AIC/DART after safety gates |
+| MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 23-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
+| Six-cluster frequency / DVFS | 0011 payload cutoff and 0023 first-cluster failure containment adapted; 23-patch build and 48-case driver/payload mock suite pass | Safe raw APSC/default indices, pre-existing busy state, routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
+| Native console / interrupts / DMA | ADT declared-span/relocation guards pass host suites and 23-patch build; AIC metadata guards retained; hardware unvalidated | Next: AIC aperture/stride and whole-boot failure handling. Physical ADT mapping/aliasing remain separate; qualify UART/AIC/DART after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |

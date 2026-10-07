@@ -253,10 +253,69 @@ AIC/ADT guards but does not re-execute their behavior suites, and the raw SMP
 proxy-ingress gap remains structural. The executed boot caller is its
 extracted kernel-branch prefix, not the full native payload/main path.
 
+## ADT declared-span follow-up — 2026-10-07
+
+Comparison-only 0024 centralizes byte-range validation against global `adt`
+and the handoff's `devtree_size`. It rejects negative C offsets, null or
+misaligned bases, wrapping extents and out-of-range records before pointer
+arithmetic or reference construction. Nodes require their complete eight-byte
+header before count reads. Properties require their complete 36-byte header,
+masked wire length and four-byte-padded payload before DST construction.
+Checked offsets also cover mutable properties, child/sibling advances,
+`reg`/`ranges` cells and C offset returns. The existing payload-size ceiling,
+template flag and global `_dt`-ignored ABI are preserved.
+
+The C next-property function still returns the current record's checked end,
+which may be a node or one-past the tree. Empty `ranges` remains an identity
+translation; nonempty short tuples are rejected. Register paths are scanned
+at most eight entries. The C trace producer rejects eight nonzero components
+before writing its output, reserving one slot for the required zero sentinel;
+the Rust breadcrumb API is unchanged.
+
+Comparison-only 0025 checks virtual subtraction, translation addition and
+both virtual/physical span ends before publishing `adt` or walking `/cpus`.
+Invalid arithmetic or a short/null/misaligned result takes the existing early
+debug-marker-and-halt pattern. It makes no new `mem_size`/physical-window
+assumption. These are checks of the **handoff-declared extent**, not proof of
+the underlying physical allocation, mapping or native access contract.
+
+The new `adt-bounds` comparison mode adds both patches after the complete
+21-patch adapted stack. The default old pin and its dispatch-off policy
+remain unchanged. Comparison artifacts still contain upstream native dispatch
+and are not boot-approved. Physical mapping/allocation, `'static` lifetime and
+mutable aliasing, caller-owned C strings/buffers, raw C `ADT_PROP` access and
+resource-exhaustion policy remain separate gates.
+
+```sh
+bash scripts/build-m1n1-upstream-offline.sh adt-bounds
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python scripts/test-m1n1-upstream-adt-bounds.py
+```
+
+The 23-patch build and both ELF/Mach-O shared-layout checks pass with the same
+six upstream C warnings and no new warnings. The actual Rust module passes
+exact/truncated spans, signed offsets, C wrappers, mutable rejection, bounded
+paths and the captured 771-node/9,999-property J575d restore tree. Twelve
+flagged/unflagged payload cases cover sizes 0/3/4/8/256/257, DST size, exact
+copy/set behavior, rejected copy lengths and unchanged flags/canaries. Three
+safe Rust guard mutations fail at designated assertions without panic. These
+Rust binaries are not sanitizer-instrumented; this is not an aliasing proof.
+The source-extracted C relocation helper passes fourteen cases and four safe
+guard controls under ASan/UBSan. Early halt ordering is checked structurally,
+not by running `_start_c` or a native boot.
+
+An independent final rerun passes. The existing 48-case DVFS/payload-prefix
+mock suite, three controls and five MCC/MMU fixtures also pass on the complete
+23-patch source, through `scratch/upstream-adt-bounds-adjacents.py`. All 215
+canonical C/Rust files match the build, primary host, reviewer and adjacent
+trees. The [declared-span inventory](inventory/m1n1-upstream-adt-bounds-2026-10-07.json)
+records final retained inputs, outputs and remaining gates.
+
 ## Remaining implementation order
 
-1. Implement remaining ADT physical bounds, AIC aperture/stride and whole-boot
-   failure propagation, keeping the complete adapted stack under regression.
+1. Address AIC aperture/stride and whole-boot failure propagation, keeping the
+   complete adapted stack under
+   regression. Do not confuse declared bounds with physical mapping qualification.
 2. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
    pre-existing busy state, feature/restore prerequisites and voltage error policy.
    Do not infer these from upstream constants or a successful mock build.

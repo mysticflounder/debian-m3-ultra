@@ -53,3 +53,34 @@ retained under `scratch/upstream-review-2026-10-06/`. The tracked
 [review inventory](inventory/m1n1-upstream-review-2026-10-06.json) records their
 identity. This is an m1n1 and M3 platform-status review, not a fresh QEMU PR or
 complete Linux commit audit.
+
+## Freshness follow-up — 2026-10-07 UTC
+
+The requested read-only refresh again resolves m1n1 `main` to `2460b604`.
+The [reviewed-to-main comparison](https://github.com/AsahiLinux/m1n1/compare/2460b604c6f016956ead711823605eea840c602e...main)
+is identical; the strict post-commit query is empty. No new default-branch
+change supersedes our SMP, MCC, DVFS, AIC or ADT guards. This does not audit
+every unmerged branch or submission. The default pin remains unchanged.
+
+The broader refresh confirms that official Linux `v7.3-rc6` and `master`
+contain `t6032.dtsi` and `t6032-j575d.dts` from the
+[T6032 device-tree commit](https://github.com/torvalds/linux/commit/67d9574cf8ed1c81c472b932a9d9819f47fb5286)
+and the [T603x binding commit](https://github.com/torvalds/linux/commit/7a867322cd14ec54783fb2fdc3ce875c89ba3b16).
+These landed on August 1; they are confirmed source availability, not a new
+post-review merge or evidence of a native Debian boot. Use these official
+files as comparison inputs for the later kernel/board-DT integration task.
+The installer remains unavailable in the upstream M3 support table.
+
+QEMU `master` at `3377670ee96b5a68361016680a95b9013709d4b7` and `v11.1.2`
+still lack our PMINTENCLR, PSCI and guarded SDK27 feature-import changes in
+[`target/arm/hvf/hvf.c`](https://gitlab.com/qemu-project/qemu/-/blob/3377670ee96b5a68361016680a95b9013709d4b7/target/arm/hvf/hvf.c).
+The three fork candidates remain pending review. Public pending-MR lookup
+was denied, so absence from all unmerged work is not established. Refresh
+the patch base and qualify a replacement binary before promotion; do not
+replace the working VM's QEMU as part of this read-only check.
+
+Evidence: `scratch/upstream-freshness-m1n1-2026-10-07.md`,
+`scratch/upstream-freshness-m1n1/`,
+`scratch/upstream-freshness-kernel-qemu-2026-10-07.md` and
+`scratch/upstream-freshness-kernel-qemu/`. No source upgrade, fetch/merge,
+external submission, native execution, VM or disk change was performed.
