@@ -71,19 +71,59 @@ It is not asserted to occur on every native boot. The effective heap limit
 now retains live top-down reservations even if a requested limit is cleared
 or widened; the decompression helper uses that effective limit unchanged.
 
+## Compressed source bounds and consumption
+
+Comparison patch 0033 replaces both decoders' size-zero/unbounded input with
+a finite capacity. Known input sizes must fit `uint32_t` and have a checked
+end. Inline input must start at or above `_payload_start` and below the checked
+handoff `top_of_kernel_data`; its remaining capacity is capped at `UINT32_MAX`.
+This handoff boundary is a declared upper bound, **not an exact file length or
+proof of readable physical backing**. Linker payload reservation size is not
+used as a file length.
+
+The full compressed capacity and bounded output capacity must be disjoint
+before decoding. Touching intervals are allowed; overlap and wrapping ends
+are rejected. Overlap rejection can follow zero-byte heap alignment, so the
+entire wrapper is not claimed to be transactional. A truncated decode may
+write bounded partial output, but cannot finalize it.
+
+XZ previously returned the caller's nonzero capacity rather than actual bytes
+consumed. Once input is bounded, that can skip a following payload. The decoder
+now returns `BfTell()` on success, as its header contract specifies. Both wrappers
+check nonzero consumption within the supplied capacity before finalization.
+The proxy caller does not use this returned consumption. Parser object-size
+semantics and compressed-or-last Image packaging are unchanged.
+
+gzip's existing nonzero-size API instead requires an exact stream length,
+including its footer. New explicit bounded-prefix APIs locate the actual
+deflate endpoint and validate gzip's actual footer/ISIZE/CRC, allowing a
+following payload without treating the capacity-end bytes as the footer.
+The original gzip/raw-deflate APIs retain their strict and legacy behavior;
+only the payload wrapper opts into prefix decoding.
+
+These finite capacities are not a proof of every decoder-internal read:
+pre-existing XZ `BfSeek` arithmetic can wrap near the 32-bit endpoint, and
+intentional unsigned rewinds prevent a naive checked-add repair. Reduced
+`BfTell()` results can also pass the wrapper's consumption check. Explicit
+forward/backward seek hardening remains a separate prerequisite.
+
 ## Separate open issues
 
 | Issue | Why the output guard does not resolve it |
 | --- | --- |
-| Inline compressed input extent | A zero input length disables gzip source bounds; XZ substitutes a 4 GiB input capacity. An exact readable payload span must be established and threaded separately |
+| Inline compressed input extent | 0033 establishes a finite declared handoff bound; exact readable file extent and physical backing still require a trustworthy producer contract |
+| Decoder-internal arithmetic | Existing XZ forward-seek arithmetic can wrap; explicit backward operations and checked forward bounds are still needed |
 | Top-down physical eligibility | Patch 0032 coordinates upward/downward bounds, but does not establish physical backing, mapping or carveout eligibility; requested MCC/proxy limits remain independently mutable |
-| Source/output overlap | A finite output span alone does not prove separation from compressed input or other live allocations |
+| Source/output overlap | 0033 rejects compressed-source/output capacity overlap; eligibility and separation from other live reservations remain separate |
+| Complete payload parser | Dispatcher headers, variables and remaining object spans are not bounded by these decoder guards; failure cutoff is not yet a whole-boot transaction |
 | Initrd end and placement | The setter accepts a raw pointer/size, and chosen-property creation uses unchecked `start + size`; valid native addresses, reservations and the Linux window constraint still need checks |
 | Image/DTB staging | Alignment and declared sizes do not independently establish readable source backing or every native reservation |
 | Physical handoff | Offline source/layout tests cannot validate the real EL/MMU/cache/DMA/timer/release state |
 
-Next: establish the exact inline payload extent and packaging/staging contract,
-and validate initrd end arithmetic and Linux's placement window.
+Next: harden XZ forward/backward seek arithmetic, then bound the complete
+dispatcher/object parser and propagate rejection;
+establish exact producer-backed payload and staging spans, and validate initrd
+end arithmetic and Linux's placement window.
 Add targeted bounds/placement checks with source-extracted fixtures.
 Keep native hardware qualification behind the recovery gates.
 
@@ -109,8 +149,25 @@ The subsequent [full30 milestone](m1n1-topdown-reservations.md) adds persistent
 reservation tracking and checked allocator arithmetic. It passes fifteen
 real-allocator/helper cases and two exact overlap controls, plus the same
 decoder/BUSY/board/layout regressions. Its separate
-[inventory](inventory/m1n1-topdown-reservations-2026-10-07.json) binds the updated
-builder and final sources. The 11:47:47 UTC upstream refresh is still unchanged.
+[inventory](inventory/m1n1-topdown-reservations-2026-10-07.json) binds that
+milestone's builder and final sources. Historical inventories remain unchanged;
+subsequent runner/builder edits do not retroactively match their input hashes.
+
+Full31 `payload-input-guards` adds the compressed-source checks and XZ
+consumption correction. The build/layout retains the same six C warnings;
+only `src/payload.c`, `src/minilzlib/xzstream.c` and the three tinf API/implementation
+files change among 215 canonical sources versus full30. Source-extracted host tests use both actual decoders,
+with 16 input-helper cases, 10 output-helper cases, 25 wrapper scenarios and
+six exact controls, plus 16 direct prefix/strict decoder API cases. These
+check strict and legacy zero-size behavior, prefix source/output zero caps,
+truncation and actual-footer CRC/ISIZE validation. Output-cap removal controls are deliberate mutations,
+including mutations of full30; they are not evidence that unmodified full30
+still has that output defect. The unmodified full30 XZ control separately
+witnesses incorrect consumed-pointer advancement for a known span with a tail.
+The allocator/BUSY/board/layout regressions also pass. See the separate
+[inventory](inventory/m1n1-compressed-input-2026-10-07.json) for final inputs and
+execution records. These are host/source results, not native qualification.
+The 12:28:21 UTC official-API refresh still finds unchanged upstream heads.
 
 A fresh 11:09:01–11:09:02 UTC upstream check again found unchanged m1n1, Linux
 and QEMU default-branch revisions. No pinned revisions, external forks or
@@ -119,10 +176,11 @@ submissions changed.
 Reproduce with the retained source tree, substituting its absolute path:
 
 ```sh
-bash scripts/build-m1n1-upstream-offline.sh payload-guards
+bash scripts/build-m1n1-upstream-offline.sh payload-input-guards
 UV_CACHE_DIR="$PWD/scratch/uv-cache" PYTHONDONTWRITEBYTECODE=1 \
   uv run --no-project --offline --python 3.13 python \
-  scripts/test-m1n1-upstream-payload-bounds.py --source-tree /path/to/full29/tree
+  scripts/test-m1n1-upstream-payload-bounds.py \
+  --source-tree /path/to/full31/tree --base-tree /path/to/full30/tree
 ```
 
 Neither command installs, boots or connects to a physical target.

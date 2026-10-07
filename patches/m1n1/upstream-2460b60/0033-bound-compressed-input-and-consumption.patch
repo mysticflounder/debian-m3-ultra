@@ -1,0 +1,362 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Wed, 7 Oct 2026 12:18:00 +0000
+Subject: [PATCH] payload: bound compressed sources and retain stream consumption
+
+Separate a finite compressed-source capacity from the parser's object-size
+argument. Known object sizes must fit the decoder's 32-bit count and have
+a non-wrapping interval. Inline size-zero objects use a checked declared
+top_of_kernel_data boundary, not an invented file length or linker capacity.
+Reject overlapping source/output intervals before decoding and require a
+positive consumed length within the original capacity before finalization.
+
+XZ's documented API promises consumed input length, but previously retained
+a nonzero supplied capacity. Return BfTell() after decoding so a finite bound
+does not skip a following DTB/initrd. Preserve size-zero terminal Image and
+other parser object-size semantics; no package format is changed.
+
+gzip's existing APIs require exact stream lengths. Add explicit bounded
+prefix APIs for gzip/raw deflate and use them only from the payload wrapper;
+locate and validate the actual footer instead of reading the capacity end.
+Keep the existing strict/legacy entry points and proxy behavior unchanged.
+
+The handoff boundary and known lengths still require trustworthy backing.
+This does not bound the complete dispatcher/variable parser, qualify initrd
+placement, or establish physical mapping/cache/DMA/native-entry safety.
+Existing XZ forward-seek overflow and intentional unsigned rewind semantics
+also remain a separate hardening gate; no universal decoder-read proof.
+
+AI assistance: OpenAI Codex; local Debian/project-fork work only. No Asahi
+submission, hardware access, firmware, disk or VM operation.
+
+--- a/src/payload.c
++++ b/src/payload.c
+@@ -91,6 +91,41 @@
+     return *dest_len != 0;
+ }
+ 
++/* The handoff boundary is a declared upper bound, not an exact file length. */
++static bool prepare_compressed_source(void *source, size_t size, uint32_t *source_len)
++{
++    uintptr_t start = (uintptr_t)source, end;
++    if (!start || size > UINT32_MAX)
++        return false;
++
++    if (size) {
++        if (__builtin_add_overflow(start, size, &end))
++            return false;
++        *source_len = (uint32_t)size;
++        return true;
++    }
++
++    u64 image_end = cur_boot_args.top_of_kernel_data;
++    if (image_end > UINTPTR_MAX || start < (uintptr_t)_payload_start || start >= image_end)
++        return false;
++
++    u64 available = image_end - start;
++    *source_len = (uint32_t)(available < UINT32_MAX ? available : UINT32_MAX);
++    return *source_len != 0;
++}
++
++static bool compressed_spans_disjoint(void *source, uint32_t source_len, void *dest,
++                                     uint32_t dest_len)
++{
++    uintptr_t source_end, dest_end;
++    if (!source || !dest || !source_len || !dest_len ||
++        __builtin_add_overflow((uintptr_t)source, (uintptr_t)source_len, &source_end) ||
++        __builtin_add_overflow((uintptr_t)dest, (uintptr_t)dest_len, &dest_end))
++        return false;
++
++    return source_end <= (uintptr_t)dest || dest_end <= (uintptr_t)source;
++}
++
+ static void finalize_uncompression(void *dest, size_t dest_len)
+ {
+     // Actually reserve the space. malloc is safe after this, but...
+@@ -110,18 +145,23 @@
+ 
+ static void *decompress_gz(void *p, size_t size)
+ {
+-    unsigned int source_len = size, dest_len;
++    unsigned int source_len, dest_len;
++    if (!prepare_compressed_source(p, size, &source_len))
++        return NULL;
++    uint32_t source_cap = source_len;
+ 
+     // Start at the end of the heap area, no allocation yet. The following code must not use
+     // malloc or heapblock, until finalize_uncompression is called.
+     void *dest;
+     if (!prepare_decompression_buffer(&dest, &dest_len))
+         return NULL;
++    if (!compressed_spans_disjoint(p, source_cap, dest, dest_len))
++        return NULL;
+ 
+     printf("Uncompressing... ");
+-    int ret = tinf_gzip_uncompress(dest, &dest_len, p, &source_len);
++    int ret = tinf_gzip_uncompress_prefix(dest, &dest_len, p, &source_len);
+ 
+-    if (ret != TINF_OK) {
++    if (ret != TINF_OK || !source_len || source_len > source_cap) {
+         printf("Error %d\n", ret);
+         return NULL;
+     }
+@@ -135,18 +175,23 @@
+ 
+ static void *decompress_xz(void *p, size_t size)
+ {
+-    uint32_t source_len = size, dest_len;
++    uint32_t source_len, dest_len;
++    if (!prepare_compressed_source(p, size, &source_len))
++        return NULL;
++    uint32_t source_cap = source_len;
+ 
+     // Start at the end of the heap area, no allocation yet. The following code must not use
+     // malloc or heapblock, until finalize_uncompression is called.
+     void *dest;
+     if (!prepare_decompression_buffer(&dest, &dest_len))
+         return NULL;
++    if (!compressed_spans_disjoint(p, source_cap, dest, dest_len))
++        return NULL;
+ 
+     printf("Uncompressing... ");
+     int ret = XzDecode(p, &source_len, dest, &dest_len);
+ 
+-    if (!ret) {
++    if (!ret || !source_len || source_len > source_cap) {
+         printf("XZ decode failed\n");
+         return NULL;
+     }
+--- a/src/minilzlib/xzstream.c
++++ b/src/minilzlib/xzstream.c
+@@ -540,8 +540,7 @@
+         return false;
+     }
+ 
+-    if (!*InputSize)
+-        *InputSize = BfTell();
+ #endif
++    *InputSize = BfTell();
+     return true;
+ }
+--- a/src/tinf/tinfgzip.c
++++ b/src/tinf/tinfgzip.c
+@@ -49,8 +49,9 @@
+ 	     | ((unsigned int) p[3] << 24);
+ }
+ 
+-int tinf_gzip_uncompress(void *dest, unsigned int *destLen,
+-                         const void *source, unsigned int *sourceLen)
++static int tinf_gzip_uncompress_impl(void *dest, unsigned int *destLen,
++                                     const void *source, unsigned int *sourceLen,
++                                     int prefix)
+ {
+ 	const unsigned char *src = (const unsigned char *) source;
+ 	unsigned char *dst = (unsigned char *) dest;
+@@ -59,7 +60,14 @@
+ 	int res;
+ 	unsigned char flg;
+ 	unsigned int sourceDataLen = 0;
++	unsigned int sourceCap;
++	unsigned int headerLen;
++	unsigned int footerOffset;
+ 
++	if (prefix && (!sourceLen || !*sourceLen))
++		return TINF_DATA_ERROR;
++	sourceCap = sourceLen ? *sourceLen : 0;
++
+ 	/* -- Check header -- */
+ 
+ 	/* Check room for at least 10 byte header and 8 byte trailer */
+@@ -136,9 +144,9 @@
+ 		start += 2;
+ 	}
+ 
+-	/* -- Get decompressed length if available -- */
++	/* -- Get decompressed length if an exact source length is available -- */
+ 
+-	if (*sourceLen) {
++	if (!prefix && *sourceLen) {
+ 		dlen = read_le32(&src[*sourceLen - 4]);
+ 
+ 		if (dlen > *destLen) {
+@@ -148,32 +156,53 @@
+ 
+ 	/* -- Check source length if available -- */
+ 
+-	if (*sourceLen) {
++	if (!prefix && *sourceLen) {
+ 		if ((src + *sourceLen) - start < 8) {
+ 			return TINF_DATA_ERROR;
+ 		}
+ 		sourceDataLen = (src + *sourceLen) - start - 8;
++	} else if (prefix) {
++		headerLen = (unsigned int)(start - src);
++		if (headerLen > sourceCap || sourceCap - headerLen < 8)
++			return TINF_DATA_ERROR;
++		sourceDataLen = sourceCap - headerLen - 8;
+ 	}
+ 
+ 	/* -- Decompress data -- */
+ 
+-	res = tinf_uncompress(dst, destLen, start, &sourceDataLen);
++	if (prefix)
++		res = tinf_uncompress_prefix(dst, destLen, start, &sourceDataLen);
++	else
++		res = tinf_uncompress(dst, destLen, start, &sourceDataLen);
+ 
+ 	if (res != TINF_OK) {
+ 		return TINF_DATA_ERROR;
+ 	}
+ 
+-	sourceDataLen += (start - src) + 8;
++	if (prefix) {
++		headerLen = (unsigned int)(start - src);
++		if (sourceDataLen > sourceCap - headerLen - 8)
++			return TINF_DATA_ERROR;
++		footerOffset = headerLen + sourceDataLen;
++		if (footerOffset > sourceCap - 8)
++			return TINF_DATA_ERROR;
++		*sourceLen = footerOffset + 8;
++		dlen = read_le32(&src[footerOffset + 4]);
++		crc32 = read_le32(&src[footerOffset]);
++	} else {
++		sourceDataLen += (start - src) + 8;
+ 
+-	if (*sourceLen && *sourceLen != sourceDataLen) {
+-		return TINF_DATA_ERROR;
+-	}
++		if (*sourceLen && *sourceLen != sourceDataLen) {
++			return TINF_DATA_ERROR;
++		}
+ 
+-	*sourceLen = sourceDataLen;
++		*sourceLen = sourceDataLen;
+ 
+-	/* -- Check decompressed length -- */
++		/* -- Check decompressed length -- */
+ 
+-	dlen = read_le32(&src[*sourceLen - 4]);
++		dlen = read_le32(&src[*sourceLen - 4]);
++		crc32 = read_le32(&src[*sourceLen - 8]);
++	}
+ 
+ 	if (*destLen != dlen) {
+ 		return TINF_DATA_ERROR;
+@@ -181,11 +210,24 @@
+ 
+ 	/* -- Check CRC32 checksum -- */
+ 
+-	crc32 = read_le32(&src[*sourceLen - 8]);
+-
+ 	if (crc32 != tinf_crc32(dst, dlen)) {
+ 		return TINF_DATA_ERROR;
+ 	}
+ 
+ 	return TINF_OK;
+ }
++
++/* Historical exact-length/sentinel API. */
++int tinf_gzip_uncompress(void *dest, unsigned int *destLen,
++                         const void *source, unsigned int *sourceLen)
++{
++	return tinf_gzip_uncompress_impl(dest, destLen, source, sourceLen, 0);
++}
++
++/* Bounded prefix API: consume one gzip member at the beginning of a finite
++ * buffer and return its actual total length, leaving any suffix untouched. */
++int tinf_gzip_uncompress_prefix(void *dest, unsigned int *destLen,
++                                const void *source, unsigned int *sourceLen)
++{
++	return tinf_gzip_uncompress_impl(dest, destLen, source, sourceLen, 1);
++}
+--- a/src/tinf/tinflate.c
++++ b/src/tinf/tinflate.c
+@@ -555,12 +555,17 @@
+ 	return;
+ }
+ 
+-/* Inflate stream from source to dest */
+-int tinf_uncompress(void *dest, unsigned int *destLen,
+-                    const void *source, unsigned int *sourceLen)
++/* Inflate stream from source to dest.  In prefix mode, sourceLen is a
++ * nonzero capacity and is replaced by the bytes consumed; the historical
++ * entry point retains its exact-length check and zero-size sentinel. */
++static int tinf_uncompress_impl(void *dest, unsigned int *destLen,
++                                const void *source, unsigned int *sourceLen,
++                                int prefix)
+ {
+ 	struct tinf_data d;
+ 	int bfinal;
++	if (prefix && (!sourceLen || !*sourceLen))
++		return TINF_DATA_ERROR;
+ 
+ 	/* Initialise data */
+ 	d.source = (const unsigned char *) source;
+@@ -619,14 +624,30 @@
+ 		unsigned int slen = d.source - (const unsigned char *)source;
+ 		if (!*sourceLen)
+ 			*sourceLen = slen;
+-		else if (*sourceLen != slen)
++		else if (!prefix && *sourceLen != slen)
+ 			return TINF_DATA_ERROR;
++		else if (prefix)
++			*sourceLen = slen;
+ 	}
+ 
+ 	*destLen = d.dest - d.dest_start;
+ 	return TINF_OK;
+ }
+ 
++/* Historical exact-length/sentinel API. */
++int tinf_uncompress(void *dest, unsigned int *destLen,
++                    const void *source, unsigned int *sourceLen)
++{
++	return tinf_uncompress_impl(dest, destLen, source, sourceLen, 0);
++}
++
++/* Bounded prefix API: consume a stream at the beginning of a finite buffer. */
++int tinf_uncompress_prefix(void *dest, unsigned int *destLen,
++                           const void *source, unsigned int *sourceLen)
++{
++	return tinf_uncompress_impl(dest, destLen, source, sourceLen, 1);
++}
++
+ /* clang -g -O1 -fsanitize=fuzzer,address -DTINF_FUZZING tinflate.c */
+ #if defined(TINF_FUZZING)
+ #include <limits.h>
+--- a/src/tinf/tinf.h
++++ b/src/tinf/tinf.h
+@@ -82,6 +82,16 @@
+                            const void *source, unsigned int *sourceLen);
+ 
+ /**
++ * Decompress a deflate stream at the beginning of a finite source buffer.
++ *
++ * `sourceLen` must be non-NULL and nonzero on entry. It is a capacity on
++ * input and is replaced by the actual compressed bytes consumed on success;
++ * a shorter prefix is accepted, unlike tinf_uncompress().
++ */
++int TINFCC tinf_uncompress_prefix(void *dest, unsigned int *destLen,
++                                  const void *source, unsigned int *sourceLen);
++
++/**
+  * Decompress `sourceLen` bytes of gzip data from `source` to `dest`.
+  *
+  * The variable `destLen` points to must contain the size of `dest` on entry,
+@@ -100,6 +110,16 @@
+                                 const void *source, unsigned int *sourceLen);
+ 
+ /**
++ * Decompress one gzip member at the beginning of a finite source buffer.
++ *
++ * `sourceLen` must be non-NULL and nonzero on entry. It is a capacity on
++ * input and is replaced by the actual member length on success, leaving any
++ * suffix outside the member unconsumed.
++ */
++int TINFCC tinf_gzip_uncompress_prefix(void *dest, unsigned int *destLen,
++                                       const void *source, unsigned int *sourceLen);
++
++/**
+  * Decompress `sourceLen` bytes of zlib data from `source` to `dest`.
+  *
+  * The variable `destLen` points to must contain the size of `dest` on entry,

@@ -806,17 +806,57 @@ Physical top-down eligibility, input extent/separation, initrd placement and
 native entry remain unqualified. The reservation ceiling does not make mutable
 requested MCC/proxy limits into an immutable carveout policy.
 
+## Finite compressed input and stream consumption — 2026-10-07 UTC
+
+Comparison-only 0033 supplies gzip/XZ with checked finite compressed capacities,
+using explicit known lengths or the declared inline handoff boundary, capped
+at `UINT32_MAX`. It rejects source/output capacity overlap before decoding and
+checks returned consumption before finalization. XZ now returns actual
+`BfTell()` consumption even with a nonzero input capacity, preventing the
+capacity itself from advancing past a following payload. This matches the
+decoder's existing header contract; the proxy ignores the returned count.
+gzip instead needs explicit bounded-prefix gzip/raw-deflate APIs: its existing
+known-size APIs require exact lengths. Only the payload opts into prefix mode;
+the strict/legacy APIs retain their behavior, including rejecting a suffix.
+
+Full31 build/layout retains six warnings and changes only payload.c/xzstream.c
+and the three tinf API/implementation files
+among 215 canonical sources versus full30. Sixteen input-helper, ten output-
+helper and twenty-five real-codec scenarios pass, with sixteen direct
+prefix/strict decoder API cases, six exact controls and
+unchanged allocator/BUSY/board regressions. The baseline XZ consumption control
+uses unmodified full30 and witnesses the wrong next pointer for a known span
+containing a suffix. Output controls instead deliberately remove bounds;
+neither exact exit text nor successful compilation alone establishes the
+semantic witness. See the [contract](m1n1-native-loader.md) and new
+[inventory](inventory/m1n1-compressed-input-2026-10-07.json). Historical input
+ledgers are retained, not rewritten to match today's runner/builder.
+
+The 12:28:21 UTC official-API refresh finds identical m1n1/Linux/QEMU heads.
+No fetch, rebase, pin/fork change, submission, push or native operation occurred.
+The declared boundary is not an exact file length or physical backing proof;
+raw dispatcher/object bounds, failure propagation and staging remain separate.
+Existing XZ `BfSeek` wrapping arithmetic is also uncorrected by this patch;
+intentional unsigned rewinds need an explicit backward API before checked
+forward arithmetic can replace it. No unconditional all-reads-bounded claim.
+Overlap rejection may follow heap alignment; truncated decoding can write
+bounded partial output but cannot finalize. No transactional whole-boot claim.
+
 ## Remaining implementation order
 
-1. Establish exact readable inline input extent and native package/staging
-   bounds using source-extracted fixtures. Do not confuse the finite output cap
-   with complete physical-memory or native entry qualification.
+1. Harden XZ forward/backward seeks, then bound the complete payload
+   dispatcher/object parser, propagate rejection,
+   and check initrd end arithmetic and the shared 1 GiB-aligned, at-most-32 GiB
+   kernel/initrd window. Establish trustworthy producer-backed package/staging
+   spans; finite declared input/output bounds do not qualify physical backing.
 2. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
    physical busy/completion semantics, feature/restore prerequisites and voltage error policy.
    Do not infer these from upstream constants or a successful mock build.
-3. Use the validated diagnostic artifacts to complete native Image/DTB/initrd
-   placement checks, downstream DART binding and absent storage/network descriptions,
-   without inventing missing CPU-frequency data.
+3. Use the validated artifacts for Image/DTB staging checks and candidate-only
+   downstream DART, PMGR and storage/network descriptions. Official Linux lacks
+   T6032 DART/NVMe nodes and matching candidate-compatible bindings; cached DT
+   metadata is not a hardware specification. Do not copy t6000/t8110/t8103
+   register formats as T6032 support or invent frequency/stream/power data.
 4. Only after a verified backup, recovery readiness and separate native-test
    approval: qualify cold entry, RVBAR/release, MCC/cache/DVFS and UART/AIC/DART,
    then a RAM-only kernel boot and persistent storage/network bring-up.

@@ -3,8 +3,9 @@
 
 The pinned tinf and minilzma implementations are compiled from the reviewed
 tree.  Only heapblock, load_one_payload and boot-args are host mocks.  The
-patched source is tested for bounded gzip/XZ output; the full28 source and two
-independent dropped-cap mutations are retained as designated unsafe controls.
+patched source is tested for bounded gzip/XZ output and compressed-input spans;
+the full30 baseline and independent dropped-cap/input mutations are retained
+as designated mutation controls, with an unmodified baseline XZ tail control.
 No VM, firmware, MMIO or native loader state is exercised.
 """
 
@@ -25,10 +26,8 @@ import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 REV = "2460b604c6f016956ead711823605eea840c602e"
-BASE_DEFAULT = ROOT / "scratch/m1n1-upstream-board-handoff.D1YyQS" / f"m1n1-{REV}"
 TEMPLATE = ROOT / "tests/m1n1-payload-bounds.c"
 REPORT_ROOT = ROOT / "scratch/native-loader-payload-tests-2026-10-07"
-PATCH_SUMS = ROOT / "scratch/m1n1-upstream-board-handoff.D1YyQS/PATCH_SHA256SUMS"
 DECODER_FILES = (
     "tinf/adler32.c", "tinf/crc32.c", "tinf/tinflate.c", "tinf/tinfzlib.c",
     "tinf/tinfgzip.c", "tinf/tinf.h", "minilzlib/dictbuf.c",
@@ -117,7 +116,7 @@ def source_inputs(tree: pathlib.Path) -> list[pathlib.Path]:
     return names
 
 
-def wrapper_set(tree: pathlib.Path, mutation: str | None = None) -> tuple[str, bool]:
+def wrapper_set(tree: pathlib.Path, mutation: str | None = None) -> tuple[str, bool, bool]:
     source_path = tree / "src/payload.c"
     source = source_path.read_text(encoding="utf-8")
     # The host template deliberately defines these constants too. Bind the
@@ -127,6 +126,8 @@ def wrapper_set(tree: pathlib.Path, mutation: str | None = None) -> tuple[str, b
     if len(align_decl.findall(source)) != 1:
         fail(f"{source_path}: expected exactly one KERNEL_ALIGN=(2 << 20) declaration")
     helper = extract_function(source, "prepare_decompression_buffer")
+    input_helper = extract_function(source, "prepare_compressed_source")
+    disjoint_helper = extract_function(source, "compressed_spans_disjoint")
     patched = helper is not None
     if patched:
         cap_decl = re.compile(r"(?m)^#define\s+MAX_DECOMPRESSED_SIZE\s+\(1U\s*<<\s*30\)\s*$")
@@ -137,6 +138,8 @@ def wrapper_set(tree: pathlib.Path, mutation: str | None = None) -> tuple[str, b
     xz = extract_function(source, "decompress_xz")
     if finalize is None or gzip is None or xz is None:
         fail(f"{source_path}: expected decompressor functions missing")
+    if (input_helper is None) != (disjoint_helper is None):
+        fail(f"{source_path}: expected compressed-input helpers missing")
     if patched:
         required = (
             "heapblock_get_cursor", "heapblock_get_limit", "cur_boot_args.phys_base",
@@ -150,6 +153,11 @@ def wrapper_set(tree: pathlib.Path, mutation: str | None = None) -> tuple[str, b
                 fail(f"{name}: patched wrapper does not use the shared helper exactly once")
             if "dest_len = 1 << 30" in body or "dest_len = 1U << 30" in body:
                 fail(f"{name}: stale unbounded one-GiB assignment remains")
+        if input_helper is not None:
+            for name, body in (("decompress_gz", gzip), ("decompress_xz", xz)):
+                for token in ("prepare_compressed_source", "compressed_spans_disjoint"):
+                    if body.count(token) != 1:
+                        fail(f"{name}: missing source-bound {token} call")
     if mutation is not None and patched:
         old = ("    void *dest;\n"
                "    if (!prepare_decompression_buffer(&dest, &dest_len))\n"
@@ -160,10 +168,17 @@ def wrapper_set(tree: pathlib.Path, mutation: str | None = None) -> tuple[str, b
             gzip = replace_once(gzip, old, new, "gzip dropped-cap mutation")
         elif mutation == "xz":
             xz = replace_once(xz, old, new, "XZ dropped-cap mutation")
+        elif mutation == "input":
+            old_input = ("    if (!prepare_compressed_source(p, size, &source_len))\n"
+                         "        return NULL;")
+            new_input = "    source_len = 64U + (uint32_t)(size & 0);"
+            gzip = replace_once(gzip, old_input, new_input, "gzip dropped-input mutation")
+            xz = replace_once(xz, old_input, new_input, "XZ dropped-input mutation")
         else:
             fail(f"unknown mutation {mutation}")
-    functions = "\n\n".join(part for part in (helper, finalize, gzip, xz) if part)
-    return functions, patched
+    functions = "\n\n".join(part for part in (helper, input_helper, disjoint_helper,
+                                              finalize, gzip, xz) if part)
+    return functions, patched, input_helper is not None
 
 
 def decoder_sources(tree: pathlib.Path, work: pathlib.Path) -> tuple[str, list[pathlib.Path]]:
@@ -186,13 +201,24 @@ def decoder_sources(tree: pathlib.Path, work: pathlib.Path) -> tuple[str, list[p
     return headers, implementations
 
 
+def has_prefix_decoders(tree: pathlib.Path) -> bool:
+    texts = [(tree / "src" / name).read_text(encoding="utf-8")
+             for name in ("tinf/tinf.h", "tinf/tinflate.c", "tinf/tinfgzip.c")]
+    joined = "\n".join(texts)
+    present = [bool(re.search(rf"\b{symbol}\s*\(", joined))
+               for symbol in ("tinf_uncompress_prefix", "tinf_gzip_uncompress_prefix")]
+    if any(present) and not all(present):
+        fail(f"{tree}: partial tinf prefix API set")
+    return all(present)
+
+
 def make_fixture(tree: pathlib.Path, mutation: str | None, base: bool,
                  work: pathlib.Path) -> tuple[str, list[pathlib.Path]]:
-    payload, patched = wrapper_set(tree, mutation)
-    if base and patched:
-        fail("base fixture unexpectedly contains patched helper")
+    payload, patched, input_patched = wrapper_set(tree, mutation)
     if not base and not patched:
         fail("patched fixture source has no prepare_decompression_buffer helper")
+    if base and input_patched:
+        fail("baseline fixture unexpectedly contains compressed-input helpers")
     gzip_data = gzip.compress(b"PAYLOAD-GZ-BOUNDARY", mtime=0)
     xz = lzma.compress(b"PAYLOAD-XZ-BOUNDARY", format=lzma.FORMAT_XZ)
     text = TEMPLATE.read_text(encoding="utf-8")
@@ -206,6 +232,12 @@ def make_fixture(tree: pathlib.Path, mutation: str | None, base: bool,
         text = "#define BASE_SOURCE 1\n" + text
     else:
         text = "#define HAVE_PREPARE_DECOMPRESSION_BUFFER 1\n" + text
+        if has_prefix_decoders(tree):
+            text = "#define HAVE_TINF_PREFIX_APIS 1\n" + text
+        if input_patched:
+            text = "#define HAVE_COMPRESSED_INPUT_HELPERS 1\n" + text
+        if mutation == "input":
+            text = "#define DROPPED_INPUT_BOUND 1\n" + text
     return text, implementations
 
 
@@ -285,7 +317,7 @@ def compile_and_run(source: str, label: str, work: pathlib.Path,
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--base-tree", type=pathlib.Path, default=BASE_DEFAULT)
+    parser.add_argument("--base-tree", type=pathlib.Path, required=True)
     parser.add_argument("--source-tree", type=pathlib.Path, required=True)
     args = parser.parse_args()
     base = args.base_tree.resolve()
@@ -295,7 +327,7 @@ def main() -> int:
             fail(f"missing source tree: {tree}")
     REPORT_ROOT.mkdir(parents=True, exist_ok=True)
     work = pathlib.Path(tempfile.mkdtemp(prefix="run-", dir=REPORT_ROOT))
-    patch_sum_paths = [PATCH_SUMS]
+    patch_sum_paths: list[pathlib.Path] = []
     for tree in (base, patched):
         candidate = tree.parent / "PATCH_SHA256SUMS"
         if candidate.is_file() and candidate not in patch_sum_paths:
@@ -319,17 +351,30 @@ def main() -> int:
                         [f"mutation-{codec}"], records, expected_exit=1,
                         expected_stderr="DESIGNATED_UNSAFE_WRITE_DETECTED\n",
                         decoder_sources=mutation_decoders)
+    input_mutation, input_decoders = make_fixture(patched, "input", False, work)
+    compile_and_run(input_mutation, "patched-dropped-input", work,
+                    ["mutation-input-xz"], records, expected_exit=1,
+                    expected_stderr="DESIGNATED_UNSAFE_INPUT_BOUND\n",
+                    decoder_sources=input_decoders)
     for codec in ("gzip", "xz"):
         original_source, original_decoders = make_fixture(base, codec, True, work)
-        compile_and_run(original_source, f"full28-original-{codec}", work,
+        compile_and_run(original_source, f"full30-original-{codec}", work,
                         [f"mutation-{codec}"], records, expected_exit=1,
                         expected_stderr="DESIGNATED_UNSAFE_WRITE_DETECTED\n",
                         decoder_sources=original_decoders)
+    unmodified_source, unmodified_decoders = make_fixture(base, None, True, work)
+    compile_and_run(unmodified_source, "full30-original-xz-known-tail", work,
+                    ["original-xz-known-tail"], records, expected_exit=1,
+                    expected_stderr="DESIGNATED_ORIGINAL_XZ_POINTER_SKIP\n",
+                    decoder_sources=unmodified_decoders)
     execution = {"status": "passed", "variants": records,
                  "source_snapshot": str(work / "source-snapshot.json")}
     (work / "execution-manifest.json").write_text(json.dumps(execution, indent=2) + "\n", encoding="utf-8")
     (work / "source-snapshot.json").write_text(json.dumps({**manifest, "status": "passed"}, indent=2) + "\n", encoding="utf-8")
-    print("PASS: patched gzip/XZ; helper-boundary-cases=10 wrapper-cases=16 mutation-controls=4")
+    wrapper_count = 25 if has_prefix_decoders(patched) else 21
+    direct_count = 16 if has_prefix_decoders(patched) else 0
+    direct_text = f" prefix-api-cases={direct_count}" if direct_count else ""
+    print(f"PASS: patched gzip/XZ; input-helper-cases=16 helper-boundary-cases=10{direct_text} wrapper-scenarios={wrapper_count} controls=6")
     print(f"Retained evidence: {work}")
     print("Scope: host source extraction with real pinned decoders; heap/load/bootargs mocked; native/firmware/VM state not tested")
     return 0
