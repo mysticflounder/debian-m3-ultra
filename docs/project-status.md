@@ -204,15 +204,33 @@ tests pass four sanitized scenarios and two exact controls independently.
 Comparison-only 0030 corrects the earlier mistaken omission of normal pruning
 list cleanup; upstream's static-stack reservation scheme is preserved. Full28
 build/layout and the old board baseline/90-case BUSY regressions pass. The
-[kernel fragment](../configs/linux-j575d-ram-serial.fragment) remains a candidate,
-not a resolved config or Image. Mainline lacks M3 OPP/cpufreq data; DART has a
-binding gap despite a source-driver match. Next: real Kconfig/schema evaluation
-and diagnostic Image/initramfs build. Native power/clocks/console transport,
-CPU entry, interrupts and DMA remain unqualified.
+[kernel fragment](../configs/linux-j575d-ram-serial.fragment) was still a candidate
+at that checkpoint; the follow-up below supplies the resolved config and Image.
+Mainline lacks M3 OPP/cpufreq data. The downstream DART compatible pair has a
+binding gap, but the actual official DTB has no DART nodes and does not exercise
+that gap. Native power/clocks/console transport, CPU entry, interrupts and DMA
+remain unqualified.
 
 The requested 09:37:04 UTC upstream refresh finds the same m1n1/Linux/QEMU
 default-branch revisions. The fresh source check still lacks comparison
 patches 0029/0030 and all three QEMU candidates; no pins or forks were changed.
+
+The [pinned diagnostic-artifact milestone](m1n1-upstream-reconciliation-2026-10-06.md#pinned-diagnostic-kernel-and-initramfs--2026-10-07-utc)
+now completes real Kconfig, full-tree dtschema and Linux **7.3.0-rc6** Image/DTB
+builds. Native-target 16 KiB pages are explicit; a separate configuration run
+matches byte-for-byte. The actual Kbuild DTB passes schema checks without
+diagnostics and four sanitized m1n1 handoff scenarios. Two static AArch64
+diagnostic initramfs builds are identical and satisfy the ELF/alignment/archive
+checks, including a dynamic-ELF rejection control. The official DT lacks
+DART/IOMMU, M3 frequency/OPP and intended storage/network descriptions. This
+build milestone does not qualify physical SoC behavior or approve native boot.
+The [inventory](inventory/m1n1-j575d-kernel-build-2026-10-07.json) records exact
+inputs, artifacts and scope. The persistent Debian VM remains unchanged.
+The exact kernel/initramfs additionally pass a disposable QEMU 11.1.1/HVF
+RAM-only boot: four CPUs online, 16 KiB runtime pages and diagnostic PID1 alive.
+The passing recipe uses QEMU's launch-time virt DTB and PL011 earlycon; the
+earlier no-serial external-DTB run is retained. No physical J575d DTB or
+m1n1 runs in this guest, so this is artifact validation, not native validation.
 
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
@@ -227,13 +245,13 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff cleanup | Capacity/bounds adapted; omitted normal cleanup restored as 0030; current-source host tests and full28 build/layout pass | Retain old baseline; static-stack lifecycle preserved, native handoff still unvalidated |
-| Exact T6032/J575d board DT | Exact official 14-file closure compiles; 32-CPU/two-die handoff cases and controls pass independently | Real Kconfig/schema and diagnostic kernel/initramfs build next; M3 OPP/cpufreq and DART binding gaps remain |
+| Exact T6032/J575d board DT | Exact closure, resolved 16 KiB config, real schema, Image/DTB and reproducible diagnostic initramfs pass | Loader/native qualification next; official DT lacks M3 frequency, DART and intended storage/network descriptions |
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
-| Native console / interrupts / DMA | Prior ADT/AIC startup suites pass; optional HV trace guards pass final sanitized tests, independent rerun and 26-patch build/layout | Early-DVFS/kernel integration next. Physical mapping/aliasing, register semantics and UART/AIC/DART behavior still need qualification |
-| RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
+| Native console / interrupts / DMA | Offline ADT/AIC/HV guards pass; kernel built-ins and actual UART/AIC/PMGR schema descriptions checked | No DART nodes exercised. Physical mapping/aliasing, power/clocks, IRQ and DMA behavior still need qualification |
+| RAM-only Linux diagnostic boot | Exact 16 KiB kernel/initramfs boot passes under HVF with four virtual CPUs; native boot not attempted | Virtual artifact sanity is separate; early initialization, loader placement and recovery/native approval remain gates |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |

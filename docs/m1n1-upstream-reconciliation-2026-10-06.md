@@ -632,18 +632,20 @@ Source/configuration dependencies for the proposed RAM/serial kernel are:
 | UART clocks | Two fixed-clock references; ARM64/common-clock fixed-rate provider, not Samsung clocks or Apple NCO |
 | RAM userspace | `BLK_DEV_INITRD` and gzip decompression; separate diagnostic userspace still needed |
 
-The [candidate fragment](../configs/linux-j575d-ram-serial.fragment) is an input
-to a future real pinned-tree Kconfig run, **not a resolved `.config` or built
-kernel**. Absence of an explicit symbol in defconfig does not establish its
+At this checkpoint the [candidate fragment](../configs/linux-j575d-ram-serial.fragment)
+was not yet evaluated by Kconfig. The follow-up below records the real
+configuration/schema runs; a fragment itself is not a resolved `.config`.
+Absence of an explicit symbol in defconfig does not establish its
 resolved value. The official UART has no pinctrl or DART dependency; source
 driver matches do not qualify inherited power/clock state or an externally
 usable console transport.
 
 The actual official DT closure has no M3 cpufreq/OPP, CPU-capacity or
-performance-domain descriptions. Do not invent these values. DART's
-`t6031`/`t8110` compatible pair dispatches to an existing driver but is not
-admitted by the retained binding; that schema gap remains separate from the
-RAM/serial path and from physical DMA qualification.
+performance-domain descriptions. Do not invent these values. The actual
+mainline DTB also contains no DART/IOMMU nodes. The `t6031`/`t8110` DART
+compatible pair is a downstream/source-level candidate: it dispatches to an
+existing driver but is not admitted by the retained binding. It is not a
+schema failure exercised by the official J575d DTB, nor DMA qualification.
 
 ```sh
 bash scripts/build-m1n1-upstream-offline.sh board-handoff
@@ -657,15 +659,102 @@ PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
 Default source/native-dispatch settings and working VMs are unchanged.
 No firmware, MMIO, native boot, disk or external submission operation occurred.
 
+## Pinned diagnostic kernel and initramfs — 2026-10-07 UTC
+
+The complete official Linux archive at `602042bf29f6efde39cfb5fdd9289bf4854bc0c5`
+is now acquired and hash-locked. All fourteen board-closure sources match the
+previous inventory. Real Kconfig resolution and an actual `Image`/Kbuild DTB
+build pass for Linux **7.3.0-rc6** in the existing immutable ARM64 builder.
+This supersedes the candidate-only configuration status above, not the
+unresolved native entry and hardware contracts.
+
+The [fragment](../configs/linux-j575d-ram-serial.fragment) explicitly requests
+`ARM64_16K_PAGES`. Generic arm64 defconfig selected 4 KiB; that is not evidence
+for the native Apple platform path. The native target uses 16 KiB, consistent
+with m1n1's Apple-Silicon translation setup. This is a configuration choice,
+not a claim that all 4 KiB native kernels are impossible: the
+[Asahi software notes](https://github.com/AsahiLinux/docs/blob/main/docs/sw/broken-software.md)
+document additional requirements for that alternative. Userspace ELF LOAD
+alignment must also be at least `0x4000` for this target.
+
+The resolved configuration satisfies all nine fragment selections, the
+derived CPU/OF/clock/power/reset/console dependencies, and `NR_CPUS=512`.
+A separate config-only run produces the identical `.config`. The built Image
+has ARMd magic and header flags `12`, encoding 16 KiB pages. These checks do
+not establish physical CPU features or firmware/loader placement.
+
+Full-tree **dtschema 2026.9** validation passes without diagnostics for both
+the earlier helper DTB and actual Kbuild DTB. Their differing bytes reflect
+helper `-@` symbol/phandle metadata; their normalized structural descriptions
+are identical. The Kbuild DTB also passes all four current-m1n1 sanitized
+handoff scenarios. A deliberately invalid root-compatible witness produces
+the expected schema diagnostic while `dt-validate` still exits zero, so this
+result checks diagnostic output, not exit status alone.
+
+The official DTB has no DART/IOMMU nodes and no M3 frequency/OPP/capacity or
+performance-domain descriptions. It does not describe the intended native
+storage/network bring-up. Consequently, the schema pass covers present
+UART/AIC/PMGR descriptions; it does not test the downstream DART compatible
+pair or supply missing device initialization data.
+
+The [RAM-only PID1](../tools/j575d-ram-init.c) and
+[isolated packager](../scripts/build-j575d-initramfs-offline.sh) produce a
+static AArch64 `/init` and reproducible gzip/newc initramfs. Two clean builds
+produce identical binary/archive hashes. ELF checks confirm no interpreter
+and `0x10000` LOAD alignment. A dynamic, non-executed ELF negative witness
+is rejected with exit 1 by the exact interpreter guard. PID1 mounts only
+proc/sysfs/devtmpfs (tmpfs fallback), creates the guest console node if
+needed, reports kernel/page-size/online-CPU/cmdline values, and stays alive.
+It does not select a persistent root or initialize networking.
+
+The exact Image/initramfs also pass a disposable **QEMU 11.1.1/HVF** boot:
+four virtual CPUs, 2 GiB RAM, no disks, no NIC/network or host exports. PID1
+reports Linux 7.3.0-rc6, `runtime_pagesize=16384`, `cpu_online=0-3`, the
+expected bootargs and its alive marker. The owned QEMU child is terminated
+and collected after readiness; the persistent Debian VM is untouched.
+
+An earlier externally dumped virtual-DTB launch produced no serial output.
+The passing harness omits external `-dtb`, lets QEMU generate the launch-time
+**virt** DTB and specifies PL011 earlycon. This is an observed launch-recipe
+differential, not an isolated kernel/driver defect. External DTBs also receive
+QEMU's `/chosen` bootarg/initrd updates, so missing such patching is not
+established as the cause. Failed logs are retained, not relabeled as passes.
+The diagnostic guest does **not** use the physical J575d DTB or execute m1n1;
+virtual SMP/interrupt/console success cannot qualify physical SoC blocks.
+
+Retained artifacts are in `scratch/linux-j575d-kernel.HdzQNm/` and
+`scratch/j575d-initramfs.tZHcMp/`; independent configuration/package reruns
+are `scratch/linux-j575d-kernel.CgvobZ/` and
+`scratch/j575d-initramfs.91TG5t/`. The
+[kernel-build inventory](inventory/m1n1-j575d-kernel-build-2026-10-07.json)
+binds inputs, configuration, build outputs, schema controls and package checks.
+The successful guest log/argv/status are in
+`scratch/j575d-artifact-vm-2026-10-07/run-zj0f406b/`.
+
+```sh
+bash scripts/build-linux-j575d-offline.sh config
+bash scripts/build-linux-j575d-offline.sh image
+bash scripts/build-j575d-initramfs-offline.sh
+UV_CACHE_DIR="$PWD/scratch/uv-cache" PYTHONDONTWRITEBYTECODE=1 \
+  uv run --no-project --offline --python 3.13 python \
+  scripts/test-j575d-artifacts-vm.py
+```
+
+The build commands require the retained verified archive and existing pinned
+builder; they do not download dependencies, boot, install or modify firmware.
+The final command alone boots the retained, hash-checked artifacts in the
+RAM-only virtual target, with a thirty-second readiness bound.
+No persistent VM, native MMIO, boot policy, partition or raw disk was changed.
+
 ## Remaining implementation order
 
 1. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
    physical busy/completion semantics, feature/restore prerequisites and voltage error policy.
    Do not infer these from upstream constants or a successful mock build.
-2. Evaluate the candidate kernel config in a complete pinned Linux tree,
-   run real DT/schema checks, and build a diagnostic kernel/initramfs. Resolve
-   the DART binding gap and storage/network dependencies without inventing
-   missing CPU-frequency data.
+2. Use the validated diagnostic artifacts to reconcile the loader's
+   Image/DTB/initrd placement
+   contract, downstream DART binding and absent storage/network descriptions,
+   without inventing missing CPU-frequency data.
 3. Only after a verified backup, recovery readiness and separate native-test
    approval: qualify cold entry, RVBAR/release, MCC/cache/DVFS and UART/AIC/DART,
    then a RAM-only kernel boot and persistent storage/network bring-up.

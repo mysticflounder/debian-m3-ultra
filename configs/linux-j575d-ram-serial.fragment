@@ -3,6 +3,10 @@
 # This is not an evaluated .config or evidence of a built/booted kernel.
 # No CPU OPP, voltage, capacity, or performance-domain values are invented.
 
+# Native Apple/m1n1 target, not the generic HVF guest configuration.
+# Apple platform paging and IOMMU alignment use 16 KiB pages.
+CONFIG_ARM64_16K_PAGES=y
+
 CONFIG_ARCH_APPLE=y
 CONFIG_APPLE_AIC=y
 
