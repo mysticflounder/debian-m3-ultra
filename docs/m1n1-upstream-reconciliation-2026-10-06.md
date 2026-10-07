@@ -747,6 +747,67 @@ The final command alone boots the retained, hash-checked artifacts in the
 RAM-only virtual target, with a thirty-second readiness bound.
 No persistent VM, native MMIO, boot policy, partition or raw disk was changed.
 
+## J575d driver modules and RAM-only module initramfs — 2026-10-07 UTC
+
+The follow-up module build compiles one top-level Kbuild invocation containing
+exactly `apple_mailbox`, `apple_rtkit`, `apple_sart`, `nvme_core`, `nvme_apple`
+and `apple_dart`. It uses pinned Linux
+`602042bf29f6efde39cfb5fdd9289bf4854bc0c5`, the original
+`scratch/linux-j575d-kernel.HdzQNm` build scratch, and verifies the unchanged
+Image `ad9b573e66738d13d7758619809cc7e8ff09cf9498e23ccec352dfe42b285f50`
+and config
+`19ef0607ca8b74c6ec5bd68ae376a85febd3ba1ac3da92d9bb47da9da9ac864c`.
+The retained package is `scratch/j575d-driver-modules.WpGKk3/package`,
+release `7.3.0-rc6`. Actual modinfo/vermagic records and depmod metadata are
+present; depmod stderr is empty. The [module inventory](inventory/m1n1-j575d-driver-modules-2026-10-07.json)
+records the package inputs and outputs. The producer pins this exact-six closure,
+while the initramfs consumer deliberately accepts a generic ordered
+`modules.load` manifest for future USB/Ethernet extensions.
+
+The module-capable initramfs is `scratch/j575d-initramfs.lQ4Gr7/`, SHA-256
+`7bfb73c02f74a285f6defb02741b85cb880fdbeb7d4a27f458c4c32b62383f30`; the
+no-module baseline is `scratch/j575d-initramfs.LdEBjk/`, SHA-256
+`aa94d06ef49767977a2ff86d37c80292821e21f70d5104023e92295e967cd6df`.
+Optional `--module-package` mode packages the module tree and manifest; static
+PID1 calls `finit_module`, emits successful `module_loaded` markers, and
+reports `/proc/modules` and registered-driver diagnostics. The exact build
+and VM commands are recorded in the [native loader contract](m1n1-native-loader.md#driver-modules-and-module-capable-initramfs).
+
+Fresh artifact tests pass in both RAM-only QEMU/HVF runs:
+`scratch/j575d-artifact-vm-2026-10-07/run-s11woxm1` is the module run and
+`run-1qm_6azy` is the no-module baseline. The module run loads all six modules
+and confirms `/proc/modules` membership. Both use four CPUs and 16 KiB pages,
+keep PID1 alive, have no disk/network/firmware, and exit cleanly after cleanup;
+the retained serial/error records contain no module errors and cleanup exits
+are zero; QEMU stderr is the expected 81-byte termination receipt. These are
+fresh scratch runs and require exact matching Image, initramfs and module-package
+hashes when repeated. They do not validate physical Apple probing, binding,
+MMIO or native behavior; no persistent VM, hardware, disk or firmware action
+occurred.
+
+The source compatible arrays already select the candidate fallback IDs. NVMe
+uses SART/mailbox/RTKit/reset and three direct PMGR domains (seven domains
+including transitive parents); it has no `iommus`, so DART is separate.
+`CONFIG_APPLE_PMGR_PWRSTATE=y`.
+The actual `apple_nvme_attach_genpd` loop processes all domains: the binding's
+maximum-two limit is schema-only, not a runtime bug or reason for a driver
+patch. Candidate DTC's six warnings and full-schema validation's 431
+diagnostic lines remain unresolved. No alias or copied-ops patch is warranted.
+Default native dispatch remains disabled; native work requires a current
+verified backup (last reported status: none), recovery readiness and separate
+approval.
+
+## Official upstream refresh — 2026-10-07T23:13:45Z
+
+The retained refresh received HTTP 200 from all four official endpoints. Linux
+advanced to `7b63ef2d55f24519e7e9e5f4d15dbea03f126e40`; its 16-commit,
+nine-path comparison touches only `drivers/md` and `fs/btrfs`, with no relevant
+M3 driver changes. m1n1
+`2460b604c6f016956ead711823605eea840c602e` and QEMU
+`f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c` remain unchanged. Raw responses are
+retained in `scratch/upstream-refresh-driver-modules-2026-10-07`; no source
+pins, forks or submissions were applied.
+
 ## Native loader destination bounds — 2026-10-07 UTC
 
 The [loader contract](m1n1-native-loader.md) reconciles the validated Image,
@@ -881,10 +942,10 @@ Security fixes and additional hardening are outside this Debian bring-up
 project's scope. Report and record findings, and advise Adam whether an upstream
 issue is warranted; do not make them boot-completion gates or file without approval.
 
-1. Build and package the DART/NVMe/mailbox/SART dependencies selected by the
-   resolved kernel config. Candidate DT compilation succeeds, but full schema
-   diagnostics remain and no module artifacts or loader are packaged. Resolve
-   DT/driver integration without claiming older fallback matches prove T6032 hardware.
+1. Qualify the packaged DART/NVMe/mailbox/SART dependency closure against the
+   candidate DT. The exact-six module package and module-capable loader pass
+   artifact tests, but full schema diagnostics remain. Resolve DT/driver
+   integration without claiming older fallback matches prove T6032 hardware.
 2. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
    physical busy/completion semantics, feature/restore prerequisites and voltage error policy.
    Do not infer these from upstream constants or a successful mock build.

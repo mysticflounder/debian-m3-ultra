@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // RAM-only J575d diagnostic initramfs /init. It must run only as PID 1.
 #include <errno.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdarg.h>
@@ -9,6 +10,7 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
+#include <sys/syscall.h>
 #include <sys/utsname.h>
 #include <unistd.h>
 
@@ -91,6 +93,70 @@ static void print_file(const char *label, const char *path)
     close(fd);
 }
 
+static void load_modules(void)
+{
+    char line[4096];
+    FILE *manifest = fopen("/modules.load", "r");
+
+    if (manifest == NULL) {
+        if (errno == ENOENT)
+            diag("modules.load absent; no module autoload");
+        else
+            diag("open /modules.load: %s", strerror(errno));
+        return;
+    }
+
+    while (fgets(line, sizeof(line), manifest) != NULL) {
+        char *path = line;
+        size_t length = strlen(path);
+        int fd;
+        long result;
+
+        while (length > 0 && (path[length - 1] == '\n' ||
+                               path[length - 1] == '\r'))
+            path[--length] = '\0';
+        if (length == 0)
+            continue;
+        if (path[0] != '/') {
+            diag("module_load_failed=%s: path is not absolute", path);
+            continue;
+        }
+
+        fd = open(path, O_RDONLY | O_CLOEXEC);
+        if (fd < 0) {
+            diag("module_load_failed=%s: %s", path, strerror(errno));
+            continue;
+        }
+        result = syscall(SYS_finit_module, fd, "", 0);
+        if (result == 0 || errno == EEXIST)
+            diag("module_loaded=%s", path);
+        else
+            diag("module_load_failed=%s: %s", path, strerror(errno));
+        close(fd);
+    }
+    if (ferror(manifest))
+        diag("read /modules.load: %s", strerror(errno));
+    fclose(manifest);
+}
+
+static void print_directory(const char *label, const char *path)
+{
+    struct dirent *entry;
+    DIR *directory = opendir(path);
+
+    if (directory == NULL) {
+        diag("%s unavailable: %s", label, strerror(errno));
+        return;
+    }
+    while ((entry = readdir(directory)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 ||
+            strcmp(entry->d_name, "..") == 0)
+            continue;
+        diag("%s=%s", label, entry->d_name);
+    }
+    closedir(directory);
+}
+
 static void print_diagnostics(void)
 {
     struct utsname uts;
@@ -137,6 +203,10 @@ int main(void)
     reconnect_console();
     diag("begin ram-only diagnostic; no persistent root, network, firmware, or raw devices");
     print_diagnostics();
+    load_modules();
+    print_file("modules", "/proc/modules");
+    print_directory("sysfs_platform_driver", "/sys/bus/platform/drivers");
+    print_directory("sysfs_pci_driver", "/sys/bus/pci/drivers");
     diag("alive; PID1 will not exit");
     for (;;)
         pause();

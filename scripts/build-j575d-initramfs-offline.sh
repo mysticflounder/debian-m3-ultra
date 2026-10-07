@@ -5,6 +5,16 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 BUILDER=sha256:1cc5bb4ef152a16785acce551084a41c973be8d0c9c7718524f67cd9d7d78121
 SRC="$ROOT/tools/j575d-ram-init.c"
+MODULE_PACKAGE=
+
+if [[ $# -eq 2 && "$1" == --module-package ]]; then
+    test -d "$2" || { echo "Module package is not a directory: $2" >&2; exit 2; }
+    MODULE_PACKAGE=$(cd -- "$2" && pwd -P)
+elif [[ $# -ne 0 ]]; then
+    echo "Usage: $0 [--module-package DIRECTORY]" >&2
+    exit 2
+fi
+
 for tool in docker shasum awk; do
     command -v "$tool" >/dev/null || { echo "Missing tool: $tool" >&2; exit 1; }
 done
@@ -17,13 +27,29 @@ cp "$SRC" "$OUT/input/j575d-ram-init.c"
 cp "$0" "$OUT/input/build-recipe.sh"
 printf 'builder=%s\nsource_sha256=%s\n' "$BUILDER" \
     "$(shasum -a 256 "$SRC" | awk '{print $1}')" > "$OUT/build-inputs.txt"
+if [[ -n "$MODULE_PACKAGE" ]]; then
+    printf 'module_package=%s\n' "$MODULE_PACKAGE" >> "$OUT/build-inputs.txt"
+else
+    printf 'module_package=none\n' >> "$OUT/build-inputs.txt"
+fi
+
+DOCKER_MOUNTS=(
+    --mount "type=bind,source=$OUT/input,target=/input,readonly"
+    --mount "type=bind,source=$OUT/output,target=/out"
+)
+BUILD_MODE=ram-only
+if [[ -n "$MODULE_PACKAGE" ]]; then
+    DOCKER_MOUNTS+=(
+        --mount "type=bind,source=$MODULE_PACKAGE,target=/module-package,readonly"
+    )
+    BUILD_MODE=module-package
+fi
 
 set +e
 docker run --rm --pull=never --network=none --read-only --cap-drop=ALL \
     --security-opt=no-new-privileges --pids-limit=128 --cpus=2 --memory=2g \
     --tmpfs /tmp:rw,nosuid,nodev,size=512m \
-    --mount "type=bind,source=$OUT/input,target=/input,readonly" \
-    --mount "type=bind,source=$OUT/output,target=/out" \
+    "${DOCKER_MOUNTS[@]}" \
     --workdir /out --entrypoint /bin/bash "$BUILDER" -c '
 set -euxo pipefail
 gcc -static -O2 -std=c11 -D_GNU_SOURCE -Wall -Wextra -Werror \
@@ -40,6 +66,34 @@ load_count=$(awk "\$1 == \"LOAD\" {print \$NF}" /out/readelf-programs.txt | tee 
 test "$load_count" -gt 0
 while IFS= read -r align; do test "$((align))" -ge 16384; done < /out/load-alignments.txt
 mkdir -p /out/rootfs/dev /out/rootfs/proc /out/rootfs/sys /out/rootfs/run
+if test "$1" = module-package; then
+    test -f /module-package/modules.load
+    module_release=
+    module_count=0
+    while IFS= read -r module_path || test -n "$module_path"; do
+        test -z "$module_path" && continue
+        case "$module_path" in
+            /lib/modules/*/kernel/*.ko) ;;
+            *) echo "modules.load entry is not an absolute kernel module path: $module_path" >&2; exit 1 ;;
+        esac
+        release_path=${module_path#/lib/modules/}
+        release=${release_path%%/kernel/*}
+        test -n "$release"
+        if test -z "$module_release"; then
+            module_release=$release
+        else
+            test "$module_release" = "$release"
+        fi
+        test -f "/module-package$module_path"
+        module_count=$((module_count + 1))
+    done < /module-package/modules.load
+    test "$module_count" -gt 0
+    test -f "/module-package/lib/modules/$module_release/modules.dep"
+    test -f "/module-package/lib/modules/$module_release/modules.alias"
+    mkdir -p /out/rootfs/lib
+    cp /module-package/modules.load /out/rootfs/modules.load
+    cp -a /module-package/lib/modules /out/rootfs/lib/modules
+fi
 cp /out/init /out/rootfs/init
 find /out/rootfs -exec touch -d @0 {} +
 (cd /out/rootfs && find . -print0 | sort -z | cpio --null --reproducible --quiet -o -H newc > /out/initramfs.cpio)
@@ -47,7 +101,11 @@ gzip -n -f /out/initramfs.cpio
 gzip -t /out/initramfs.cpio.gz
 gzip -dc /out/initramfs.cpio.gz | cpio --quiet -it > /out/archive-list.txt
 grep -Fx "init" /out/archive-list.txt
-' build-j575d-initramfs > "$OUT/build.log" 2>&1
+if test "$1" = module-package; then
+    grep -Fx "modules.load" /out/archive-list.txt
+    grep -F "lib/modules/" /out/archive-list.txt
+fi
+' build-j575d-initramfs "$BUILD_MODE" > "$OUT/build.log" 2>&1
 BUILD_RC=$?
 set -e
 printf '%s\n' "$BUILD_RC" > "$OUT/build.exit"

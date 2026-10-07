@@ -1,0 +1,435 @@
+{
+  "artifact_vm": {
+    "baseline": {
+      "boot_argv_receipt": {
+        "path": "scratch/j575d-artifact-vm-2026-10-07/run-1qm_6azy/boot.argv",
+        "sha256": "8bb919b2b074569fea1a2e859e2f3babdf1ff9a89a399985e0dc775347a36696"
+      },
+      "dumpdtb_argv_receipt": {
+        "path": "scratch/j575d-artifact-vm-2026-10-07/run-1qm_6azy/dumpdtb.argv",
+        "sha256": "4c78cf919a9b955b1566d3f976ceab250433114981e27d7773997177ad626b9a"
+      },
+      "markers": {
+        "alive": true,
+        "cmdline": true,
+        "cmdline_console": true,
+        "cmdline_rdinit": true,
+        "cpu_online": true,
+        "diag": true,
+        "pagesize": true,
+        "release": true,
+        "uname": true
+      },
+      "module_mode": false,
+      "qemu": null,
+      "qemu_stderr": {
+        "path": "scratch/j575d-artifact-vm-2026-10-07/run-1qm_6azy/qemu.stderr.log",
+        "sha256": "4c30bc8b917e88c5b8eecea4ba3db940ecbc5eff33803eea464515c703f1605a"
+      },
+      "run": "scratch/j575d-artifact-vm-2026-10-07/run-1qm_6azy",
+      "scope": "guest artifacts under QEMU/HVF virt; no Apple hardware binding claim; not native J575d qualification",
+      "serial": {
+        "path": "scratch/j575d-artifact-vm-2026-10-07/run-1qm_6azy/guest.serial.log",
+        "sha256": "829a9dcdd94781aae35fed8306ab59a8df66e376d41333c411323326307a463d"
+      },
+      "status": {
+        "path": "scratch/j575d-artifact-vm-2026-10-07/run-1qm_6azy/status.json",
+        "sha256": "a389c9e02a95d16eb02cf4f2c95a18dcb5d225874fe189e86fdc6d428c563156"
+      },
+      "virt_dtb": {
+        "path": "scratch/j575d-artifact-vm-2026-10-07/run-1qm_6azy/virt-generated.dtb",
+        "sha256": "d73f75931948069e61bfd948ed0960c7f40c8cb8e7d094d94946bd964119c839"
+      }
+    },
+    "module": {
+      "boot_argv_receipt": {
+        "path": "scratch/j575d-artifact-vm-2026-10-07/run-s11woxm1/boot.argv",
+        "sha256": "f5013055e4673e5d877fdb95d91a78f536e2c6a71f8a60e4b15e1e54cf3f4395"
+      },
+      "dumpdtb_argv_receipt": {
+        "path": "scratch/j575d-artifact-vm-2026-10-07/run-s11woxm1/dumpdtb.argv",
+        "sha256": "e358fdcf8de4d44030c58157fbd3388021707c01eb600eea0a12de2d804d99bc"
+      },
+      "markers": {
+        "alive": true,
+        "cmdline": true,
+        "cmdline_console": true,
+        "cmdline_rdinit": true,
+        "cpu_online": true,
+        "diag": true,
+        "module_loaded:apple_dart": true,
+        "module_loaded:apple_mailbox": true,
+        "module_loaded:apple_rtkit": true,
+        "module_loaded:apple_sart": true,
+        "module_loaded:nvme_apple": true,
+        "module_loaded:nvme_core": true,
+        "modules_snapshot": true,
+        "pagesize": true,
+        "release": true,
+        "uname": true
+      },
+      "module_mode": true,
+      "qemu": {
+        "path": "/opt/homebrew/bin/qemu-system-aarch64",
+        "sha256": "45d74da57beb9be259ca3d6996e5c70d4ab14326ea59c3db3e80308859d91a3e",
+        "version_argv": [
+          "/opt/homebrew/bin/qemu-system-aarch64",
+          "--version"
+        ],
+        "version_exit": 0,
+        "version_stderr": "",
+        "version_stdout": "QEMU emulator version 11.1.1\nCopyright (c) 2003-2026 Fabrice Bellard and the QEMU Project developers\n"
+      },
+      "qemu_stderr": {
+        "path": "scratch/j575d-artifact-vm-2026-10-07/run-s11woxm1/qemu.stderr.log",
+        "sha256": "010a494108ccdaea5967722361f6d681b299cbe92b7a0e57acffa105d78f4216"
+      },
+      "run": "scratch/j575d-artifact-vm-2026-10-07/run-s11woxm1",
+      "scope": "guest artifacts under QEMU/HVF virt; no Apple hardware binding claim; not native J575d qualification",
+      "serial": {
+        "path": "scratch/j575d-artifact-vm-2026-10-07/run-s11woxm1/guest.serial.log",
+        "sha256": "e21050b26bf46a418d56e8507dfa52f84dbaef3caa9b4585ba05c7580f286848"
+      },
+      "status": {
+        "path": "scratch/j575d-artifact-vm-2026-10-07/run-s11woxm1/status.json",
+        "sha256": "0b37c146bc92ab2f60a4a39472ca034021f4dac4596145103694cbf3b2bc680b"
+      },
+      "virt_dtb": {
+        "path": "scratch/j575d-artifact-vm-2026-10-07/run-s11woxm1/virt-generated.dtb",
+        "sha256": "c0635c5fc707028b5906c92c42af9cb640bc89c989481f1ffaf67fa542b93d70"
+      }
+    }
+  },
+  "checks": {
+    "baseline_guest": "PASS",
+    "baseline_initramfs": "PASS",
+    "module_build": "PASS",
+    "module_guest_load": "PASS",
+    "module_initramfs": "PASS",
+    "module_package": "PASS",
+    "overall": "PASS",
+    "upstream_refresh": "PASS"
+  },
+  "initramfs": {
+    "baseline": {
+      "archive_list": {
+        "path": "scratch/j575d-initramfs.LdEBjk/output/archive-list.txt",
+        "sha256": "564a1495f533c34326c57c42775abc918ee403e9a019a31f77230bbbebe65daf"
+      },
+      "build_exit": 0,
+      "build_log": {
+        "path": "scratch/j575d-initramfs.LdEBjk/build.log",
+        "sha256": "fdbfd8e57556db874023e7e843da0d47c449eb17c9f58b566326a7f709bb51e2"
+      },
+      "init": {
+        "path": "scratch/j575d-initramfs.LdEBjk/output/init",
+        "sha256": "23cd25952f28096572559b9de7b4073c478f396d7a5e71112e208f824c3cfd91"
+      },
+      "initramfs": {
+        "path": "scratch/j575d-initramfs.LdEBjk/output/initramfs.cpio.gz",
+        "sha256": "aa94d06ef49767977a2ff86d37c80292821e21f70d5104023e92295e967cd6df"
+      },
+      "module_mode": false,
+      "root": "scratch/j575d-initramfs.LdEBjk",
+      "source": {
+        "path": "scratch/j575d-initramfs.LdEBjk/input/j575d-ram-init.c",
+        "sha256": "38faa6be294ec3afed139478e1b1135f666d2ee0251d3d9bc3786cedef0878d0"
+      }
+    },
+    "module": {
+      "archive_list": {
+        "path": "scratch/j575d-initramfs.lQ4Gr7/output/archive-list.txt",
+        "sha256": "d7b0eae1a090d7ca53f772e1e72387debe70f8ea5270121624ffccf9ab892850"
+      },
+      "build_exit": 0,
+      "build_log": {
+        "path": "scratch/j575d-initramfs.lQ4Gr7/build.log",
+        "sha256": "f96936c89cdd4e78d75e58d96a3a524a64b32b52f0f6b9a1365e55bd6f45aedc"
+      },
+      "init": {
+        "path": "scratch/j575d-initramfs.lQ4Gr7/output/init",
+        "sha256": "23cd25952f28096572559b9de7b4073c478f396d7a5e71112e208f824c3cfd91"
+      },
+      "initramfs": {
+        "path": "scratch/j575d-initramfs.lQ4Gr7/output/initramfs.cpio.gz",
+        "sha256": "7bfb73c02f74a285f6defb02741b85cb880fdbeb7d4a27f458c4c32b62383f30"
+      },
+      "manifest_in_initramfs_sha256": "af00ccc1b3b7df494e59e035ff9a480e079781397b652f242a737eea6a89d87d",
+      "module_mode": true,
+      "module_payloads": {
+        "/lib/modules/7.3.0-rc6/kernel/drivers/iommu/apple-dart.ko": "bc0a671fecf3c956a37bcf7d3be140566a711fa6fa811ac34a126a383b34a16c",
+        "/lib/modules/7.3.0-rc6/kernel/drivers/nvme/host/nvme-apple.ko": "7e7283f5e963c02f17b6c90803a40207fa5a4d918b2cac4787c6578dc9acf908",
+        "/lib/modules/7.3.0-rc6/kernel/drivers/nvme/host/nvme-core.ko": "11df6a06afb8fe2a720f2bcadbd2f2e115397a1dea2a9ad6511170de57064c36",
+        "/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-mailbox.ko": "3da62bed5e2c873fa40487709e8d6ca4a93110017f76e671cd42af537f819cae",
+        "/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-rtkit.ko": "5ca0ca01219f07981838b0eaf1d92113e33aae296157edb36e9927a42857431f",
+        "/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-sart.ko": "2ba690b528404ee9efacd85a3ffa2a4a09014a1afa0fd485cde60ef014bd3520"
+      },
+      "root": "scratch/j575d-initramfs.lQ4Gr7",
+      "source": {
+        "path": "scratch/j575d-initramfs.lQ4Gr7/input/j575d-ram-init.c",
+        "sha256": "38faa6be294ec3afed139478e1b1135f666d2ee0251d3d9bc3786cedef0878d0"
+      }
+    }
+  },
+  "kernel": {
+    "base": "scratch/linux-j575d-kernel.HdzQNm",
+    "build_exit": 0,
+    "build_log": {
+      "path": "scratch/j575d-driver-modules.WpGKk3/build.log",
+      "sha256": "693b315b3e0cd5e5f943b3914b2892e3df3ee88b70bdc88b8715763f9848837c"
+    },
+    "builder": "sha256:1cc5bb4ef152a16785acce551084a41c973be8d0c9c7718524f67cd9d7d78121",
+    "clone_config": {
+      "path": "scratch/j575d-driver-modules.WpGKk3/build/.config",
+      "sha256": "19ef0607ca8b74c6ec5bd68ae376a85febd3ba1ac3da92d9bb47da9da9ac864c"
+    },
+    "clone_image": {
+      "path": "scratch/j575d-driver-modules.WpGKk3/build/arch/arm64/boot/Image",
+      "sha256": "ad9b573e66738d13d7758619809cc7e8ff09cf9498e23ccec352dfe42b285f50"
+    },
+    "config": {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/build/.config",
+      "sha256": "19ef0607ca8b74c6ec5bd68ae376a85febd3ba1ac3da92d9bb47da9da9ac864c"
+    },
+    "image": {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/build/arch/arm64/boot/Image",
+      "sha256": "ad9b573e66738d13d7758619809cc7e8ff09cf9498e23ccec352dfe42b285f50"
+    },
+    "package_receipt": {
+      "path": "scratch/j575d-driver-modules.WpGKk3/PACKAGE_SHA256SUMS",
+      "sha256": "a64071774249e45b112ae76c331fb7e3e3d62e20221b39ddb70db892801f74f2"
+    },
+    "revision": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5"
+  },
+  "module_package": {
+    "depmod_stderr": {
+      "path": "scratch/j575d-driver-modules.WpGKk3/metadata/depmod.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "manifest": {
+      "path": "scratch/j575d-driver-modules.WpGKk3/package/modules.load",
+      "sha256": "af00ccc1b3b7df494e59e035ff9a480e079781397b652f242a737eea6a89d87d"
+    },
+    "modules": [
+      {
+        "modinfo": {
+          "depends": "",
+          "name": "apple_mailbox",
+          "vermagic": "7.3.0-rc6 SMP preempt mod_unload aarch64"
+        },
+        "modinfo_receipt": {
+          "path": "scratch/j575d-driver-modules.WpGKk3/metadata/apple-mailbox.ko.modinfo",
+          "sha256": "62d4502ce2a1748e1d44987cbd23e8453104d6b693cfb79d2aa464ddd29923dd"
+        },
+        "name": "apple_mailbox",
+        "path": "/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-mailbox.ko",
+        "sha256": "3da62bed5e2c873fa40487709e8d6ca4a93110017f76e671cd42af537f819cae"
+      },
+      {
+        "modinfo": {
+          "depends": "apple-mailbox",
+          "name": "apple_rtkit",
+          "vermagic": "7.3.0-rc6 SMP preempt mod_unload aarch64"
+        },
+        "modinfo_receipt": {
+          "path": "scratch/j575d-driver-modules.WpGKk3/metadata/apple-rtkit.ko.modinfo",
+          "sha256": "1a81142dea70eaafbd7f208c4f71a545820ddda236008414139373b2005f9d4d"
+        },
+        "name": "apple_rtkit",
+        "path": "/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-rtkit.ko",
+        "sha256": "5ca0ca01219f07981838b0eaf1d92113e33aae296157edb36e9927a42857431f"
+      },
+      {
+        "modinfo": {
+          "depends": "",
+          "name": "apple_sart",
+          "vermagic": "7.3.0-rc6 SMP preempt mod_unload aarch64"
+        },
+        "modinfo_receipt": {
+          "path": "scratch/j575d-driver-modules.WpGKk3/metadata/apple-sart.ko.modinfo",
+          "sha256": "f3cfe2016355c199c091af4644f7a213ae4c33efe7e07df997d73b19f1b66619"
+        },
+        "name": "apple_sart",
+        "path": "/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-sart.ko",
+        "sha256": "2ba690b528404ee9efacd85a3ffa2a4a09014a1afa0fd485cde60ef014bd3520"
+      },
+      {
+        "modinfo": {
+          "depends": "",
+          "name": "nvme_core",
+          "vermagic": "7.3.0-rc6 SMP preempt mod_unload aarch64"
+        },
+        "modinfo_receipt": {
+          "path": "scratch/j575d-driver-modules.WpGKk3/metadata/nvme-core.ko.modinfo",
+          "sha256": "66ff5df117e8acb127d6a8920cf10c554ec68ca25a76531e49e66eadfd7bc92a"
+        },
+        "name": "nvme_core",
+        "path": "/lib/modules/7.3.0-rc6/kernel/drivers/nvme/host/nvme-core.ko",
+        "sha256": "11df6a06afb8fe2a720f2bcadbd2f2e115397a1dea2a9ad6511170de57064c36"
+      },
+      {
+        "modinfo": {
+          "depends": "apple-rtkit,nvme-core,apple-sart",
+          "name": "nvme_apple",
+          "vermagic": "7.3.0-rc6 SMP preempt mod_unload aarch64"
+        },
+        "modinfo_receipt": {
+          "path": "scratch/j575d-driver-modules.WpGKk3/metadata/nvme-apple.ko.modinfo",
+          "sha256": "0238bd62237147212f6bb9d522370fe83ca956ae6ec63b989e599f531d6cbaa2"
+        },
+        "name": "nvme_apple",
+        "path": "/lib/modules/7.3.0-rc6/kernel/drivers/nvme/host/nvme-apple.ko",
+        "sha256": "7e7283f5e963c02f17b6c90803a40207fa5a4d918b2cac4787c6578dc9acf908"
+      },
+      {
+        "modinfo": {
+          "depends": "",
+          "name": "apple_dart",
+          "vermagic": "7.3.0-rc6 SMP preempt mod_unload aarch64"
+        },
+        "modinfo_receipt": {
+          "path": "scratch/j575d-driver-modules.WpGKk3/metadata/apple-dart.ko.modinfo",
+          "sha256": "9ab5841e3bc6184a0f323b28a17c4a63828d58556094deb88edfc0def64eadee"
+        },
+        "name": "apple_dart",
+        "path": "/lib/modules/7.3.0-rc6/kernel/drivers/iommu/apple-dart.ko",
+        "sha256": "bc0a671fecf3c956a37bcf7d3be140566a711fa6fa811ac34a126a383b34a16c"
+      }
+    ],
+    "modules_alias": {
+      "path": "scratch/j575d-driver-modules.WpGKk3/package/lib/modules/7.3.0-rc6/modules.alias",
+      "sha256": "3c1c2a70d122bf65f75e9c87b8528756ec9f8f37fc97e4209b197b62ed7aaedd"
+    },
+    "modules_dep": {
+      "path": "scratch/j575d-driver-modules.WpGKk3/package/lib/modules/7.3.0-rc6/modules.dep",
+      "sha256": "95daa5e4b72a59aa0fdd14b1dc3068379c9dc4b3c011d85c6b894e798198ec98"
+    },
+    "release": "7.3.0-rc6"
+  },
+  "receipts": {
+    "init_source_current": {
+      "path": "tools/j575d-ram-init.c",
+      "sha256": "38faa6be294ec3afed139478e1b1135f666d2ee0251d3d9bc3786cedef0878d0"
+    },
+    "initramfs_recipe_current": {
+      "path": "scripts/build-j575d-initramfs-offline.sh",
+      "sha256": "a9f1a58d8230be55c59fb884a7c6715b7464aca99c3a94af834cf8aa69c9b9ae"
+    },
+    "initramfs_recipe_retained": {
+      "path": "scratch/j575d-initramfs.lQ4Gr7/input/build-recipe.sh",
+      "sha256": "a9f1a58d8230be55c59fb884a7c6715b7464aca99c3a94af834cf8aa69c9b9ae"
+    },
+    "producer_recipe_current": {
+      "path": "scripts/build-j575d-driver-modules-offline.sh",
+      "sha256": "75e0df6a83ebddc87c72eb74139192175c601113eedc9aff38d476707dae3600"
+    },
+    "producer_recipe_retained": {
+      "path": "scratch/j575d-driver-modules.WpGKk3/build-recipe.sh",
+      "sha256": "75e0df6a83ebddc87c72eb74139192175c601113eedc9aff38d476707dae3600"
+    },
+    "review": "scratch/m3-driver-module-integration-review-2026-10-07.md",
+    "vm_harness_current": {
+      "path": "scripts/test-j575d-artifacts-vm.py",
+      "sha256": "62bdc1de11873c02c1fc39de896acd898f083bba287c6aefd947664754a6bf32"
+    }
+  },
+  "recorded_utc": "2026-10-07",
+  "schema": "m1n1-j575d-driver-modules-v1",
+  "scope": "Functional module build/ABI/package/load evidence only; not native J575d qualification, physical driver binding, MMIO, firmware, recovery, or security evidence.",
+  "upstream_refresh": {
+    "linux": "7b63ef2d55f24519e7e9e5f4d15dbea03f126e40",
+    "linux_compare": {
+      "ahead_by": 16,
+      "changed_files": 9,
+      "driver_scope": "no applicable T6032/J575d/DART/NVMe/PMGR/mailbox/SART/m1n1 CPU-board changes",
+      "path_families": [
+        "drivers/md/",
+        "fs/btrfs/"
+      ],
+      "response": {
+        "path": "scratch/upstream-refresh-driver-modules-2026-10-07/linux-compare.json",
+        "sha256": "d3969c9dc12aaee7943d9bbdca6f184c27bf072825c4f48d56320a9127498a47"
+      },
+      "status": {
+        "path": "scratch/upstream-refresh-driver-modules-2026-10-07/linux-compare-http-status.txt",
+        "sha256": "c11e3f4837efde2441e23a7b9da02131f53bf59fddeb7147c4ab81afe400460f"
+      },
+      "stderr": {
+        "path": "scratch/upstream-refresh-driver-modules-2026-10-07/linux-compare-error.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "m1n1": "2460b604c6f016956ead711823605eea840c602e",
+    "qemu": "f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c",
+    "sources": [
+      {
+        "name": "m1n1 main",
+        "response": {
+          "path": "scratch/upstream-refresh-driver-modules-2026-10-07/m1n1-main.json",
+          "sha256": "7d069eb7ca8a2e96d4aadcb116c4475154ae900da9dc0bbb762fa0fa4fb52399"
+        },
+        "sha": "2460b604c6f016956ead711823605eea840c602e",
+        "status": {
+          "path": "scratch/upstream-refresh-driver-modules-2026-10-07/m1n1-http-status.txt",
+          "sha256": "c11e3f4837efde2441e23a7b9da02131f53bf59fddeb7147c4ab81afe400460f"
+        },
+        "stderr": {
+          "path": "scratch/upstream-refresh-driver-modules-2026-10-07/m1n1-error.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "Linux master",
+        "response": {
+          "path": "scratch/upstream-refresh-driver-modules-2026-10-07/linux-master.json",
+          "sha256": "da7e4bf7ae3144c0288b602f80ada22d93ef2a458d628643a28a345692b128bf"
+        },
+        "sha": "7b63ef2d55f24519e7e9e5f4d15dbea03f126e40",
+        "status": {
+          "path": "scratch/upstream-refresh-driver-modules-2026-10-07/linux-http-status.txt",
+          "sha256": "c11e3f4837efde2441e23a7b9da02131f53bf59fddeb7147c4ab81afe400460f"
+        },
+        "stderr": {
+          "path": "scratch/upstream-refresh-driver-modules-2026-10-07/linux-error.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "QEMU GitHub mirror master",
+        "response": {
+          "path": "scratch/upstream-refresh-driver-modules-2026-10-07/qemu-github-master.json",
+          "sha256": "66d9ee4fdda4bb40de9ac8006e900b5be9e2b7825388d56ff1151cf6262cff85"
+        },
+        "sha": "f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c",
+        "status": {
+          "path": "scratch/upstream-refresh-driver-modules-2026-10-07/qemu-github-http-status.txt",
+          "sha256": "c11e3f4837efde2441e23a7b9da02131f53bf59fddeb7147c4ab81afe400460f"
+        },
+        "stderr": {
+          "path": "scratch/upstream-refresh-driver-modules-2026-10-07/qemu-github-error.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "name": "QEMU GitLab master",
+        "response": {
+          "path": "scratch/upstream-refresh-driver-modules-2026-10-07/qemu-gitlab-master.json",
+          "sha256": "6752fb68a7fd6bbca25108da33ae2731a38be2f71179182c5d47c7a5b0e5bc9e"
+        },
+        "sha": "f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c",
+        "status": {
+          "path": "scratch/upstream-refresh-driver-modules-2026-10-07/qemu-gitlab-http-status.txt",
+          "sha256": "c11e3f4837efde2441e23a7b9da02131f53bf59fddeb7147c4ab81afe400460f"
+        },
+        "stderr": {
+          "path": "scratch/upstream-refresh-driver-modules-2026-10-07/qemu-gitlab-error.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "summary": {
+      "path": "scratch/upstream-refresh-driver-modules-2026-10-07/summary.json",
+      "sha256": "bd2130e492e39ef2361ea4b89ae2ff7dc1a82615cdf58aa9f7c19ea34a4c77e7"
+    }
+  }
+}

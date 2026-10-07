@@ -40,6 +40,81 @@ is unknown. A future package builder must account for that span; the shorter
 file length alone does not establish readable source padding. No native boot
 package has been produced or approved by this milestone.
 
+## Driver modules and module-capable initramfs
+
+The fresh module producer compiles six Kbuild goals together against pinned
+Linux `602042bf29f6efde39cfb5fdd9289bf4854bc0c5`, the original
+`scratch/linux-j575d-kernel.HdzQNm` build, and its unchanged Image/config
+hashes. The retained package is
+`scratch/j575d-driver-modules.WpGKk3/package`, release `7.3.0-rc6`, containing
+`apple_mailbox`, `apple_rtkit`, `apple_sart`, `nvme_core`, `nvme_apple` and
+`apple_dart`. Real modinfo/vermagic records, `modules.dep`, `modules.alias` and
+empty depmod stderr were checked. The [module inventory](inventory/m1n1-j575d-driver-modules-2026-10-07.json)
+records the package inputs and outputs. The producer requires exactly these six
+manifest entries; the consumer accepts an ordered manifest generically so a
+future USB/Ethernet closure can reuse the same initramfs path.
+
+The optional `--module-package` mode of
+`build-j575d-initramfs-offline.sh` copies that package, while static PID1 uses
+`finit_module` in manifest order, emits `module_loaded` markers, and reports
+`/proc/modules` plus registered-driver diagnostics. The module initramfs is
+`scratch/j575d-initramfs.lQ4Gr7/`, SHA-256
+`7bfb73c02f74a285f6defb02741b85cb880fdbeb7d4a27f458c4c32b62383f30`; the
+no-module baseline is `scratch/j575d-initramfs.LdEBjk/`, SHA-256
+`aa94d06ef49767977a2ff86d37c80292821e21f70d5104023e92295e967cd6df`.
+These are fresh scratch artifacts; any VM rerun must use the exact matching
+Image, initramfs and module-package hashes.
+
+Build a fresh module package with
+`bash scripts/build-j575d-driver-modules-offline.sh`. Each builder prints a
+unique scratch output path; use the printed package path with
+`--module-package`, then the printed initramfs path and its actual SHA-256
+when testing those new outputs. For example, the retained package can be used
+to build fresh module and no-module initramfs variants with:
+
+```sh
+bash scripts/build-j575d-initramfs-offline.sh \
+  --module-package scratch/j575d-driver-modules.WpGKk3/package
+bash scripts/build-j575d-initramfs-offline.sh
+```
+
+The following commands recheck the already-retained, accepted artifacts,
+not the newly printed build directories:
+
+```sh
+UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --offline --no-project scripts/test-j575d-artifacts-vm.py \
+  --initramfs scratch/j575d-initramfs.lQ4Gr7/output/initramfs.cpio.gz \
+  --initramfs-sha256 7bfb73c02f74a285f6defb02741b85cb880fdbeb7d4a27f458c4c32b62383f30 \
+  --module-package scratch/j575d-driver-modules.WpGKk3/package \
+  --expect-module apple_mailbox --expect-module apple_rtkit --expect-module apple_sart \
+  --expect-module nvme_core --expect-module nvme_apple --expect-module apple_dart
+UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --offline --no-project scripts/test-j575d-artifacts-vm.py \
+  --initramfs scratch/j575d-initramfs.LdEBjk/output/initramfs.cpio.gz \
+  --initramfs-sha256 aa94d06ef49767977a2ff86d37c80292821e21f70d5104023e92295e967cd6df
+```
+
+Both fresh RAM-only QEMU/HVF acceptance runs pass: module run
+`scratch/j575d-artifact-vm-2026-10-07/run-s11woxm1` loads all six modules and
+reports them in `/proc/modules`; baseline `run-1qm_6azy` confirms no module
+autoload. Both use four CPUs and 16 KiB pages, keep PID1 alive, have no disk,
+network or firmware, and exit cleanly after cleanup. The retained
+serial/error records contain no module errors; QEMU stderr is the expected
+81-byte termination receipt and cleanup exits are zero. This does not validate
+physical Apple probing, DT binding, native MMIO or hardware behavior.
+Default native dispatch remains disabled; native work still requires a
+current verified backup, recovery readiness and separate approval.
+
+The candidate compatible tables already select fallback implementations, but
+this is not a hardware contract. NVMe uses SART/mailbox/RTKit/reset and three
+direct PMGR domains (seven domains including transitive parents), with no `iommus` property;
+DART is separate. `CONFIG_APPLE_PMGR_PWRSTATE=y`. The actual
+`apple_nvme_attach_genpd` loop handles all domains; the binding's max-two limit
+is schema-only and is not a runtime defect. Candidate DTC's six warnings and
+full-schema validation's 431 diagnostic lines remain open. No alias or copied
+hardware-ops patch is justified.
+
 ## Decompression destination guard
 
 Both gzip and XZ previously advertised a 1 GiB destination after a zero-byte
@@ -146,11 +221,12 @@ source backing or prove every other codec operation safe.
 | Image/DTB staging | Alignment and declared sizes do not independently establish readable source backing or every native reservation |
 | Physical handoff | Offline source/layout tests cannot validate the real EL/MMU/cache/DMA/timer/release state |
 
-Next: establish a working Image/DTB/initrd package and native placement contract,
-then bring up the required SoC drivers. Native hardware qualification remains
-behind the backup/recovery and approval gates. Defensive parser hardening and
-security fixes are outside project scope; report findings rather than making
-them prerequisites for bring-up.
+Next: establish a working Image/DTB/initrd package and native placement
+contract, then qualify the packaged SoC-driver closure against the candidate
+DT. Native hardware qualification remains behind the backup/recovery and
+approval gates. Defensive parser hardening and security fixes are outside
+project scope; report findings rather than making them prerequisites for
+bring-up.
 
 ## Report-only issue candidates
 

@@ -289,14 +289,54 @@ hardware qualification. The candidate DT was rebuilt byte-identically and its
 sorted decompilation matches. DTC reported six warnings; offline full schema
 validation emitted 431 diagnostic lines despite returning zero, so this is
 not a clean schema pass. DART/mailbox/SART/NVMe compatible declarations and
-NVMe's three power domains need integration work. The selected drivers remain
-unbuilt modules: no `.ko`, `modules.alias` or `modules.dep` artifacts are present,
-and the diagnostic initramfs has no module loader. Build and package these
-dependencies next; an alias copying older hardware data would add no evidence.
+NVMe's three-domain binding need schema reconciliation. The selected drivers were
+unbuilt at that earlier checkpoint; the follow-up
+below now records their separate, pinned module package and module-capable
+diagnostic initramfs. An alias copying older hardware data would add no
+evidence.
 The candidate NVMe node uses SART/mailbox/power/reset and has no `iommus`
 property, so DART is not assumed to be every storage node's dependency.
 
-The 14:04:34 UTC official-API refresh returned HTTP 200 for all four endpoints;
+The [driver-module integration milestone](m1n1-upstream-reconciliation-2026-10-06.md#j575d-driver-modules-and-ram-only-module-initramfs--2026-10-07-utc)
+completed on 2026-10-07. The producer compiled the exact six Kbuild goals
+together against pinned Linux `602042bf29f6efde39cfb5fdd9289bf4854bc0c5`,
+the retained `scratch/linux-j575d-kernel.HdzQNm` build, and the unchanged
+Image/config hashes. The retained package is
+`scratch/j575d-driver-modules.WpGKk3/package`, release `7.3.0-rc6`, with
+actual modinfo/vermagic, `modules.dep`/`modules.alias` and empty depmod
+stderr; the [module inventory](inventory/m1n1-j575d-driver-modules-2026-10-07.json)
+records the package inputs and outputs. The module initramfs is
+`scratch/j575d-initramfs.lQ4Gr7/`; the baseline remains
+`scratch/j575d-initramfs.LdEBjk/`. Both disposable QEMU/HVF RAM-only runs
+pass: `scratch/j575d-artifact-vm-2026-10-07/run-s11woxm1` is the module run
+and `run-1qm_6azy` is the baseline; the module run loads all six modules and
+reports them in `/proc/modules`, while both runs keep four CPUs, 16 KiB pages
+and PID1 alive, with no disk, network or firmware and clean post-cleanup exit.
+The retained serial/error records contain no module errors; QEMU stderr is the
+expected 81-byte termination receipt and cleanup exits are zero. This is
+functional artifact integration, not physical Apple probe/binding or native
+validation.
+
+The candidate fallback compatible tables remain usable for the selected
+drivers. NVMe uses SART/mailbox/RTKit/reset and three direct PMGR domains
+(seven domains including transitive parents); it has no `iommus`, so DART remains separate.
+`CONFIG_APPLE_PMGR_PWRSTATE=y`. The actual `apple_nvme_attach_genpd` loop
+accepts all domains: the binding's maximum-two restriction is schema-only, not
+a runtime bug or reason for a driver patch. Candidate DTC's six warnings and
+full-schema validation's 431 diagnostic lines remain unresolved. No alias or
+copied-ops patch is warranted. Native work still requires a current verified
+backup (last reported status: none), recovery readiness and separate approval.
+
+The 2026-10-07T23:13:45Z official refresh returned HTTP 200 from all four
+endpoints. Linux advanced to `7b63ef2d55f24519e7e9e5f4d15dbea03f126e40`;
+the retained comparison is 16 commits across nine paths confined to
+`drivers/md` and `fs/btrfs`, with no relevant M3 driver changes. m1n1
+`2460b604c6f016956ead711823605eea840c602e` and QEMU
+`f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c` remain unchanged. No source pins,
+forks or submissions changed.
+
+At the earlier 14:04:34 UTC checkpoint, the official-API refresh returned HTTP
+200 for all four endpoints;
 m1n1 `2460b604`, Linux `602042bf`, and QEMU `f9587d40` remain unchanged from
 13:24:05 UTC. No upstream updates were applied.
 
@@ -318,9 +358,9 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
-| Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; candidate DART fallback matches; DT compiles but schema diagnostics remain | Build required drivers; qualify physical layout, power/clocks, IRQ and DMA on native hardware |
-| RAM-only Linux diagnostic boot | Exact 16 KiB kernel/initramfs HVF boot passed previously; loader output/allocator/declared-input guards pass offline; native boot not attempted | Native backing/placement and early initialization remain open; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | Candidate DT rebuild passes; full schema diagnostics and missing module artifacts remain; native bring-up pending | Build/package drivers and resolve DT dependencies; qualify storage/network hardware after early boot |
+| Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; six selected modules built/packaged; candidate DT warnings/schema diagnostics remain | Qualify physical layout, power/clocks, IRQ, DMA and driver binding on native hardware |
+| RAM-only Linux diagnostic boot | Final module initramfs and baseline both pass disposable QEMU/HVF RAM-only checks; exact hashes and four-CPU/16 KiB/PID1 markers recorded; native boot not attempted | Native backing/placement and early initialization remain open; verified backup/recovery and separate approval are required |
+| NVMe / USB / Ethernet | NVMe dependency closure plus separate DART module packaged and loaded in HVF; USB/Ethernet work and candidate schema diagnostics remain | Qualify candidate DT, storage/network binding and hardware after early boot; no native probe claim |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |
