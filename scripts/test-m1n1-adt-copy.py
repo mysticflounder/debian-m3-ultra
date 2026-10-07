@@ -18,7 +18,10 @@ ARCHIVE = ROOT / "scratch/m1n1-cpu-audit/source.tar.gz"
 ARCHIVE_SHA256 = "6425983260ab96d55c36fdaab3b456830c3bd80f06b7759a61ed2bcca924d973"
 SOURCE = PINNED / "rust/src/adt.rs"
 SOURCE_SHA256 = "3771322ab6ab7b9c28807857fa77672ae6b09bb58588d46d94bc58f144afdd97"
-PATCH = ROOT / "patches/m1n1/0020-check-adt-copy-length-before-write.patch"
+PATCHES = (
+    ROOT / "patches/m1n1/0020-check-adt-copy-length-before-write.patch",
+    ROOT / "patches/m1n1/0021-fix-adt-property-view-length.patch",
+)
 TEMPLATE = ROOT / "tests/m1n1-adt-copy.rs"
 
 
@@ -43,7 +46,7 @@ def sha256(data: bytes) -> str:
 
 
 def materialize(work: pathlib.Path) -> tuple[str, str]:
-    if not SOURCE.is_file() or not PATCH.is_file() or not TEMPLATE.is_file():
+    if not SOURCE.is_file() or not all(p.is_file() for p in PATCHES) or not TEMPLATE.is_file():
         fail("ADT source, patch, or harness missing")
     data = SOURCE.read_bytes()
     if sha256(data) != SOURCE_SHA256:
@@ -60,21 +63,22 @@ def materialize(work: pathlib.Path) -> tuple[str, str]:
     source_path = tree / "rust/src/adt.rs"
     source_path.parent.mkdir(parents=True)
     source_path.write_bytes(data)
-    applied = run(
-        ["patch", "-p1", "--batch", "--forward", "--fuzz=0", "--no-backup-if-mismatch",
-         "-i", str(PATCH)], tree
-    )
-    if applied.returncode:
-        fail(f"0020 did not apply:\n{applied.stdout}{applied.stderr}")
+    for patch in PATCHES:
+        applied = run(
+            ["patch", "-p1", "--batch", "--forward", "--fuzz=0", "--no-backup-if-mismatch",
+             "-i", str(patch)], tree
+        )
+        if applied.returncode:
+            fail(f"{patch.name} did not apply:\n{applied.stdout}{applied.stderr}")
     paths = {p.relative_to(tree) for p in tree.rglob("*") if p.is_file()}
     if paths != {pathlib.Path("rust/src/adt.rs")}:
-        fail(f"0020 created unexpected paths: {sorted(str(p) for p in paths)}")
+        fail(f"ADT patches created unexpected paths: {sorted(str(p) for p in paths)}")
     return data.decode(), source_path.read_text(encoding="utf-8")
 
 
 def mutate_no_length_guard(source: str) -> str:
-    old = "    if p.size as usize != len {\n"
-    new = "    if false && p.size as usize != len {\n"
+    old = "    if p.payload_size() as usize != len {\n"
+    new = "    if false && p.payload_size() as usize != len {\n"
     if source.count(old) != 1:
         fail(f"ADT length guard: expected one site, found {source.count(old)}")
     return source.replace(old, new, 1)

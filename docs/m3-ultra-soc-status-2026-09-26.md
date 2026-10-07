@@ -242,6 +242,7 @@ byte), and its size-bit check does not exclude bit 31. The padded host fixture
 does not qualify that parser for arbitrary malformed inputs. The optional
 virtio DT export also has an unchecked interrupt-property result; neither
 issue is repaired by patch 0020 or established as a current native M3 failure.
+Patch 0021 fixes the view-length metadata separately below.
 
 The full20 reset-entry placement check finds `_vectors_start=0x4000`,
 `_el1_vectors_start=0x8800` and `_cpu_reset_c=0x30690` in an executable LOAD
@@ -253,6 +254,76 @@ writability or effect, entry `CurrentEL`/`MPIDR_EL1`, or release-to-acknowledgem
 timing. Those reset-time observations remain gated on recovery readiness and
 separate native-testing approval; another runtime topology capture cannot
 substitute for them.
+
+## ADT property-view length — 2026-10-06
+
+Patch `0021-fix-adt-property-view-length.patch` makes the Rust
+`ADTProperty` slice metadata equal to its declared payload length. The
+original metadata was `132 + first_size_byte`: it counted a Rust `char`
+array as the name header and read only one byte of the u32 size field.
+For example, a declared 256-byte value had a 132-byte view, while a
+zero-byte value could expose padding or the following property to `str()`.
+
+The replacement reads the complete little-endian u32, masks the template
+marker (bit 31), and constructs a raw slice pointer with the payload length.
+The struct's fixed header is excluded from that metadata. A shared
+`payload_size()` helper normalizes property traversal, reads, writes, scalar
+accessors and C getter/copy lengths without modifying the wire size field.
+Ordinary unflagged properties retain their C ABI behavior; flagged properties
+now report their payload length, not a length containing the template marker.
+Patch 0020's copy-before-validation protection is retained. The
+twenty-one-patch offline firmware build passes, with the
+same two known compiler warnings; linked shared-memory and reset-entry
+placement checks pass as well.
+
+The source-extracted host harness uses aligned backing with padding for
+the original-source and mutation controls. Its test-only lookup helper
+obtains the real module's property reference; view sizing, string methods
+and the C getter run against the actual implementation. Full physical
+buffer bounds, the existing maximum-size policy and mutable-reference aliasing remain
+separate concerns. No native execution is implied by these host checks.
+
+The host suite covers flagged and unflagged zero, unterminated three-byte,
+four-byte scalar, eight-byte string, 256-byte and 257-byte properties, plus
+traversal from a flagged property to its successor and flagged copy guards.
+The pre-0021 source,
+header-added-to-metadata mutation and first-size-byte mutation each fail
+their designated view-size check with exit 1. The unterminated string
+returns `BadValue` even though padding contains a NUL; the string iterator
+also remains within the payload. A separate raw-length mutation is rejected
+by the C getter length check before any oversized view or copy is attempted.
+The C-copy runner applies both ADT
+patches and retains its original and guard-removal controls.
+The captured J575d restore template contains 9,999 properties, including
+69 template-marked properties across 18 nodes. The pinned Python ADT parser
+already masks bit 31; retaining that flag in Rust's slice metadata would
+create an invalid multi-gigabyte reference. This is a restore template,
+not the live post-iBoot ADT or evidence of a native boot failure.
+An additional host walker applies both patches and traverses the real Rust
+node/property APIs on that captured fixture: all 771 nodes, 9,999 properties
+and 69 flagged properties pass extent/value checks against aligned backing.
+Its maximum observed depth is five. This checks a known-good fixture, not
+malformed inputs or reference safety before validation.
+The [validation inventory](inventory/m1n1-adt-view-2026-10-06.json) records
+the source, patch, harness, logs and firmware artifact hashes.
+
+Run the view and C-copy regressions independently:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python scripts/test-m1n1-adt-view.py
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python scripts/test-m1n1-adt-copy.py
+```
+
+## Upstream refresh — 2026-10-06
+
+The [current upstream review](m1n1-upstream-review-2026-10-06.md) identifies
+new T6032/M3 Ultra and overlapping SMP support, 44 commits after our pinned
+baseline. The new code changes the next implementation priority: reconcile
+local patches and test a separate offline candidate before continuing private
+firmware analysis. The local source pin and native-dispatch gates remain
+unchanged. Upstream source support is not native board or installer validation.
 
 ## Development-host split
 

@@ -22,6 +22,11 @@ rejects ADT copy-length mismatches before writing the destination. The default
 twenty-patch build and shared-layout audits pass. These fixes do not qualify
 the whole ADT parser or native interrupt/CPU-reset behavior; see the
 [SoC follow-up](m3-ultra-soc-status-2026-09-26.md#shared-adt-copy-contract--2026-09-30).
+2026-10-06: patch [0021](../patches/m1n1/0021-fix-adt-property-view-length.patch)
+corrects the Rust property's payload-view length and normalizes the ADT template
+flag across property-length consumers. The default twenty-one-patch
+build and linked-layout checks pass; see the
+[ADT view follow-up](m3-ultra-soc-status-2026-09-26.md#adt-property-view-length--2026-10-06).
 The earlier [opt-in experiment](m1n1-smp-shared-experiment.md) is retained as
 historical evidence. Neither series enables native T6032 dispatch.
 This is a **build result,
@@ -84,12 +89,12 @@ bash scripts/build-m1n1-cpu-offline.sh baseline
 bash scripts/build-m1n1-cpu-offline.sh patched
 ```
 
-`smp-shared` is now a compatibility alias for the same eighteen-patch series
-as `patched` (with a different version tag). Patches 0015–0018 must apply
+`smp-shared` is now a compatibility alias for the same twenty-one-patch series
+as `patched` (with a different version tag). Patches 0015–0021 must apply
 with zero fuzz; historical patches retain their established settings.
 
 The script validates the source archive digest and Rust version, extracts a
-fresh scratch tree per run, applies all eighteen patches only to the patched copy,
+fresh scratch tree per run, applies all twenty-one patches only to the patched copy,
 sets a local version tag and passes `--offline --locked` to Cargo. Logs and
 artifacts are retained on failure or success. There is no install/boot step.
 The source archive stays unmodified. This is a repeatable build recipe, not

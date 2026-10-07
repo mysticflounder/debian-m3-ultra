@@ -1,4 +1,4 @@
-# Project status — 2026-09-30
+# Project status — 2026-10-06
 
 Updated at task completion. Source/offline validation is not native-hardware
 validation. External PR, VM and MacBook states below are last recorded states,
@@ -7,8 +7,9 @@ not a fresh remote or live-machine check.
 Current handoff: the SMP shared-memory fix (`d484a58`) and SMP index guards
 (`f51c869`) were pushed before this follow-up. Patch 0018 adds MMU/HV direct
 and proxy index validation, preserving canonical exit/unpin sentinels; it is
-committed locally as `14605bf`, not pushed. The twenty-patch cross-build,
-sanitizer suites, mutation controls and shared-layout audit pass. The subsequent
+committed locally as `14605bf`, not pushed. The twenty-one-patch cross-build
+and linked-layout checks pass; prior sanitizer and mutation results remain
+recorded for the unchanged guards. The subsequent
 [CPU callback trace](m1n1-t6032-startup.md#captured-runtime-callback-path--2026-09-30)
 identifies `function-enable_core`, its stored receiver and base-class forwarding
 path; 2,273 instruction words match the captured collection. A subsequent
@@ -71,9 +72,22 @@ resolves operation `0x1500` to a unique inline constant `24,000,000` in the
 pinned iBoot registry. The static successful path supplies this same scalar
 to all six frequency metadata selectors; it is not a per-cluster state table.
 The metadata lead is closed, while safe early-DVFS policy remains unresolved.
-The next concrete offline implementation is the ADT property-view metadata
-defect: use the full declared payload length, not header size plus its first
-byte. This is separate from establishing end-to-end ADT buffer bounds.
+Patch 0021 now fixes the ADT property-view metadata defect using the full
+payload length with the template flag masked; traversal and getter/copy
+lengths share that normalization. The host view tests and C-copy ABI regression pass,
+including deterministic original/mutation controls. See the
+[ADT view follow-up](m3-ultra-soc-status-2026-09-26.md#adt-property-view-length--2026-10-06).
+The actual Rust parser also traverses the captured restore template's 771
+nodes and 9,999 properties, including 69 template-marked properties, offline.
+End-to-end ADT buffer bounds remain the next parser requirement.
+
+The [October 6 upstream review](m1n1-upstream-review-2026-10-06.md) found
+44 commits since our pinned baseline, including T6032/M3 Ultra support and
+overlapping SMP startup/shared-state changes. Our ADT fixes remain needed.
+The next primary task is to classify all local patches against that new
+baseline and test a separate offline candidate; the current source pin and
+disabled native dispatch are unchanged. This takes priority over further
+private-firmware tracing until the new source paths have been reconciled.
 
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
@@ -89,11 +103,11 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff cleanup | Validated offline | Two separate patches, seven-case handoff suite and full firmware build pass; no native execution |
 | Exact T6032/J575d board DT | Validated offline | Four handoff cases pass on pinned six-cluster DT; retain regression coverage, native behavior still unvalidated |
-| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; twenty-patch build and static reset-entry placement pass; callbacks linked to PMGR | Qualify cold reset, release sequencing and RVBAR behavior after backup/recovery readiness and native approval; dispatch remains disabled |
+| T6032 SoC identity / CPU startup | Masks, complete 32-node preflight and caller rejection implemented; twenty-one-patch build and static reset-entry placement pass; callbacks linked to PMGR | Qualify cold reset, release sequencing and RVBAR behavior after backup/recovery readiness and native approval; dispatch remains disabled |
 | Secondary-start failure handling | Pre-release guards, fatal timeout and caller status implemented offline; SMP and MMU/HV index/sentinel checks pass sanitizer and mutation regressions | Continue CPU-release evidence work. Native reset remains unvalidated; no rollback or recoverable degraded-SMP claim |
-| MCC/cache initialization | SMP shared-memory fix retained in the default twenty-patch offline build; mapping/startup guards and nine-object layout re-audited | Native behavior unvalidated. All 64 controller/plane contexts, handoff/encoding, aperture relationship, cache effects and DMA still need hardware qualification |
+| MCC/cache initialization | SMP shared-memory fix retained in the default twenty-one-patch offline build; mapping/startup guards and nine-object layout re-audited | Native behavior unvalidated. All 64 controller/plane contexts, handoff/encoding, aperture relationship, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | Conditional routing and provider traced; initial software zero fill checked; iBoot metadata source resolved to constant 24,000,000, not cluster states | Safe raw APSC/default indices, feature/restore ordering and bounded failure handling remain open; native dispatch disabled |
-| Native console / interrupts / DMA | AIC metadata guards and shared ADT copy-length fix pass offline; live offsets captured; hardware unvalidated | Audit remaining ADT parser bounds, AIC aperture/stride and failure propagation; qualify final ADT and UART/AIC/DART only after safety gates |
+| Native console / interrupts / DMA | AIC metadata guards and ADT copy/view/template-flag fixes pass offline; live offsets captured; hardware unvalidated | Reconcile new upstream first; implement ADT buffer-bound checks; audit AIC aperture/stride and failure propagation; qualify UART/AIC/DART after safety gates |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |

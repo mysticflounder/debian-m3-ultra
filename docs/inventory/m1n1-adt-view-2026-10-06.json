@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-06",
+  "source_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "source_archive_sha256": "6425983260ab96d55c36fdaab3b456830c3bd80f06b7759a61ed2bcca924d973",
+  "adt_source_sha256": "3771322ab6ab7b9c28807857fa77672ae6b09bb58588d46d94bc58f144afdd97",
+  "patch_count": 21,
+  "build_directory": "scratch/m1n1-firmware-patched.nSEOUv",
+  "build_status": "pass; same two known compiler warnings",
+  "tests": {
+    "adt_view": "Actual Rust module; flagged and unflagged 0, unterminated3, scalar4, string8, 256 and257 byte payloads; DST extent, C getter, public string/scalar methods, and preserved wire flags.",
+    "flagged_traversal_copy": "Flagged3 followed by ordinary4; padded traversal and property iterator, normalized offset getter, exact and mismatch-preserving C copy.",
+    "negative_controls": "Pre0021 source and header/first-size-byte mutations exit1 with designated diagnostic; raw-size helper mutation retains masked DST metadata and exits at offset getter before oversized consumer use.",
+    "copy_abi_regression": "0020+0021 runner; exact/zero success, mismatch preservation and errors pass; original and removed-guard controls pass.",
+    "j575d_restore": "Known-good589140B template,771nodes9999properties69flagged18nodeswithflags,maxdepth5; actual Rust APIs and aligned backing, no malformed-input claim.",
+    "shared_layout": "Both ELF variants: nine shared objects in64KiB; Mach-O DATA interval pass.",
+    "reset_entry_placement": "Vectors/reset C entry in executable LOAD; reset-stack pointer symbols in writable shared section."
+  },
+  "safety": {
+    "native_executed": false,
+    "firmware_installed": false,
+    "mmio_probed": false,
+    "vm_changed": false,
+    "disks_changed": false,
+    "t6032_cpu_dispatch_enabled": false,
+    "t6032_dvfs_dispatch_enabled": false
+  },
+  "limitations": [
+    "Aligned padded host fixtures and property-name c_char compatibility shim; no sanitizer or full parser-bounds claim.",
+    "Test-only helper obtains real named_prop/properties references; firmware has no test helper.",
+    "Bit31 template semantics are handled; physical buffer bounds, existing maximum-size policy and static-reference aliasing remain separate requirements.",
+    "Restore fixture is not a live/final post-iBoot ADT; range observations occur after Rust APIs construct references.",
+    "Static linked placement does not validate reset-stack pointees, RVBAR, CPU release or cache/DVFS hardware."
+  ],
+  "sha256": {
+    "patches/m1n1/0021-fix-adt-property-view-length.patch": "e5d7cb03c43aa15a1fcef9492425d63df2533e90489d6f4d233fd145c46458a9",
+    "scripts/test-m1n1-adt-view.py": "8d4ff158368c070d332ff4867559a2d478e8e27e47aea64a76caf888a8beb7b9",
+    "tests/m1n1-adt-view.rs": "b24d1522ea5ed22b921cd33fae69be2532b2cf6f533a7df1ea4c42b628938685",
+    "scripts/test-m1n1-adt-copy.py": "b70f67b473c60266ca5d8385e101e5977fa81283414c96122ee0385143bf7609",
+    "scripts/build-m1n1-cpu-offline.sh": "b8d77aa0c1cb12e125cff2bfb074af15d32f8252adc5cfc8d320aba3292aa75c",
+    "scratch/m1n1-adt-view-test-2026-10-06.log": "a10f5cb231a4cc340b5151b93d04569704e4a654612fde56d4e67b2efb182c81",
+    "scratch/m1n1-adt-view-copy-regression-2026-10-06.log": "c1a3e2f6ef074122c138723b8d51da732862779ec0f2cba58e70f3001f98b4e2",
+    "scratch/m1n1-adt-view-build-2026-10-06.log": "f9cb180e8979847ec12bce00dd5e2625bf8f21233b18ece19c9be7b885e8b336",
+    "scratch/m1n1-adt-view-layout-2026-10-06.log": "724def6f0a26e4b43c1266402f3a2f5fa3c82c7df26916ff8aeaa6d80ce1c9ae",
+    "scratch/m1n1-adt-view-placement-2026-10-06.log": "518c7f5075f9a4bbda5cd328714126f52fb04cdccce2839d0754db2c67bba3c3",
+    "scratch/m1n1-firmware-patched.nSEOUv/PATCH_SHA256SUMS": "34dcf727eadd3a2a8bf12ffee96aba60faf36bf58ec34e32e04c3f51623c375e",
+    "scratch/m1n1-firmware-patched.nSEOUv/build.log": "186bb6489a9732abd1c34afc25ec37af2e3160d24a264fdd7a12f2a2e3e19379",
+    "scratch/m1n1-firmware-patched.nSEOUv/patch.log": "e92235b1f095f0f965c7c34bece59984994848cca576bf5f2fd3d01ac04da9cc",
+    "scratch/adt-j575d-decoded.bin": "4a818ecc7f3d71195c1def12c6eed0c90b287f82cad2a6a4ffd6f0849fe13c12",
+    "scratch/adt-view-contract-final-review.md": "ec7e5f8a64cdb6b0639c01a7f490c38012baf89b0c6dfaf78064a03214e2ac48",
+    "scratch/adt-view-final-review.md": "391e88964a8ae042730acb00f0230e16e462fd6b8d63e09a09876308efcd3984",
+    "scratch/adt-restore-validation/test_adt_restore.py": "6b340e6172778ffa3b647e8ae5fcfd4d3c84f67dec0f0680aa9438a6817cdf76",
+    "scratch/adt-restore-validation/report.json": "d132c53a00050d51e97ad4555841d54040c8c4ca837f81cadcacb15cc0a62225",
+    "scratch/adt-restore-validation/manifest.json": "2a0f7e4be416ac5eceee602abd29b66aa552998374fde8e4346a36efa4c36127",
+    "scratch/adt-restore-validation/run.log": "be9e93c3bb3645a17c22c5f8e2d7babd75c2c315dac723528e17505979a59e00"
+  },
+  "artifact_sha256": {
+    "m1n1.elf": "a5dc8d729228945e73f4f6ec54058368ec13b72c00c939a07ac8a806e8f23b4e",
+    "m1n1-raw.elf": "eb7dc7761c90b49c154ccb3d68db230231e10adef84394dd125b4bfaa319e0c6",
+    "m1n1.macho": "19a773635d7ee0d5a5ce9e2fcdcdc40f60895db3e217044964640829ca05a4ef",
+    "m1n1.bin": "b7f2b3c9aded5a4aaf41beac9a7539eefc4efddbd15244023608ff38ce4800d5"
+  }
+}

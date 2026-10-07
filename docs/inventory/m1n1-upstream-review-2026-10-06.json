@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-06",
+  "scope": "Read-only m1n1 source comparison and official M3 feature-status review; not a full Linux/QEMU audit.",
+  "repository": "https://github.com/AsahiLinux/m1n1",
+  "pinned_revision": "4184923ffb2dff079b384d6a32cc02142aa14572",
+  "upstream_revision": "2460b604c6f016956ead711823605eea840c602e",
+  "upstream_committer_timestamp": "2026-10-06T06:49:16Z",
+  "ahead": 44,
+  "behind": 0,
+  "source_pin_changed": false,
+  "native_executed": false,
+  "important_commits": {
+    "t6032": "1a0e368532b63c3b22b91325e231842146b35203",
+    "hv_cpu_start": "647ae30533bcbb457fe544ab6a8d64f77b90ce1f",
+    "smp_cache": "7ec85ae4242af6eba41180f6194b88ccb9ff2a5d",
+    "shared_mapping": "d16a2f4e3c4d2753c38ef1bb3f756add5822ee15",
+    "adt_child_error": "4e06076e390f005f8368b272c445b932c4aa2d28"
+  },
+  "adt_local_fix_superseded": false,
+  "next": "Classify all 21 patches and prepare a separate offline candidate; retain native safety gates.",
+  "sha256": {
+    "scratch/upstream-review-2026-10-06/main-commit.json": "7d069eb7ca8a2e96d4aadcb116c4475154ae900da9dc0bbb762fa0fa4fb52399",
+    "scratch/upstream-review-2026-10-06/compare.json": "536387f7521425a0ec205982d522942cb7f4e2411b6f0be3f6656bbd8720d7a9",
+    "scratch/upstream-review-2026-10-06/manifest.txt": "57099600cbb9f974297daa0fe907f5461350bdb9361436860077f195f19ec83b",
+    "scratch/upstream-review-2026-10-06/raw-sha256.txt": "d1720cafb46ae23736c7b0f1cde3be7077ded456ca5becc3f5d4a898462f56eb",
+    "scratch/upstream-review-2026-10-06/report.md": "aa7209b4b834ea0102c6b900bcb73f73e8cd9ed11b89a35f7f2a718c2d468e8c",
+    "scratch/upstream-review-2026-10-06/raw/main/rust/src/adt.rs": "5e40126dddc35bbbf5b5715f29dcb42de2a0207ca64cbadc0a936abb09724184",
+    "scratch/upstream-review-2026-10-06/raw/main/src/smp.c": "4b000be8d4e6437fc24351a57db5277785cc2e427045fb45d1750b158f2b8766",
+    "scratch/upstream-review-2026-10-06/raw/main/src/mcc.c": "d57179272adcc57445b5281043161e00368e221667541bd431e4fc4add488658",
+    "scratch/upstream-review-2026-10-06/raw/main/src/cpufreq.c": "35253fe452b819791be5c318de387cfc0b3bde61d8f9b4bf03cab4697651530e"
+  }
+}
