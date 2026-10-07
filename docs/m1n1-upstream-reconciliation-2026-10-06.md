@@ -311,10 +311,83 @@ canonical C/Rust files match the build, primary host, reviewer and adjacent
 trees. The [declared-span inventory](inventory/m1n1-upstream-adt-bounds-2026-10-07.json)
 records final retained inputs, outputs and remaining gates.
 
+## AIC aperture/stride follow-up — 2026-10-07 UTC
+
+Comparison-only 0026 retains the first ADT `reg` size instead of discarding it.
+It checks the nonzero, four-byte-aligned base and non-wrapping aperture before
+any register read. Both capability words and the event/IACK word must fit
+before the first AIC2/3 capability read. AIC1 keeps its fixed 0x8000 window
+and checks that window before reading INFO.
+
+After capability reads, the driver validates the supported capacity and the
+first complete bank block, then checks the last indexed span for config,
+software set/clear and mask set/clear. Strides remain independent: they need
+not equal the fallback, but must be aligned, large enough for their own bank
+when there are multiple dies, and fit the declared aperture. Multiplication
+casts the die to u64 first. Signed software-IRQ ingress rejects negative,
+out-of-die and out-of-local-IRQ inputs; raw writes and acknowledge reads are
+also aperture-bounded. Public initialization clears a stale AIC on failure,
+and AIC2's config fallback/AIC3's required config are reset on each call.
+
+The bank-address formula is deliberately unchanged. `max_irq` must be positive,
+at most 4096 and divisible by 32; `nr_irq` must not exceed it. A zero actual
+IRQ count remains accepted at initialization. This is an explicit supported-
+layout precondition, not a theorem that future hardware cannot have partial
+banks. Both the reviewed m1n1 source and
+[official Linux driver](https://github.com/torvalds/linux/blob/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/drivers/irqchip/irq-apple-aic.c#L1022)
+derive bitmap-bank addresses using `max_irq >> 5`; changing to a ceiling would
+invent a different register layout without independent hardware evidence.
+The raw `max_die` field remains informational. The separate HV event-hook
+extent stays `event + 4`, rather than expanding to the full ADT aperture.
+
+The allowlisted captured restore template supplies relative AIC base
+0x92400000, size 0x1cc000 and the first arm-io translation to 0x292400000.
+It supplies offsets 4/12, config 0x10000 and strides 0x4a00, but does **not**
+contain `aic-iack-offset`. The separate September 30 live metadata supplies
+IACK 0x40000. The
+[official T6032-inherited die-zero DTS](https://github.com/torvalds/linux/blob/602042bf29f6efde39cfb5fdd9289bf4854bc0c5/arch/arm64/boot/dts/apple/t6031-die0.dtsi#L9)
+independently describes core base 0x292400000/size 0x1cc000 and a separate event
+entry at core + 0x40000. These are distinct sources, not a reconstructed final
+handoff or captured capability-register values. They permit this arithmetic
+layout; physical register access is still unvalidated.
+
+The complete 24-patch comparison cross-build and shared-layout audit pass,
+with the same six upstream C warnings and no additional warnings. Unchanged
+ADT/relocation and 48-case DVFS/payload plus five MCC/MMU host fixtures pass on
+the complete 24-patch tree. Their canonical source files match the build.
+The new AIC1/2/3 host suite and independent terminal rerun pass seven fixture
+groups with ASan/UBSan. Four source mutations must exit exactly 1 with their
+designated diagnostic and no sanitizer/runtime error; generated sources,
+production/host headers and compile/run logs are retained. The sparse MMIO
+observer does not dereference fake addresses, including the large-stride
+case. Actual register capabilities in the J575d-style fixture are synthetic.
+The [AIC aperture inventory](inventory/m1n1-upstream-aic-aperture-2026-10-07.json)
+records retained evidence and the limited validation scope. Explicit AIC3
+capability/IACK aperture rejection is covered; independently testing short
+AIC2 windows at each fixed capability offset remains a coverage extension.
+
+Run the driver suite with:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --no-project --offline --python 3.13 python \
+  scripts/test-m1n1-upstream-aic-aperture.py
+bash scripts/build-m1n1-upstream-offline.sh aic-guards
+```
+
+This does not prove power state, physical mapping, cross-bank non-overlap,
+HW_STATE-per-die placement, IRQ routing/target semantics or native boot.
+The next required cutoff is in `main.c`: it currently ignores the void
+`aic_init()` result and continues into `smp_init()`. Quiet no-op runtime
+helpers are not a successful interrupt-controller initialization contract.
+HV trace null/divisor/die/bitmap-index guards are separate follow-ups.
+Default source pin/native dispatch remain unchanged; comparison
+artifacts are not boot-approved. No physical MMIO, VM, disk or firmware changes.
+
 ## Remaining implementation order
 
-1. Address AIC aperture/stride and whole-boot failure propagation, keeping the
-   complete adapted stack under
+1. Address whole-boot failure propagation and remaining AIC/HV caller guards,
+   keeping the complete adapted stack under
    regression. Do not confuse declared bounds with physical mapping qualification.
 2. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
    pre-existing busy state, feature/restore prerequisites and voltage error policy.

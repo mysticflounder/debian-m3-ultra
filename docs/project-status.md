@@ -126,13 +126,26 @@ The [upstream refresh](m1n1-upstream-review-2026-10-06.md#freshness-follow-up--2
 finds no newer m1n1 default-branch changes; all three QEMU fixes remain absent
 from the official checked source. Official Linux 7.3-rc6/master contains
 T6032/J575d DTS/bindings, to be used during kernel/board integration; this is
-not native boot evidence. The next primary implementation task is AIC
-aperture/stride validation, followed by whole-boot failure handling. The
+not native boot evidence. AIC aperture/stride validation is now complete for
+the declared register window, with the hardware qualifications below. The next
+primary implementation task is whole-boot failure handling. The
 default source pin and disabled native dispatch are unchanged. Upstream
 comparison artifacts contain its native T6032 dispatch and are not
 boot-approved or fully hardware-qualified. The full original guard adaptation
 is accounted for, but the remaining input and runtime gates are not complete.
 Those implementation tasks take priority over further private-firmware tracing.
+
+The [AIC aperture follow-up](m1n1-upstream-reconciliation-2026-10-06.md#aic-aperturestride-follow-up--2026-10-07-utc)
+adds comparison-only 0026: bounded capability/IACK reads, indexed bank/stride
+preflight and software-IRQ/raw-write ingress, preserving AIC1/2/3 layouts and
+the HV event-hook size. The 24-patch cross-build/layout audit, seven AIC fixture
+groups, four exact-diagnostic sanitized mutation controls and independent rerun
+pass. ADT/relocation, 48-case DVFS/payload and five MCC/MMU regressions also pass
+on that complete source. The
+[evidence inventory](inventory/m1n1-upstream-aic-aperture-2026-10-07.json)
+records the declared-span scope and unchanged hardware/recovery gates.
+Startup still ignores AIC initialization failure before SMP; this caller cutoff
+is next. HV trace-index guards remain separate. No native execution or MMIO.
 
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
@@ -150,9 +163,9 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Exact T6032/J575d board DT | Validated offline; official Linux 7.3 DT source confirmed | Reconcile official DTS/bindings during kernel integration; retain handoff regressions, native behavior still unvalidated |
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
-| MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 23-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
-| Six-cluster frequency / DVFS | 0011 payload cutoff and 0023 first-cluster failure containment adapted; 23-patch build and 48-case driver/payload mock suite pass | Safe raw APSC/default indices, pre-existing busy state, routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
-| Native console / interrupts / DMA | ADT declared-span/relocation guards pass host suites and 23-patch build; AIC metadata guards retained; hardware unvalidated | Next: AIC aperture/stride and whole-boot failure handling. Physical ADT mapping/aliasing remain separate; qualify UART/AIC/DART after safety gates |
+| MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 24-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
+| Six-cluster frequency / DVFS | 0011 payload cutoff and 0023 first-cluster failure containment adapted; 24-patch build and 48-case driver/payload mock suite pass | Safe raw APSC/default indices, pre-existing busy state, routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
+| Native console / interrupts / DMA | ADT declared bounds/relocation and AIC aperture/stride guards pass host suites and 24-patch build; hardware unvalidated | Next: whole-boot AIC failure cutoff; HV trace guards separate. Physical mapping/aliasing, register semantics and UART/AIC/DART behavior still need qualification |
 | RAM-only Linux diagnostic boot | Not attempted; gated | Complete early initialization, boot entry and recovery validation before approved native testing |
 | NVMe / USB / Ethernet | Pending hardware bring-up | Reconcile source support, initialization dependencies and device-tree descriptions; test only after early boot |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
