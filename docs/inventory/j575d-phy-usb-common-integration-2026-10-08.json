@@ -1,0 +1,708 @@
+{
+  "schema_version": 1,
+  "date_utc": "2026-10-08",
+  "parent_commit": "74f593e",
+  "scope": "Opt-in T6031 USB-only common calibration and disabled 822-record J575d DT; not boot approved",
+  "contract": {
+    "source_groups": [
+      "tunable_AUS40CMN_SHM",
+      "tunable_AUSPLL_CORE",
+      "tunable_CIO4PLL_CORE"
+    ],
+    "rows_per_group_per_port": [
+      1,
+      7,
+      4
+    ],
+    "ports": 6,
+    "usb_records": 72,
+    "source_order_preserved": true,
+    "source_masks_and_values_preserved": true,
+    "core_relative_big_endian_triples": true,
+    "linux_property": "apple,tunable-usb-common",
+    "linux_modes": [
+      "APPLE_ATCPHY_MODE_USB3",
+      "APPLE_ATCPHY_MODE_USB3_DP"
+    ],
+    "semantic_mode_crosswalk": "constrained caller-path inference; not decoded native enum names",
+    "numeric_native_enum_identity_claimed": false,
+    "whole_native_helper_sha256": "a389ef0a4abb911a9d9148a1c49ccdba15536c61175336d08423da12c4a44c0d",
+    "separate_cio80_default_and_usb2_not_assigned": true
+  },
+  "linux": {
+    "source_pin": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+    "patch": {
+      "path": "patches/linux/j575d-602042bf/0005-apple-atcphy-m3-usb-common-calibration.patch",
+      "sha256": "ab77204e6dadbd78163eb604592aaf683d67c061e826ac0c3f56a5f815606551"
+    },
+    "recipe": {
+      "path": "scripts/build-j575d-phy-usb-common-offline.sh",
+      "sha256": "0801009793db9fffb066c58066ca9bf9226abcce9543295ec247a735b620a945"
+    },
+    "build_workspace": "scratch/j575d-phy-usb-common.W3594q",
+    "builder_image": "sha256:1cc5bb4ef152a16785acce551084a41c973be8d0c9c7718524f67cd9d7d78121",
+    "build_exit": 0,
+    "kernel_release": "7.3.0-rc6",
+    "modules": 20,
+    "module_elf_machine": "AArch64",
+    "atc_sha256": "2425dbcb0bf6a59f5302db50abc7a33dee0847faf3e4564454e93cb22bc4487b",
+    "binding_sha256": "0c4f50c8cdc62ff44ea8a991139769a011681968518dc0bf8919411d26f086ca",
+    "absent_property_legacy_behavior_preserved": true,
+    "capability_enabled_only_in_t6031_descriptor": true,
+    "other_generation_present_property_rejected": true,
+    "new_channel_does_not_require_fabric_pair": true,
+    "zero_and_partial_tuple_lengths_rejected_before_mapping": true,
+    "existing_tuple_parser_and_masked_apply_unchanged": true,
+    "application_order": [
+      "common-a",
+      "axi2af",
+      "optional Fabric",
+      "common-b",
+      "optional USB-common in USB3/USB3_DP",
+      "existing mode lanes"
+    ],
+    "added_or_enlarged_resources": 0,
+    "usb2_role_behavior_unchanged": true,
+    "dependency_closure_depmod_aliases_and_vermagic_passed": true,
+    "baseline_config_image_and_kernel_link_artifacts_preserved": true,
+    "package_installed": false,
+    "package_booted": false
+  },
+  "candidate": {
+    "builder": {
+      "path": "scripts/build-j575d-phy-usb-common-dt.py",
+      "sha256": "58849770ce97efe650fa0714026f7ba22fe29aa3f1024cde8a8b722493036532"
+    },
+    "path": "scratch/j575d-phy-usb-common-dt.04qu7uzz/candidate.dtb",
+    "sha256": "9b46e8022b11e7fa9c79601325eccfa415d0ddacf0568b1263d155b6aebe1e4c",
+    "ports": 6,
+    "generic_records": 750,
+    "usb_common_records": 72,
+    "total_records": 822,
+    "changed_properties_from_frozen_pre_fabric_parent": 42,
+    "phy_nodes_disabled": 6,
+    "ace3_nodes_disabled": 6,
+    "legacy_windows_and_other_nodes_preserved": true,
+    "compiled_dtb_roundtrip_and_reservations_preserved": true,
+    "independent_cli_outputs_byte_identical": true,
+    "cio80_default_records_unconverted": 30,
+    "usb2_records_unconverted": 12
+  },
+  "tests": {
+    "source_tests": 6,
+    "dt_tests": 8,
+    "mode_fixture": "complete source-extracted atcphy_apply_tunables with recording apply primitive, not a handwritten implementation",
+    "mode_cases": 56,
+    "mode_dimensions": "7 symbolic modes x USB absent/present x Fabric absent/present x 2 orientations",
+    "actual_both_lane_calls_and_register_bases_checked": true,
+    "mode_gate_mutation_compiles": true,
+    "mode_gate_mutation_expected_exit": 1,
+    "kernel_tuple_parser_source_extracted_be_length_alignment_bounds_and_65_rows_checked": true,
+    "all_822_compiled_tuples_independently_checked_from_raw_capture": true,
+    "fixture_scope": "offline source/compiled-DT contracts; not a blanket cross-architecture or physical hardware proof",
+    "main_package_checksum_checks": 92,
+    "main_build_checksum_checks": 13,
+    "schema_status": "Actual 822-record candidate and frozen 750-record baseline have byte-identical path-normalized diagnostics; seven copy-only controls qualify the targeted binding",
+    "whole_dt_schema_clean": false,
+    "schema": {
+      "dtschema_version": "2026.9",
+      "offline": true,
+      "binding_document_exit": 0,
+      "binding_document_diagnostics": 0,
+      "actual_candidate_exit": 0,
+      "baseline_exit": 0,
+      "diagnostic_lines_each": 449,
+      "baseline_schema_errors_each": 80,
+      "unmatched_compatibles_each": 86,
+      "normalized_diagnostics_byte_identical": true,
+      "new_diagnostics": 0,
+      "atc_diagnostics": 0,
+      "whole_dt_schema_clean": false,
+      "canonical_phy_nodes_disabled": true,
+      "copy_controls": 7,
+      "copy_target": "/soc@200000000/phy@703000000",
+      "enabled_copy_valid_12_and_65_rows_accepted": true,
+      "enabled_copy_missing_optional_property_accepted": true,
+      "enabled_copy_malformed_and_empty_property_rejected": true,
+      "wrong_generation_isolated_without_fabric_or_sixth_reg_rejected_enabled_and_disabled": true,
+      "restriction_disabled_conditional_gap_observed": false,
+      "scope": "Schema and offline DT contract only, not kernel execution or physical functionality"
+    },
+    "source_fixture_final_sha256": "36458effa78282a07f339e3eba5f04169cd99b9918cedd781c3dc0d9152bc8a6",
+    "historical_driver_report_note": "Driver report predates main's final one-line refinement to require mode-gate mutation exit exactly 1; current fixture hash and main-source-tests-final.log are the final receipt; that historical report also used an older Fabric DTB. Current schema report and final independent review supersede those historical validation inputs.",
+    "independent_final_review": "scratch/j575d-usb-common-final-review-2026-10-08/report.md",
+    "parent_ace3_layout_routing_closure_and_controls_rechecked": true,
+    "final_inventory_check": "scratch/j575d-usb-common-driver-2026-10-08/main-final-inventory-check.log"
+  },
+  "baseline_triage": {
+    "validation_errors": 80,
+    "unmatched_compatibles": 86,
+    "missing_exact_m3_match_does_not_prove_absence_of_fallback_driver": true,
+    "pmgr_external_clock_boolean_properties": 8,
+    "pmgr_external_clock_schema_errors": 16,
+    "pmgr_property_locations": "MCA0..MCA3 power domains on both dies",
+    "pmgr_linux_property_consumer_found": false,
+    "pmgr_hardware_meaning_unproven": true,
+    "property_allowed_or_removed_to_silence_schema": false
+  },
+  "remaining": [
+    "30 CIO80-default records: establish caller/protocol and resource/order before assigning",
+    "12 USB2 records: named consumer, base and role semantics",
+    "Independent J575d select-IRQ witness",
+    "Whole-board binding/fallback hardware and PMGR MCA external-clock contracts",
+    "Physical power/clock/IRQ/DMA and native kernel-entry qualification",
+    "Verified backup, recovery readiness and separate native approval",
+    "Retained m1n1 source-policy lane remains held"
+  ],
+  "unchanged": {
+    "default_m1n1_pin": "4184923ffb2dff079b384d6a32cc02142aa14572",
+    "native_dispatch": false,
+    "persistent_vm": true,
+    "firmware": true,
+    "nvram": true,
+    "disks_and_partitions": true,
+    "mmio_performed": false,
+    "native_functionality_validated": false,
+    "pushed": false,
+    "asahi_submission": false,
+    "security_remediation": false
+  },
+  "receipts": [
+    {
+      "path": "patches/linux/j575d-602042bf/0005-apple-atcphy-m3-usb-common-calibration.patch",
+      "sha256": "ab77204e6dadbd78163eb604592aaf683d67c061e826ac0c3f56a5f815606551"
+    },
+    {
+      "path": "scripts/build-j575d-phy-usb-common-offline.sh",
+      "sha256": "0801009793db9fffb066c58066ca9bf9226abcce9543295ec247a735b620a945"
+    },
+    {
+      "path": "scripts/build-j575d-phy-usb-common-dt.py",
+      "sha256": "58849770ce97efe650fa0714026f7ba22fe29aa3f1024cde8a8b722493036532"
+    },
+    {
+      "path": "tests/test-j575d-phy-usb-common.py",
+      "sha256": "36458effa78282a07f339e3eba5f04169cd99b9918cedd781c3dc0d9152bc8a6"
+    },
+    {
+      "path": "tests/test-j575d-phy-usb-common-dt.py",
+      "sha256": "a923986d26214d1aa6537d033ac6b9cd00e2bd8f69b83871695f07918c8c8821"
+    },
+    {
+      "path": "docs/inventory/j575d-phy-fabric-integration-2026-10-08.json",
+      "sha256": "06a833501975a9d76da93557c482ce0f780489384eb7f1f89d898d9523d84cc7"
+    },
+    {
+      "path": "scratch/j575d-usb-mode-scope-2026-10-08/report.md",
+      "sha256": "0c5e22f2ecfcf9da8a0fdcdfd638e50c28d47fa7a0ebebdb22706b06a6cac4c1"
+    },
+    {
+      "path": "scratch/j575d-usb-mode-scope-2026-10-08/verify-usb-helper-v4.py",
+      "sha256": "f4ff3bf34a26611281c586100f3190fe2e87631529d6d4908cf4f43a469181d7"
+    },
+    {
+      "path": "scratch/j575d-usb-mode-scope-2026-10-08/verify-usb-helper-v4.out",
+      "sha256": "96e00cf92ab6aeb99b783fe885e22de79f8ea13c4fb0c41b8e879c5750d5498b"
+    },
+    {
+      "path": "scratch/j575d-usb-common-driver-2026-10-08/report.md",
+      "sha256": "749f5933a1fb8b04085ab277929a785d7f6be76fab879b2e5ec32b036dde1e6e"
+    },
+    {
+      "path": "scratch/j575d-usb-common-driver-2026-10-08/main-source-tests-final.log",
+      "sha256": "b1191ce4df04c39469ce8c213977c78842f5e73daff493d7f9ecf22a7dda3186"
+    },
+    {
+      "path": "scratch/j575d-usb-common-driver-2026-10-08/main-dt-tests.log",
+      "sha256": "71d71067d1c9a0420887dede1cf73676beba9c155a35db60265ee505ff3dd836"
+    },
+    {
+      "path": "scratch/j575d-usb-common-driver-2026-10-08/main-build-check.log",
+      "sha256": "42c28e7dbacdcfbfa62936aaab32e32ba4457341908b069c213fb1f6b052b341"
+    },
+    {
+      "path": "scratch/j575d-usb-common-driver-2026-10-08/main-package-check.log",
+      "sha256": "4f7a217f5df8e8288104173b295b6bae32efe3bb39fdc031b68d7c151cb1ff14"
+    },
+    {
+      "path": "scratch/j575d-usb-common-build-2026-10-08/report.md",
+      "sha256": "713b4bc562200faaedff9e8c7eb9e28d11b1c0b9ddb727138cd2b4df325dfecd"
+    },
+    {
+      "path": "scratch/j575d-board-binding-triage-2026-10-08/report.md",
+      "sha256": "87a665a0e1fa81f3c6549d573f50f42efbb4447dd821c68976700bb497bc48ca"
+    },
+    {
+      "path": "scratch/j575d-board-binding-triage-2026-10-08/grouping.json",
+      "sha256": "d32417fa1f1a653916a05014110e8d9df998e8eee0f21d880136bea8537c0b4b"
+    },
+    {
+      "path": "scratch/j575d-board-binding-triage-2026-10-08/diagnostic-details.tsv",
+      "sha256": "468147bdff0c8edd8463a9a37f67bec8d028f157f95f9909e6c7b2f49792b2e2"
+    },
+    {
+      "path": "scratch/j575d-pmgr-external-clock-contract-2026-10-08/report.md",
+      "sha256": "18a7784b07052bf70a7011cad56765342a121f9dacd85796f9728da0c21e9050"
+    },
+    {
+      "path": "scratch/j575d-pmgr-external-clock-contract-2026-10-08/source-checks.txt",
+      "sha256": "4a2ff902d97cb6a61569f3dadbb4199e2d8bbce0791793872ac8ede2547a9c26"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common-dt.04qu7uzz/candidate.dtb",
+      "sha256": "9b46e8022b11e7fa9c79601325eccfa415d0ddacf0568b1263d155b6aebe1e4c"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common-dt.04qu7uzz/candidate.dts",
+      "sha256": "24d32d784fe49eaa9ef06d8617407ce9c64d883394b3dca7b2d9d1b4c9d5d8c4"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common-dt.04qu7uzz/roundtrip.dtb",
+      "sha256": "4c4cc450ada2a7714636ae207070b678a0e61bcac1c8722762025608869b8a8b"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common-dt.04qu7uzz/manifest.json",
+      "sha256": "01496d63b8296a76d4b98145f97e52a04e57cd81d443976e4696e01c110d4de9"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common-dt.04qu7uzz/dtc.stderr",
+      "sha256": "c3982d8ef5184da578c432ba9a32dcf0648a0afd18a88b8d9993aa55f3c01e4f"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common-dt.04qu7uzz/roundtrip.stderr",
+      "sha256": "a138d8a56ae51b357d1737061036e9c56880d67ebb1666b5215d1f9eb05698a9"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/build-recipe.sh",
+      "sha256": "0801009793db9fffb066c58066ca9bf9226abcce9543295ec247a735b620a945"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/build-inputs.txt",
+      "sha256": "2e3e37c77c0980a65dde22bac7d65522fb888cd808256f64c0194c0b7c7a2130"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/build.log",
+      "sha256": "4ce16dbba03a3760a1263c6341d33887a77ac996578aeb87c2d12ec24e3917f2"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/build.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/SHA256SUMS",
+      "sha256": "2e68b656b69c56a58c23395825f89a36409b0d05acdc46ae75807edb5c3de758"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/PACKAGE_SHA256SUMS",
+      "sha256": "da440c18e3d7253d23a43cb25baf23c9d447b193066737780a53a2f17d45e558"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/build/Module.symvers",
+      "sha256": "b12af2f4d3d3c1dc79790d4afe92bb9fe19c53b77fcac740a1ae545a13c67d66"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/metadata/provenance.txt",
+      "sha256": "513bc9aeef293e07ae6c01818846999af5c4ec674881e9c5ce212257b2b6adcd"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/metadata/patched-source.sha256",
+      "sha256": "1e3ad99a74f1098d3ec43e3e76cdf9098b57998348d7c2a0a48325c521696afb"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/metadata/patched-binding.sha256",
+      "sha256": "15293ebbd435896aaef843931721bb542068751ca3794e746a77b70b0066f0cf"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/metadata/config.diff",
+      "sha256": "32707ea9c41edb53b4b3f72027867604c0373ac5d436c0b12eb22ebd02e87409"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/metadata/config.diff.merge",
+      "sha256": "7b5494cb8fbb7057f5c2b3b776e5952bb82a37a274e1f8c6a7a3daac6238a872"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/metadata/depmod.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/source/drivers/phy/apple/atc.c",
+      "sha256": "2425dbcb0bf6a59f5302db50abc7a33dee0847faf3e4564454e93cb22bc4487b"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/source/Documentation/devicetree/bindings/phy/apple,atcphy.yaml",
+      "sha256": "0c4f50c8cdc62ff44ea8a991139769a011681968518dc0bf8919411d26f086ca"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/baseline.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/baseline.normalized.stderr",
+      "sha256": "c08ca25bd1c64a977a4ee0765a01d67a3981c0c6950073c32fd45b964f11919e"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/baseline.stderr",
+      "sha256": "8bf37fb46f982ca9a021d909d6c7a5ad27ddc4c1d5020b3d4aa02f69b5a80b1d"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/baseline.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/bindings-input-manifest.sha256",
+      "sha256": "6266ed2410d7e076257b69bfa2a5209f54f4e8e93d6a57df952a1cd52d475bff"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/candidate.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/candidate.normalized.stderr",
+      "sha256": "c08ca25bd1c64a977a4ee0765a01d67a3981c0c6950073c32fd45b964f11919e"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/candidate.stderr",
+      "sha256": "0cb2b39b64e43f1eb731bd340dd46fb3684d1944e9077506a995ec49cbd615ba"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/candidate.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/README",
+      "sha256": "1f6766d8675caeec7594bec6acd6fb0a5ae467a8247ddba000a5e07e96fe7b7e"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/empty-property-fdtput.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/empty-property-fdtput.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/empty-property-fdtput.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/empty-property-status-fdtput.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/empty-property-status-fdtput.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/empty-property-status-fdtput.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/empty-property.dtb",
+      "sha256": "f781aa39f291451e35b6e65ff1316e6fda1eb1e1d492a65b2d818be4f0907e40"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/empty-property.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/empty-property.stderr",
+      "sha256": "ed1bbecd78e38dd339f84aa6b35186176e2f12597279c50e77282b8a1f62edc9"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/empty-property.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/malformed-2-cells-fdtput.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/malformed-2-cells-fdtput.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/malformed-2-cells-fdtput.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/malformed-2-cells-status-fdtput.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/malformed-2-cells-status-fdtput.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/malformed-2-cells-status-fdtput.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/malformed-2-cells.dtb",
+      "sha256": "97c2242ccf38b8b437b82b067288e10675baa3945ff0aab4608594056fd47c61"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/malformed-2-cells.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/malformed-2-cells.stderr",
+      "sha256": "90c42a1ac0dae3c782ea0728d6d8f9a7d753ec7e6c6f4f9cbe897b7383f5e1fb"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/malformed-2-cells.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/missing-optional-property-fdtput.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/missing-optional-property-fdtput.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/missing-optional-property-fdtput.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/missing-optional-property-status-fdtput.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/missing-optional-property-status-fdtput.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/missing-optional-property-status-fdtput.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/missing-optional-property.dtb",
+      "sha256": "999ede27c7cb105ce51526ebfae9e976f121154d533f2b18aa6746cd8e8440c4"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/missing-optional-property.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/missing-optional-property.stderr",
+      "sha256": "8f000e4dfb831957294f1b97ccc8a3c8fadd58d3e1eed693ba463d50f799bb4d"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/missing-optional-property.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-12-original-status-fdtput.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-12-original-status-fdtput.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-12-original-status-fdtput.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-12-original.dtb",
+      "sha256": "b69e0d38bd28e396def75ac67f0d014e7336a7fd271a78248e95366faaca59a8"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-12-original.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-12-original.stderr",
+      "sha256": "959a4d6497f38403e4e03cb67cfde108ae60805351a17b07a51ad47f11a4f943"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-12-original.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-65-rows-fdtput.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-65-rows-fdtput.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-65-rows-fdtput.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-65-rows-status-fdtput.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-65-rows-status-fdtput.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-65-rows-status-fdtput.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-65-rows.dtb",
+      "sha256": "7a3dd510ce16561f3f30afd92ba0f9e90245fec611b541b0b65fb39a4581cfa0"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-65-rows.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-65-rows.stderr",
+      "sha256": "58eee4975d4d92594e77ec1df224de71f08f5de0be28ec82d43969a2b753e7fc"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/valid-65-rows.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-disabled-fabric-fdtput.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-disabled-fabric-fdtput.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-disabled-fdtput.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-disabled-reg-fdtput.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-disabled-reg-fdtput.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-disabled.dtb",
+      "sha256": "48939ac483811bc7e3112ff0c53d1a752b54e3e4ca4ab1494f2897ea6f97a20f"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-disabled.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-disabled.stderr",
+      "sha256": "74a2ba88f6cd2f87999a1c043c92b75b209f56ae5405e4218f9901ae5f488d08"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-disabled.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-enabled-fabric-fdtput.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-enabled-fabric-fdtput.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-enabled-fdtput.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-enabled-reg-fdtput.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-enabled-reg-fdtput.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-enabled-status-fdtput.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-enabled-status-fdtput.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-enabled-status-fdtput.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-enabled.dtb",
+      "sha256": "746ef0ca9a36db692f3d5918d3d2923eff22cea4d3b31a27d37073bd4a6c0b1b"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-enabled.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-enabled.stderr",
+      "sha256": "c765796a94cdf3b6b0584e2c17b561c3b2d29df6d4f8810b9dc3c5de42aa7645"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/controls/wrong-generation-enabled.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/diagnostics-identical.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/dt-doc-validate.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/dt-doc-validate.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/dt-doc-validate.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/pinned-input-sha256",
+      "sha256": "6d621f9b44650c690f6d431e16bd1e97899f6712b7a23bbbe888a6250cd8d01a"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/report.md",
+      "sha256": "2548d2b57fd2c4100e05ab469e3219a9854e408669f00b0d524ae563617c7497"
+    },
+    {
+      "path": "scratch/j575d-usb-common-schema-2026-10-08/run-audit.sh",
+      "sha256": "471667e12bd705d60db32a95116f31dd4c3dc7c93d90edb8f376bbf8adff46dc"
+    },
+    {
+      "path": "scratch/j575d-usb-common-driver-2026-10-08/full-schema.yaml",
+      "sha256": "fe45f8a456bdd035b8c1297e9e755b48ce2920d0dafc2c2865c051c79a5ffde8"
+    },
+    {
+      "path": "scratch/verify-j575d-usb-common-final-2026-10-08.py",
+      "sha256": "c3362911eaa6226f66dfbc254e71f0d8ce7a37cac4702fc0254d9f030a26d94c"
+    },
+    {
+      "path": "scratch/j575d-usb-common-driver-2026-10-08/main-parent-final.log",
+      "sha256": "b8e115e470f1e579806b08714ec16f27089f5ed6b225d15c22415e509a9ef740"
+    },
+    {
+      "path": "scratch/j575d-usb-common-final-review-2026-10-08/report.md",
+      "sha256": "8a09dbb76979939bae0da80cef9125ed6d70937ca45d3e78b239dd4b049b9ec6"
+    },
+    {
+      "path": "scratch/j575d-usb-common-final-review-2026-10-08/fixture-tests.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-usb-common-final-review-2026-10-08/fixture-tests.stderr",
+      "sha256": "6cad5a420cdc6370dfd32d0f115cffd170fcb36cb285dfb9193c8b3e376c8f48"
+    },
+    {
+      "path": "scratch/j575d-usb-common-final-review-2026-10-08/fixture-tests.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-common-driver-2026-10-08/main-final-inventory-check.log",
+      "sha256": "29890710fa4c5adc84ee98b4be7cf13cbe4b5c541dcb666252c3612f31b86172"
+    }
+  ]
+}

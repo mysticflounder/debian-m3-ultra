@@ -1,0 +1,154 @@
+diff --git drivers/phy/apple/atc.c drivers/phy/apple/atc.c
+index aba3645..a052b79 100644
+--- drivers/phy/apple/atc.c
++++ drivers/phy/apple/atc.c
+@@ -600,6 +600,7 @@ struct atcphy_hw {
+ 	int aciophy_lane_mode;
+ 	int aciophy_crossbar;
+ 	bool fabric_tunables;
++	bool usb_common_tunables;
+ };
+ 
+ /**
+@@ -613,6 +614,7 @@ struct atcphy_hw {
+  * @tunables.lane_dp: DisplayPort lane-specific tunables
+  * @tunables.lane_usb4: USB4 lane-specific tunables
+  * @tunables.fabric: Optional M3 Apple Fabric tunables
++ * @tunables.usb_common: Optional T6031 USB-common tunables
+  * @mode: Current PHY operating mode
+  * @swap_lanes: True if lanes must be swapped due to cable orientation
+  * @dp_link_rate: DisplayPort link rate
+@@ -650,6 +652,7 @@ struct apple_atcphy {
+ 		struct apple_tunable *lane_dp[2];
+ 		struct apple_tunable *lane_usb4[2];
+ 		struct apple_tunable *fabric;
++		struct apple_tunable *usb_common;
+ 	} tunables;
+ 
+ 	const struct atcphy_hw *hw;
+@@ -673,6 +676,7 @@ struct apple_atcphy {
+ 		struct resource *fabric;
+ 	} res;
+ 	bool fabric_enabled;
++	bool usb_common_enabled;
+ 
+ 	struct {
+ 		struct phy *usb2;
+@@ -939,6 +943,9 @@ static void atcphy_apply_tunables(struct apple_atcphy *atcphy, enum atcphy_mode
+ 	if (atcphy->tunables.fabric)
+ 		apple_tunable_apply(atcphy->regs.fabric, atcphy->tunables.fabric);
+ 	apple_tunable_apply(atcphy->regs.core, atcphy->tunables.common[1]);
++	if (atcphy->tunables.usb_common &&
++	    (mode == APPLE_ATCPHY_MODE_USB3 || mode == APPLE_ATCPHY_MODE_USB3_DP))
++		apple_tunable_apply(atcphy->regs.core, atcphy->tunables.usb_common);
+ 
+ 	switch (mode) {
+ 	/*
+@@ -2404,6 +2411,16 @@ static int atcphy_load_tunables(struct apple_atcphy *atcphy)
+ 		}
+ 	}
+ 
++	if (atcphy->usb_common_enabled) {
++		atcphy->tunables.usb_common = devm_apple_tunable_parse(
++			atcphy->dev, atcphy->np, "apple,tunable-usb-common", atcphy->res.core);
++		if (IS_ERR(atcphy->tunables.usb_common)) {
++			dev_err(atcphy->dev, "Failed to read tunable apple,tunable-usb-common: %ld\n",
++				PTR_ERR(atcphy->tunables.usb_common));
++			return PTR_ERR(atcphy->tunables.usb_common);
++		}
++	}
++
+ 	return 0;
+ }
+ 
+@@ -2442,6 +2459,31 @@ static int atcphy_validate_fabric(struct platform_device *pdev,
+ 	return 0;
+ }
+ 
++static int atcphy_validate_usb_common(struct apple_atcphy *atcphy)
++{
++	const struct property *usb_common_prop;
++
++	usb_common_prop = of_find_property(atcphy->np, "apple,tunable-usb-common", NULL);
++	if (!usb_common_prop)
++		return 0;
++
++	if (!atcphy->hw->usb_common_tunables) {
++		dev_err(atcphy->dev,
++			"apple,tunable-usb-common is only supported with apple,t6031-atcphy\n");
++		return -EINVAL;
++	}
++
++	if (!usb_common_prop->length ||
++	    usb_common_prop->length % (3 * sizeof(u32))) {
++		dev_err(atcphy->dev,
++			"apple,tunable-usb-common must contain one or more complete tuples\n");
++		return -EINVAL;
++	}
++
++	atcphy->usb_common_enabled = true;
++	return 0;
++}
++
+ static int atcphy_map_resources(struct platform_device *pdev, struct apple_atcphy *atcphy)
+ {
+ 	struct {
+@@ -2533,6 +2575,9 @@ static int atcphy_probe(struct platform_device *pdev)
+ 	platform_set_drvdata(pdev, atcphy);
+ 
+ 	ret = atcphy_validate_fabric(pdev, atcphy);
++	if (ret)
++		return ret;
++	ret = atcphy_validate_usb_common(atcphy);
+ 	if (ret)
+ 		return ret;
+ 	ret = atcphy_map_resources(pdev, atcphy);
+@@ -2553,6 +2598,7 @@ static const struct atcphy_hw atcphy_hw_t8103 = {
+ 	.aciophy_lane_mode = ACIOPHY_LANE_MODE_T8103,
+ 	.aciophy_crossbar = ACIOPHY_CROSSBAR_T8103,
+ 	.fabric_tunables = false,
++	.usb_common_tunables = false,
+ };
+ 
+ static const struct atcphy_hw atcphy_hw_t8122 = {
+@@ -2560,6 +2606,7 @@ static const struct atcphy_hw atcphy_hw_t8122 = {
+ 	.aciophy_lane_mode = ACIOPHY_LANE_MODE_T8122,
+ 	.aciophy_crossbar = ACIOPHY_CROSSBAR_T8122,
+ 	.fabric_tunables = false,
++	.usb_common_tunables = false,
+ };
+ 
+ static const struct atcphy_hw atcphy_hw_t6031 = {
+@@ -2567,6 +2614,7 @@ static const struct atcphy_hw atcphy_hw_t6031 = {
+ 	.aciophy_lane_mode = ACIOPHY_LANE_MODE_T8122,
+ 	.aciophy_crossbar = ACIOPHY_CROSSBAR_T8122,
+ 	.fabric_tunables = true,
++	.usb_common_tunables = true,
+ };
+ 
+ static const struct of_device_id atcphy_match[] = {
+diff --git Documentation/devicetree/bindings/phy/apple,atcphy.yaml Documentation/devicetree/bindings/phy/apple,atcphy.yaml
+index 3b48813..a144ba0 100644
+--- Documentation/devicetree/bindings/phy/apple,atcphy.yaml
++++ Documentation/devicetree/bindings/phy/apple,atcphy.yaml
+@@ -71,6 +71,7 @@ allOf:
+         reg-names:
+           maxItems: 5
+         apple,tunable-fabric: false
++        apple,tunable-usb-common: false
+ 
+ $defs:
+   apple,tunable:
+@@ -175,6 +176,12 @@ properties:
+       Optional M3 Apple Fabric tunables, applied to the sixth fabric register
+       region after tunable-axi2af and before tunable-common-b.
+ 
++  apple,tunable-usb-common:
++    $ref: "#/$defs/apple,tunable"
++    description: >
++      Optional T6031 USB common tunables, applied to the core register region
++      after tunable-common-b and before mode-specific USB3 lane tunables.
++
+   apple,tunable-lane0-usb:
+     $ref: "#/$defs/apple,tunable"
+     description: USB3 tunables for lane 0.

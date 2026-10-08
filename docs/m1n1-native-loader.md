@@ -535,6 +535,77 @@ receipts remain reproducible. No default payload, native dispatch, firmware,
 NVRAM, disk, partition or persistent-VM setting changes. The m1n1 source-policy
 hold, verified-backup/recovery requirement and separate native approval remain.
 
+## Opt-in T6031 USB-only calibration — 2026-10-08 UTC
+
+The [USB-common patch](../patches/linux/j575d-602042bf/0005-apple-atcphy-m3-usb-common-calibration.patch)
+extends the frozen Fabric source through a separate optional
+`apple,tunable-usb-common` property. Only the T6031 descriptor permits it;
+other generations reject its presence. Absent properties preserve the legacy
+path, including M3 without a Fabric pair. Present properties must contain
+nonempty complete triples before resource mapping; the existing core-relative
+big-endian parser checks alignment and bounds. No window is added or enlarged.
+
+| Source group | Rows per port | Linux resource |
+| --- | ---: | --- |
+| AUS40CMN_SHM | 1 | core |
+| AUSPLL_CORE | 7 | core |
+| CIO4PLL_CORE | 4 | core |
+
+All twelve rows per port retain source order, masks and values. The channel
+runs once after generic common-b and before existing lane programming, only
+for symbolic Linux USB3 and USB3/DP modes. DP-only, TBT, USB4, USB2 and OFF do
+not apply it. This is a constrained semantic caller mapping, not a claim that
+Linux and native numeric enum values are identical or that reset/analog timing
+has been qualified physically.
+
+```sh
+bash scripts/build-j575d-phy-usb-common-offline.sh
+uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache \
+  python tests/test-j575d-phy-usb-common.py
+uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache \
+  python tests/test-j575d-phy-usb-common-dt.py
+```
+
+The fresh twenty-module package passes closure, depmod, aliases, AArch64 ELF,
+vermagic and baseline invariance checks. It is not installed or booted. Six
+source tests execute the complete extracted apply function across 56 cases
+(seven modes, USB present/absent, Fabric present/absent and both orientations),
+including both real lane calls and register bases. A compiling mode-gate
+mutation fails with the designated exit 1, rather than accepting any runtime
+fault as a witness. Separate source-extracted parser/validation fixtures check
+generation, lengths, big-endian tuples and bounds.
+
+Eight independent DT tests check all 822 compiled records against raw capture:
+750 generic plus 72 USB-only. Only 42 properties differ from the frozen
+pre-Fabric parent; all six PHY and ACE3 nodes stay disabled, legacy windows and
+all other nodes stay unchanged, and DTC round-trip/header/reservation checks
+pass. The frozen Fabric suite and its pinned CLI log are not rewritten.
+Final full-schema comparison produces byte-identical path-normalized diagnostics
+for the actual 822-record candidate and frozen 750-record baseline: 449 lines,
+80 existing schema errors and 86 unmatched compatibles, with no ATCPHY or new
+diagnostics. The binding document itself validates without diagnostics. Seven
+copy-only controls qualify the targeted USB property: enabled copies accept
+12 and 65 rows and an absent optional property; malformed and empty matrices
+are rejected. Other-generation copies reject USB-common with Fabric and its
+sixth resource removed, whether enabled or disabled. No disabled-node gap was
+observed for this USB restriction; the separate Fabric pair limitation above
+is unchanged. Canonical PHY nodes remain disabled, and neither a clean whole
+board nor physical/native functionality is claimed.
+
+The [USB-common inventory](inventory/j575d-phy-usb-common-integration-2026-10-08.json)
+also retains whole-board triage. Missing exact M3 driver names do not prove
+missing drivers: several advertised fallback compatibles already match the
+pinned source. The 16 PMGR property errors are eight boolean
+`apple,externally-clocked` entries on MCA0..3 domains across both dies,
+reported by both parent and child schemas. Linux has no identified consumer,
+but hardware meaning remains unproven; neither allowing nor deleting the
+property merely to silence validation is justified.
+
+Thirty CIO80-default records, twelve USB2 records and the select-IRQ witness
+remain separate work. Physical power/clock/IRQ/DMA, native kernel entry,
+source-policy, verified-backup/recovery and separate-approval gates are unchanged.
+No default loader, native dispatch, persistent VM, firmware, NVRAM or disk changes.
+
 ## Corrected USB4+2 provider profile — 2026-10-08 UTC
 
 Run `uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache

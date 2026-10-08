@@ -488,9 +488,27 @@ existing validation errors and 86 unmatched compatibles; essential
 PMGR/DART/NVMe/SPMI/USB descriptions need functional triage. Negative controls
 also document dt-schema's disabled-node conditional-coverage limitation;
 driver and exact-property builder checks independently enforce the Fabric pair.
-The 72 USB-helper records have a proven ordered core-resource sequence but
-still need USB-only Linux mode integration; 30 CIO80 defaults and 12 USB2
-records remain unassigned. The latest Linux API check at 04:16 UTC still returns `7b63ef2d`;
+The next opt-in T6031 USB-common channel assigns the 72 USB-helper records
+in their proven core-resource order, after generic calibration and only for
+USB3/USB3-DP before existing lane programming. It preserves absent-property
+legacy paths, rejects other generations and does not require Fabric presence.
+The fresh twenty-module package builds without installation/boot; six source
+tests exercise the complete apply function in 56 mode/presence/orientation
+cases and a compiling mode-gate mutation with exact exit 1. Eight independent
+DT tests check all 822 raw-to-compiled records, 42 bounded property changes,
+disabled PHY/ACE3 nodes and DTC round-trip/reservations. Full-schema validation
+of the actual candidate adds no diagnostics relative to the frozen 750-record
+baseline; 80 existing errors and 86 unmatched compatibles remain. Seven
+copy-only controls accept valid/absent optional USB matrices and reject
+malformed, empty and isolated other-generation usage, including disabled nodes.
+This targeted qualification is not a clean whole-board or physical boot claim.
+The 30 CIO80 defaults and 12 USB2 records remain
+unassigned. Board triage distinguishes existing fallback matches from physical
+compatibility. The 16 PMGR errors narrow to eight MCA-domain external-clock
+booleans, with no identified Linux consumer and unresolved hardware meaning;
+those properties are left unchanged. See the
+[USB-common inventory](inventory/j575d-phy-usb-common-integration-2026-10-08.json).
+The latest Linux API check at 04:16 UTC still returns `7b63ef2d`;
 the retained source pin is not changed. See the [integration inventory](inventory/j575d-phy-fabric-integration-2026-10-08.json).
 
 At the earlier 14:04:34 UTC checkpoint, the official-API refresh returned HTTP
@@ -511,14 +529,14 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff / loader | Full32 comparison builds, inline candidate/official packet assembly, payload tests and handoff fixtures pass; no native boot | Qualify physical placement/source backing and Linux entry; security findings are report-only, not bring-up gates |
-| Exact T6032/J575d board DT | Disabled candidate integrates 750 generic records; four DT tests/round-trip and targeted binding checks pass with zero new schema diagnostics | Triage 80 existing validation errors/86 unmatched compatibles; USB mode calibration, CIO80, USB2 and select IRQ remain open; no boot approval |
+| Exact T6032/J575d board DT | Disabled candidate integrates 822 records (750 generic plus 72 USB-only); eight independent DT tests/round-trip and targeted USB schema controls pass with no new diagnostics | Triage 80 existing errors/86 unmatched compatibles; CIO80, USB2 and select IRQ remain open; no boot approval |
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | Fresh twenty-module Fabric package builds; twenty source/DT/decoder tests pass; 390 Fabric records have explicit candidate windows and no ATCPHY schema errors | Package not installed or booted; complete mode/USB2 integration, essential binding triage and select IRQ, then physical power/clock/IRQ/DMA qualification |
+| NVMe / USB / Ethernet | Fresh twenty-module USB-common package builds; six source/eight DT tests pass, including 56 complete-source mode cases; Fabric and USB-only channels assigned | Package not installed or booted; CIO80/USB2, essential binding/PMGR clock contracts and select IRQ, then physical power/clock/IRQ/DMA qualification |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |
