@@ -240,9 +240,11 @@ PHYs expose fourteen named tables, and six ACE3 controllers use SPMI banks
 `scripts/collect-j575d-usb-metadata.py` emits only public selected fields and
 table bytes; unfiltered ioreg output stays in memory. This is macOS metadata,
 not a final iBoot handoff. Complete generation-aware M3 PHY and ACE3/SPMI
-driver ports have now been built as described below. Exact second-bank routing,
-four named IRQs, six connector graphs and faithful tunable conversion remain
-prerequisites. Neither module loading nor the existing PCIe profile proves
+driver ports have now been built as described below. Subsequent provider
+metadata resolves the second bank's physical address and exposes the board
+layout correction described below. Four named IRQs, six connector graphs and
+faithful tunable conversion remain prerequisites. Neither module loading nor
+the existing PCIe profile proves
 physical USB support. New combined m1n1 tests remain unexecuted pending the
 retained tree's policy decision.
 
@@ -275,9 +277,53 @@ SPMI transactions, PHY calibration, IRQ delivery, power sequencing or USB traffi
 The inherited SPMI FIFO-recovery code defines ACT at `0xa4` but writes its flush
 through RSP at `0x8`. This is recorded as an unverified reliability question,
 not a proven security issue; no register guess or issue filing was introduced.
-Second-bank routing, four-IRQ/connector graphs, per-port tunable handoff and
+Board-layout correction, four-IRQ/connector graphs, per-port tunable handoff and
 native qualification remain open. The default loader/native-dispatch setting
 is unchanged, and no boot-entry or disk action is authorized by this milestone.
+
+## USB physical layout and companion bindings — 2026-10-08 UTC
+
+The [routing inventory](inventory/j575d-usb-routing-2026-10-08.json) records
+an additional read-only macOS observation. The collector retains public
+IODeviceTree/IOService resource descriptors and explicit USB-to-mapper-to-DART
+joins; unfiltered archives stay in memory. Eleven offline filter fixtures pass,
+and two in-memory wrong-die controls are rejected. This does not read registers
+or qualify hardware operation.
+
+Translated addresses establish four USB/PHY pairs on die 0 and two on die 1,
+not the generic candidate's three-plus-three arrangement:
+
+| Firmware port | Physical DWC3 base | Linux source pair |
+| --- | --- | --- |
+| 1 | `0x702280000` | `dwc3_0` / `atcphy0` |
+| 2 | `0xb02280000` | `dwc3_1` / `atcphy1` |
+| 3 | `0xf02280000` | `dwc3_2` / `atcphy2` |
+| 4 | `0x1302280000` | Missing `dwc3_3` / `atcphy3` and two DART nodes |
+| 5 | `0x2702280000` | `dwc3_0_die1` / `atcphy0_die1` |
+| 6 | `0x2b02280000` | `dwc3_1_die1` / `atcphy1_die1` |
+
+The existing `dwc3_2_die1` / `atcphy2_die1` pair is not witnessed as a J575d
+port; do not assign the sixth connector to it. Port 4's DART windows are
+directly observed at `0x1302f00000` and `0x1302f80000`, with DART IRQ 1450,
+distinct from its USB provider's fifth raw IRQ word 858. Source-subdivided
+DWC3/ATCPHY windows are not all separate, directly observed resource lengths.
+The die-0 PMGR already provides the fourth-port power-domain templates.
+
+SPMI a2 also resolves into die 0, at `0x2a11a8000`, with observed AIC
+controller `0x170` and IRQ number 767. Its first live window contains the
+driver's complete `0x100` register footprint. A parent level-high IRQ and
+`ps_nub_spmi_a2` are reviewed source-level candidates; the power-domain join
+and physical transactions are not runtime-validated. This supersedes the
+earlier unresolved-address finding, not the native qualification gate.
+
+Companion patch `0004-apple-spmi-and-ace3-bindings.patch` adds the matching
+SPMI interrupt/domain schema and ACE3's four named IRQs/connector binding.
+Zero-fuzz application and offline `dtschema==2026.9` document/reference checks
+pass; no full board-DTB schema validation is claimed. It is not applied to the
+frozen twenty-module build recipe/receipt. The next source change is the actual
+four-plus-two board layout, followed by connector graphs and faithful per-port
+calibration. The default DT/loader is unchanged and the m1n1 policy-held lane
+remains held.
 
 ## PCIe four-port DT profile — 2026-10-08 UTC
 

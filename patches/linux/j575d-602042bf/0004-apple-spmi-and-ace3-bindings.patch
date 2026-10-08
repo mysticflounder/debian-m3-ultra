@@ -1,0 +1,131 @@
+J575d functional Apple SPMI/ACE3 DT binding backport against Linux
+602042bf29f6efde39cfb5fdd9289bf4854bc0c5.
+
+Ports only the binding deltas from the cached primary Asahi Linux head
+77cb8f24c2381a8abb7272d7bbdec548d6426a8a:
+  apple,spmi.yaml        3b386bcef218b0c72cbd9c5faf5e3a8cf359cd0e5b6069f413a4908336146367
+  apple,sn201202x.yaml   569d97fa64a39bc520f58b5666cabe842b37a528c1dadbb0da86ca985e9c55b3
+
+The SPMI delta adds T6030/T6031/T8122 compatible coverage, optional primary
+IRQ polling, interrupt-controller/#interrupt-cells, and power-domains.  The
+new ACE3 binding describes the four named child IRQs and USB-C connector.
+No board DT graph, driver, recipe, or inventory change is included.
+
+Application: patch --batch --fuzz=0 -p0 from the pinned source root.
+This is functional DT binding coverage only; it does not establish hardware,
+native, live, firmware, or VM operation.
+
+--- Documentation/devicetree/bindings/spmi/apple,spmi.yaml
++++ Documentation/devicetree/bindings/spmi/apple,spmi.yaml
+@@ -20,8 +20,11 @@
+       - items:
+           - enum:
+               - apple,t6020-spmi
++              - apple,t6030-spmi
++              - apple,t6031-spmi
+               - apple,t8012-spmi
+               - apple,t8015-spmi
++              - apple,t8122-spmi
+           - const: apple,t8103-spmi
+       - items:
+           - enum:
+@@ -34,6 +37,18 @@
+   reg:
+     maxItems: 1
+ 
++  interrupts:
++    maxItems: 1
++    description: Optional, operates in polled mode if not present
++
++  interrupt-controller: true
++
++  "#interrupt-cells":
++    const: 2
++
++  power-domains:
++    maxItems: 1
++
+ required:
+   - compatible
+   - reg
+--- /dev/null
++++ Documentation/devicetree/bindings/usb/apple,sn201202x.yaml
+@@ -0,0 +1,78 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/usb/apple,sn201202x.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Texas Instruments sn201202x Type-C Power Delivery controller
++
++maintainers:
++  - Sasha Finkelstein <k@chaosmail.tech>
++
++description: |
++  Texas Instruments sn201202x Type-C Power Delivery controller
++
++  A variant of tps6598x controller also known as Apple ACE3
++  present on hardware with Apple SoCs starting from the M3.
++
++properties:
++  compatible:
++    enum:
++      - apple,sn201202x
++
++  reg:
++    maxItems: 1
++
++  interrupts:
++    items:
++      - description: Primary irq used for tps6598x events
++      - description: Logical register selection completed
++      - description: Standby command completed
++      - description: Wakeup command completed
++
++  interrupt-names:
++    items:
++      - const: irq
++      - const: select
++      - const: sleep
++      - const: wake
++
++  connector:
++    $ref: /schemas/connector/usb-connector.yaml#
++
++required:
++  - compatible
++  - reg
++  - interrupts
++  - interrupt-names
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/interrupt-controller/irq.h>
++    #include <dt-bindings/spmi/spmi.h>
++    spmi {
++        #address-cells = <2>;
++        #size-cells = <0>;
++        usb-pd@c {
++            compatible = "apple,sn201202x";
++            reg = <0xc SPMI_USID>;
++            interrupts = <11 IRQ_TYPE_EDGE_RISING>,
++                         <13 IRQ_TYPE_EDGE_RISING>,
++                         <17 IRQ_TYPE_EDGE_RISING>,
++                         <19 IRQ_TYPE_EDGE_RISING>;
++            interrupt-names = "irq", "select", "sleep", "wake";
++
++            connector {
++                compatible = "usb-c-connector";
++                label = "USB-C";
++
++                port {
++                    typec_ep: endpoint {
++                        remote-endpoint = <&otg_ep>;
++                    };
++                };
++            };
++        };
++    };

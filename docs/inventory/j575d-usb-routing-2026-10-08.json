@@ -1,0 +1,441 @@
+{
+  "schema": "j575d-usb-routing-contract-v1",
+  "date_utc": "2026-10-08",
+  "parent_commit": "95f5d51",
+  "scope": "filtered read-only metadata and offline bindings",
+  "native_boot_approved": false,
+  "native_or_physical_functionality_tested": false,
+  "linux_pin": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+  "primary_asahi_pin": "77cb8f24c2381a8abb7272d7bbdec548d6426a8a",
+  "linux_board_source_changed": false,
+  "default_loader_changed": false,
+  "physical_layout": {
+    "die0_ports": 4,
+    "die1_ports": 2,
+    "existing_candidate": "three plus three; not faithful to this witness",
+    "missing_pair": "dwc3_3/atcphy3 plus two DART nodes on die0",
+    "unwitnessed_pair": "dwc3_2_die1/atcphy2_die1; do not map a connector to it"
+  },
+  "ports": [
+    {
+      "port_number": 1,
+      "firmware_usb": "usb-drd0",
+      "firmware_phy": "atc-phy0",
+      "firmware_dart": "dart-usb0",
+      "physical_dwc3_base": "0x702280000",
+      "physical_atc_usb2phy_base": "0x702a90000",
+      "physical_dart_ranges": [
+        {
+          "base": "0x702f00000",
+          "size": "0x4000"
+        },
+        {
+          "base": "0x702f80000",
+          "size": "0x4000"
+        }
+      ],
+      "raw_usb_irq_words": [
+        1362,
+        1363,
+        1364,
+        1365,
+        855
+      ],
+      "raw_dart_irq_word": 1366,
+      "mapper_reg_word": 1,
+      "linux_dwc3_label": "dwc3_0",
+      "linux_phy_label": "atcphy0",
+      "linux_die_from_pinned_ranges": 0,
+      "linux_provider_currently_present": true,
+      "irq_translation_is_source_mapping_not_live_linux_tuple": true
+    },
+    {
+      "port_number": 2,
+      "firmware_usb": "usb-drd1",
+      "firmware_phy": "atc-phy1",
+      "firmware_dart": "dart-usb1",
+      "physical_dwc3_base": "0xb02280000",
+      "physical_atc_usb2phy_base": "0xb02a90000",
+      "physical_dart_ranges": [
+        {
+          "base": "0xb02f00000",
+          "size": "0x4000"
+        },
+        {
+          "base": "0xb02f80000",
+          "size": "0x4000"
+        }
+      ],
+      "raw_usb_irq_words": [
+        1390,
+        1391,
+        1392,
+        1393,
+        856
+      ],
+      "raw_dart_irq_word": 1394,
+      "mapper_reg_word": 1,
+      "linux_dwc3_label": "dwc3_1",
+      "linux_phy_label": "atcphy1",
+      "linux_die_from_pinned_ranges": 0,
+      "linux_provider_currently_present": true,
+      "irq_translation_is_source_mapping_not_live_linux_tuple": true
+    },
+    {
+      "port_number": 3,
+      "firmware_usb": "usb-drd2",
+      "firmware_phy": "atc-phy2",
+      "firmware_dart": "dart-usb2",
+      "physical_dwc3_base": "0xf02280000",
+      "physical_atc_usb2phy_base": "0xf02a90000",
+      "physical_dart_ranges": [
+        {
+          "base": "0xf02f00000",
+          "size": "0x4000"
+        },
+        {
+          "base": "0xf02f80000",
+          "size": "0x4000"
+        }
+      ],
+      "raw_usb_irq_words": [
+        1418,
+        1419,
+        1420,
+        1421,
+        857
+      ],
+      "raw_dart_irq_word": 1422,
+      "mapper_reg_word": 1,
+      "linux_dwc3_label": "dwc3_2",
+      "linux_phy_label": "atcphy2",
+      "linux_die_from_pinned_ranges": 0,
+      "linux_provider_currently_present": true,
+      "irq_translation_is_source_mapping_not_live_linux_tuple": true
+    },
+    {
+      "port_number": 4,
+      "firmware_usb": "usb-drd3",
+      "firmware_phy": "atc-phy3",
+      "firmware_dart": "dart-usb3",
+      "physical_dwc3_base": "0x1302280000",
+      "physical_atc_usb2phy_base": "0x1302a90000",
+      "physical_dart_ranges": [
+        {
+          "base": "0x1302f00000",
+          "size": "0x4000"
+        },
+        {
+          "base": "0x1302f80000",
+          "size": "0x4000"
+        }
+      ],
+      "raw_usb_irq_words": [
+        1446,
+        1447,
+        1448,
+        1449,
+        858
+      ],
+      "raw_dart_irq_word": 1450,
+      "mapper_reg_word": 1,
+      "linux_dwc3_label": "dwc3_3",
+      "linux_phy_label": "atcphy3",
+      "linux_die_from_pinned_ranges": 0,
+      "linux_provider_currently_present": false,
+      "irq_translation_is_source_mapping_not_live_linux_tuple": true
+    },
+    {
+      "port_number": 5,
+      "firmware_usb": "usb-drd4",
+      "firmware_phy": "atc-phy4",
+      "firmware_dart": "dart-usb4",
+      "physical_dwc3_base": "0x2702280000",
+      "physical_atc_usb2phy_base": "0x2702a90000",
+      "physical_dart_ranges": [
+        {
+          "base": "0x2702f00000",
+          "size": "0x4000"
+        },
+        {
+          "base": "0x2702f80000",
+          "size": "0x4000"
+        }
+      ],
+      "raw_usb_irq_words": [
+        5458,
+        5459,
+        5460,
+        5461,
+        4951
+      ],
+      "raw_dart_irq_word": 5462,
+      "mapper_reg_word": 1,
+      "linux_dwc3_label": "dwc3_0_die1",
+      "linux_phy_label": "atcphy0_die1",
+      "linux_die_from_pinned_ranges": 1,
+      "linux_provider_currently_present": true,
+      "irq_translation_is_source_mapping_not_live_linux_tuple": true
+    },
+    {
+      "port_number": 6,
+      "firmware_usb": "usb-drd5",
+      "firmware_phy": "atc-phy5",
+      "firmware_dart": "dart-usb5",
+      "physical_dwc3_base": "0x2b02280000",
+      "physical_atc_usb2phy_base": "0x2b02a90000",
+      "physical_dart_ranges": [
+        {
+          "base": "0x2b02f00000",
+          "size": "0x4000"
+        },
+        {
+          "base": "0x2b02f80000",
+          "size": "0x4000"
+        }
+      ],
+      "raw_usb_irq_words": [
+        5486,
+        5487,
+        5488,
+        5489,
+        4952
+      ],
+      "raw_dart_irq_word": 5490,
+      "mapper_reg_word": 1,
+      "linux_dwc3_label": "dwc3_1_die1",
+      "linux_phy_label": "atcphy1_die1",
+      "linux_die_from_pinned_ranges": 1,
+      "linux_provider_currently_present": true,
+      "irq_translation_is_source_mapping_not_live_linux_tuple": true
+    }
+  ],
+  "spmi_banks": [
+    {
+      "firmware_bank": "nub-spmi-a0",
+      "phandle": "0x1eb",
+      "physical_ranges": [
+        {
+          "base": "0x2a1188000",
+          "size": "0x4000"
+        },
+        {
+          "base": "0x2a1184000",
+          "size": "0x4000"
+        },
+        {
+          "base": "0x2a1180000",
+          "size": "0x4000"
+        }
+      ],
+      "aic_controller": "0x170",
+      "observed_irq_number": 763,
+      "linux_die_from_pinned_ranges": 0,
+      "pmgr_runtime_join_observed": false
+    },
+    {
+      "firmware_bank": "nub-spmi-a2",
+      "phandle": "0x1f1",
+      "physical_ranges": [
+        {
+          "base": "0x2a11a8000",
+          "size": "0x4000"
+        },
+        {
+          "base": "0x2a11a4000",
+          "size": "0x4000"
+        },
+        {
+          "base": "0x2a11a0000",
+          "size": "0x4000"
+        }
+      ],
+      "aic_controller": "0x170",
+      "observed_irq_number": 767,
+      "linux_die_from_pinned_ranges": 0,
+      "pmgr_runtime_join_observed": false
+    }
+  ],
+  "binding_patch": {
+    "implemented": true,
+    "zero_fuzz_apply_pass": true,
+    "dt_doc_validate_pass": true,
+    "full_dtb_validation": false,
+    "applied_to_existing_20_module_build": false
+  },
+  "verification": {
+    "collector_fixtures": 11,
+    "byte_payload_hash_checks": 590,
+    "layout_mutations": {
+      "wrong_fourth_port_die": "rejected",
+      "wrong_second_spmi_die": "rejected"
+    },
+    "independent_review_pass": true,
+    "unchanged_source_closure_files": 19
+  },
+  "security_findings_confirmed": [],
+  "remaining": [
+    "correct J575d Linux layout to four die0 plus two die1 ports",
+    "six ACE3 connector graphs and four named child IRQs",
+    "SPMI a2 source PMGR candidate lacks direct runtime power join",
+    "faithful ATC payload format/base/grouping conversion; preserve all six calibrations",
+    "m1n1 combined handoff lane remains policy-held pending explicit override",
+    "verified backup, recovery readiness and separate native approval"
+  ],
+  "receipts": [
+    {
+      "path": "scratch/j575d-usb-routing-final-2026-10-08.json",
+      "sha256": "eb2a519519982141b31092e9eb93619ca6c2b3160bc12d07f7be96a730e55f30"
+    },
+    {
+      "path": "scripts/collect-j575d-spmi-routing.py",
+      "sha256": "a434dd9e3cfc516227c42b998e7b1afef8204e7ded098adcaf39a7295f7ae599"
+    },
+    {
+      "path": "tests/test-j575d-spmi-routing.py",
+      "sha256": "01f8f83cc62c36e5b92e4a5081907136bd2ed4f83c11c8a1bfe571380bbdc883"
+    },
+    {
+      "path": "scratch/j575d-spmi-routing-tests-2026-10-08.log",
+      "sha256": "34a82a30511a2175a5286cff0751874e9220ce5fb08cab87b09cc04e220f6b31"
+    },
+    {
+      "path": "patches/linux/j575d-602042bf/0004-apple-spmi-and-ace3-bindings.patch",
+      "sha256": "5c28415802f799eec6f90f1dba176f63726798bdd82c86ad1df1cd9954ff60f7"
+    },
+    {
+      "path": "scratch/j575d-usb-bindings-port-2026-10-08/README.md",
+      "sha256": "db018a005439856979a2199b0c430d9ae02d9cf9953c8adacb255e7eebc40668"
+    },
+    {
+      "path": "scratch/j575d-usb-bindings-port-2026-10-08/validation-receipt.txt",
+      "sha256": "1bde543b02a788d0fe8a72f5538a6fb42ebf1c7cc181c150066f08ee05853540"
+    },
+    {
+      "path": "scratch/j575d-usb-bindings-port-2026-10-08/dt-doc-validate-full.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-bindings-port-2026-10-08/dt-doc-validate-full.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-usb-bank-routing-2026-10-08.md",
+      "sha256": "4c7a5d482c6c1617a52f617b5fd8d48a695f3917b0a118631ceae267a149f3b0"
+    },
+    {
+      "path": "scratch/j575d-usb-physical-layout-2026-10-08.md",
+      "sha256": "e28d0ad6b0d94a84c5ab4badf60d69dd0cd849f3c2519c8cd9d2f19aa1b087bc"
+    },
+    {
+      "path": "scratch/j575d-spmi-routing-collector-review-2026-10-08.md",
+      "sha256": "2ec61d49557c0df38efd05f8ee7a7d10dc7cfe32464047e2996e0612c0fde883"
+    },
+    {
+      "path": "scratch/j575d-usb-tunable-contract-2026-10-08.md",
+      "sha256": "36b32d6b2e7d90f73ec7b2a00700ea9da2df6bfd7889b87a6e8f774473ab11d4"
+    },
+    {
+      "path": "docs/inventory/j575d-usb-live-contract-2026-10-08.json",
+      "sha256": "d11d36a7f2c13c1e4afeb34fc5bbfa1f15def046498295dfda5b3de11a30af06"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/arch/arm64/boot/dts/apple/t6032.dtsi",
+      "sha256": "14d37c88fb06f2c86c795bb3b46322dfadcba064a87a1d6bdc2dd8796b4c4cf0"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/arch/arm64/boot/dts/apple/t6031-pmgr.dtsi",
+      "sha256": "2fbe8cd26bae6ec1b2062b6defb97d5eddd7f3e3aecd870cfdf60aa9609493a5"
+    },
+    {
+      "path": "scratch/j575d-pcie-dt.z4iac0rm/baseline.dtb",
+      "sha256": "e92e5c9dc86731d76dc060759bb622cbad073e4e32e831bf0ca68deef3ff4cd5"
+    },
+    {
+      "path": "docs/inventory/t6032-board-dt-sources-2026-09-26.json",
+      "sha256": "904df7708deb7fde29dae228dce8ea522d42085d2b69a48389297d86a4a6410c"
+    },
+    {
+      "path": "scratch/record-j575d-usb-routing-2026-10-08.py",
+      "sha256": "6782f442366996ad5d44b72f923a5c8f27ef33d79a4a6da56be5be33d59f2a73"
+    }
+  ],
+  "source_closure": [
+    {
+      "path": "scratch/m1n1-board-dt/t6032-j575d.dts",
+      "sha256": "28ffa9037b10eac9140b3881b47583e91347aabb72ab686decfd1fa17693aeb6"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/t6032.dtsi",
+      "sha256": "326f3f9839f6017099e987402176923cb1d65af29ee21d1e34c3b95837ff7fbf"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/multi-die-cpp.h",
+      "sha256": "692ecc0cb7340122da7a558e02ac6c70ed2e49811136d58c4b21d82e8e79abc3"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/t6031-base.dtsi",
+      "sha256": "c1f08bc5b31cda11f94ce193316af5fc8403b4593782b0d25c515d176c37ca5a"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/t6031-die0.dtsi",
+      "sha256": "417ea802824a583d94a1b4c9933c629444d199faf4aa2edd87f5e1a9c7c3975f"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/t6031-dieX.dtsi",
+      "sha256": "6d9ff0c6fe73715f37fe49dbfd4d17ff182a6e8022b18ef128c3cd41b9bc7317"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/t6031-pmgr.dtsi",
+      "sha256": "d14dff6ac71140b534dbaa43b22208a960eb1b7258df1760f0b53f91f562d817"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/t6031-gpio-pins.dtsi",
+      "sha256": "65069ae20dfc2eb95d2dafbda618cba47b89bcd0c5bc649348601f18c802e4af"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/t6031-nvme.dtsi",
+      "sha256": "0b9ab097a7e973f05b2237e51b89aa6d93e1d60beff1f5ad01605e4426068b6d"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/spi1-nvram.dtsi",
+      "sha256": "a4a26dd2abe3412221761fcbe05958599a7ff07b2fd980ab8a739a175966cc5e"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/hwmon-common.dtsi",
+      "sha256": "240f138526ff84717ee8a65b47f749b2d855ddd472b6c16e9b5a93dcd8bea601"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/hwmon-fan.dtsi",
+      "sha256": "05a5627c1087415e7e42d09d0d6cf04ac5167394fa1246143dca1a19c6318b59"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/hwmon-fan-dual.dtsi",
+      "sha256": "ebc824c95d4195f424d1918a1ac96026f7214b77dcafa1581daf3304b38d3368"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/dt-bindings/gpio/gpio.h",
+      "sha256": "5423b3866877ead0920ec978b5b072f06087443033a72445b39faed8f288ddc1"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/dt-bindings/interrupt-controller/apple-aic.h",
+      "sha256": "6a67506ab5333d6e552b3a656e03b34f9769af5c88cf7202b1458e1ba5067f25"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/dt-bindings/interrupt-controller/irq.h",
+      "sha256": "392400a309a54ea5b1a2ac2e52773d3ab68e07323109b9aed88a69fedc74e082"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/dt-bindings/pinctrl/apple.h",
+      "sha256": "2079cb60617b0bb054e2e9e346ec6f5b3fdf8b4464ac9da89e09655e3af183b0"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/dt-bindings/phy/phy.h",
+      "sha256": "1bd66286362f02487d3b5eeefb4be3221b949b1eecbfc4ca717fbbbe5e8a61be"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/dt-bindings/spmi/spmi.h",
+      "sha256": "c2952b040e5c24726c423e52ba939d389141ff27eb2307fb3888657b455e2b9b"
+    }
+  ]
+}
