@@ -1,0 +1,494 @@
+{
+  "schema": "j575d-usb-drivers-v1",
+  "date_utc": "2026-10-08",
+  "scope": "functional Linux module backports/build and RAM-only QEMU/HVF load; not native hardware qualification",
+  "new_driver_backport_implemented": true,
+  "native_boot_approved": false,
+  "linux_pin": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+  "primary_asahi_pin": "77cb8f24c2381a8abb7272d7bbdec548d6426a8a",
+  "patches": [
+    {
+      "path": "patches/linux/j575d-602042bf/0001-apple-spmi-ace3-transactions-and-irqs.patch",
+      "sha256": "379fc96df828c1aa8f8001586d7a53b8173b206125b0768c46f5cf64a8aa9cfd"
+    },
+    {
+      "path": "patches/linux/j575d-602042bf/0002-apple-atcphy-m3-generation-support.patch",
+      "sha256": "4e6946c388b9dc2bc4148f7cf50eac607d4319441fd667e4c94b3ed94b8cd3da"
+    },
+    {
+      "path": "patches/linux/j575d-602042bf/0003-typec-tipd-common-core-and-ace3.patch",
+      "sha256": "f362591a2595943ae34836a5b09ada304b04a5600aee0960481478b92e211648"
+    }
+  ],
+  "recipes": [
+    {
+      "path": "scripts/build-j575d-usb-drivers-offline.sh",
+      "sha256": "4dda197c0f5f17186354e6c5921be7659639b9ef2cc78d8fc32878600aecc7d6"
+    },
+    {
+      "path": "configs/linux-j575d-usb-drivers.fragment",
+      "sha256": "633cc578633fd037a1440c81975421c6b876b78d2b82f0d55014376f9df278ba"
+    },
+    {
+      "path": "scripts/build-j575d-initramfs-offline.sh",
+      "sha256": "a9f1a58d8230be55c59fb884a7c6715b7464aca99c3a94af834cf8aa69c9b9ae"
+    },
+    {
+      "path": "tools/j575d-ram-init.c",
+      "sha256": "38faa6be294ec3afed139478e1b1135f666d2ee0251d3d9bc3786cedef0878d0"
+    },
+    {
+      "path": "scripts/test-j575d-artifacts-vm.py",
+      "sha256": "c31fc76b81198b64f9d86d3ffc6e963a63c14ebb290c4dad8c28fdc2bc127ab6"
+    }
+  ],
+  "build": {
+    "workspace": "scratch/j575d-usb-drivers.6s0L0J",
+    "exit_code": 0,
+    "recipe_copy": {
+      "path": "scratch/j575d-usb-drivers.6s0L0J/build-recipe.sh",
+      "sha256": "4dda197c0f5f17186354e6c5921be7659639b9ef2cc78d8fc32878600aecc7d6"
+    },
+    "inputs": {
+      "path": "scratch/j575d-usb-drivers.6s0L0J/build-inputs.txt",
+      "sha256": "97b56ea4fefe6f318cda6f87747bef1b751c33ce0717dad5f80a608f062d7e77"
+    },
+    "log": {
+      "path": "scratch/j575d-usb-drivers.6s0L0J/build.log",
+      "sha256": "97de79ebfdacfbe3cadc441d8ac35bd8598e082e930ee374e899c0c9cf978783"
+    },
+    "exit": {
+      "path": "scratch/j575d-usb-drivers.6s0L0J/build.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    "package_hash_list": {
+      "path": "scratch/j575d-usb-drivers.6s0L0J/PACKAGE_SHA256SUMS",
+      "sha256": "c39e6a9b69cade57f6b13c2bd348c0084ee37d8f2aa5485a1c30ecd554ad1c9d",
+      "entries_verified": 89
+    },
+    "build_hash_list": {
+      "path": "scratch/j575d-usb-drivers.6s0L0J/SHA256SUMS",
+      "sha256": "5a295fe672f67b753ab0848e1f64841c6ac26d2774d970203e947255cff0ec41",
+      "entries_verified": 9
+    },
+    "patched_sources": [
+      {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/source/drivers/spmi/spmi-apple-controller.c",
+        "sha256": "097a627f5acdb366b1637e56555802898b36a1e2ac34faa391695d16127bad98"
+      },
+      {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/source/drivers/spmi/Kconfig",
+        "sha256": "a1a6f81c5901a7e783deb81a17e05bd9a927e4163334e538d0c379643e8ce6b0"
+      },
+      {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/source/drivers/phy/apple/atc.c",
+        "sha256": "1b9517fd9b79e1c5fb0be4cd56d8c1443b78d08a138e56c09ca7321505f51eae"
+      },
+      {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/source/Documentation/devicetree/bindings/phy/apple,atcphy.yaml",
+        "sha256": "cdc3c842cdc92dbaa5c70a3d9dfda704f80eb7089552c025baf3f9d4bfb1a78d"
+      },
+      {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/source/drivers/usb/typec/tipd/Kconfig",
+        "sha256": "38ddfbb3b1a054fd656dc403e71bc2e8da1c634e60ea4bb27eab607d8babbd9a"
+      },
+      {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/source/drivers/usb/typec/tipd/Makefile",
+        "sha256": "04f8a20002ce8b7e0eac327a56539bf79a97cdce63f3a964a70c86307bf02a35"
+      },
+      {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/source/drivers/usb/typec/tipd/core.c",
+        "sha256": "a08f8cee1ff379c8b9535ad1eed5892dc832e684024de3fb75ad480f6f04faff"
+      },
+      {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/source/drivers/usb/typec/tipd/tps6598x.h",
+        "sha256": "80f7b051b5dbe246c7235ea061006ac0214bf3d3f0b81d3791aced5da0d18780"
+      },
+      {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/source/drivers/usb/typec/tipd/i2c.c",
+        "sha256": "f19db7f37cb46dee8fe43d8fcb24990a83772160b67294eee0103636acc155aa"
+      },
+      {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/source/drivers/usb/typec/tipd/spmi.c",
+        "sha256": "a0f5b62407cdbf9c22bee02400864c7802be75ca7cb4a4fb170d18eb2937b17e"
+      }
+    ],
+    "unchanged_builtin_artifacts": {
+      "arch/arm64/boot/Image": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/build/arch/arm64/boot/Image",
+        "sha256": "ad9b573e66738d13d7758619809cc7e8ff09cf9498e23ccec352dfe42b285f50"
+      },
+      "vmlinux.o": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/build/vmlinux.o",
+        "sha256": "c374260adf8be4dfd7e73a0be79f2136e6a939fa5a5ab7bad840ec19c310faf5"
+      },
+      "System.map": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/build/System.map",
+        "sha256": "f8013c17497ce293cad4d01be6723173cffb5a0e325f86e2890c9cecb9d69a59"
+      },
+      "vmlinux.symvers": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/build/vmlinux.symvers",
+        "sha256": "2be09f0907b6c19975e4defbbcfc5e6ec232c07d291205f71c3cb107e1054b0e"
+      }
+    },
+    "config_changes": [
+      "CONFIG_APPLE_TUNABLE=m",
+      "CONFIG_AQTION=m",
+      "CONFIG_NET_VENDOR_AQUANTIA=y",
+      "CONFIG_PHY_APPLE_ATC=m",
+      "CONFIG_TYPEC_SN201202X=m",
+      "CONFIG_TYPEC_TPS6598X_CORE=m"
+    ],
+    "module_count": 20
+  },
+  "modules": [
+    {
+      "name": "apple_dart",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/iommu/apple-dart.ko",
+        "sha256": "bc0a671fecf3c956a37bcf7d3be140566a711fa6fa811ac34a126a383b34a16c"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__iommu__apple-dart.ko.modinfo",
+        "sha256": "9ab5841e3bc6184a0f323b28a17c4a63828d58556094deb88edfc0def64eadee"
+      },
+      "depends": ""
+    },
+    {
+      "name": "apple_mailbox",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-mailbox.ko",
+        "sha256": "3da62bed5e2c873fa40487709e8d6ca4a93110017f76e671cd42af537f819cae"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__soc__apple__apple-mailbox.ko.modinfo",
+        "sha256": "62d4502ce2a1748e1d44987cbd23e8453104d6b693cfb79d2aa464ddd29923dd"
+      },
+      "depends": ""
+    },
+    {
+      "name": "apple_rtkit",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-rtkit.ko",
+        "sha256": "5ca0ca01219f07981838b0eaf1d92113e33aae296157edb36e9927a42857431f"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__soc__apple__apple-rtkit.ko.modinfo",
+        "sha256": "1a81142dea70eaafbd7f208c4f71a545820ddda236008414139373b2005f9d4d"
+      },
+      "depends": "apple-mailbox"
+    },
+    {
+      "name": "apple_sart",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-sart.ko",
+        "sha256": "2ba690b528404ee9efacd85a3ffa2a4a09014a1afa0fd485cde60ef014bd3520"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__soc__apple__apple-sart.ko.modinfo",
+        "sha256": "f3cfe2016355c199c091af4644f7a213ae4c33efe7e07df997d73b19f1b66619"
+      },
+      "depends": ""
+    },
+    {
+      "name": "apple_tunable",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-tunable.ko",
+        "sha256": "f066d1e9d1fe2b878266ff6c7b1f165b93b4f4ba07984d1006655168f66a7856"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__soc__apple__apple-tunable.ko.modinfo",
+        "sha256": "d0d55974f318313b28a1aaa15d34610196757ed9a21cdb3e4c513e3fae908fa5"
+      },
+      "depends": ""
+    },
+    {
+      "name": "atlantic",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/net/ethernet/aquantia/atlantic/atlantic.ko",
+        "sha256": "8d87c0c22d8a65f1f74e13604eb32346a6c4dc793b7e034b5ebda5609b6c831e"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__net__ethernet__aquantia__atlantic__atlantic.ko.modinfo",
+        "sha256": "56301f85deaa285f94f7e427f2ed8afa23d21eb7968aecf39a110e0b1e822e52"
+      },
+      "depends": ""
+    },
+    {
+      "name": "i2c_pasemi_core",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/i2c/busses/i2c-pasemi-core.ko",
+        "sha256": "4e6d0972af3aa8ce7fb1335da16698b8a143812eb4173397195b744e2db7d008"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__i2c__busses__i2c-pasemi-core.ko.modinfo",
+        "sha256": "d62928c777a55f7d2cd01479d9f6eb93e10ff86963fab937da4fe3b199719b89"
+      },
+      "depends": ""
+    },
+    {
+      "name": "i2c_pasemi_platform",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/i2c/busses/i2c-pasemi-platform.ko",
+        "sha256": "ea73581cfe89932352f9ca8fe706757f6db719d16a047425f0541e150e79d02a"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__i2c__busses__i2c-pasemi-platform.ko.modinfo",
+        "sha256": "128b7e7d8b5021b72d60294d8d09f348c7d1df845f37a1efe1e4eeb44c0a1c77"
+      },
+      "depends": "i2c-pasemi-core"
+    },
+    {
+      "name": "nvme_apple",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/nvme/host/nvme-apple.ko",
+        "sha256": "7e7283f5e963c02f17b6c90803a40207fa5a4d918b2cac4787c6578dc9acf908"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__nvme__host__nvme-apple.ko.modinfo",
+        "sha256": "0238bd62237147212f6bb9d522370fe83ca956ae6ec63b989e599f531d6cbaa2"
+      },
+      "depends": "apple-rtkit,nvme-core,apple-sart"
+    },
+    {
+      "name": "nvme_core",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/nvme/host/nvme-core.ko",
+        "sha256": "11df6a06afb8fe2a720f2bcadbd2f2e115397a1dea2a9ad6511170de57064c36"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__nvme__host__nvme-core.ko.modinfo",
+        "sha256": "66ff5df117e8acb127d6a8920cf10c554ec68ca25a76531e49e66eadfd7bc92a"
+      },
+      "depends": ""
+    },
+    {
+      "name": "pcie_apple",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/pci/controller/pcie-apple.ko",
+        "sha256": "b2ec265d819d277b9d3df4731042183786bb762263af38fea1bac12dc82f7bb9"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__pci__controller__pcie-apple.ko.modinfo",
+        "sha256": "645f4014a62c89d6c8eb3c66d2c7a89dfa2d8fe874fff8d9f3a7ee8f136a8859"
+      },
+      "depends": ""
+    },
+    {
+      "name": "phy_apple_atc",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/phy/apple/phy-apple-atc.ko",
+        "sha256": "4293844964d8a3699321e3342478f0c29d4566a11369581e83f81c587d96f614"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__phy__apple__phy-apple-atc.ko.modinfo",
+        "sha256": "cea8826023b15e50592287903907bdd05c18ef4236d9f6445c4bf791586a09d2"
+      },
+      "depends": "typec,apple-tunable"
+    },
+    {
+      "name": "pinctrl_apple_gpio",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/pinctrl/pinctrl-apple-gpio.ko",
+        "sha256": "4972ed0b8eb49ce2af012e1d4a502270d025d99f9fe6d7f10c4d2d4b45dd69f8"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__pinctrl__pinctrl-apple-gpio.ko.modinfo",
+        "sha256": "285713bb13b5f1580d97b1b370a95d00dc44ecbb375b89a4e208a9d25e5fb745"
+      },
+      "depends": ""
+    },
+    {
+      "name": "sn201202x",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/usb/typec/tipd/sn201202x.ko",
+        "sha256": "b8ab50a2f23cfd6631b7cf2b3e4cdcecb8d5619580d83a5e948fdf12298d7de0"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__usb__typec__tipd__sn201202x.ko.modinfo",
+        "sha256": "9dcba9b8645f6d5d92b58139d2863df41fe34542e9af083cdf6acc8bfbce1c03"
+      },
+      "depends": "tps6598x-core"
+    },
+    {
+      "name": "spmi_apple_controller",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/spmi/spmi-apple-controller.ko",
+        "sha256": "72b35d62474f4cf6b36c31c339fc7911834f8e34ac544b3f33348ce07da52c7b"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__spmi__spmi-apple-controller.ko.modinfo",
+        "sha256": "fcae858140ed88700a519d0fa9712841309385d4b61627059df95b147ba066e8"
+      },
+      "depends": ""
+    },
+    {
+      "name": "tcpci",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/usb/typec/tcpm/tcpci.ko",
+        "sha256": "5fab17bd78c4c8b9458168e734177933592fe6112c3888618e9a598f6dde6dda"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__usb__typec__tcpm__tcpci.ko.modinfo",
+        "sha256": "2192a8244c87bb83f56f79094888348600a9b3f9041cbb874b34313f1fb37da6"
+      },
+      "depends": "tcpm"
+    },
+    {
+      "name": "tcpm",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/usb/typec/tcpm/tcpm.ko",
+        "sha256": "6762646ee80b8502f1d9ba39ec51351d118e0f3c3fea06ee95b04bd0a45d3d5a"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__usb__typec__tcpm__tcpm.ko.modinfo",
+        "sha256": "307c6e24bf0d1263f0f649b1f71803da294d7566b7ab93e9b49f1698f2f51e71"
+      },
+      "depends": "typec"
+    },
+    {
+      "name": "tps6598x",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/usb/typec/tipd/tps6598x.ko",
+        "sha256": "b8a4cfcfbe2649496d84463b2992e18fa567739bb556eb46986f1ffa26dda10e"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__usb__typec__tipd__tps6598x.ko.modinfo",
+        "sha256": "7cd02f4ee964ce827e3307628758f8e2c5e79b23c7bd21f6c025ff3a182ad4b5"
+      },
+      "depends": "tps6598x-core"
+    },
+    {
+      "name": "tps6598x_core",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/usb/typec/tipd/tps6598x-core.ko",
+        "sha256": "aa8e5876ad872a95aa6b0d0da7b95304a8ddc5f0266fb60c01d7eaf78bb6ad6b"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__usb__typec__tipd__tps6598x-core.ko.modinfo",
+        "sha256": "83b53e2e719e3ccdd85e65a7837ce29d5710d220e9e95fff59205bdd85f4e2dc"
+      },
+      "depends": "typec"
+    },
+    {
+      "name": "typec",
+      "module": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/package/lib/modules/7.3.0-rc6/kernel/drivers/usb/typec/typec.ko",
+        "sha256": "29f44eb21bb683a796fa9a160447aedf9cb80be1d7d4d19c0f7f32317d6b4f50"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-usb-drivers.6s0L0J/metadata/drivers__usb__typec__typec.ko.modinfo",
+        "sha256": "7eaba799bcabe8bac6662a4358af10e23b0b1f4eb11cb68b043eee720569e8d5"
+      },
+      "depends": ""
+    }
+  ],
+  "initramfs": {
+    "image": {
+      "path": "scratch/j575d-initramfs.twYPeR/output/initramfs.cpio.gz",
+      "sha256": "430cc4ddf9a9786ed7e754730ac98a937f8d727cf65d13b3b6114c6bfbf4959c"
+    },
+    "init": {
+      "path": "scratch/j575d-initramfs.twYPeR/output/init",
+      "sha256": "23cd25952f28096572559b9de7b4073c478f396d7a5e71112e208f824c3cfd91"
+    },
+    "exit": {
+      "path": "scratch/j575d-initramfs.twYPeR/build.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    "hash_list": {
+      "path": "scratch/j575d-initramfs.twYPeR/SHA256SUMS",
+      "sha256": "3501aefe549679d30c4d939b8fc487f4fc1b734433251a55248e09cb52b1b08f",
+      "entries_verified": 11
+    }
+  },
+  "runtime": {
+    "status": {
+      "path": "scratch/j575d-artifact-vm-2026-10-07/run-44cq22hk/status.json",
+      "sha256": "bdc9c9da30c1e31b13adf786b9fa06d308654dc9a74f67f73b48487f0765228f"
+    },
+    "boot_argv": {
+      "path": "scratch/j575d-artifact-vm-2026-10-07/run-44cq22hk/boot.argv",
+      "sha256": "f0eb987a184f52f49826818bc103cbdfdc86da5d6f7a57e42d4d889bb3d006f2"
+    },
+    "serial": {
+      "path": "scratch/j575d-artifact-vm-2026-10-07/run-44cq22hk/guest.serial.log",
+      "sha256": "7772d4b4991e62ff93f1d8ad4442a76c41cb900127a20a38ab61de00b8246e4d"
+    },
+    "qemu_stderr": {
+      "path": "scratch/j575d-artifact-vm-2026-10-07/run-44cq22hk/qemu.stderr.log",
+      "sha256": "26b4f28644c3d0a6559c23b937c7b7649096eeca1f67eaaee273032a0b1c89b0"
+    },
+    "loaded_modules": [
+      "apple_dart",
+      "apple_mailbox",
+      "apple_rtkit",
+      "apple_sart",
+      "apple_tunable",
+      "atlantic",
+      "i2c_pasemi_core",
+      "i2c_pasemi_platform",
+      "nvme_apple",
+      "nvme_core",
+      "pcie_apple",
+      "phy_apple_atc",
+      "pinctrl_apple_gpio",
+      "sn201202x",
+      "spmi_apple_controller",
+      "tcpci",
+      "tcpm",
+      "tps6598x",
+      "tps6598x_core",
+      "typec"
+    ],
+    "markers_passed": 30,
+    "qemu_exit_after_cleanup": 0,
+    "physical_apple_device_binding": false
+  },
+  "reviews": [
+    {
+      "path": "scratch/j575d-spmi-driver-audit-2026-10-08.md",
+      "sha256": "aa9cdb14628fc98147b334b870f692fde1c5b7e7a5efae8b0ae997acc47d5e0e"
+    },
+    {
+      "path": "scratch/j575d-atc-driver-port-2026-10-08.md",
+      "sha256": "6b5e3460a57cb158aa1569cb5bd1d2e0286c5c9920fab7f8b103df4b1daad000"
+    },
+    {
+      "path": "scratch/j575d-tipd-ace3-port-2026-10-08.md",
+      "sha256": "58b246613e304ba83fd7bcef65f67219a56b753e03ee11d6752d0bb02e0b5daa"
+    },
+    {
+      "path": "scratch/j575d-tipd-preservation-review-2026-10-08.md",
+      "sha256": "390de8ffc87ae3ff84ec6018df99d6cc5e45ce12115072231eeee0cf9c31f696"
+    },
+    {
+      "path": "scratch/j575d-tipd-preservation-review-2026-10-08.py",
+      "sha256": "e31a07aa6318f5dced5090b551d2a807104888d6a8712cc2b9fd038ce254ab8e"
+    },
+    {
+      "path": "scratch/j575d-tipd-preservation-review-2026-10-08.uv.receipt",
+      "sha256": "845f578db66373b5c7812d34896839e339ed7829d4cc2ea17f99aa9be74594aa"
+    },
+    {
+      "path": "scratch/j575d-usb-driver-package-review-2026-10-08.md",
+      "sha256": "049d0e18d34abcaf48a80dc240138175f4662247805c650b2d5a7803b649152c"
+    }
+  ],
+  "remaining": [
+    "second SPMI bank AIC/PMGR/die routing",
+    "four ACE3 IRQ mapping per port",
+    "six connector graphs",
+    "per-port tunable conversion and final handoff",
+    "native power/clock/IRQ/USB traffic qualification after safety gates"
+  ],
+  "reliability_findings": [
+    {
+      "status": "unverified",
+      "component": "apple-spmi-controller FIFO recovery",
+      "observation": "primary defines ACT 0xa4 but recovery flush writes RSP 0x8",
+      "action": "recorded; no speculative register change or issue filed"
+    }
+  ],
+  "security_findings_confirmed": []
+}

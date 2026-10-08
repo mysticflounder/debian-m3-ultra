@@ -240,10 +240,44 @@ PHYs expose fourteen named tables, and six ACE3 controllers use SPMI banks
 `scripts/collect-j575d-usb-metadata.py` emits only public selected fields and
 table bytes; unfiltered ioreg output stays in memory. This is macOS metadata,
 not a final iBoot handoff. Complete generation-aware M3 PHY and ACE3/SPMI
-driver ports, exact second-bank routing, four named IRQs, six connector graphs
-and faithful tunable conversion remain prerequisites. Neither the 17-module
-VM run nor the existing PCIe profile proves USB support. New combined m1n1
-tests remain unexecuted pending the retained tree's policy decision.
+driver ports have now been built as described below. Exact second-bank routing,
+four named IRQs, six connector graphs and faithful tunable conversion remain
+prerequisites. Neither module loading nor the existing PCIe profile proves
+physical USB support. New combined m1n1 tests remain unexecuted pending the
+retained tree's policy decision.
+
+## Functional USB driver backports — 2026-10-08 UTC
+
+The [USB driver inventory](inventory/j575d-usb-drivers-2026-10-08.json) binds
+three source-root-relative patches against Linux `602042bf`: complete Apple
+SPMI command/FIFO/optional-IRQ support, the generation-aware M3 USB2/USB3 PHY
+implementation, and a semantic TIPD common/I2C/ACE3-SPMI split. The split
+preserves the pinned newer status layouts, power-status callbacks and TPS66993
+support. The PHY uses the intentional `t6031,t8122` fallback, not a bare alias;
+DisplayPort functionality is not established or required for this stage.
+
+`scripts/build-j575d-usb-drivers-offline.sh` patches and builds only fresh APFS
+clones. The final workspace `scratch/j575d-usb-drivers.6s0L0J` resolves exactly
+six module-overlay config changes and packages twenty modules, including
+`spmi-apple-controller`, `tps6598x-core`, `sn201202x` and the rebuilt PHY/I2C
+front end. The baseline config, Image and built-in ABI artifacts remain
+unchanged; depmod reports no unresolved symbols and both new OF aliases resolve.
+
+The initramfs `scratch/j575d-initramfs.twYPeR/output/initramfs.cpio.gz` has SHA-256
+`430cc4ddf9a9786ed7e754730ac98a937f8d727cf65d13b3b6114c6bfbf4959c`.
+RAM-only HVF receipt `scratch/j575d-artifact-vm-2026-10-07/run-44cq22hk` (created
+October 8 UTC; harness output-directory name retained) passes thirty markers
+and records all twenty modules in `/proc/modules`, with no load/symbol errors.
+The disposable guest has no disks, network, firmware or host-device passthrough;
+the persistent VM is untouched. This checks module ABI/registration, not Apple
+SPMI transactions, PHY calibration, IRQ delivery, power sequencing or USB traffic.
+
+The inherited SPMI FIFO-recovery code defines ACT at `0xa4` but writes its flush
+through RSP at `0x8`. This is recorded as an unverified reliability question,
+not a proven security issue; no register guess or issue filing was introduced.
+Second-bank routing, four-IRQ/connector graphs, per-port tunable handoff and
+native qualification remain open. The default loader/native-dispatch setting
+is unchanged, and no boot-entry or disk action is authorized by this milestone.
 
 ## PCIe four-port DT profile — 2026-10-08 UTC
 

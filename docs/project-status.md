@@ -396,10 +396,21 @@ ACE3 needs SPMI transaction/IRQ support and a TIPD common/SPMI split; the old
 PHY implementation through the intentional T6031/T8122 fallback, not a bare
 compatible alias. The SPMI series applies in scratch with an include
 prerequisite; TIPD needs a semantic port preserving newer pinned-core behavior.
-No new driver has been built or physically tested. Second-bank AIC/power/die
-mapping, the fourth ACE3 IRQ, all six connector graphs and final tunable
-handoff remain open. The separate m1n1 comparison lane awaits Adam's decision
-on its local no-AI instruction; no alternate copy or policy override was used.
+Those source gaps are now addressed by the subsequent
+[functional USB driver inventory](inventory/j575d-usb-drivers-2026-10-08.json):
+three complete backports apply without fuzz, the six-symbol module overlay
+builds a twenty-module closure, and the original Image/built-in ABI remain
+byte-identical. The TIPD port preserves all four existing variant data tables,
+packed status layouts, newer power-status callbacks and TPS66993 matches.
+The new RAM-only HVF run loads all twenty modules and passes thirty markers;
+there are no unresolved-symbol/load diagnostics. This is ABI/registration
+evidence, not physical Apple driver operation. An inherited SPMI ACT/RSP
+FIFO-recovery discrepancy is recorded as an unverified reliability item;
+no speculative register fix or issue filing was made. Second-bank AIC/power/die
+mapping, the fourth ACE3 IRQ, all six connector graphs and final per-port
+tunable handoff remain open. The separate m1n1 comparison lane awaits Adam's
+decision on its local no-AI instruction; no alternate copy or policy override
+was used. No firmware, disk or persistent-VM state was changed.
 
 At the earlier 14:04:34 UTC checkpoint, the official-API refresh returned HTTP
 200 for all four endpoints;
@@ -424,9 +435,9 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
-| Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; extended 17-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
-| RAM-only Linux diagnostic boot | Final 17-module initramfs HVF run loads all modules and reports 17 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | PCIe profile/modules prepared; filtered live USB metadata and primary M3 PHY/ACE3/SPMI backport contracts captured, but no new driver build or physical qualification | Port complete M3 PHY and SPMI/ACE3 support; preserve newer TIPD behavior; resolve second-bank routing, four IRQs, six connector graphs and final tunable/alias handoff |
+| Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
+| RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
+| NVMe / USB / Ethernet | PCIe/modules prepared; live USB metadata captured; complete M3 PHY and SPMI/ACE3 backports compile/load while preserving newer TIPD behavior and original Image/ABI; no physical qualification | Resolve second-bank routing, four IRQs, six connector graphs and final per-port tunable/alias handoff; qualify inherited SPMI recovery behavior and native hardware |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |

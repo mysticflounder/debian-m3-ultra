@@ -1,0 +1,8 @@
+# Module-only USB/ACE3 overlay for the retained J575d diagnostic kernel.
+# Merge only in a cloned output after applying the pinned USB driver patches.
+CONFIG_PHY_APPLE_ATC=m
+CONFIG_NET_VENDOR_AQUANTIA=y
+CONFIG_AQTION=m
+CONFIG_APPLE_TUNABLE=m
+CONFIG_TYPEC_TPS6598X_CORE=m
+CONFIG_TYPEC_SN201202X=m
