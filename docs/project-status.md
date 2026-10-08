@@ -1,4 +1,4 @@
-# Project status — 2026-10-07 UTC
+# Project status — 2026-10-08 UTC
 
 Updated at task completion. Source/offline validation is not native-hardware
 validation. External PR, VM and MacBook states below are last recorded states,
@@ -387,6 +387,20 @@ zero. Six DTC warnings remain; both dtschema receipts retain 431 stderr lines.
 This host-only profile does not prove physical PCIe, DART, link, DMA, IRQ or
 driver binding.
 
+The [USB live/backport inventory](inventory/j575d-usb-live-contract-2026-10-08.json)
+now binds a filtered, unprivileged macOS collection: six ATC PHYs, six USB DRDs,
+six ACE3 HPM controllers, two relevant SPMI banks and fourteen named tunable
+payloads per PHY. The restore template contains only two generic tunables.
+ACE3 needs SPMI transaction/IRQ support and a TIPD common/SPMI split; the old
+17-module package is not sufficient. Primary source supplies a complete M3
+PHY implementation through the intentional T6031/T8122 fallback, not a bare
+compatible alias. The SPMI series applies in scratch with an include
+prerequisite; TIPD needs a semantic port preserving newer pinned-core behavior.
+No new driver has been built or physically tested. Second-bank AIC/power/die
+mapping, the fourth ACE3 IRQ, all six connector graphs and final tunable
+handoff remain open. The separate m1n1 comparison lane awaits Adam's decision
+on its local no-AI instruction; no alternate copy or policy override was used.
+
 At the earlier 14:04:34 UTC checkpoint, the official-API refresh returned HTTP
 200 for all four endpoints;
 m1n1 `2460b604`, Linux `602042bf`, and QEMU `f9587d40` remain unchanged from
@@ -412,7 +426,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; extended 17-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final 17-module initramfs HVF run loads all modules and reports 17 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | AQC113 alias resolves `atlantic`; four-port profile and extended package pass host checks, but USB compatibility/ADT/Type-C graph and physical contracts remain open | Resolve actual USB compatibles, live ADT tunables, die-1 ATC aliases and Type-C graph; qualify PCIe/DART/network hardware only after early boot |
+| NVMe / USB / Ethernet | PCIe profile/modules prepared; filtered live USB metadata and primary M3 PHY/ACE3/SPMI backport contracts captured, but no new driver build or physical qualification | Port complete M3 PHY and SPMI/ACE3 support; preserve newer TIPD behavior; resolve second-bank routing, four IRQs, six connector graphs and final tunable/alias handoff |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |

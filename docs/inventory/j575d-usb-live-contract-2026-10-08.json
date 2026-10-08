@@ -1,0 +1,802 @@
+{
+  "schema": "j575d-usb-live-backport-contract-v1",
+  "date_utc": "2026-10-08",
+  "parent_commit": "1f89f76",
+  "status": "filtered_live_metadata_and_functional_backport_contract_verified",
+  "scope": "read-only macOS metadata and offline source/patch applicability; no native, MMIO, firmware, VM or disk changes",
+  "native_boot_approved": false,
+  "new_driver_backport_implemented": false,
+  "collector": {
+    "path": "scripts/collect-j575d-usb-metadata.py",
+    "sha256": "ec478207c286fe1059b854813135f529165ac6ffec59d774cf8de35255266f27"
+  },
+  "tests": {
+    "recipe": {
+      "path": "tests/test_collect_j575d_usb_metadata.py",
+      "sha256": "fb79b10b42b718c446f504511b9cb1bdb0445ca7ec19f5cf0b7958490dd07b38"
+    },
+    "receipt": {
+      "path": "scratch/j575d-usb-collector-tests-2026-10-08/root-final/receipt.json",
+      "sha256": "546917941c6365e102741263c9e22a88f96cfee3ddb82c85eb9bf2a443bde5e8"
+    },
+    "stdout": {
+      "path": "scratch/j575d-usb-collector-tests-2026-10-08/root-final/stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stderr": {
+      "path": "scratch/j575d-usb-collector-tests-2026-10-08/root-final/stderr",
+      "sha256": "6f283ee6225d2cef4c0127d95456a6f954c45141c92b97dd89016cb1c630e8f4"
+    },
+    "coverage": "two stdlib tests: valid ioreg parsing, bytes/SHA, public-field filtering, mocked acquisition and six-port joins"
+  },
+  "live": {
+    "receipt": {
+      "path": "scratch/j575d-usb-live-2026-10-08/derived/collector-v1-2026-10-08.json",
+      "sha256": "2feaf14d0e5a983cf72126877dbcea2c68f78bf2da5f3d45e0f218f970fd8a7e"
+    },
+    "collection": {
+      "path": "scratch/j575d-usb-live-2026-10-08/raw/collection.json",
+      "sha256": "058c64f0563b374db3495cb9474122aee68b5f15979adc3fe7d7ff49ebd84456"
+    },
+    "host": {
+      "kernel": "\"Darwin Kernel Version 27.0.0: Tue Aug 11 21:05:42 PDT 2026; root:xnu-13432.1.9~1/RELEASE_ARM64_T6031\"",
+      "model_or_compatible": "<\"J575dAP\",\"Mac15,14\",\"AppleARM\">",
+      "os_build": "\"26A428\"",
+      "target_type": "J575dAP"
+    },
+    "atc_count": 6,
+    "hpm_count": 6,
+    "usb_drd_count": 6,
+    "spmi_banks": 2,
+    "named_tables_per_phy": 14,
+    "full_table_bytes_retained_in_filtered_scratch": true,
+    "not_a_final_iboot_handoff": true,
+    "ports": [
+      {
+        "port_number": 1,
+        "hpm": "hpm0@C",
+        "atc_phy": "atc-phy0@2A90000",
+        "usb_drd": "usb-drd0@2280000",
+        "spmi_bank": "nub-spmi-a0",
+        "firmware_reg_le32": [
+          12,
+          3,
+          0,
+          4,
+          0,
+          0
+        ],
+        "firmware_irq_le32": [
+          11,
+          17,
+          19
+        ],
+        "join": "explicit equal port-number; USB atc-phy-parent matches PHY phandle",
+        "direct_hpm_atc_phandle": false
+      },
+      {
+        "port_number": 2,
+        "hpm": "hpm1@A",
+        "atc_phy": "atc-phy1@2A90000",
+        "usb_drd": "usb-drd1@2280000",
+        "spmi_bank": "nub-spmi-a0",
+        "firmware_reg_le32": [
+          10,
+          3,
+          0,
+          4,
+          0,
+          0
+        ],
+        "firmware_irq_le32": [
+          37,
+          43,
+          45
+        ],
+        "join": "explicit equal port-number; USB atc-phy-parent matches PHY phandle",
+        "direct_hpm_atc_phandle": false
+      },
+      {
+        "port_number": 3,
+        "hpm": "hpm2@8",
+        "atc_phy": "atc-phy2@2A90000",
+        "usb_drd": "usb-drd2@2280000",
+        "spmi_bank": "nub-spmi-a0",
+        "firmware_reg_le32": [
+          8,
+          3,
+          0,
+          4,
+          0,
+          0
+        ],
+        "firmware_irq_le32": [
+          63,
+          69,
+          71
+        ],
+        "join": "explicit equal port-number; USB atc-phy-parent matches PHY phandle",
+        "direct_hpm_atc_phandle": false
+      },
+      {
+        "port_number": 4,
+        "hpm": "hpm3@6",
+        "atc_phy": "atc-phy3@2A90000",
+        "usb_drd": "usb-drd3@2280000",
+        "spmi_bank": "nub-spmi-a0",
+        "firmware_reg_le32": [
+          6,
+          3,
+          0,
+          4,
+          0,
+          0
+        ],
+        "firmware_irq_le32": [
+          89,
+          95,
+          97
+        ],
+        "join": "explicit equal port-number; USB atc-phy-parent matches PHY phandle",
+        "direct_hpm_atc_phandle": false
+      },
+      {
+        "port_number": 5,
+        "hpm": "hpm4@C",
+        "atc_phy": "atc-phy4@2A90000",
+        "usb_drd": "usb-drd4@2280000",
+        "spmi_bank": "nub-spmi-a2",
+        "firmware_reg_le32": [
+          12,
+          3,
+          0,
+          4,
+          0,
+          0
+        ],
+        "firmware_irq_le32": [
+          11,
+          17,
+          19
+        ],
+        "join": "explicit equal port-number; USB atc-phy-parent matches PHY phandle",
+        "direct_hpm_atc_phandle": false
+      },
+      {
+        "port_number": 6,
+        "hpm": "hpm5@A",
+        "atc_phy": "atc-phy5@2A90000",
+        "usb_drd": "usb-drd5@2280000",
+        "spmi_bank": "nub-spmi-a2",
+        "firmware_reg_le32": [
+          10,
+          3,
+          0,
+          4,
+          0,
+          0
+        ],
+        "firmware_irq_le32": [
+          37,
+          43,
+          45
+        ],
+        "join": "explicit equal port-number; USB atc-phy-parent matches PHY phandle",
+        "direct_hpm_atc_phandle": false
+      }
+    ],
+    "tables": [
+      {
+        "name": "tunable_ATC0AXI2AF",
+        "byte_lengths_by_port": [
+          624,
+          624,
+          624,
+          624,
+          624,
+          624
+        ],
+        "sha256_by_port": [
+          "9c56e80de63a88ce8901e62cadf8e17bd8bcaebee9e262cdf25792c7e049aab3",
+          "9c56e80de63a88ce8901e62cadf8e17bd8bcaebee9e262cdf25792c7e049aab3",
+          "9c56e80de63a88ce8901e62cadf8e17bd8bcaebee9e262cdf25792c7e049aab3",
+          "9c56e80de63a88ce8901e62cadf8e17bd8bcaebee9e262cdf25792c7e049aab3",
+          "9c56e80de63a88ce8901e62cadf8e17bd8bcaebee9e262cdf25792c7e049aab3",
+          "9c56e80de63a88ce8901e62cadf8e17bd8bcaebee9e262cdf25792c7e049aab3"
+        ]
+      },
+      {
+        "name": "tunable_ATC_FABRIC",
+        "byte_lengths_by_port": [
+          780,
+          780,
+          780,
+          780,
+          780,
+          780
+        ],
+        "sha256_by_port": [
+          "9b5b31845838ac146d752851ef36dbcebafd6c7865ff8613f0ea8d35866a1125",
+          "9b5b31845838ac146d752851ef36dbcebafd6c7865ff8613f0ea8d35866a1125",
+          "9b5b31845838ac146d752851ef36dbcebafd6c7865ff8613f0ea8d35866a1125",
+          "9b5b31845838ac146d752851ef36dbcebafd6c7865ff8613f0ea8d35866a1125",
+          "f9d25187868897bb415d63b4826a20a24258c71dc601802af085a1f680b2f5d2",
+          "f9d25187868897bb415d63b4826a20a24258c71dc601802af085a1f680b2f5d2"
+        ]
+      },
+      {
+        "name": "tunable_AUS40CMN_SHM",
+        "byte_lengths_by_port": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "sha256_by_port": [
+          "ec4c05df06b2e442757dcf42844d08ecb473ddf9f20f7369a3ac5b52c735ef54",
+          "3b2a8fddd0ced289e28858576d8187077b236a3fc602150fe7991f42dd0469c2",
+          "c679ec1b732c9b72553fabbbf7f7ee59494f873760fb59bf0d301436cbc9b142",
+          "3b2a8fddd0ced289e28858576d8187077b236a3fc602150fe7991f42dd0469c2",
+          "de70a86f727d39a89e225f7b2226a0fffc29275a1555ef42347a76294768023f",
+          "c679ec1b732c9b72553fabbbf7f7ee59494f873760fb59bf0d301436cbc9b142"
+        ]
+      },
+      {
+        "name": "tunable_AUSPLL_CORE",
+        "byte_lengths_by_port": [
+          84,
+          84,
+          84,
+          84,
+          84,
+          84
+        ],
+        "sha256_by_port": [
+          "1979f72687701d1e9bb9dc1610655a089e2a0448ca0905125ccf4b9956a8dc45",
+          "dbc4dc8f6cf365a046cea19e145e3f23c5cf4596caba60843910c161c45b71ce",
+          "1979f72687701d1e9bb9dc1610655a089e2a0448ca0905125ccf4b9956a8dc45",
+          "dbb62c5a410ae4b8a2294997b608efb875aae88656e4d46edf2aeba73b2fbc9a",
+          "dbc4dc8f6cf365a046cea19e145e3f23c5cf4596caba60843910c161c45b71ce",
+          "dbc4dc8f6cf365a046cea19e145e3f23c5cf4596caba60843910c161c45b71ce"
+        ]
+      },
+      {
+        "name": "tunable_CIO4PLL_CORE",
+        "byte_lengths_by_port": [
+          48,
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        "sha256_by_port": [
+          "b7b77dff39b63303c62d0a106b0b998bbb7aafcace6879153ea2c97955acbf24",
+          "b7b77dff39b63303c62d0a106b0b998bbb7aafcace6879153ea2c97955acbf24",
+          "3b6535c048cef032b71848418b443434aca58a4db997b00b3700dc7e3c469e1d",
+          "b7b77dff39b63303c62d0a106b0b998bbb7aafcace6879153ea2c97955acbf24",
+          "a672ba81cc72239155a8553ee13b0a38f43a662b9be33fa2c3092de041de54fe",
+          "a672ba81cc72239155a8553ee13b0a38f43a662b9be33fa2c3092de041de54fe"
+        ]
+      },
+      {
+        "name": "tunable_LN0_RX_CFG_TX_OF_RXCLK",
+        "byte_lengths_by_port": [
+          48,
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        "sha256_by_port": [
+          "cd188b1768100c5ea6a952bc8f20401e277ad8e7d22ef34d3a2b86100f1ed8c2",
+          "cd188b1768100c5ea6a952bc8f20401e277ad8e7d22ef34d3a2b86100f1ed8c2",
+          "cd188b1768100c5ea6a952bc8f20401e277ad8e7d22ef34d3a2b86100f1ed8c2",
+          "cd188b1768100c5ea6a952bc8f20401e277ad8e7d22ef34d3a2b86100f1ed8c2",
+          "cd188b1768100c5ea6a952bc8f20401e277ad8e7d22ef34d3a2b86100f1ed8c2",
+          "cd188b1768100c5ea6a952bc8f20401e277ad8e7d22ef34d3a2b86100f1ed8c2"
+        ]
+      },
+      {
+        "name": "tunable_LN0_RX_EQ_CIO_DFLT",
+        "byte_lengths_by_port": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "sha256_by_port": [
+          "3797a624f5f13876c450417a5872b53e3d4a9f2a7d6c45fc154850d69a6c919e",
+          "3797a624f5f13876c450417a5872b53e3d4a9f2a7d6c45fc154850d69a6c919e",
+          "3797a624f5f13876c450417a5872b53e3d4a9f2a7d6c45fc154850d69a6c919e",
+          "3797a624f5f13876c450417a5872b53e3d4a9f2a7d6c45fc154850d69a6c919e",
+          "3797a624f5f13876c450417a5872b53e3d4a9f2a7d6c45fc154850d69a6c919e",
+          "3797a624f5f13876c450417a5872b53e3d4a9f2a7d6c45fc154850d69a6c919e"
+        ]
+      },
+      {
+        "name": "tunable_LN0_RX_TOP_CIO_DFLT",
+        "byte_lengths_by_port": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "sha256_by_port": [
+          "78c79e0214c6560d46aadb1f7acb4ffb430bfd728a06d76767915a569ce04f48",
+          "78c79e0214c6560d46aadb1f7acb4ffb430bfd728a06d76767915a569ce04f48",
+          "78c79e0214c6560d46aadb1f7acb4ffb430bfd728a06d76767915a569ce04f48",
+          "78c79e0214c6560d46aadb1f7acb4ffb430bfd728a06d76767915a569ce04f48",
+          "78c79e0214c6560d46aadb1f7acb4ffb430bfd728a06d76767915a569ce04f48",
+          "78c79e0214c6560d46aadb1f7acb4ffb430bfd728a06d76767915a569ce04f48"
+        ]
+      },
+      {
+        "name": "tunable_LN1_RX_CFG_TX_OF_RXCLK",
+        "byte_lengths_by_port": [
+          48,
+          48,
+          48,
+          48,
+          48,
+          48
+        ],
+        "sha256_by_port": [
+          "cd188b1768100c5ea6a952bc8f20401e277ad8e7d22ef34d3a2b86100f1ed8c2",
+          "cd188b1768100c5ea6a952bc8f20401e277ad8e7d22ef34d3a2b86100f1ed8c2",
+          "cd188b1768100c5ea6a952bc8f20401e277ad8e7d22ef34d3a2b86100f1ed8c2",
+          "cd188b1768100c5ea6a952bc8f20401e277ad8e7d22ef34d3a2b86100f1ed8c2",
+          "cd188b1768100c5ea6a952bc8f20401e277ad8e7d22ef34d3a2b86100f1ed8c2",
+          "cd188b1768100c5ea6a952bc8f20401e277ad8e7d22ef34d3a2b86100f1ed8c2"
+        ]
+      },
+      {
+        "name": "tunable_LN1_RX_EQ_CIO_DFLT",
+        "byte_lengths_by_port": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "sha256_by_port": [
+          "3797a624f5f13876c450417a5872b53e3d4a9f2a7d6c45fc154850d69a6c919e",
+          "3797a624f5f13876c450417a5872b53e3d4a9f2a7d6c45fc154850d69a6c919e",
+          "3797a624f5f13876c450417a5872b53e3d4a9f2a7d6c45fc154850d69a6c919e",
+          "3797a624f5f13876c450417a5872b53e3d4a9f2a7d6c45fc154850d69a6c919e",
+          "3797a624f5f13876c450417a5872b53e3d4a9f2a7d6c45fc154850d69a6c919e",
+          "3797a624f5f13876c450417a5872b53e3d4a9f2a7d6c45fc154850d69a6c919e"
+        ]
+      },
+      {
+        "name": "tunable_LN1_RX_TOP_CIO_DFLT",
+        "byte_lengths_by_port": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "sha256_by_port": [
+          "78c79e0214c6560d46aadb1f7acb4ffb430bfd728a06d76767915a569ce04f48",
+          "78c79e0214c6560d46aadb1f7acb4ffb430bfd728a06d76767915a569ce04f48",
+          "78c79e0214c6560d46aadb1f7acb4ffb430bfd728a06d76767915a569ce04f48",
+          "78c79e0214c6560d46aadb1f7acb4ffb430bfd728a06d76767915a569ce04f48",
+          "78c79e0214c6560d46aadb1f7acb4ffb430bfd728a06d76767915a569ce04f48",
+          "78c79e0214c6560d46aadb1f7acb4ffb430bfd728a06d76767915a569ce04f48"
+        ]
+      },
+      {
+        "name": "tunable_UC_REGS_CIO_DFLT",
+        "byte_lengths_by_port": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "sha256_by_port": [
+          "ea0b53edae2c095d1efeaabbe1090bdd69c1d6c82b2badc015cf93e5b6c791db",
+          "ea0b53edae2c095d1efeaabbe1090bdd69c1d6c82b2badc015cf93e5b6c791db",
+          "ea0b53edae2c095d1efeaabbe1090bdd69c1d6c82b2badc015cf93e5b6c791db",
+          "ea0b53edae2c095d1efeaabbe1090bdd69c1d6c82b2badc015cf93e5b6c791db",
+          "ea0b53edae2c095d1efeaabbe1090bdd69c1d6c82b2badc015cf93e5b6c791db",
+          "ea0b53edae2c095d1efeaabbe1090bdd69c1d6c82b2badc015cf93e5b6c791db"
+        ]
+      },
+      {
+        "name": "tunable_USB2PHY_DEV",
+        "byte_lengths_by_port": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "sha256_by_port": [
+          "5c2b9b9cd4e6a208668b9ee82643ca790a46876339dcdaed39b4cf064077547b",
+          "5c2b9b9cd4e6a208668b9ee82643ca790a46876339dcdaed39b4cf064077547b",
+          "5c2b9b9cd4e6a208668b9ee82643ca790a46876339dcdaed39b4cf064077547b",
+          "5c2b9b9cd4e6a208668b9ee82643ca790a46876339dcdaed39b4cf064077547b",
+          "5c2b9b9cd4e6a208668b9ee82643ca790a46876339dcdaed39b4cf064077547b",
+          "5c2b9b9cd4e6a208668b9ee82643ca790a46876339dcdaed39b4cf064077547b"
+        ]
+      },
+      {
+        "name": "tunable_USB2PHY_HOST",
+        "byte_lengths_by_port": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "sha256_by_port": [
+          "3c880940d48a6c4c2c640ea4e5b47f567b1e5155e74b219de3e1e91ff6291055",
+          "3c880940d48a6c4c2c640ea4e5b47f567b1e5155e74b219de3e1e91ff6291055",
+          "3c880940d48a6c4c2c640ea4e5b47f567b1e5155e74b219de3e1e91ff6291055",
+          "3c880940d48a6c4c2c640ea4e5b47f567b1e5155e74b219de3e1e91ff6291055",
+          "3c880940d48a6c4c2c640ea4e5b47f567b1e5155e74b219de3e1e91ff6291055",
+          "3c880940d48a6c4c2c640ea4e5b47f567b1e5155e74b219de3e1e91ff6291055"
+        ]
+      }
+    ]
+  },
+  "restore": {
+    "receipt": {
+      "path": "scratch/j575d-usb-live-2026-10-08/derived/restore-atc.json",
+      "sha256": "7decbe22730ca6306b382e4676d85c54f87653a6eb1444aac28823a86ee85f28"
+    },
+    "source": {
+      "path": "scratch/adt-j575d-decoded.bin",
+      "sha256": "4a818ecc7f3d71195c1def12c6eed0c90b287f82cad2a6a4ffd6f0849fe13c12"
+    },
+    "distinction": "restore template has only tunable-device and tunable-host; fourteen named live tables are absent"
+  },
+  "linux": {
+    "pin": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+    "source_receipts": [
+      {
+        "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/phy/apple/atc.c",
+        "sha256": "cc08d4fc52a2c5c7059bf22f6924d8d46897c441929429fa4db3bf86ce198178"
+      },
+      {
+        "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/spmi/spmi-apple-controller.c",
+        "sha256": "7829da5419cdd8f977877b1f5565a9fb628b69b9c72dab6529e61895abe6a4e2"
+      },
+      {
+        "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/usb/typec/tipd/core.c",
+        "sha256": "d807af36db683a6ebe06e2cd0c3c3e508474f642f0ac6bd7a3596c2816d74726"
+      },
+      {
+        "path": "scratch/linux-j575d-kernel.HdzQNm/source/include/linux/spmi.h",
+        "sha256": "dd914b47805a531c7d40f80d01f1b978dac2bb9b8482972230343fe4ad91c530"
+      },
+      {
+        "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/soc/apple/tunable.c",
+        "sha256": "e2e366e0a4e7f1707ec6c463c8f477604f7ba74254eccbab65d37f3d69a3fae7"
+      }
+    ],
+    "baseline_config": {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/build/.config",
+      "sha256": "19ef0607ca8b74c6ec5bd68ae376a85febd3ba1ac3da92d9bb47da9da9ac864c"
+    }
+  },
+  "primary": {
+    "asahi_pin": "77cb8f24c2381a8abb7272d7bbdec548d6426a8a",
+    "commits": [
+      {
+        "sha": "0d18b0a04aefacd07e04928b9199449c5ddae2a3",
+        "parent": "565aa55fc56a55039b35fbc10bcc319c591c730e",
+        "subject": "spmi: apple: lock around FIFOs",
+        "files": [
+          "drivers/spmi/spmi-apple-controller.c"
+        ]
+      },
+      {
+        "sha": "3b51ed952b49b1836903ce5e828c0f83c4884b7c",
+        "parent": "121d753dfe65303a8f87f98f08b402ae345c1c4e",
+        "subject": "spmi: apple: Validate FIFO state",
+        "files": [
+          "drivers/spmi/spmi-apple-controller.c"
+        ]
+      },
+      {
+        "sha": "47d246feceabfa90af9c06d815cac16e2a30bb8b",
+        "parent": "0d18b0a04aefacd07e04928b9199449c5ddae2a3",
+        "subject": "spmi: apple: Add interrupt functionality",
+        "files": [
+          "drivers/spmi/Kconfig",
+          "drivers/spmi/spmi-apple-controller.c"
+        ]
+      },
+      {
+        "sha": "550afd1aa62bb43183aad36aca4ba97580858dbe",
+        "parent": "da16cc966d153550b2fc99e207ccc95cf32d5e31",
+        "subject": "usb: typec: tipd: Add sn201202x support",
+        "files": [
+          "MAINTAINERS",
+          "drivers/usb/typec/tipd/Kconfig",
+          "drivers/usb/typec/tipd/Makefile",
+          "drivers/usb/typec/tipd/core.c",
+          "drivers/usb/typec/tipd/spmi.c",
+          "drivers/usb/typec/tipd/tps6598x.h"
+        ]
+      },
+      {
+        "sha": "565aa55fc56a55039b35fbc10bcc319c591c730e",
+        "parent": "dd08df03372c7a5d8b9c3b2fbf38acff016cc77e",
+        "subject": "spmi: apple: Implement remaining commands",
+        "files": [
+          "drivers/spmi/spmi-apple-controller.c"
+        ]
+      },
+      {
+        "sha": "da16cc966d153550b2fc99e207ccc95cf32d5e31",
+        "parent": "ed1159548730e70f7717978d199d187c551a956e",
+        "subject": "usb: typec: tipd: Factor out i2c specifics",
+        "files": [
+          "drivers/usb/typec/tipd/Kconfig",
+          "drivers/usb/typec/tipd/Makefile",
+          "drivers/usb/typec/tipd/core.c",
+          "drivers/usb/typec/tipd/i2c.c",
+          "drivers/usb/typec/tipd/tps6598x.h"
+        ]
+      },
+      {
+        "sha": "dd08df03372c7a5d8b9c3b2fbf38acff016cc77e",
+        "parent": "3b51ed952b49b1836903ce5e828c0f83c4884b7c",
+        "subject": "spmi: apple: check transaction status",
+        "files": [
+          "drivers/spmi/spmi-apple-controller.c"
+        ]
+      }
+    ],
+    "driver_and_patch_receipts": [
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/branch-pin.txt",
+        "sha256": "74a5aa54e0c41fdc4e3918f6f38f2e652c0c2c1eae5c1eaa353db13e9f357f81"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/branch.json",
+        "sha256": "b361c780c81bbdb7c249f53f714edf351767016408c2b1051ef25347c9a59a52"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/commits/0d18b0a04aefacd07e04928b9199449c5ddae2a3.json",
+        "sha256": "ef5d2bbd8a931770b9f82eea1c454d6659cd09a765a1ff25a8b93796f623fc6b"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/commits/0d18b0a04aefacd07e04928b9199449c5ddae2a3.patch",
+        "sha256": "599bb2b928a3e7b5de574ec736eb386948eceb3894f4af544e047447a3ea0d63"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/commits/3b51ed952b49b1836903ce5e828c0f83c4884b7c.json",
+        "sha256": "074bb1507ddd8698c4dca62ac1bef8e7d993d1d843d65eb0fdeb2451231e5524"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/commits/3b51ed952b49b1836903ce5e828c0f83c4884b7c.patch",
+        "sha256": "7f85af863ecd23d19d16124cdf0d0eb8e1eb80ea61f3556292cbb8243a342396"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/commits/47d246feceabfa90af9c06d815cac16e2a30bb8b.json",
+        "sha256": "5d7c637e5fd18f44e36c85f226cab81378734acb0ebb1b1d73ce8aca7bcb4d27"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/commits/47d246feceabfa90af9c06d815cac16e2a30bb8b.patch",
+        "sha256": "f203ace82b3dbf9a6b36d70c0a37d6ae4eaa28794fb3acd190122926973c397c"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/commits/550afd1aa62bb43183aad36aca4ba97580858dbe.json",
+        "sha256": "7ad504df2c759858ed8c1e547b1dc9bbe45e2bb92fed7bc6c5855c03cbde671f"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/commits/550afd1aa62bb43183aad36aca4ba97580858dbe.patch",
+        "sha256": "90db4ef0f08aefd5a7cfd7d6482a4a8da62924fd66de63c1355d7a9f8d547375"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/commits/565aa55fc56a55039b35fbc10bcc319c591c730e.json",
+        "sha256": "db1d3caf76dbc499b25232c84a95b1eccc5d7c9954dce1e84da155729ccb3fc2"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/commits/565aa55fc56a55039b35fbc10bcc319c591c730e.patch",
+        "sha256": "87d61948edb563e9411dfd09dbc5cd280a807b4d1ecef5d5374b406768c57249"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/commits/da16cc966d153550b2fc99e207ccc95cf32d5e31.json",
+        "sha256": "7ceb357c24146e60a98cc7786681ce3cc67b90e3d55a883d5e7fed6db9421426"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/commits/da16cc966d153550b2fc99e207ccc95cf32d5e31.patch",
+        "sha256": "c60e95354b6abc92ebc4481d2d85a0f60ffbfde68e5b2a7dfb25f07695c67740"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/commits/dd08df03372c7a5d8b9c3b2fbf38acff016cc77e.json",
+        "sha256": "207bccf527798887e8085352225a5da70a79b6823f993b9ff8be4322ee1feed2"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/commits/dd08df03372c7a5d8b9c3b2fbf38acff016cc77e.patch",
+        "sha256": "c9920c085a013f67d06fee2d4697ffcfe26ede169ce68962b80af4bd83ebe839"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/Documentation/devicetree/bindings/spmi/apple,spmi.yaml",
+        "sha256": "3b386bcef218b0c72cbd9c5faf5e3a8cf359cd0e5b6069f413a4908336146367"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/Documentation/devicetree/bindings/usb/apple,sn201202x.yaml",
+        "sha256": "569d97fa64a39bc520f58b5666cabe842b37a528c1dadbb0da86ca985e9c55b3"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/MAINTAINERS",
+        "sha256": "8eb676475c469bd8bef15a9022a190b7010466969f05b7328a61ca3ea108f356"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/arch/arm64/boot/dts/apple/t6032-j575d.dts",
+        "sha256": "28ffa9037b10eac9140b3881b47583e91347aabb72ab686decfd1fa17693aeb6"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/arch/arm64/boot/dts/apple/t8122-usbpd-spmi.dtsi",
+        "sha256": "74363972a2ef316bba4f7a72a36b8ed33d0713820aa85719dc4537e969101c06"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/core-da16.c",
+        "sha256": "6fdab849b336eabdd39c50ae39de06bb84d01a2952cf8a33fae6d4b4dcf9c608"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/drivers/spmi/Kconfig",
+        "sha256": "a1a6f81c5901a7e783deb81a17e05bd9a927e4163334e538d0c379643e8ce6b0"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/drivers/spmi/Makefile",
+        "sha256": "cac8a74163cab9cd6de978f474d62fad76f1b065d4e8e956950f597c2ba19c4d"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/drivers/spmi/spmi-apple-controller.c",
+        "sha256": "097a627f5acdb366b1637e56555802898b36a1e2ac34faa391695d16127bad98"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/drivers/usb/typec/tipd/Kconfig",
+        "sha256": "38ddfbb3b1a054fd656dc403e71bc2e8da1c634e60ea4bb27eab607d8babbd9a"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/drivers/usb/typec/tipd/Makefile",
+        "sha256": "04f8a20002ce8b7e0eac327a56539bf79a97cdce63f3a964a70c86307bf02a35"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/drivers/usb/typec/tipd/core.c",
+        "sha256": "3f581b0837bf24c085fb08db0043329b6d3043fc1c9f6b25b005f7e7bdba0a72"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/drivers/usb/typec/tipd/i2c.c",
+        "sha256": "6051ba21184915fc3399599655ed3fc8c71a4b0b57d3c8b6ebe32b21025ce9e1"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/drivers/usb/typec/tipd/spmi.c",
+        "sha256": "a0f5b62407cdbf9c22bee02400864c7802be75ca7cb4a4fb170d18eb2937b17e"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/drivers/usb/typec/tipd/tps6598x.h",
+        "sha256": "cf71a3a19d7d9a39f1987c7631cc955f8a150f8a5761c9567b7c421fbd7fe545"
+      },
+      {
+        "path": "scratch/j575d-usb-spmi-backport-primary-2026-10-08/raw/spmi-apple-controller-550.c",
+        "sha256": "7c8d712b594258e5231dd1dfbb99029bde289ebea60eb1a7f59e5367b0b827f3"
+      }
+    ],
+    "graph_and_binding_receipts": [
+      {
+        "path": "scratch/j575d-usb-typec-primary-2026-10-08/README.md",
+        "sha256": "db90960efa269b6cd38ffac286793add18dc762795f586bb62cfdde38d2d6d50"
+      },
+      {
+        "path": "scratch/j575d-usb-typec-primary-2026-10-08/apple,sn201202x.yaml",
+        "sha256": "569d97fa64a39bc520f58b5666cabe842b37a528c1dadbb0da86ca985e9c55b3"
+      },
+      {
+        "path": "scratch/j575d-usb-typec-primary-2026-10-08/apple,spmi.yaml",
+        "sha256": "3b386bcef218b0c72cbd9c5faf5e3a8cf359cd0e5b6069f413a4908336146367"
+      },
+      {
+        "path": "scratch/j575d-usb-typec-primary-2026-10-08/spmi.h",
+        "sha256": "c2952b040e5c24726c423e52ba939d389141ff27eb2307fb3888657b455e2b9b"
+      },
+      {
+        "path": "scratch/j575d-usb-typec-primary-2026-10-08/t6031-base.dtsi",
+        "sha256": "c1f08bc5b31cda11f94ce193316af5fc8403b4593782b0d25c515d176c37ca5a"
+      },
+      {
+        "path": "scratch/j575d-usb-typec-primary-2026-10-08/t6031-die0.dtsi",
+        "sha256": "417ea802824a583d94a1b4c9933c629444d199faf4aa2edd87f5e1a9c7c3975f"
+      },
+      {
+        "path": "scratch/j575d-usb-typec-primary-2026-10-08/t6031-dieX.dtsi",
+        "sha256": "6d9ff0c6fe73715f37fe49dbfd4d17ff182a6e8022b18ef128c3cd41b9bc7317"
+      },
+      {
+        "path": "scratch/j575d-usb-typec-primary-2026-10-08/t6032-j575d.dts",
+        "sha256": "28ffa9037b10eac9140b3881b47583e91347aabb72ab686decfd1fa17693aeb6"
+      },
+      {
+        "path": "scratch/j575d-usb-typec-primary-2026-10-08/t6032.dtsi",
+        "sha256": "326f3f9839f6017099e987402176923cb1d65af29ee21d1e34c3b95837ff7fbf"
+      },
+      {
+        "path": "scratch/j575d-usb-typec-primary-2026-10-08/t603x-j514-j516.dtsi",
+        "sha256": "0decc98d3f6559eda79efc24bd4767eaf49631897aa36c5277eec870b2121149"
+      },
+      {
+        "path": "scratch/j575d-usb-typec-primary-2026-10-08/t8122-usbpd-spmi.dtsi",
+        "sha256": "74363972a2ef316bba4f7a72a36b8ed33d0713820aa85719dc4537e969101c06"
+      }
+    ],
+    "atc_m3_commit": {
+      "path": "scratch/j575d-usb-spmi-primary-2026-10-08/atc-m3-commit.json",
+      "sha256": "2dc587860fe2de9983dfcb1ae24ab0daa4389174039fd4550013e583f9c4afcb"
+    },
+    "verified_nonempty_atc_parent": {
+      "path": "scratch/j575d-usb-spmi-primary-2026-10-08/atc-parent.c",
+      "sha256": "8379e29899d95a508b61b10f87b257d123a32664e7ada7eb0bfbbe79022d2769"
+    },
+    "asahi_head_api": {
+      "path": "scratch/j575d-usb-spmi-primary-2026-10-08/asahi-head.json",
+      "sha256": "b361c780c81bbdb7c249f53f714edf351767016408c2b1051ef25347c9a59a52"
+    }
+  },
+  "backport": {
+    "atc": "complete 24065f2 generation-aware T8122 implementation needed; keep intentional T6031/T8122 DT fallback, not bare aliases",
+    "spmi": "five transaction/IRQ patches apply in scratch after mod_devicetable.h include prerequisite; not yet compiled",
+    "tipd": "I2C/common refactor rejects five of fifteen core.c hunks; semantic port must preserve pinned newer tps66993/status behavior",
+    "required_modules": [
+      "spmi-apple-controller.ko",
+      "tps6598x-core.ko",
+      "sn201202x.ko",
+      "rebuilt tps6598x.ko",
+      "generation-aware phy-apple-atc.ko"
+    ],
+    "retained_17_module_package_sufficient_for_ace3": false,
+    "modules_only_expected_not_verified": true
+  },
+  "audits": [
+    {
+      "path": "scratch/j575d-usb-live-contract-2026-10-08.md",
+      "sha256": "7d09e335045c4b627bd6a53b2d769285e5fe6abadec244b95b3ed7ad9d47a6c9"
+    },
+    {
+      "path": "scratch/j575d-usb-atc-compatibility-2026-10-08.md",
+      "sha256": "8fe0dff776f36fd2b027ff8b9747997e6d70127e52ac16d79e95039bcc5e3ef2"
+    },
+    {
+      "path": "scratch/j575d-usb-typec-graph-2026-10-08.md",
+      "sha256": "681044b8992c3358b42d8eb829726f0e3cc422e554bf2bccdc5f8e96663a7935"
+    },
+    {
+      "path": "scratch/j575d-usb-spmi-backport-contract-2026-10-08.md",
+      "sha256": "4a82f119bc4daaf5860f61e6dc4c4d5f59cace7aff33f5f0562856351b7cc578"
+    },
+    {
+      "path": "scratch/j575d-usb-atc-primary-2026-10-08/commit-metadata.md",
+      "sha256": "ae6421fcb24cb128388b5ebe1ba1eba6843f19be364cae55494753d4629ce8bd"
+    }
+  ],
+  "remaining": [
+    "implement and compile complete SPMI/ACE3/ATC backports preserving old driver behavior and Image/ABI",
+    "identify second SPMI bank AIC/power-domain/die routing; a2 name does not prove die 1",
+    "four named ACE3 IRQs: select IRQ inferred from primary other-board source, not present in captured three-cell ADT",
+    "six reciprocal connector/DRD/PHY graphs and precise provider availability",
+    "faithful conversion of fourteen live table payloads to generation-specific Linux tunable properties",
+    "all-six final bootloader aliases and combined package/handoff tests; m1n1 policy decision remains pending",
+    "verified backup, recovery readiness, separate native approval and physical device/USB traffic validation"
+  ],
+  "security_scope": "findings report and record only; no security fixes or issue filing authorized"
+}

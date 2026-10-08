@@ -231,6 +231,20 @@ MMIO, firmware, disk, persistent-VM, security-fix or submission action is
 authorized by this milestone. The [I/O module inventory](inventory/m1n1-j575d-io-modules-2026-10-08.json)
 records the exact scope.
 
+## Live USB and functional backport contract — 2026-10-08 UTC
+
+The subsequent [filtered live USB inventory](inventory/j575d-usb-live-contract-2026-10-08.json)
+supersedes using the restore template as the only tunable source: all six live
+PHYs expose fourteen named tables, and six ACE3 controllers use SPMI banks
+`nub-spmi-a0`/`nub-spmi-a2`, not the older I2C-only PD path. The collector
+`scripts/collect-j575d-usb-metadata.py` emits only public selected fields and
+table bytes; unfiltered ioreg output stays in memory. This is macOS metadata,
+not a final iBoot handoff. Complete generation-aware M3 PHY and ACE3/SPMI
+driver ports, exact second-bank routing, four named IRQs, six connector graphs
+and faithful tunable conversion remain prerequisites. Neither the 17-module
+VM run nor the existing PCIe profile proves USB support. New combined m1n1
+tests remain unexecuted pending the retained tree's policy decision.
+
 ## PCIe four-port DT profile — 2026-10-08 UTC
 
 The independent `build-j575d-pcie-dt.py` profile (SHA-256 prefix `574e2cf4`)
