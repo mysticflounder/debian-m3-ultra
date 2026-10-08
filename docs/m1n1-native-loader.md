@@ -325,6 +325,57 @@ now corrects the four-plus-two provider layout; connector graphs and faithful
 per-port calibration remain open. The default DT/loader is unchanged and the
 m1n1 policy-held lane remains held.
 
+## Disabled ACE3/Type-C graph candidate — 2026-10-08 UTC
+
+The separate `configs/j575d-ace3-candidate.dtsi` fragment adds the missing
+die-0 a2 SPMI bank and six ACE3 connector graphs after the corrected USB4+2
+profile. The new bank and all six ACE3 children are explicitly disabled.
+Neither the pinned board nor the default loader/profile is replaced.
+
+The read-only `collect-j575d-ace3-routing.py` receipt confirms six actual
+`AppleHPMARMSPMI` services and unchanged bank/SID/dock/port joins. All 426
+retained byte tuples verify; eight collector fixtures pass. Both registry
+planes still expose only three interrupts per HPM, and no `interrupt-names`,
+GPIO or PMGR relationship closing the remaining routing questions.
+
+| Firmware port | SPMI bank / SID | DWC3 / PHY | Candidate select IRQ |
+| --- | --- | --- | --- |
+| 1 | a0 / c | `dwc3_0` / `atcphy0` | 13 |
+| 2 | a0 / a | `dwc3_1` / `atcphy1` | 39 |
+| 3 | a0 / 8 | `dwc3_2` / `atcphy2` | 65 |
+| 4 | a0 / 6 | `dwc3_3` / `atcphy3` | 91 |
+| 5 | a2 / c | `dwc3_0_die1` / `atcphy0_die1` | 13 |
+| 6 | a2 / a | `dwc3_1_die1` / `atcphy1_die1` | 39 |
+
+The select values are **sibling-board source convention, not J575d witnesses**.
+Linux requires four named interrupts and does not derive the fourth from SID
+or the logical-register selection command. The a2 power-domain association
+also retains its source-derived status. No native qualification follows.
+
+With the retained Linux closure and receipts present, run
+`uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache
+python scripts/build-j575d-ace3-candidate.py`. Then run
+`python tests/test-j575d-ace3-candidate.py <workspace>` through the same uv
+environment. These commands only compile/inspect offline DT artifacts.
+
+Two independent builds reproduce the unchanged USB baseline `af9ba709` and
+candidate `832bdc15`. The candidate adds 103 nodes and 49 symbols, including
+36 endpoint nodes forming 18 reciprocal connections. Checks require exact
+connector/DWC3/ATCPHY ownership, port indices, the four-die0/two-die1 mapping,
+and preservation of existing resources and resolved reference identities.
+Eleven regression tests pass on each build; eight designated builder controls
+also reject wrong routing, ownership, resource, status and unrelated changes.
+All four DTC diagnostic files are byte-identical and retain six warnings;
+this is not complete DTB schema validation. The
+[candidate inventory](inventory/j575d-ace3-candidate-2026-10-08.json)
+binds the evidence, including the unchanged USB driver package regression.
+
+Next: faithful six-port calibration and an independent select-IRQ witness.
+SPMI power/recovery, PHY initialization, IRQ/DMA and Type-C operation still
+need native qualification. No calibration, aliases, bootloader handoff,
+firmware, disk or VM change is included; the retained m1n1 policy-held lane
+and backup/recovery/native-approval gates remain unchanged.
+
 ## Corrected USB4+2 provider profile — 2026-10-08 UTC
 
 Run `uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache

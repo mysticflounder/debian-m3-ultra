@@ -1,0 +1,424 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * J575d offline, disabled ACE3/Type-C graph candidate.
+ *
+ * Include after the pinned board DTS, PCIe profile, and corrected USB 4+2
+ * provider profile (configs/j575d-usb-layout.dtsi).  Every ACE3 child and the
+ * new a2 SPMI parent is disabled.  The select IRQ cells follow the cached
+ * sibling-board DTS convention and are explicitly not J575d-witnessed.
+ *
+ * This fragment is for offline source/schema/graph work only.  It does not
+ * enable a controller, add calibration, alter aliases/loader state, or claim
+ * native/hardware functionality.
+ */
+
+/* The J575d witness has an a2 bank, but the pinned Linux board DTS has no
+ * source node for it.  Keep this candidate bank disabled. */
+&die0 {
+	nub_spmi_a2: spmi@2a11a8000 {
+		compatible = "apple,t6031-spmi", "apple,t8103-spmi";
+		#address-cells = <2>;
+		#size-cells = <0>;
+		#interrupt-cells = <2>;
+		interrupt-controller;
+		reg = <0x2 0xa11a8000 0x0 0x100>;
+		interrupt-parent = <&aic>;
+		interrupts = <AIC_IRQ 0 767 IRQ_TYPE_LEVEL_HIGH>;
+		power-domains = <&ps_nub_spmi_a2>;
+		status = "disabled";
+	};
+};
+
+&nub_spmi_a0 {
+	hpm0: usb-pd@c {
+		compatible = "apple,sn201202x";
+		reg = <0xc SPMI_USID>;
+		/* select=13 is sibling-board source convention; J575d-unwitnessed. */
+		interrupts = <11 IRQ_TYPE_EDGE_RISING>,
+			<13 IRQ_TYPE_EDGE_RISING>,
+			<17 IRQ_TYPE_EDGE_RISING>,
+			<19 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "irq", "select", "sleep", "wake";
+		status = "disabled";
+
+		typec0: connector {
+			compatible = "usb-c-connector";
+			label = "J575d USB-C 0";
+			power-role = "dual";
+			data-role = "dual";
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				port@0 {
+					reg = <0>;
+					typec0_hs: endpoint {
+						remote-endpoint = <&dwc3_0_hs>;
+					};
+				};
+				port@1 {
+					reg = <1>;
+					typec0_ss: endpoint {
+						remote-endpoint = <&atcphy0_typec_lanes>;
+					};
+				};
+			};
+		};
+	};
+
+	hpm1: usb-pd@a {
+		compatible = "apple,sn201202x";
+		reg = <0xa SPMI_USID>;
+		/* select=39 is sibling-board source convention; J575d-unwitnessed. */
+		interrupts = <37 IRQ_TYPE_EDGE_RISING>,
+			<39 IRQ_TYPE_EDGE_RISING>,
+			<43 IRQ_TYPE_EDGE_RISING>,
+			<45 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "irq", "select", "sleep", "wake";
+		status = "disabled";
+
+		typec1: connector {
+			compatible = "usb-c-connector";
+			label = "J575d USB-C 1";
+			power-role = "dual";
+			data-role = "dual";
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				port@0 {
+					reg = <0>;
+					typec1_hs: endpoint {
+						remote-endpoint = <&dwc3_1_hs>;
+					};
+				};
+				port@1 {
+					reg = <1>;
+					typec1_ss: endpoint {
+						remote-endpoint = <&atcphy1_typec_lanes>;
+					};
+				};
+			};
+		};
+	};
+
+	hpm2: usb-pd@8 {
+		compatible = "apple,sn201202x";
+		reg = <0x8 SPMI_USID>;
+		/* select=65 is sibling-board source convention; J575d-unwitnessed. */
+		interrupts = <63 IRQ_TYPE_EDGE_RISING>,
+			<65 IRQ_TYPE_EDGE_RISING>,
+			<69 IRQ_TYPE_EDGE_RISING>,
+			<71 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "irq", "select", "sleep", "wake";
+		status = "disabled";
+
+		typec2: connector {
+			compatible = "usb-c-connector";
+			label = "J575d USB-C 2";
+			power-role = "dual";
+			data-role = "dual";
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				port@0 {
+					reg = <0>;
+					typec2_hs: endpoint {
+						remote-endpoint = <&dwc3_2_hs>;
+					};
+				};
+				port@1 {
+					reg = <1>;
+					typec2_ss: endpoint {
+						remote-endpoint = <&atcphy2_typec_lanes>;
+					};
+				};
+			};
+		};
+	};
+
+	hpm3: usb-pd@6 {
+		compatible = "apple,sn201202x";
+		reg = <0x6 SPMI_USID>;
+		/* select=91 is sibling-board source convention; J575d-unwitnessed. */
+		interrupts = <89 IRQ_TYPE_EDGE_RISING>,
+			<91 IRQ_TYPE_EDGE_RISING>,
+			<95 IRQ_TYPE_EDGE_RISING>,
+			<97 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "irq", "select", "sleep", "wake";
+		status = "disabled";
+
+		typec3: connector {
+			compatible = "usb-c-connector";
+			label = "J575d USB-C 3";
+			power-role = "dual";
+			data-role = "dual";
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				port@0 {
+					reg = <0>;
+					typec3_hs: endpoint {
+						remote-endpoint = <&dwc3_3_hs>;
+					};
+				};
+				port@1 {
+					reg = <1>;
+					typec3_ss: endpoint {
+						remote-endpoint = <&atcphy3_typec_lanes>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&nub_spmi_a2 {
+	hpm4: usb-pd@c {
+		compatible = "apple,sn201202x";
+		reg = <0xc SPMI_USID>;
+		/* select=13 is sibling-board source convention; J575d-unwitnessed. */
+		interrupts = <11 IRQ_TYPE_EDGE_RISING>,
+			<13 IRQ_TYPE_EDGE_RISING>,
+			<17 IRQ_TYPE_EDGE_RISING>,
+			<19 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "irq", "select", "sleep", "wake";
+		status = "disabled";
+
+		typec4: connector {
+			compatible = "usb-c-connector";
+			label = "J575d USB-C 4";
+			power-role = "dual";
+			data-role = "dual";
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				port@0 {
+					reg = <0>;
+					typec4_hs: endpoint {
+						remote-endpoint = <&dwc3_0_die1_hs>;
+					};
+				};
+				port@1 {
+					reg = <1>;
+					typec4_ss: endpoint {
+						remote-endpoint = <&atcphy0_die1_typec_lanes>;
+					};
+				};
+			};
+		};
+	};
+
+	hpm5: usb-pd@a {
+		compatible = "apple,sn201202x";
+		reg = <0xa SPMI_USID>;
+		/* select=39 is sibling-board source convention; J575d-unwitnessed. */
+		interrupts = <37 IRQ_TYPE_EDGE_RISING>,
+			<39 IRQ_TYPE_EDGE_RISING>,
+			<43 IRQ_TYPE_EDGE_RISING>,
+			<45 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "irq", "select", "sleep", "wake";
+		status = "disabled";
+
+		typec5: connector {
+			compatible = "usb-c-connector";
+			label = "J575d USB-C 5";
+			power-role = "dual";
+			data-role = "dual";
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				port@0 {
+					reg = <0>;
+					typec5_hs: endpoint {
+						remote-endpoint = <&dwc3_1_die1_hs>;
+					};
+				};
+				port@1 {
+					reg = <1>;
+					typec5_ss: endpoint {
+						remote-endpoint = <&atcphy1_die1_typec_lanes>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&dwc3_0 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			dwc3_0_hs: endpoint { remote-endpoint = <&typec0_hs>; };
+		};
+		port@1 {
+			reg = <1>;
+			dwc3_0_ss: endpoint { remote-endpoint = <&atcphy0_usb3>; };
+		};
+	};
+};
+
+&dwc3_1 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			dwc3_1_hs: endpoint { remote-endpoint = <&typec1_hs>; };
+		};
+		port@1 {
+			reg = <1>;
+			dwc3_1_ss: endpoint { remote-endpoint = <&atcphy1_usb3>; };
+		};
+	};
+};
+
+&dwc3_2 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			dwc3_2_hs: endpoint { remote-endpoint = <&typec2_hs>; };
+		};
+		port@1 {
+			reg = <1>;
+			dwc3_2_ss: endpoint { remote-endpoint = <&atcphy2_usb3>; };
+		};
+	};
+};
+
+&dwc3_3 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			dwc3_3_hs: endpoint { remote-endpoint = <&typec3_hs>; };
+		};
+		port@1 {
+			reg = <1>;
+			dwc3_3_ss: endpoint { remote-endpoint = <&atcphy3_usb3>; };
+		};
+	};
+};
+
+&dwc3_0_die1 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			dwc3_0_die1_hs: endpoint { remote-endpoint = <&typec4_hs>; };
+		};
+		port@1 {
+			reg = <1>;
+			dwc3_0_die1_ss: endpoint { remote-endpoint = <&atcphy0_die1_usb3>; };
+		};
+	};
+};
+
+&dwc3_1_die1 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			dwc3_1_die1_hs: endpoint { remote-endpoint = <&typec5_hs>; };
+		};
+		port@1 {
+			reg = <1>;
+			dwc3_1_die1_ss: endpoint { remote-endpoint = <&atcphy1_die1_usb3>; };
+		};
+	};
+};
+
+&atcphy0 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			atcphy0_typec_lanes: endpoint { remote-endpoint = <&typec0_ss>; };
+		};
+		port@1 {
+			reg = <1>;
+			atcphy0_usb3: endpoint { remote-endpoint = <&dwc3_0_ss>; };
+		};
+	};
+};
+
+&atcphy1 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			atcphy1_typec_lanes: endpoint { remote-endpoint = <&typec1_ss>; };
+		};
+		port@1 {
+			reg = <1>;
+			atcphy1_usb3: endpoint { remote-endpoint = <&dwc3_1_ss>; };
+		};
+	};
+};
+
+&atcphy2 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			atcphy2_typec_lanes: endpoint { remote-endpoint = <&typec2_ss>; };
+		};
+		port@1 {
+			reg = <1>;
+			atcphy2_usb3: endpoint { remote-endpoint = <&dwc3_2_ss>; };
+		};
+	};
+};
+
+&atcphy3 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			atcphy3_typec_lanes: endpoint { remote-endpoint = <&typec3_ss>; };
+		};
+		port@1 {
+			reg = <1>;
+			atcphy3_usb3: endpoint { remote-endpoint = <&dwc3_3_ss>; };
+		};
+	};
+};
+
+&atcphy0_die1 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			atcphy0_die1_typec_lanes: endpoint { remote-endpoint = <&typec4_ss>; };
+		};
+		port@1 {
+			reg = <1>;
+			atcphy0_die1_usb3: endpoint { remote-endpoint = <&dwc3_0_die1_ss>; };
+		};
+	};
+};
+
+&atcphy1_die1 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@0 {
+			reg = <0>;
+			atcphy1_die1_typec_lanes: endpoint { remote-endpoint = <&typec5_ss>; };
+		};
+		port@1 {
+			reg = <1>;
+			atcphy1_die1_usb3: endpoint { remote-endpoint = <&dwc3_1_die1_ss>; };
+		};
+	};
+};

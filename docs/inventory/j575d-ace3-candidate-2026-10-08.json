@@ -1,0 +1,247 @@
+{
+  "schema": "j575d-disabled-ace3-candidate-offline-evidence-v1",
+  "date_utc": "2026-10-08",
+  "parent_commit": "249979a",
+  "linux_pin": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+  "cached_primary_pin": "77cb8f24c2381a8abb7272d7bbdec548d6426a8a",
+  "scope": "Functional Linux-only DT source/graph work; public read-only metadata; no native functionality or boot approval.",
+  "collector": {
+    "path": "scripts/collect-j575d-ace3-routing.py",
+    "capture": "scratch/j575d-ace3-routing-first-2026-10-08.json",
+    "plane_counts": {
+      "IODeviceTree": {
+        "targets": 14,
+        "records": 17
+      },
+      "IOService": {
+        "targets": 22,
+        "records": 27
+      }
+    },
+    "hpm_providers": 6,
+    "apple_hpm_arm_spmi_services": 6,
+    "byte_tuples_verified": 426,
+    "unchanged_bank_sid_dock_port_joins": 6,
+    "interrupt_cells_per_provider": 3,
+    "select_irq_witness": false,
+    "unfiltered_archives_retained": false,
+    "mmio_register_access": false
+  },
+  "collector_test_log": "scratch/j575d-ace3-collector-main-tests-2026-10-08.log",
+  "candidate": {
+    "fragment": "configs/j575d-ace3-candidate.dtsi",
+    "builder": "scripts/build-j575d-ace3-candidate.py",
+    "include_order": [
+      "t6032-j575d.dts",
+      "j575d-pcie-ports.dtsi",
+      "j575d-usb-layout.dtsi",
+      "j575d-ace3-candidate.dtsi"
+    ],
+    "new_a2_bank": {
+      "die": 0,
+      "physical_base": "0x2a11a8000",
+      "linux_footprint": "0x100",
+      "aic_irq": [
+        0,
+        767,
+        4
+      ],
+      "power_domain": "ps_nub_spmi_a2",
+      "power_domain_basis": "source convention; runtime join unwitnessed",
+      "status": "disabled"
+    },
+    "ace_children": 6,
+    "ace_children_status": "disabled",
+    "graph_links": 18,
+    "endpoint_nodes": 36,
+    "added_nodes": 103,
+    "added_symbols": 49,
+    "numeric_phandle_changes": 600,
+    "select_irq_basis": "Cached sibling-board DTS convention, not derived by Linux driver and not observed on J575d.",
+    "select_irq_values": [
+      13,
+      39,
+      65,
+      91,
+      13,
+      39
+    ]
+  },
+  "ports": [
+    {
+      "port": 1,
+      "bank": "a0",
+      "sid": 12,
+      "observed_irqs": [
+        11,
+        17,
+        19
+      ],
+      "dwc3": "dwc3_0",
+      "phy": "atcphy0"
+    },
+    {
+      "port": 2,
+      "bank": "a0",
+      "sid": 10,
+      "observed_irqs": [
+        37,
+        43,
+        45
+      ],
+      "dwc3": "dwc3_1",
+      "phy": "atcphy1"
+    },
+    {
+      "port": 3,
+      "bank": "a0",
+      "sid": 8,
+      "observed_irqs": [
+        63,
+        69,
+        71
+      ],
+      "dwc3": "dwc3_2",
+      "phy": "atcphy2"
+    },
+    {
+      "port": 4,
+      "bank": "a0",
+      "sid": 6,
+      "observed_irqs": [
+        89,
+        95,
+        97
+      ],
+      "dwc3": "dwc3_3",
+      "phy": "atcphy3"
+    },
+    {
+      "port": 5,
+      "bank": "a2",
+      "sid": 12,
+      "observed_irqs": [
+        11,
+        17,
+        19
+      ],
+      "dwc3": "dwc3_0_die1",
+      "phy": "atcphy0_die1"
+    },
+    {
+      "port": 6,
+      "bank": "a2",
+      "sid": 10,
+      "observed_irqs": [
+        37,
+        43,
+        45
+      ],
+      "dwc3": "dwc3_1_die1",
+      "phy": "atcphy1_die1"
+    }
+  ],
+  "builds": [
+    {
+      "kind": "main",
+      "workspace": "scratch/j575d-ace3-candidate.dif94rf2",
+      "baseline_sha256": "af9ba709814b2a1f1be5c9e3a8529a78df2851eb3b6ce8c306949766d501b867",
+      "candidate_sha256": "832bdc15bcc9c0d5204a62e5d18b72574890b4df8e48b41dd2da5cf1f4c3d265",
+      "command_checksums": "scratch/j575d-ace3-main-command-checksums-2026-10-08.txt",
+      "test_log": "scratch/j575d-ace3-candidate-main-tests-final-2026-10-08.log"
+    },
+    {
+      "kind": "independent",
+      "workspace": "scratch/j575d-ace3-candidate.do6suzh1",
+      "baseline_sha256": "af9ba709814b2a1f1be5c9e3a8529a78df2851eb3b6ce8c306949766d501b867",
+      "candidate_sha256": "832bdc15bcc9c0d5204a62e5d18b72574890b4df8e48b41dd2da5cf1f4c3d265",
+      "command_checksums": "scratch/j575d-ace3-independent-command-checksums-2026-10-08.txt",
+      "test_log": "scratch/j575d-ace3-candidate-independent-tests-final-2026-10-08.log"
+    }
+  ],
+  "verification": {
+    "source_files_unchanged": 19,
+    "parent_layout_receipts_verified": 31,
+    "parent_routing_receipts_verified": 38,
+    "command_file_receipts_per_build": 36,
+    "command_exits_per_build": 9,
+    "candidate_tests_per_build": 11,
+    "collector_fixtures": 8,
+    "designated_builder_controls_per_build": 8,
+    "exact_endpoint_owner_and_port_shape_checked": true,
+    "existing_resources_statuses_and_resolved_references_preserved": true,
+    "baseline_and_candidate_byte_identical_between_builds": true,
+    "dtc_warnings_each": 6,
+    "dtc_warning_categories": [
+      "simple_bus_reg",
+      "unit_address_vs_reg"
+    ],
+    "all_four_dtc_diagnostics_byte_identical": true,
+    "full_dtb_schema_validation": false,
+    "prior_twenty_module_receipts_verified": 83,
+    "prior_module_manifest_entries": 109,
+    "prior_hvf_markers_rechecked": 30,
+    "fresh_vm_run": false
+  },
+  "native_boot_approved": false,
+  "native_or_physical_functionality_tested": false,
+  "default_dt_or_loader_changed": false,
+  "native_dispatch_enabled": false,
+  "pinned_board_sources_changed": false,
+  "frozen_twenty_module_build_changed": false,
+  "calibration_or_alias_handoff_added": false,
+  "security_findings_confirmed": [],
+  "remaining": [
+    "Independent J575d select IRQ evidence, especially a2; keep candidate disabled.",
+    "Faithful per-port PHY calibration, source grouping and handoff/alias preparation.",
+    "Runtime SPMI power-domain join and recovery behavior.",
+    "Native IRQ/DMA/PHY/Type-C operation after verified backup, recovery readiness and explicit approval.",
+    "Retained m1n1 integration remains policy-held; no alternate-copy bypass."
+  ],
+  "receipts": [
+    {"path":"configs/j575d-ace3-candidate.dtsi","sha256":"4cb88fa61cfc7af43af5b585425424145a7a456877370ff7e6bc3c6abb8095b8"},
+    {"path":"scripts/collect-j575d-ace3-routing.py","sha256":"cb2585e06e156866e4ef885a68b635f398bfa14b8c10833251d1badc22376509"},
+    {"path":"scripts/build-j575d-ace3-candidate.py","sha256":"a749751e14236990e168b59e3533571a23fa75a9a79da3ff5482022d583d1728"},
+    {"path":"tests/test-j575d-ace3-routing.py","sha256":"3dc0530fa958b94c5ee515a248631b3267a93bda10c27ca26d9ea5eb115761d8"},
+    {"path":"tests/test-j575d-ace3-candidate.py","sha256":"31e217c7f59d9435d42e465ca260f5d67db059da4bf225f350596d9f137032a4"},
+    {"path":"scripts/collect-j575d-spmi-routing.py","sha256":"a434dd9e3cfc516227c42b998e7b1afef8204e7ded098adcaf39a7295f7ae599"},
+    {"path":"scratch/j575d-ace3-routing-first-2026-10-08.json","sha256":"9b44d4817457c943d2ec09e3b659fe9bf9cf8ad021e9cd74bdf3d29bbfe4155f"},
+    {"path":"scratch/verify-j575d-ace3-routing-2026-10-08.py","sha256":"43d8d5b81b562c420f41c1ac121eb83f48210d000fb84446d3f017855806cbd4"},
+    {"path":"scratch/j575d-ace3-routing-main-verification2-2026-10-08.log","sha256":"5ee91dec6d7bfa4897a73c21f61cf5aaf6134ecd52f7917f8d8ecdaee9779ef5"},
+    {"path":"scratch/j575d-ace3-collector-main-tests-2026-10-08.log","sha256":"780658b806eaeebcee43e90c31552e3ec008de93d214abd47780a9b84ad367e1"},
+    {"path":"scratch/j575d-ace3-live-evidence-2026-10-08.md","sha256":"acb48799980993903190ba6ef65fabbfc98f466138b249bd93baf493c61ba757"},
+    {"path":"scratch/j575d-ace3-select-contract-2026-10-08.md","sha256":"3d327456f3fd7f35dafe3fb2faa279b2258de7d0cf86d93843d6297aea799b6e"},
+    {"path":"scratch/j575d-ace3-driver-contract-2026-10-08.md","sha256":"c4d19dcef1c6260940f2dd20c61a3304a29acb2342a2c8c1d04976d16d16b870"},
+    {"path":"scratch/j575d-ace3-collector-review-2026-10-08.md","sha256":"86381e941284d48d664576417ad8a63b15c2ad2192b1a5e3d57e0e8e907f5fa1"},
+    {"path":"scratch/j575d-ace3-candidate-contract-2026-10-08.md","sha256":"4110a01d75538d398bfb59505c1afb61f45cd9b620538f76450da67d37cd9697"},
+    {"path":"scratch/j575d-ace3-candidate-builder-notes-2026-10-08.md","sha256":"b9d1699fdf68c5147b6bea2c5ce1c24a54d9ee3605ba4e5a149d5d567a508bb9"},
+    {"path":"scratch/j575d-ace3-candidate-test-review-2026-10-08.md","sha256":"35bc7034bc8eb9048a11daff778f4c212910bd4148bf2cce00b6a0c396d3ee5d"},
+    {"path":"scratch/j575d-usb-live-2026-10-08/derived/collector-v1-2026-10-08.json","sha256":"2feaf14d0e5a983cf72126877dbcea2c68f78bf2da5f3d45e0f218f970fd8a7e"},
+    {"path":"scratch/j575d-usb-typec-primary-2026-10-08/t8122-usbpd-spmi.dtsi","sha256":"74363972a2ef316bba4f7a72a36b8ed33d0713820aa85719dc4537e969101c06"},
+    {"path":"scratch/j575d-usb-typec-primary-2026-10-08/t603x-j514-j516.dtsi","sha256":"0decc98d3f6559eda79efc24bd4767eaf49631897aa36c5277eec870b2121149"},
+    {"path":"scratch/j575d-usb-typec-primary-2026-10-08/apple,sn201202x.yaml","sha256":"569d97fa64a39bc520f58b5666cabe842b37a528c1dadbb0da86ca985e9c55b3"},
+    {"path":"scratch/j575d-ace3-candidate-main-build-final-2026-10-08.log","sha256":"f7f12947fa1a16ce8dd4e37ad15694cd9033b8616934a2ebffa6a7bc77640c7c"},
+    {"path":"scratch/j575d-ace3-candidate-main-tests-final-2026-10-08.log","sha256":"734278099cc73a04f9544111700e7e81da888e0f9c26db03d19c15822201a101"},
+    {"path":"scratch/j575d-ace3-candidate-independent-tests-final-2026-10-08.log","sha256":"eecbcd1dc2454bac6397c5bf3b094ae7890fa250fd31764f0d6d01acc1f10666"},
+    {"path":"scratch/j575d-ace3-parent-layout-regression-2026-10-08.log","sha256":"f123a92092cde2566a010e11039e30ac96e3dab1cf76827e69da1294f071249c"},
+    {"path":"scratch/j575d-ace3-parent-driver-regression-2026-10-08.log","sha256":"881d36183395a19e65657bc5955ec2e770fb8c197afe75d36d3a6dd37dc7660c"},
+    {"path":"docs/inventory/j575d-usb-layout-2026-10-08.json","sha256":"4a3111048c6c31695beb682bf489b50e1eefb2a0ee767058b524b2074030ab75"},
+    {"path":"docs/inventory/j575d-usb-routing-2026-10-08.json","sha256":"4e68cedf0630efc01190538de6c110a5235bc242fb559a4cd62d1deabb30269d"},
+    {"path":"scratch/j575d-ace3-candidate.dif94rf2/manifest.json","sha256":"df9158ca378cae137bddba6cdeb9f2ff5ae4a965db727ad96024ab4842d54958"},
+    {"path":"scratch/j575d-ace3-candidate.dif94rf2/baseline.dtb","sha256":"af9ba709814b2a1f1be5c9e3a8529a78df2851eb3b6ce8c306949766d501b867"},
+    {"path":"scratch/j575d-ace3-candidate.dif94rf2/candidate.dtb","sha256":"832bdc15bcc9c0d5204a62e5d18b72574890b4df8e48b41dd2da5cf1f4c3d265"},
+    {"path":"scratch/j575d-ace3-candidate.do6suzh1/manifest.json","sha256":"c6d32a5fcab65d1555bd2ddb77faad66acc470a766ce31068a773e6faf9c6d22"},
+    {"path":"scratch/j575d-ace3-candidate.do6suzh1/baseline.dtb","sha256":"af9ba709814b2a1f1be5c9e3a8529a78df2851eb3b6ce8c306949766d501b867"},
+    {"path":"scratch/j575d-ace3-candidate.do6suzh1/candidate.dtb","sha256":"832bdc15bcc9c0d5204a62e5d18b72574890b4df8e48b41dd2da5cf1f4c3d265"},
+    {"path":"scratch/j575d-ace3-main-command-checksums-2026-10-08.txt","sha256":"f94cc6229004254c8da184d53a429dd80d273f4668fe240f3c6205750bf4a3dd"},
+    {"path":"scratch/j575d-ace3-independent-command-checksums-2026-10-08.txt","sha256":"69e9cc1b77e9197e11e0af5dd2d9894189ea3f3c2690aef1b4ba086127174700"},
+    {"path":"scratch/verify-j575d-ace3-candidate-2026-10-08.py","sha256":"ac84a68aa1ca155f582f8aafb62feda70bc4f01e702b9c5586e06343cd667d54"},
+    {"path":"scripts/build-j575d-usb-layout.py","sha256":"5617d5bf3ddf7c0c0fce7e8aa2a17a0a8dd264c4bc73b3f258b624c26efcbc2d"},
+    {"path":"scripts/build-j575d-pcie-dt.py","sha256":"574e2cf4a5cac153180b4a137cc1d8c6fc1048f147cc51620abc8634338a8f63"},
+    {"path":"configs/j575d-usb-layout.dtsi","sha256":"31626a3b01f0821143778db7212701c74fe0a2f3eed2bdc71237e114e3660fb6"},
+    {"path":"configs/j575d-pcie-ports.dtsi","sha256":"1408e38cc8fccaf1c02513e5c21a89da327be863ee4fbe6386f74a41f49fb399"},
+    {"path":"docs/inventory/t6032-board-dt-sources-2026-09-26.json","sha256":"904df7708deb7fde29dae228dce8ea522d42085d2b69a48389297d86a4a6410c"},
+    {"path":"docs/inventory/j575d-usb-drivers-2026-10-08.json","sha256":"7a51ac0a015e454fbfb9c00818ad2195b827a061f74b0a86dca34ba719e98909"},
+    {"path":"scratch/j575d-ace3-final-audit-2026-10-08.md","sha256":"19928a1297194403ce417d34a557a4e45a6a84a491b9b5848ba5a34ea1d1d628"}
+  ]
+}
