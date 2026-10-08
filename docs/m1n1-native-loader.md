@@ -181,6 +181,55 @@ physical Apple probing, DT binding, native MMIO or hardware behavior.
 Default native dispatch remains disabled; native work still requires a
 current verified backup, recovery readiness and separate approval.
 
+## I/O module closure — 2026-10-08 UTC
+
+The new `build-j575d-io-modules-offline.sh` overlays a cloned build with only
+four resolved Kconfig changes: `CONFIG_APPLE_TUNABLE=m`, `CONFIG_AQTION=m`,
+`CONFIG_PHY_APPLE_ATC=m` and `CONFIG_NET_VENDOR_AQUANTIA=y`. The original
+`.config` is unchanged; the overlay is intentional. The retained COW build is
+`scratch/j575d-io-modules.RBhuUf/package`, whose closed dependency manifest
+contains 17 modules in generated order. It preserves the prior Image and
+`vmlinux.o`, `System.map` and `vmlinux.symvers` hashes
+(`ad9b573e66738d13d7758619809cc7e8ff09cf9498e23ccec352dfe42b285f50`,
+`c374260adf8be4dfd7e73a0be79f2136e6a939fa5a5ab7bad840ec19c310faf5`,
+`f8013c17497ce293cad4d01be6723173cffb5a0e325f86e2890c9cecb9d69a59`,
+`2be09f0907b6c19975e4defbbcfc5e6ec232c07d291205f71c3cb107e1054b0e` respectively);
+the package extends the prior six with PCIe, Apple GPIO, Pasemi I2C
+core/platform, Apple tunable/ATC PHY, Type-C/TCPM/TCPci/TPS6598x and Aquantia
+Atlantic. Its AQC113 PCI alias resolves to `atlantic`.
+
+The 17-module initramfs is
+`scratch/j575d-initramfs.g1ScGZ/output/initramfs.cpio.gz`, SHA-256
+`0923b9e2ca20deaf63dab4d01b1ae037cce19ce36ba9eaa1d2ba612434d3096d`. Its
+RAM-only HVF acceptance run is
+`scratch/j575d-artifact-vm-2026-10-07/run-_c1kxiz_`: all 17 load markers,
+17 `/proc/modules` members and every diagnostic marker pass, with no network,
+disks or persistent VM and cleanup exit zero. The legacy-six and extended-17
+manifest checks pass in `scratch/j575d-module-manifest-checks.c32siftq`.
+
+Read-only host I/O inspection identifies primary AQC113 PCI ID `1d6a04c0`,
+Apple subsystem `106b0223`, bound driver port 2/BDF `2:0:0`. The candidate
+port 02/DART2 remains disabled, and cached m1n1 does not enable a Linux DT
+node; `pcie_init` is hardware initialization only. This is not a native probe
+or USB qualification. USB remains open: the driver compatible is only `t8103`
+against T6031/T8122 candidates, full32 ATC fixup misses die-1 aliases, restore
+ADT tunables use device/host topics not expected here, and the Type-C graph is
+absent. Do not label USB hardware complete. Native dispatch remains disabled.
+No candidate-schema resolution is implied by this module package.
+
+Reproduce the build/package portion with the retained recipe shape:
+
+```sh
+bash scripts/build-j575d-io-modules-offline.sh
+bash scripts/build-j575d-initramfs-offline.sh \
+  --module-package scratch/j575d-io-modules.RBhuUf/package
+```
+
+These are build/package and disposable HVF checks only; no native commands,
+MMIO, firmware, disk, persistent-VM, security-fix or submission action is
+authorized by this milestone. The [I/O module inventory](inventory/m1n1-j575d-io-modules-2026-10-08.json)
+records the exact scope.
+
 The candidate compatible tables already select fallback implementations, but
 this is not a hardware contract. NVMe uses SART/mailbox/RTKit/reset and three
 direct PMGR domains (seven domains including transitive parents), with no `iommus` property;

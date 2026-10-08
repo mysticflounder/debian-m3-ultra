@@ -884,6 +884,57 @@ No native/MMIO, persistent-VM, raw-disk/partition, firmware, issue, push or Asah
 action occurred. Security findings remain report-only; no hardening, fuzzing or
 firmware patch is part of this milestone.
 
+## J575d I/O module closure — 2026-10-08 UTC
+
+The new I/O overlay resolves exactly four symbols in a clone: `CONFIG_APPLE_TUNABLE=m`,
+`CONFIG_AQTION=m`, `CONFIG_PHY_APPLE_ATC=m` and `CONFIG_NET_VENDOR_AQUANTIA=y`.
+The original `.config` remains unchanged; the retained Image, `vmlinux.o`,
+`System.map` and `vmlinux.symvers` hashes are unchanged. The isolated COW
+workspace/package is `scratch/j575d-io-modules.RBhuUf/package`; its Kbuild
+dependency closure generates a 17-module ordered manifest and the actual
+AQC113 PCI alias resolves to `atlantic`.
+
+The module initramfs is
+`scratch/j575d-initramfs.g1ScGZ/output/initramfs.cpio.gz`, SHA-256
+`0923b9e2ca20deaf63dab4d01b1ae037cce19ce36ba9eaa1d2ba612434d3096d`. The
+final RAM-only HVF run is
+`scratch/j575d-artifact-vm-2026-10-07/run-_c1kxiz_`: all 17 load markers,
+17 `/proc/modules` members and every diagnostic marker pass; there are no
+network/disks/persistent-VM actions and cleanup exits zero. Legacy-six and
+extended-17 manifest checks pass in
+`scratch/j575d-module-manifest-checks.c32siftq`. The [I/O module inventory](inventory/m1n1-j575d-io-modules-2026-10-08.json)
+records inputs and scope.
+
+Read-only host I/O inspection reports primary AQC113 `1d6a04c0`, Apple
+subsystem `106b0223`, bound driver port 2/BDF `2:0:0`. Candidate port 02/DART2
+remains disabled, and cached m1n1 does not enable a Linux DT node; `pcie_init`
+is hardware initialization only. This is not a native probe or USB result.
+USB remains open: the driver compatible is only `t8103` against T6031/T8122
+candidates, full32 ATC fixup misses die-1 aliases, restore ADT tunables use
+device/host topics not expected here, and the Type-C graph is absent. USB
+hardware must not be labeled complete.
+No candidate-schema resolution is implied by this module package.
+
+The 2026-10-08 00:12 UTC official refresh leaves Linux
+`7b63ef2d55f24519e7e9e5f4d15dbea03f126e40` unchanged from the 23:13 checkpoint;
+the same 16 commits across `drivers/md` and `fs/btrfs` have no applicable I/O
+changes. m1n1 `2460b604c6f016956ead711823605eea840c602e` and QEMU
+`f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c` remain unchanged. Responses are
+retained in `scratch/upstream-refresh-usb-network-2026-10-08`; no pin, fork,
+push, issue or Asahi submission changed.
+
+Reproduce only the build/package steps with:
+
+```sh
+bash scripts/build-j575d-io-modules-offline.sh
+bash scripts/build-j575d-initramfs-offline.sh \
+  --module-package scratch/j575d-io-modules.RBhuUf/package
+```
+
+No native command, MMIO, firmware, disk, persistent VM, security hardening,
+fuzzing or issue action occurred. Default m1n1 pin `4184923ffb2dff079b384d6a32cc02142aa14572`
+and native dispatch remain unchanged.
+
 ## Native loader destination bounds — 2026-10-07 UTC
 
 The [loader contract](m1n1-native-loader.md) reconciles the validated Image,
@@ -1019,10 +1070,11 @@ Security fixes and additional hardening are outside this Debian bring-up
 project's scope. Report and record findings, and advise Adam whether an upstream
 issue is warranted; do not make them boot-completion gates or file without approval.
 
-1. Qualify the packaged DART/NVMe/mailbox/SART dependency closure against the
-   candidate DT. The exact-six module package and module-capable loader pass
-   artifact tests, but full schema diagnostics remain. Resolve DT/driver
-   integration without claiming older fallback matches prove T6032 hardware.
+1. Continue candidate PCIe port-2/DART2 board enablement and invariants. The
+   extended 17-module package and manifest/HVF checks pass, but candidate port
+   02/DART2 remains disabled and no native probe or binding is established.
+   Resolve DT/driver integration without claiming fallback matches prove T6032
+   hardware.
 2. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
    physical busy/completion semantics, feature/restore prerequisites and voltage error policy.
    Do not infer these from upstream constants or a successful mock build.
@@ -1031,7 +1083,8 @@ issue is warranted; do not make them boot-completion gates or file without appro
    descriptions. Official Linux lacks
    T6032 DART/NVMe nodes; cached candidates already match fallback drivers, but
    their metadata is not a hardware specification. Candidate schema/module
-   integration is incomplete. Do not copy t6000/t8110/t8103
+   integration is incomplete; USB Type-C/compatibility and physical contracts
+   remain open. Do not copy t6000/t8110/t8103
    register formats as T6032 support or invent frequency/stream/power data.
 4. Only after a verified backup, recovery readiness and separate native-test
    approval: qualify cold entry, RVBAR/release, MCC/cache/DVFS and UART/AIC/DART,

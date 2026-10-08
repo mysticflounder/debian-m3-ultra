@@ -1,0 +1,6 @@
+# Separate module-only overlay for J575d I/O bring-up.
+# Merge with the retained resolved .config in a cloned output only.
+CONFIG_PHY_APPLE_ATC=m
+CONFIG_NET_VENDOR_AQUANTIA=y
+CONFIG_AQTION=m
+CONFIG_APPLE_TUNABLE=m

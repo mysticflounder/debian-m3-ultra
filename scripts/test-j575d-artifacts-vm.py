@@ -74,7 +74,7 @@ def parse_args() -> argparse.Namespace:
         action="append",
         dest="expected_modules",
         metavar="NAME",
-        help="expected module name; repeat for each required module",
+        help="complete expected module set, including retained six; repeat for each module",
     )
     return parser.parse_args()
 
@@ -184,8 +184,11 @@ def prepare_module_package(
         guest_paths.append(guest_path)
     if release is None or len(guest_paths) != len(set(guest_paths)):
         raise RuntimeError("modules.load must contain unique module paths")
-    if len(guest_paths) != len(DEFAULT_MODULES):
-        raise RuntimeError(f"modules.load must contain six modules, found {len(guest_paths)}")
+    expected_normalized = {normalize_module_name(name) for name in expected_modules}
+    if len(guest_paths) != len(expected_normalized):
+        raise RuntimeError(
+            f"modules.load must contain {len(expected_normalized)} expected modules, found {len(guest_paths)}"
+        )
 
     release_root = package / "lib" / "modules" / release
     dependencies = release_root / "modules.dep"
@@ -200,7 +203,11 @@ def prepare_module_package(
     records: list[dict[str, object]] = []
     for guest_path in guest_paths:
         local_path = package / guest_path.lstrip("/")
-        modinfo_path = builder_metadata / f"{local_path.name}.modinfo"
+        relative_module = local_path.relative_to(release_root / "kernel")
+        modinfo_path = builder_metadata / f"{str(relative_module).replace('/', '__')}.modinfo"
+        if not modinfo_path.is_file():
+            # The retained six-module builder uses legacy basename records.
+            modinfo_path = builder_metadata / f"{local_path.name}.modinfo"
         if not modinfo_path.is_file():
             raise RuntimeError(f"builder modinfo record missing: {modinfo_path}")
         fields = parse_builder_modinfo(modinfo_path, release)
@@ -218,7 +225,6 @@ def prepare_module_package(
         )
 
     actual_names = {str(record["normalized_name"]) for record in records}
-    expected_normalized = {normalize_module_name(name) for name in expected_modules}
     missing = sorted(expected_normalized - actual_names)
     if missing:
         raise RuntimeError(f"expected module names absent from builder modinfo: {', '.join(missing)}")

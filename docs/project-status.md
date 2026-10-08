@@ -353,6 +353,31 @@ post-fixup DTBs are test-only, no native CPU matrix or physical placement,
 allocation, firmware or kernel-entry claim is made. The
 [inventory](inventory/m1n1-j575d-inline-package-2026-10-07.json) records scope.
 
+The [I/O module milestone](m1n1-upstream-reconciliation-2026-10-06.md#j575d-io-module-closure--2026-10-08-utc)
+adds a cloned-build closure for PCIe, I2C, Apple tunable/ATC, Type-C and
+Aquantia networking. Only four resolved symbols change:
+`APPLE_TUNABLE=m`, `AQTION=m`, `PHY_APPLE_ATC=m` and
+`NET_VENDOR_AQUANTIA=y`; the original config and old Image/vmlinux.o/System.map/
+vmlinux.symvers hashes remain unchanged. The retained 17-module package is
+`scratch/j575d-io-modules.RBhuUf/package`, and its module initrd is
+`scratch/j575d-initramfs.g1ScGZ/output/initramfs.cpio.gz`, SHA-256
+`0923b9e2ca20deaf63dab4d01b1ae037cce19ce36ba9eaa1d2ba612434d3096d`.
+The final RAM-only HVF run `scratch/j575d-artifact-vm-2026-10-07/run-_c1kxiz_`
+loads all 17 modules, reports 17 `/proc/modules` members and every marker,
+with no network/disks/persistent VM/native hardware; legacy-six and extended-17
+manifest checks pass in `scratch/j575d-module-manifest-checks.c32siftq`.
+The [I/O module inventory](inventory/m1n1-j575d-io-modules-2026-10-08.json)
+records the exact inputs and scope.
+
+Read-only host I/O identifies AQC113 `1d6a04c0`, Apple subsystem `106b0223`,
+bound port 2/BDF `2:0:0`; candidate port 02/DART2 remains disabled and cached
+m1n1 does not enable a Linux DT node (`pcie_init` is hardware initialization
+only). USB remains open: `t8103` compatibility, missing die-1 ATC aliases,
+restore ADT tunables and absent Type-C graph are unresolved. Do not label USB
+hardware complete. The 00:12 UTC official refresh leaves Linux
+`7b63ef2d55f24519e7e9e5f4d15dbea03f126e40`, m1n1 and QEMU unchanged; its
+responses are retained in `scratch/upstream-refresh-usb-network-2026-10-08`.
+
 At the earlier 14:04:34 UTC checkpoint, the official-API refresh returned HTTP
 200 for all four endpoints;
 m1n1 `2460b604`, Linux `602042bf`, and QEMU `f9587d40` remain unchanged from
@@ -376,9 +401,9 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
-| Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; six selected modules built/packaged; candidate DT warnings/schema diagnostics remain | Qualify physical layout, power/clocks, IRQ, DMA and driver binding on native hardware |
-| RAM-only Linux diagnostic boot | Final module initramfs/baseline QEMU/HVF checks plus candidate/official inline payload and handoff host fixtures pass; native boot not attempted | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | NVMe dependency closure plus separate DART module packaged and loaded in HVF; USB/Ethernet work and candidate schema diagnostics remain | Qualify candidate DT, storage/network binding and hardware after early boot; no native probe claim |
+| Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; extended 17-module closure builds and loads in RAM-only HVF; candidate DT warnings/schema diagnostics remain | Qualify candidate PCIe port 2/DART2, physical layout, power/clocks, IRQ, DMA and driver binding on native hardware |
+| RAM-only Linux diagnostic boot | Final 17-module initramfs HVF run loads all modules and reports 17 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
+| NVMe / USB / Ethernet | AQC113 alias resolves `atlantic` and extended package passes host/HVF checks; USB Type-C/DT/physical contract remains open | Resolve candidate port 2/DART2 and USB compatibility/ADT/Type-C graph; qualify storage/network hardware only after early boot |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |

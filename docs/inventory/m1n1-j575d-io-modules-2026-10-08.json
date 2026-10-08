@@ -1,0 +1,499 @@
+{
+  "schema": "j575d-io-module-evidence-v1",
+  "date_utc": "2026-10-08",
+  "parent_commit": "2b73d4f",
+  "native_boot_approved": false,
+  "status": "offline_build_and_ram_only_module_load_pass",
+  "scope": "I/O module preparation and load/registration only. No physical PCIe/USB/PHY/Ethernet binding, link, DMA, native boot, firmware, recovery or security qualification.",
+  "host_identity": {
+    "method": "read-only running macOS IORegistry, not native Linux probing",
+    "controller": "Apple AQC113",
+    "pci_vendor_device": "1d6a:04c0",
+    "apple_subsystem": "106b:0223",
+    "bound_driver": "AppleEthernetAquantiaAqtion113",
+    "macos_path": "apcie0-2 / pci-bridge2@2",
+    "macos_bdf": "2:0:0",
+    "raw_local_evidence": {
+      "path": "scratch/m3-pci-host-2026-10-08.txt",
+      "sha256": "a48b8a7a09287f0a54fa232443f98879d5bf8e7e360fad60b460ef72af6fe3d5"
+    },
+    "privacy": "raw snapshot is not committed; no MAC/IP/serial copied into this inventory",
+    "linux_bdf_or_requester_mapping_proven": false
+  },
+  "recipes": [
+    {
+      "path": "configs/linux-j575d-io-modules.fragment",
+      "sha256": "985d45caa5b47a2858e97e24cbb1cf3a8a6e90d74b0dd9c4a59aee817c47640b"
+    },
+    {
+      "path": "scripts/build-j575d-io-modules-offline.sh",
+      "sha256": "654e9f7522c536400b3bbfc1b082127fdb63e036834d6583a58d730804e6f6f3"
+    },
+    {
+      "path": "scripts/test-j575d-artifacts-vm.py",
+      "sha256": "c31fc76b81198b64f9d86d3ffc6e963a63c14ebb290c4dad8c28fdc2bc127ab6"
+    },
+    {
+      "path": "scripts/build-j575d-initramfs-offline.sh",
+      "sha256": "a9f1a58d8230be55c59fb884a7c6715b7464aca99c3a94af834cf8aa69c9b9ae"
+    },
+    {
+      "path": "tools/j575d-ram-init.c",
+      "sha256": "38faa6be294ec3afed139478e1b1135f666d2ee0251d3d9bc3786cedef0878d0"
+    }
+  ],
+  "baseline_config": {
+    "path": "scratch/linux-j575d-kernel.HdzQNm/build/.config",
+    "sha256": "19ef0607ca8b74c6ec5bd68ae376a85febd3ba1ac3da92d9bb47da9da9ac864c"
+  },
+  "resolved_config": {
+    "path": "scratch/j575d-io-modules.RBhuUf/build/.config",
+    "sha256": "798b97f74b113a936778ef96e932723a1780b84bfc65da53817985cb9087435d"
+  },
+  "config_delta": {
+    "path": "scratch/j575d-io-modules.RBhuUf/metadata/config.diff",
+    "sha256": "169ec97bc4b0a7150ee33a421163822bacf4fe0a81468742d4f91713fe83fb6a"
+  },
+  "config_delta_merge": {
+    "path": "scratch/j575d-io-modules.RBhuUf/metadata/config.diff.merge",
+    "sha256": "f47201a005e8099fd5f544b594b993ee4ecab4660a636d170831f51b64f81035"
+  },
+  "unchanged_image_and_abi": {
+    "arch/arm64/boot/Image": {
+      "baseline": {
+        "path": "scratch/linux-j575d-kernel.HdzQNm/build/arch/arm64/boot/Image",
+        "sha256": "ad9b573e66738d13d7758619809cc7e8ff09cf9498e23ccec352dfe42b285f50"
+      },
+      "clone": {
+        "path": "scratch/j575d-io-modules.RBhuUf/build/arch/arm64/boot/Image",
+        "sha256": "ad9b573e66738d13d7758619809cc7e8ff09cf9498e23ccec352dfe42b285f50"
+      }
+    },
+    "vmlinux.o": {
+      "baseline": {
+        "path": "scratch/linux-j575d-kernel.HdzQNm/build/vmlinux.o",
+        "sha256": "c374260adf8be4dfd7e73a0be79f2136e6a939fa5a5ab7bad840ec19c310faf5"
+      },
+      "clone": {
+        "path": "scratch/j575d-io-modules.RBhuUf/build/vmlinux.o",
+        "sha256": "c374260adf8be4dfd7e73a0be79f2136e6a939fa5a5ab7bad840ec19c310faf5"
+      }
+    },
+    "System.map": {
+      "baseline": {
+        "path": "scratch/linux-j575d-kernel.HdzQNm/build/System.map",
+        "sha256": "f8013c17497ce293cad4d01be6723173cffb5a0e325f86e2890c9cecb9d69a59"
+      },
+      "clone": {
+        "path": "scratch/j575d-io-modules.RBhuUf/build/System.map",
+        "sha256": "f8013c17497ce293cad4d01be6723173cffb5a0e325f86e2890c9cecb9d69a59"
+      }
+    },
+    "vmlinux.symvers": {
+      "baseline": {
+        "path": "scratch/linux-j575d-kernel.HdzQNm/build/vmlinux.symvers",
+        "sha256": "2be09f0907b6c19975e4defbbcfc5e6ec232c07d291205f71c3cb107e1054b0e"
+      },
+      "clone": {
+        "path": "scratch/j575d-io-modules.RBhuUf/build/vmlinux.symvers",
+        "sha256": "2be09f0907b6c19975e4defbbcfc5e6ec232c07d291205f71c3cb107e1054b0e"
+      }
+    }
+  },
+  "modules": [
+    {
+      "name": "apple_mailbox",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-mailbox.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-mailbox.ko",
+        "sha256": "3da62bed5e2c873fa40487709e8d6ca4a93110017f76e671cd42af537f819cae"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__soc__apple__apple-mailbox.ko.modinfo",
+        "sha256": "62d4502ce2a1748e1d44987cbd23e8453104d6b693cfb79d2aa464ddd29923dd"
+      }
+    },
+    {
+      "name": "apple_rtkit",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-rtkit.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-rtkit.ko",
+        "sha256": "5ca0ca01219f07981838b0eaf1d92113e33aae296157edb36e9927a42857431f"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__soc__apple__apple-rtkit.ko.modinfo",
+        "sha256": "1a81142dea70eaafbd7f208c4f71a545820ddda236008414139373b2005f9d4d"
+      }
+    },
+    {
+      "name": "apple_sart",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-sart.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-sart.ko",
+        "sha256": "2ba690b528404ee9efacd85a3ffa2a4a09014a1afa0fd485cde60ef014bd3520"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__soc__apple__apple-sart.ko.modinfo",
+        "sha256": "f3cfe2016355c199c091af4644f7a213ae4c33efe7e07df997d73b19f1b66619"
+      }
+    },
+    {
+      "name": "nvme_core",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/nvme/host/nvme-core.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/nvme/host/nvme-core.ko",
+        "sha256": "11df6a06afb8fe2a720f2bcadbd2f2e115397a1dea2a9ad6511170de57064c36"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__nvme__host__nvme-core.ko.modinfo",
+        "sha256": "66ff5df117e8acb127d6a8920cf10c554ec68ca25a76531e49e66eadfd7bc92a"
+      }
+    },
+    {
+      "name": "nvme_apple",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/nvme/host/nvme-apple.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/nvme/host/nvme-apple.ko",
+        "sha256": "7e7283f5e963c02f17b6c90803a40207fa5a4d918b2cac4787c6578dc9acf908"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__nvme__host__nvme-apple.ko.modinfo",
+        "sha256": "0238bd62237147212f6bb9d522370fe83ca956ae6ec63b989e599f531d6cbaa2"
+      }
+    },
+    {
+      "name": "apple_dart",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/iommu/apple-dart.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/iommu/apple-dart.ko",
+        "sha256": "bc0a671fecf3c956a37bcf7d3be140566a711fa6fa811ac34a126a383b34a16c"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__iommu__apple-dart.ko.modinfo",
+        "sha256": "9ab5841e3bc6184a0f323b28a17c4a63828d58556094deb88edfc0def64eadee"
+      }
+    },
+    {
+      "name": "pcie_apple",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/pci/controller/pcie-apple.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/pci/controller/pcie-apple.ko",
+        "sha256": "b2ec265d819d277b9d3df4731042183786bb762263af38fea1bac12dc82f7bb9"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__pci__controller__pcie-apple.ko.modinfo",
+        "sha256": "645f4014a62c89d6c8eb3c66d2c7a89dfa2d8fe874fff8d9f3a7ee8f136a8859"
+      }
+    },
+    {
+      "name": "pinctrl_apple_gpio",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/pinctrl/pinctrl-apple-gpio.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/pinctrl/pinctrl-apple-gpio.ko",
+        "sha256": "4972ed0b8eb49ce2af012e1d4a502270d025d99f9fe6d7f10c4d2d4b45dd69f8"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__pinctrl__pinctrl-apple-gpio.ko.modinfo",
+        "sha256": "285713bb13b5f1580d97b1b370a95d00dc44ecbb375b89a4e208a9d25e5fb745"
+      }
+    },
+    {
+      "name": "i2c_pasemi_core",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/i2c/busses/i2c-pasemi-core.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/i2c/busses/i2c-pasemi-core.ko",
+        "sha256": "4e6d0972af3aa8ce7fb1335da16698b8a143812eb4173397195b744e2db7d008"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__i2c__busses__i2c-pasemi-core.ko.modinfo",
+        "sha256": "d62928c777a55f7d2cd01479d9f6eb93e10ff86963fab937da4fe3b199719b89"
+      }
+    },
+    {
+      "name": "i2c_pasemi_platform",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/i2c/busses/i2c-pasemi-platform.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/i2c/busses/i2c-pasemi-platform.ko",
+        "sha256": "ea73581cfe89932352f9ca8fe706757f6db719d16a047425f0541e150e79d02a"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__i2c__busses__i2c-pasemi-platform.ko.modinfo",
+        "sha256": "128b7e7d8b5021b72d60294d8d09f348c7d1df845f37a1efe1e4eeb44c0a1c77"
+      }
+    },
+    {
+      "name": "apple_tunable",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-tunable.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/soc/apple/apple-tunable.ko",
+        "sha256": "f066d1e9d1fe2b878266ff6c7b1f165b93b4f4ba07984d1006655168f66a7856"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__soc__apple__apple-tunable.ko.modinfo",
+        "sha256": "d0d55974f318313b28a1aaa15d34610196757ed9a21cdb3e4c513e3fae908fa5"
+      }
+    },
+    {
+      "name": "typec",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/usb/typec/typec.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/usb/typec/typec.ko",
+        "sha256": "29f44eb21bb683a796fa9a160447aedf9cb80be1d7d4d19c0f7f32317d6b4f50"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__usb__typec__typec.ko.modinfo",
+        "sha256": "7eaba799bcabe8bac6662a4358af10e23b0b1f4eb11cb68b043eee720569e8d5"
+      }
+    },
+    {
+      "name": "phy_apple_atc",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/phy/apple/phy-apple-atc.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/phy/apple/phy-apple-atc.ko",
+        "sha256": "6a75bdf5bb58f467db08f6727fba1ba2896bfa72bc75ed9cc35f45d7b29352ec"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__phy__apple__phy-apple-atc.ko.modinfo",
+        "sha256": "2cb062e0ef4f73fad46d3d5f6de2b02c7c0726da949271b3777659176942de25"
+      }
+    },
+    {
+      "name": "tcpm",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/usb/typec/tcpm/tcpm.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/usb/typec/tcpm/tcpm.ko",
+        "sha256": "6762646ee80b8502f1d9ba39ec51351d118e0f3c3fea06ee95b04bd0a45d3d5a"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__usb__typec__tcpm__tcpm.ko.modinfo",
+        "sha256": "307c6e24bf0d1263f0f649b1f71803da294d7566b7ab93e9b49f1698f2f51e71"
+      }
+    },
+    {
+      "name": "tcpci",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/usb/typec/tcpm/tcpci.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/usb/typec/tcpm/tcpci.ko",
+        "sha256": "5fab17bd78c4c8b9458168e734177933592fe6112c3888618e9a598f6dde6dda"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__usb__typec__tcpm__tcpci.ko.modinfo",
+        "sha256": "2192a8244c87bb83f56f79094888348600a9b3f9041cbb874b34313f1fb37da6"
+      }
+    },
+    {
+      "name": "tps6598x",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/usb/typec/tipd/tps6598x.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/usb/typec/tipd/tps6598x.ko",
+        "sha256": "8592ae72d0ab98861120dda174d97fbdd96d7aa21972b47ccce7e1610b9d769c"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__usb__typec__tipd__tps6598x.ko.modinfo",
+        "sha256": "ba914a4535c1359fd49b03d84c14c0aca3845c7ed7a71b43d425de3c0c8a0d06"
+      }
+    },
+    {
+      "name": "atlantic",
+      "guest_path": "/lib/modules/7.3.0-rc6/kernel/drivers/net/ethernet/aquantia/atlantic/atlantic.ko",
+      "module": {
+        "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/kernel/drivers/net/ethernet/aquantia/atlantic/atlantic.ko",
+        "sha256": "8d87c0c22d8a65f1f74e13604eb32346a6c4dc793b7e034b5ebda5609b6c831e"
+      },
+      "modinfo": {
+        "path": "scratch/j575d-io-modules.RBhuUf/metadata/drivers__net__ethernet__aquantia__atlantic__atlantic.ko.modinfo",
+        "sha256": "56301f85deaa285f94f7e427f2ed8afa23d21eb7968aecf39a110e0b1e822e52"
+      }
+    }
+  ],
+  "package_metadata": [
+    {
+      "path": "scratch/j575d-io-modules.RBhuUf/build-inputs.txt",
+      "sha256": "6c163524919615c844ba742e2ba1728b2e65714f303780850e63bc28cbbcd8bb"
+    },
+    {
+      "path": "scratch/j575d-io-modules.RBhuUf/build.log",
+      "sha256": "ec74ab5a18a192c4d0a6cd3866b33919361c0fe62afe84bbe768b13a1bbd46f5"
+    },
+    {
+      "path": "scratch/j575d-io-modules.RBhuUf/build.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-io-modules.RBhuUf/PACKAGE_SHA256SUMS",
+      "sha256": "ecf01a07337e080333053c2ef06b9c14a26fd279773f08e3a45090db22ee79bd"
+    },
+    {
+      "path": "scratch/j575d-io-modules.RBhuUf/SHA256SUMS",
+      "sha256": "063a8c8189925d8e6f9c1e96f6a510b0eec0d3419f7309e0bdce4b7a876c087d"
+    },
+    {
+      "path": "scratch/j575d-io-modules.RBhuUf/package/modules.load",
+      "sha256": "5a5b1e76f94624db301055bd360c63c5e7d66ffdb294326fd1f810f4e6d26787"
+    },
+    {
+      "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/modules.dep",
+      "sha256": "2c72aacbaec89cc4ec207766b6395ad750cdf44058e3b6d4d5d4aa3502c8f7c0"
+    },
+    {
+      "path": "scratch/j575d-io-modules.RBhuUf/package/lib/modules/7.3.0-rc6/modules.alias",
+      "sha256": "fe7ecc2edbadab143e6639cd3c03ddd5b06d7cd1c6005aab9cc7ceaf76c609f0"
+    },
+    {
+      "path": "scratch/j575d-io-modules.RBhuUf/metadata/depmod.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-io-modules.RBhuUf/metadata/aqc113-alias.show-depends",
+      "sha256": "55e56074e7b166a21980655603558dc42f81663389e8b3d03f0e81ec204ca804"
+    },
+    {
+      "path": "scratch/j575d-io-modules.RBhuUf/metadata/modprobe-show-depends.txt",
+      "sha256": "0bed170f50eb449103ceaee276fca980b6973e8be66848e075911a3301a1b0d9"
+    }
+  ],
+  "initramfs": {
+    "path": "scratch/j575d-initramfs.g1ScGZ/output/initramfs.cpio.gz",
+    "sha256": "0923b9e2ca20deaf63dab4d01b1ae037cce19ce36ba9eaa1d2ba612434d3096d"
+  },
+  "initramfs_receipts": [
+    {
+      "path": "scratch/j575d-initramfs.g1ScGZ/build-inputs.txt",
+      "sha256": "020db1e036566e293e7a3331d5f498e8fb631a570501da57d1066b3b3835483b"
+    },
+    {
+      "path": "scratch/j575d-initramfs.g1ScGZ/build.log",
+      "sha256": "cc493b5079927d14d80568a6ed0bceffd33db8007774f24a023ec350d9d06398"
+    },
+    {
+      "path": "scratch/j575d-initramfs.g1ScGZ/build.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-initramfs.g1ScGZ/SHA256SUMS",
+      "sha256": "3bb8caee564b9b6bd1a33903aca24ac3c06a73c2c4492d7f7c9789b0810b17c5"
+    },
+    {
+      "path": "scratch/j575d-initramfs.g1ScGZ/output/archive-list.txt",
+      "sha256": "fc345c37cd9c1e88e93cf68664861ae375d19114b82edf42bc4f9dc5e05412fd"
+    },
+    {
+      "path": "scratch/j575d-initramfs.g1ScGZ/output/readelf-programs.txt",
+      "sha256": "93e91f727d861fe6b05b7f70c09714fd3fb6914041297348648b6ac9fdcfbfc1"
+    }
+  ],
+  "vm": {
+    "status.json": {
+      "path": "scratch/j575d-artifact-vm-2026-10-07/run-_c1kxiz_/status.json",
+      "sha256": "b848f0cfeda4255659e26ec4da8c943c4b7c831c4e9381974a1b367e3b5777ab"
+    },
+    "guest.serial.log": {
+      "path": "scratch/j575d-artifact-vm-2026-10-07/run-_c1kxiz_/guest.serial.log",
+      "sha256": "9c10c2a4291de433a9f167fec5d4e3f6dc81fc4c193fd8e42807fd994c6f9bb3"
+    },
+    "qemu.stderr.log": {
+      "path": "scratch/j575d-artifact-vm-2026-10-07/run-_c1kxiz_/qemu.stderr.log",
+      "sha256": "f6e4c71d47ea9ec3b5c8996e2ca34cd7ca3141374e337c3cfa6139b31e2cd63d"
+    },
+    "boot.argv": {
+      "path": "scratch/j575d-artifact-vm-2026-10-07/run-_c1kxiz_/boot.argv",
+      "sha256": "d0447929969d1861e597ec4b2087f5ed4baaf4a436cec0a9c75cf8c2ace05ccc"
+    }
+  },
+  "manifest_compatibility": {
+    "path": "scratch/j575d-module-manifest-checks.c32siftq/report.json",
+    "sha256": "a024a9a7ffe9dabe2fe354608cf66380575a6f7b253786452387210fba82136e"
+  },
+  "independent_review": {
+    "path": "scratch/m3-io-module-final-review-2026-10-08.md",
+    "sha256": "c368f31ed87f890fd138fd3b5d0072f031647f97e2dbf683886cb21f58661b5f"
+  },
+  "dependency_audits": [
+    {
+      "path": "scratch/m3-usb-dependency-contract-2026-10-08.md",
+      "sha256": "8343568c7301aa905f039671a86148f213656601c9f27aba62128108443f7ab9"
+    },
+    {
+      "path": "scratch/m3-ethernet-dependency-contract-2026-10-08.md",
+      "sha256": "53f0b19f973ec6a4b545fe1d75229645a400913f92d12c8fd2f15102570e2902"
+    },
+    {
+      "path": "scratch/m3-usb-network-build-contract-2026-10-08.md",
+      "sha256": "dae9216dd1d07465ccf2afe41e8499b439397e96fab5f21f63c181d42a93f34e"
+    }
+  ],
+  "candidate_dtb": {
+    "path": "scratch/m1n1-board-dt/t6032-j575d.dtb",
+    "sha256": "e92e5c9dc86731d76dc060759bb622cbad073e4e32e831bf0ca68deef3ff4cd5"
+  },
+  "relevant_sources": [
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/net/ethernet/aquantia/atlantic/aq_pci_func.c",
+      "sha256": "8f86c033291d66034d354f8838a28471c526a58646baba636357f7c4a4b3fb99"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/net/ethernet/aquantia/atlantic/aq_common.h",
+      "sha256": "15611f4b753bc82bcb095800b0e7507b4b3e834481ced4f6d875c631fdebb9a6"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/phy/apple/atc.c",
+      "sha256": "cc08d4fc52a2c5c7059bf22f6924d8d46897c441929429fa4db3bf86ce198178"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/i2c/busses/Makefile",
+      "sha256": "bc7019382476d0c4e469fef8de44039857b34968ed461ed3e1532a2143f407f3"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/pci/controller/pcie-apple.c",
+      "sha256": "416dce904eabc6859f36a051cf9ce0d77473634b3f1526587a9d58870b70898c"
+    }
+  ],
+  "m1n1_atc_source": {
+    "path": "scratch/m1n1-upstream-xz-seek-guards.m9h56j/m1n1-2460b604c6f016956ead711823605eea840c602e/src/kboot_atc.c",
+    "sha256": "cba6ad6fd70b235188852dd0c18d814cddf69b9e002b1b5abd9a0b0079460a1b"
+  },
+  "new_symbol_c_header_references": {
+    "path": "scratch/j575d-io-built-in-macro-references-2026-10-08.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "upstream": {
+    "heads": {
+      "linux": {
+        "head": "7b63ef2d55f24519e7e9e5f4d15dbea03f126e40",
+        "url": "https://api.github.com/repos/torvalds/linux/commits/master",
+        "response": {
+          "path": "scratch/upstream-refresh-usb-network-2026-10-08/linux-master.json",
+          "sha256": "da7e4bf7ae3144c0288b602f80ada22d93ef2a458d628643a28a345692b128bf"
+        }
+      },
+      "m1n1": {
+        "head": "2460b604c6f016956ead711823605eea840c602e",
+        "url": "https://api.github.com/repos/AsahiLinux/m1n1/commits/main",
+        "response": {
+          "path": "scratch/upstream-refresh-usb-network-2026-10-08/m1n1-main.json",
+          "sha256": "7d069eb7ca8a2e96d4aadcb116c4475154ae900da9dc0bbb762fa0fa4fb52399"
+        }
+      },
+      "qemu_github_mirror": {
+        "head": "f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c",
+        "url": "https://api.github.com/repos/qemu/qemu/commits/master",
+        "response": {
+          "path": "scratch/upstream-refresh-usb-network-2026-10-08/qemu-master.json",
+          "sha256": "66d9ee4fdda4bb40de9ac8006e900b5be9e2b7825388d56ff1151cf6262cff85"
+        }
+      }
+    },
+    "linux_comparison": {
+      "path": "scratch/upstream-refresh-usb-network-2026-10-08/linux-compare.json",
+      "sha256": "d3969c9dc12aaee7943d9bbdca6f184c27bf072825c4f48d56320a9127498a47"
+    },
+    "applicable_io_changes": 0
+  },
+  "remaining": [
+    "candidate PCIe port02 and DART2 enablement; Linux requester IDs/reset/IRQ/DMA/firmware/link qualification",
+    "actual T6032 ATCPHY compatible/operations and live tunable format; die1 alias handoff",
+    "Type-C controller/connector/cable-role graph; USB3/USB4/Thunderbolt are not completed by module loading",
+    "candidate DT schema diagnostics and full native early initialization remain open",
+    "verified backup, recovery readiness and separate approval before native actions"
+  ]
+}
