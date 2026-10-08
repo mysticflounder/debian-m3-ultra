@@ -37,8 +37,83 @@ This is a packaging contract, not a newly demonstrated loader defect.
 
 The uncompressed copy path uses the declared Image span when its input length
 is unknown. A future package builder must account for that span; the shorter
-file length alone does not establish readable source padding. No native boot
-package has been produced or approved by this milestone.
+file length alone does not establish readable source padding. At this earlier
+checkpoint no package had been assembled or approved. The later host-only
+assembly below produces an **unqualified comparison package**, not a native
+boot artifact.
+
+## Inline package assembly — 2026-10-07 UTC
+
+The new `build-j575d-inline-package.py` assembles actual candidate and official
+packages from hash-pinned retained inputs: full32 raw loader
+`edb04ff16c0e467a6179392ac99674faa59005aeb9b89c9e062f8305fcb154cb`, raw ELF
+`67827c952c4e79268960597e31afd3f344fe1dd22d2854555bd5781ea0dc3b04`, the
+unchanged Image `ad9b573e66738d13d7758619809cc7e8ff09cf9498e23ccec352dfe42b285f50`,
+and the retained module initramfs. The raw ELF symbols establish `_base=0`,
+`_end=_payload_start=0x3b0000` (3,866,624 bytes), matching raw-binary EOF.
+The Image remains the original 43,010,560-byte gzip input with declared
+`image_size=44,040,192`; full32 finalization reserves the additional 1,029,632
+bytes, but zero-fill of that tail is not proven or required by this package.
+
+Retained outputs are `scratch/j575d-inline-package.zv0ik1p4` (candidate DTB
+SHA-256 `e92e5c9dc86731d76dc060759bb622cbad073e4e32e831bf0ca68deef3ff4cd5`)
+and `scratch/j575d-inline-package.z0up7d3d` (official Kbuild DTB SHA-256
+`abd4d0760dabe647048cb3c4ea3e68116e37fcb9dcdb022ded29449d6c43ee79`). Each
+contains `manifest.json`, `payload.bin`, `UNQUALIFIED-m1n1-inline.bin`,
+`Image.gz`, `initramfs.wrapper` and `README.txt` explicitly marked **NOT BOOT
+APPROVED**; there is no installer. The [inline-package inventory](inventory/m1n1-j575d-inline-package-2026-10-07.json)
+records the exact inputs and outputs.
+
+The contiguous payload is, with no alignment padding: a
+`chosen.bootargs` record, gzip Image, exact DTB, the 14-byte
+`m1n1_initramfs` magic without NUL plus little-endian compressed-initramfs
+length and bytes, then a 64-byte zero trailer. The default bootargs are
+`earlycon console=ttySAC0 rdinit=/init`; no QEMU PL011 address or baud is
+invented. The shipped inline packet retains runtime bootargs/placeholders;
+post-fixup DTBs from the handoff fixture are test outputs only and are never
+substituted into it. The zero trailer supplies lookahead backing for this
+assembly; no parser patch is claimed.
+
+The actual combined-binary host tests compile/run the retained `payload.c`,
+tinf and libfdt sources. Official and candidate runs pass with compile/run
+exit zero, zero mismatches, actual compressed consumption, setters and boot
+tail checks: `scratch/m1n1-inline-package-tests-2026-10-07/run-smvjc7ad`
+(official) and `run-m46s1y2s` (candidate). The test compiles a 32-CPU target
+configuration but makes no native CPU-matrix claim.
+
+The separate Linux handoff fixture uses the actual packaged official Kbuild
+and candidate DTBs at `scratch/m1n1-linux-package-handoff.mlaq_etg`. Its input
+DT placeholder is 8 GiB; the retained `dt_set_memory()` function changes it to
+a synthetic 16 GiB RAM span at `0x10000000000` for the host check. Image,
+initrd and CPU-release addresses remain synthetic and this does not qualify
+physical placement or whole-`kboot_prepare_dt` behavior.
+
+Reproduce assembly and host checks with retained paths:
+
+```sh
+UV_CACHE_DIR="$PWD/scratch/uv-cache" PYTHONDONTWRITEBYTECODE=1 \
+  uv run --no-project --offline --python 3.13 python scripts/build-j575d-inline-package.py --board candidate
+UV_CACHE_DIR="$PWD/scratch/uv-cache" PYTHONDONTWRITEBYTECODE=1 \
+  uv run --no-project --offline --python 3.13 python scripts/build-j575d-inline-package.py --board official
+UV_CACHE_DIR="$PWD/scratch/uv-cache" PYTHONDONTWRITEBYTECODE=1 \
+  uv run --no-project --offline --python 3.13 python scripts/test-m1n1-inline-package.py \
+  --payload scratch/j575d-inline-package.zv0ik1p4/UNQUALIFIED-m1n1-inline.bin \
+  --image scratch/linux-j575d-kernel.HdzQNm/build/arch/arm64/boot/Image \
+  --dtb scratch/m1n1-board-dt/t6032-j575d.dtb \
+  --initramfs scratch/j575d-initramfs.lQ4Gr7/output/initramfs.cpio.gz \
+  --bootargs 'earlycon console=ttySAC0 rdinit=/init'
+UV_CACHE_DIR="$PWD/scratch/uv-cache" PYTHONDONTWRITEBYTECODE=1 \
+  uv run --no-project --offline --python 3.13 python scripts/test-m1n1-inline-package.py \
+  --payload scratch/j575d-inline-package.z0up7d3d/UNQUALIFIED-m1n1-inline.bin \
+  --image scratch/linux-j575d-kernel.HdzQNm/build/arch/arm64/boot/Image \
+  --dtb scratch/linux-j575d-kernel.HdzQNm/build/arch/arm64/boot/dts/apple/t6032-j575d.dtb \
+  --initramfs scratch/j575d-initramfs.lQ4Gr7/output/initramfs.cpio.gz \
+  --bootargs 'earlycon console=ttySAC0 rdinit=/init'
+```
+
+The assembled files and host fixtures do not install, boot, touch
+firmware/MMIO, or qualify physical source/destination disjointness, native
+allocation, firmware state or kernel entry.
 
 ## Driver modules and module-capable initramfs
 

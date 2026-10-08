@@ -808,13 +808,90 @@ M3 driver changes. m1n1
 retained in `scratch/upstream-refresh-driver-modules-2026-10-07`; no source
 pins, forks or submissions were applied.
 
+## Assembled inline Image/DTB/initramfs packages — 2026-10-07 UTC
+
+`scripts/build-j575d-inline-package.py` assembles actual candidate and official
+packages from the hash-pinned retained full32 raw loader
+`edb04ff16c0e467a6179392ac99674faa59005aeb9b89c9e062f8305fcb154cb` and raw
+ELF `67827c952c4e79268960597e31afd3f344fe1dd22d2854555bd5781ea0dc3b04`,
+unchanged Image `ad9b573e66738d13d7758619809cc7e8ff09cf9498e23ccec352dfe42b285f50`,
+and retained module initramfs. The raw ELF symbols give `_base=0` and
+`_end=_payload_start=0x3b0000`, exactly 3,866,624 bytes and the raw binary EOF.
+The Image is the original 43,010,560-byte gzip input with declared
+`image_size=44,040,192`; full32 finalization reserves a 1,029,632-byte tail,
+without proving or requiring zero-fill.
+
+Candidate output `scratch/j575d-inline-package.zv0ik1p4` uses DTB SHA-256
+`e92e5c9dc86731d76dc060759bb622cbad073e4e32e831bf0ca68deef3ff4cd5`; official
+output `scratch/j575d-inline-package.z0up7d3d` uses Kbuild DTB SHA-256
+`abd4d0760dabe647048cb3c4ea3e68116e37fcb9dcdb022ded29449d6c43ee79`. Each
+retains `manifest.json`, `payload.bin`, `UNQUALIFIED-m1n1-inline.bin`,
+`Image.gz`, `initramfs.wrapper` and `README.txt` marked **NOT BOOT APPROVED**;
+no installer is present. The [inline-package inventory](inventory/m1n1-j575d-inline-package-2026-10-07.json)
+records the pinned inputs and outputs.
+
+The packet is contiguous, with no alignment padding: `chosen.bootargs`, gzip
+Image, exact DTB, then 14-byte `m1n1_initramfs` magic without NUL, a little-
+endian compressed-initramfs length and bytes, and a 64-byte zero trailer.
+Default bootargs are `earlycon console=ttySAC0 rdinit=/init`; no QEMU PL011
+address or baud is invented. Runtime bootargs/placeholders remain in the
+shipped packet. Host post-fixup DTBs are test outputs only and are never
+substituted into that packet. The zero trailer supplies lookahead backing for
+this assembly; no parser patch is claimed.
+
+The combined-binary host tests compile/run actual `payload.c`, tinf and libfdt
+and pass with compile/run exit zero and zero mismatches, including actual
+consumption, setters and boot-tail checks. Final evidence is
+`scratch/m1n1-inline-package-tests-2026-10-07/run-smvjc7ad` (official) and
+`run-m46s1y2s` (candidate). The test compiles a 32-CPU target configuration;
+it makes no native CPU-matrix claim.
+
+The actual `kboot_set_initrd`, `dt_set_chosen`, `dt_set_memory` and
+`dt_set_cpus` fixture also passes for the actual packaged official Kbuild DTB
+and candidate DTB with the module initramfs in
+`scratch/m1n1-linux-package-handoff.mlaq_etg`. The input DT placeholder is
+8 GiB, but the retained `dt_set_memory()` function changes it in the fixture
+to a synthetic 16 GiB RAM span at `0x10000000000`; Image is RAM+32 MiB,
+initrd RAM+128 MiB, and 32 release addresses are at
+RAM+`0x101000+i*0x1000`. The synthetic ADT provider supplies three lookups
+(`/chosen`, `dram-base`, `dram-size`); bootargs, initrd start/end and memreserve, all 32 release addresses
+and the seven-node
+PMGR provider graph remain covered. This does not execute whole
+`kboot_prepare_dt` or prove physical source/destination disjointness, native
+allocation, firmware state or kernel entry. The fixture hashes the actual
+initramfs and passes its size; it does not map or copy it at the synthetic
+physical address. Post-fixup DTBs remain test-only.
+
+Reproduce the assembly and retained host checks with:
+
+```sh
+UV_CACHE_DIR="$PWD/scratch/uv-cache" PYTHONDONTWRITEBYTECODE=1 \
+  uv run --no-project --offline --python 3.13 python scripts/build-j575d-inline-package.py --board candidate
+UV_CACHE_DIR="$PWD/scratch/uv-cache" PYTHONDONTWRITEBYTECODE=1 \
+  uv run --no-project --offline --python 3.13 python scripts/build-j575d-inline-package.py --board official
+UV_CACHE_DIR="$PWD/scratch/uv-cache" PYTHONDONTWRITEBYTECODE=1 \
+  uv run --no-project --offline --python 3.13 python scripts/test-m1n1-linux-package-handoff.py \
+  --dtb scratch/m1n1-board-dt/t6032-j575d.dtb \
+  --dtb scratch/linux-j575d-kernel.HdzQNm/build/arch/arm64/boot/dts/apple/t6032-j575d.dtb \
+  --initramfs scratch/j575d-initramfs.lQ4Gr7/output/initramfs.cpio.gz \
+  --bootargs 'earlycon console=ttySAC0 rdinit=/init'
+```
+
+All results are artifact assembly and host-fixture evidence only. The default
+m1n1 pin `4184923ffb2dff079b384d6a32cc02142aa14572` and native dispatch remain
+unchanged; the full32 comparison loader is not a replacement or boot approval.
+No native/MMIO, persistent-VM, raw-disk/partition, firmware, issue, push or Asahi submission
+action occurred. Security findings remain report-only; no hardening, fuzzing or
+firmware patch is part of this milestone.
+
 ## Native loader destination bounds — 2026-10-07 UTC
 
 The [loader contract](m1n1-native-loader.md) reconciles the validated Image,
 official DTB, initramfs, inline-payload ordering and Linux entry requirements.
 The documented compressed-or-last kernel packaging rule is preserved; this
-work does not classify an unsupported `Image + DTB + initramfs` package as a
-new loader defect or create a native boot package.
+guard milestone did not itself classify an unsupported `Image + DTB + initramfs`
+package as a new loader defect or create a package. The later assembled inline
+packages are explicitly unqualified comparison artifacts.
 
 Comparison-only 0031 fixes a source-demonstrated destination-capacity gap:
 gzip/XZ received a 1 GiB bound despite a possibly smaller heap span, and the
@@ -949,7 +1026,7 @@ issue is warranted; do not make them boot-completion gates or file without appro
 2. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
    physical busy/completion semantics, feature/restore prerequisites and voltage error policy.
    Do not infer these from upstream constants or a successful mock build.
-3. Establish working Image/DTB/initrd packaging, native RAM placement and the
+3. Qualify the assembled Image/DTB/initrd packet's native RAM placement and
    Linux kernel/initrd window, plus candidate-only DART, PMGR and storage/network
    descriptions. Official Linux lacks
    T6032 DART/NVMe nodes; cached candidates already match fallback drivers, but

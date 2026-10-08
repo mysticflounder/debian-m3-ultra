@@ -319,7 +319,7 @@ validation.
 
 The candidate fallback compatible tables remain usable for the selected
 drivers. NVMe uses SART/mailbox/RTKit/reset and three direct PMGR domains
-(seven domains including transitive parents); it has no `iommus`, so DART remains separate.
+(seven domains in the full dependency closure); it has no `iommus`, so DART remains separate.
 `CONFIG_APPLE_PMGR_PWRSTATE=y`. The actual `apple_nvme_attach_genpd` loop
 accepts all domains: the binding's maximum-two restriction is schema-only, not
 a runtime bug or reason for a driver patch. Candidate DTC's six warnings and
@@ -334,6 +334,24 @@ the retained comparison is 16 commits across nine paths confined to
 `2460b604c6f016956ead711823605eea840c602e` and QEMU
 `f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c` remain unchanged. No source pins,
 forks or submissions changed.
+
+The [inline-package milestone](m1n1-upstream-reconciliation-2026-10-06.md#assembled-inline-imagedtbinitramfs-packages--2026-10-07-utc)
+assembled actual candidate and official Image/DTB/initramfs packets from the
+hash-pinned full32 raw loader. Candidate and official retained outputs are
+`scratch/j575d-inline-package.zv0ik1p4` and
+`scratch/j575d-inline-package.z0up7d3d`; each is explicitly unqualified and
+contains no installer. The contiguous packet uses default bootargs
+`earlycon console=ttySAC0 rdinit=/init`, gzip Image, exact DTB, 14-byte
+`m1n1_initramfs` wrapper plus length, and a 64-byte zero trailer. Actual
+payload/tinf/libfdt host tests pass for both DTBs with zero mismatches; the
+separate handoff fixture at
+`scratch/m1n1-linux-package-handoff.mlaq_etg` passes the four fixup functions
+against the actual packaged official/candidate DTBs and module initrd using a
+synthetic 16 GiB memory/ADT/CPU state (the input DT placeholder is 8 GiB).
+These are host tests:
+post-fixup DTBs are test-only, no native CPU matrix or physical placement,
+allocation, firmware or kernel-entry claim is made. The
+[inventory](inventory/m1n1-j575d-inline-package-2026-10-07.json) records scope.
 
 At the earlier 14:04:34 UTC checkpoint, the official-API refresh returned HTTP
 200 for all four endpoints;
@@ -352,14 +370,14 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | QEMU CPU feature coverage | Partial; separate from basic VM operation | Continue bounded feature probes where useful; do not treat optional gaps as bare-metal or VM blockers |
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
-| M3 m1n1 capacity / handoff / loader | Retained full32 comparison builds and host regressions pass; no native boot | Functional Image/DTB/initrd staging and handoff; security findings are report-only, not bring-up gates |
-| Exact T6032/J575d board DT | Exact closure, resolved 16 KiB config, real schema, Image/DTB and reproducible diagnostic initramfs pass | Loader/native qualification next; official DT lacks M3 frequency, DART and intended storage/network descriptions |
+| M3 m1n1 capacity / handoff / loader | Full32 comparison builds, inline candidate/official packet assembly, payload tests and handoff fixtures pass; no native boot | Qualify physical placement/source backing and Linux entry; security findings are report-only, not bring-up gates |
+| Exact T6032/J575d board DT | Candidate and official DTBs are retained; candidate/official inline packets and synthetic four-fixup handoff pass | Host post-fixup DTBs remain test-only; qualify runtime placeholders and native DT/memory/release contracts; official DT lacks M3 frequency, DART and intended storage/network descriptions |
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; six selected modules built/packaged; candidate DT warnings/schema diagnostics remain | Qualify physical layout, power/clocks, IRQ, DMA and driver binding on native hardware |
-| RAM-only Linux diagnostic boot | Final module initramfs and baseline both pass disposable QEMU/HVF RAM-only checks; exact hashes and four-CPU/16 KiB/PID1 markers recorded; native boot not attempted | Native backing/placement and early initialization remain open; verified backup/recovery and separate approval are required |
+| RAM-only Linux diagnostic boot | Final module initramfs/baseline QEMU/HVF checks plus candidate/official inline payload and handoff host fixtures pass; native boot not attempted | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
 | NVMe / USB / Ethernet | NVMe dependency closure plus separate DART module packaged and loaded in HVF; USB/Ethernet work and candidate schema diagnostics remain | Qualify candidate DT, storage/network binding and hardware after early boot; no native probe claim |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |

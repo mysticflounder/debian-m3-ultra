@@ -1,0 +1,288 @@
+{
+  "schema": "j575d-inline-package-evidence-v1",
+  "date_utc": "2026-10-07",
+  "parent_commit": "8f215b0",
+  "scope": "Valid package assembly/actual payload parsing and four source-extracted DT fixups only; no native boot, physical mapping, whole kboot_prepare_dt, complete allocator-reservation, firmware, disk, VM or security qualification.",
+  "native_boot_approved": false,
+  "status": "functional_offline_acceptance_pass_native_unqualified",
+  "packages": {
+    "official": {
+      "manifest": {
+        "path": "scratch/j575d-inline-package.z0up7d3d/manifest.json",
+        "sha256": "f59ba1fe73c8d09218c5ea3fc5ce5bb014432e356651438c414dbbc2faa85e4c"
+      },
+      "inline_binary": {
+        "path": "scratch/j575d-inline-package.z0up7d3d/UNQUALIFIED-m1n1-inline.bin",
+        "sha256": "64b8b042e97ee565ff208874c5a242e7593585e0b45cded8ead7ad3779977622"
+      },
+      "payload": {
+        "path": "scratch/j575d-inline-package.z0up7d3d/payload.bin",
+        "sha256": "81533af9080d113c35ec133538fd5f63c00772549845ca635a47676ec402079e"
+      },
+      "components": [
+        {
+          "kind": "chosen.bootargs",
+          "offset": 0,
+          "length": 54,
+          "sha256": "e605141b1d836ae9d431cf2184009baa60098e8bab6fc840f01d196b88afb955"
+        },
+        {
+          "kind": "gzip.Image",
+          "offset": 54,
+          "length": 14788668,
+          "sha256": "750bdf8b44fc3e036381b44a46c4795a5b1b771f18d45223c5ca531676e56543"
+        },
+        {
+          "kind": "dtb",
+          "offset": 14788722,
+          "length": 110331,
+          "sha256": "abd4d0760dabe647048cb3c4ea3e68116e37fcb9dcdb022ded29449d6c43ee79"
+        },
+        {
+          "kind": "m1n1_initramfs",
+          "offset": 14899053,
+          "length": 918739,
+          "sha256": "4dba815382e714881dd78ee16c201e22a006db8127314f76ef312528e2ae6553"
+        },
+        {
+          "kind": "zero_terminal",
+          "offset": 15817792,
+          "length": 64,
+          "sha256": "f5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a92759fb4b"
+        }
+      ],
+      "whole_package_test": {
+        "report": {
+          "path": "scratch/m1n1-inline-package-tests-2026-10-07/run-smvjc7ad/report.json",
+          "sha256": "dbc96ab0941dc4117493e3435d8492ab2ad6f633989023db924f8967021bbdd2"
+        },
+        "compile_exit": 0,
+        "run_exit": 0,
+        "mismatches": 0,
+        "compile_stdout": {
+          "path": "scratch/m1n1-inline-package-tests-2026-10-07/run-smvjc7ad/compile.stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "compile_stderr": {
+          "path": "scratch/m1n1-inline-package-tests-2026-10-07/run-smvjc7ad/compile.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "run_stdout": {
+          "path": "scratch/m1n1-inline-package-tests-2026-10-07/run-smvjc7ad/run.stdout",
+          "sha256": "03892e625c5b298ae12e923299dd838a162cf456cf129d207cc25b84d25b4439"
+        },
+        "run_stderr": {
+          "path": "scratch/m1n1-inline-package-tests-2026-10-07/run-smvjc7ad/run.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "input_mode": "whole-combined-actual",
+        "observed": {
+          "gzip_consumed": "14788668",
+          "kernel_retained_span": "44040192",
+          "kernel_tail_reservation": "1029632",
+          "initrd_set_calls": "1",
+          "dtb_prepare_calls": "1",
+          "kernel_boot_calls": "1"
+        }
+      },
+      "synthetic_dt_handoff": {
+        "run_exit": 0,
+        "post_fixup_dtb": {
+          "path": "scratch/m1n1-linux-package-handoff.mlaq_etg/dtb-00.post-fixup.dtb",
+          "sha256": "cfbef9fe354b25449419788e3c44006cae56fdcf45a79dc337f80badfb699efb"
+        },
+        "stdout": {
+          "path": "scratch/m1n1-linux-package-handoff.mlaq_etg/dtb-00.stdout.log",
+          "sha256": "66bffad8d3c3c1b7c68925971602c5d926941c8632cacdab6e4f05b3efe3061e"
+        },
+        "stderr": {
+          "path": "scratch/m1n1-linux-package-handoff.mlaq_etg/dtb-00.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "post_fixup_dtb_role": "host fixture output only; NEVER a native package input"
+      }
+    },
+    "candidate": {
+      "manifest": {
+        "path": "scratch/j575d-inline-package.zv0ik1p4/manifest.json",
+        "sha256": "64ecfe65e1ab51cd23848f4b344ee57ea9ccfa862410982d3f274ddd643d991a"
+      },
+      "inline_binary": {
+        "path": "scratch/j575d-inline-package.zv0ik1p4/UNQUALIFIED-m1n1-inline.bin",
+        "sha256": "51d23e468573307669be15f57536b32dc8d3f05804de2b9f36d2e2f757574dea"
+      },
+      "payload": {
+        "path": "scratch/j575d-inline-package.zv0ik1p4/payload.bin",
+        "sha256": "23c86f179899bd0788db0d76375ffde27de5b827fc016b3ae80cfc5243cc83e4"
+      },
+      "components": [
+        {
+          "kind": "chosen.bootargs",
+          "offset": 0,
+          "length": 54,
+          "sha256": "e605141b1d836ae9d431cf2184009baa60098e8bab6fc840f01d196b88afb955"
+        },
+        {
+          "kind": "gzip.Image",
+          "offset": 54,
+          "length": 14788668,
+          "sha256": "750bdf8b44fc3e036381b44a46c4795a5b1b771f18d45223c5ca531676e56543"
+        },
+        {
+          "kind": "dtb",
+          "offset": 14788722,
+          "length": 192070,
+          "sha256": "e92e5c9dc86731d76dc060759bb622cbad073e4e32e831bf0ca68deef3ff4cd5"
+        },
+        {
+          "kind": "m1n1_initramfs",
+          "offset": 14980792,
+          "length": 918739,
+          "sha256": "4dba815382e714881dd78ee16c201e22a006db8127314f76ef312528e2ae6553"
+        },
+        {
+          "kind": "zero_terminal",
+          "offset": 15899531,
+          "length": 64,
+          "sha256": "f5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a92759fb4b"
+        }
+      ],
+      "whole_package_test": {
+        "report": {
+          "path": "scratch/m1n1-inline-package-tests-2026-10-07/run-m46s1y2s/report.json",
+          "sha256": "67982881f6c44c746cdf76804e6779614941a0caa04fdba8d1754b5103d78e53"
+        },
+        "compile_exit": 0,
+        "run_exit": 0,
+        "mismatches": 0,
+        "compile_stdout": {
+          "path": "scratch/m1n1-inline-package-tests-2026-10-07/run-m46s1y2s/compile.stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "compile_stderr": {
+          "path": "scratch/m1n1-inline-package-tests-2026-10-07/run-m46s1y2s/compile.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "run_stdout": {
+          "path": "scratch/m1n1-inline-package-tests-2026-10-07/run-m46s1y2s/run.stdout",
+          "sha256": "b8deba46bef7c143b05b6ea6b0e0c9cd8cb66fde65d3ec12cdddb5651d5f6c5c"
+        },
+        "run_stderr": {
+          "path": "scratch/m1n1-inline-package-tests-2026-10-07/run-m46s1y2s/run.stderr",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "input_mode": "whole-combined-actual",
+        "observed": {
+          "gzip_consumed": "14788668",
+          "kernel_retained_span": "44040192",
+          "kernel_tail_reservation": "1029632",
+          "initrd_set_calls": "1",
+          "dtb_prepare_calls": "1",
+          "kernel_boot_calls": "1"
+        }
+      },
+      "synthetic_dt_handoff": {
+        "run_exit": 0,
+        "post_fixup_dtb": {
+          "path": "scratch/m1n1-linux-package-handoff.mlaq_etg/dtb-01.post-fixup.dtb",
+          "sha256": "0b375fffb16556afc4ca256ba7fe08147a17694d06a6613db2328b22097e55d5"
+        },
+        "stdout": {
+          "path": "scratch/m1n1-linux-package-handoff.mlaq_etg/dtb-01.stdout.log",
+          "sha256": "8a1f22d266f70726fe7fb5d808331a6423da5d8a77a0ee1e234ab8823c8d9167"
+        },
+        "stderr": {
+          "path": "scratch/m1n1-linux-package-handoff.mlaq_etg/dtb-01.stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "post_fixup_dtb_role": "host fixture output only; NEVER a native package input"
+      }
+    }
+  },
+  "dt_handoff": {
+    "execution_manifest": {
+      "path": "scratch/m1n1-linux-package-handoff.mlaq_etg/execution-manifest.json",
+      "sha256": "bdc6b4cd52dc8519a582777ca7e38db7125e92a97537571e554800582e8dddb9"
+    },
+    "compile_stdout": {
+      "path": "scratch/m1n1-linux-package-handoff.mlaq_etg/compile.stdout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compile_stderr": {
+      "path": "scratch/m1n1-linux-package-handoff.mlaq_etg/compile.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "executed_functions": [
+      "kboot_set_initrd",
+      "dt_set_chosen",
+      "dt_set_memory",
+      "dt_set_cpus"
+    ],
+    "synthetic_layout": {
+      "ram_base": "0x10000000000",
+      "ram_size": "0x400000000",
+      "image_base": "0x10002000000",
+      "image_span": 44040192,
+      "initrd_base": "0x10008000000",
+      "initrd_span": "actual initramfs size",
+      "same_window_size": "0x40000000",
+      "assertions": [
+        "all ranges inside RAM",
+        "image/initrd non-overlap",
+        "same 1GiB window",
+        "memory.reg differs from 8GiB DT placeholder"
+      ]
+    },
+    "synthetic_adt": "/chosen node=1; dram-base=0x10000000000; dram-size=0x400000000; page-size=0x4000"
+  },
+  "recipes": {
+    "scripts/build-j575d-inline-package.py": {
+      "path": "scripts/build-j575d-inline-package.py",
+      "sha256": "3ae1c43b8b643bc69227d50fc491e9ff02f2c605b68999feb673eb5bda11a4b0"
+    },
+    "scripts/test-m1n1-inline-package.py": {
+      "path": "scripts/test-m1n1-inline-package.py",
+      "sha256": "f49c3964a7be7216585cc998b0a66cdfe9dd21f3469bde8a06b2dd4b0b472cc1"
+    },
+    "tests/m1n1-inline-package.c": {
+      "path": "tests/m1n1-inline-package.c",
+      "sha256": "683a4ac7b79d671ef74ebd27285dacd598bc36289900dd06caf22bd1f4c599cb"
+    },
+    "scripts/test-m1n1-linux-package-handoff.py": {
+      "path": "scripts/test-m1n1-linux-package-handoff.py",
+      "sha256": "d70bb4397c2daae179e7d256d9f49aab83fa7f8e149bd0d595ff5c675c57a33f"
+    },
+    "tests/m1n1-linux-package-handoff.c": {
+      "path": "tests/m1n1-linux-package-handoff.c",
+      "sha256": "14db804cb462fc7a07dd16d8f1d97c5a12efcfc5776e349974042b64f25c0c91"
+    }
+  },
+  "sources": {
+    "src/payload.c": {
+      "path": "scratch/m1n1-upstream-xz-seek-guards.m9h56j/m1n1-2460b604c6f016956ead711823605eea840c602e/src/payload.c",
+      "sha256": "39dd637c06938dec8559008f2890bd15925b367e8c517f66dcbced2a53258e35"
+    },
+    "src/kboot.c": {
+      "path": "scratch/m1n1-upstream-xz-seek-guards.m9h56j/m1n1-2460b604c6f016956ead711823605eea840c602e/src/kboot.c",
+      "sha256": "14822d4bef8af488ec4f2dbb9cd06e36fec8dc8882c7f78e92e6dcd810c61391"
+    },
+    "build/m1n1-raw.elf": {
+      "path": "scratch/m1n1-upstream-xz-seek-guards.m9h56j/m1n1-2460b604c6f016956ead711823605eea840c602e/build/m1n1-raw.elf",
+      "sha256": "67827c952c4e79268960597e31afd3f344fe1dd22d2854555bd5781ea0dc3b04"
+    }
+  },
+  "prior_module_evidence": {
+    "path": "docs/inventory/m1n1-j575d-driver-modules-2026-10-07.json",
+    "sha256": "5b7a3757987263ee3d62a96fbf3e8d95d0ce958a43be4d245fe86959507e2846"
+  },
+  "independent_review": {
+    "path": "scratch/m3-inline-package-final-review-2026-10-07.md",
+    "sha256": "7169372fbf07a3068fb2699fbe7a2a5d518e94c070d91a1c25884bce0957ae90"
+  },
+  "remaining": [
+    "candidate DT schema coverage and physical SoC driver contracts",
+    "real handoff backing, source/decompression disjointness and physical placement",
+    "whole native boot initialization, reservations, EL/MMU/cache/DMA and CPU release behavior",
+    "verified backup, recovery readiness and separate approval before native actions"
+  ]
+}
