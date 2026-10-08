@@ -1,0 +1,572 @@
+{
+  "schema_version": 1,
+  "date_utc": "2026-10-08",
+  "parent_commit": "924da91",
+  "scope": "Read-only public-registry and Apple binary contract audit; native polling alternative and remaining Type-C producer edges, not hardware qualification",
+  "linux_pin": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+  "candidate": {
+    "calibration_records": 822,
+    "usb_common_records": 72,
+    "phy_disabled": 6,
+    "ace3_disabled": 6,
+    "native_boot_approved": false,
+    "modified": false
+  },
+  "select_irq": {
+    "candidate_sibling_board_values": [
+      13,
+      39,
+      65,
+      91
+    ],
+    "candidate_port_values": [
+      13,
+      39,
+      65,
+      91,
+      13,
+      39
+    ],
+    "candidate_values_j575d_witnessed": false,
+    "linux_contract": "Named select IRQ is required; DT cell is a direct local SPMI hwirq. No SID-to-IRQ calculation in the retained source.",
+    "fresh_public_planes": [
+      "IODeviceTree",
+      "IOService"
+    ],
+    "hpm_nodes_each": 6,
+    "public_interrupt_entries_per_hpm": 3,
+    "public_type_words": [
+      0,
+      2,
+      3
+    ],
+    "public_fourth_select_irq_found": false,
+    "fresh_host": {
+      "reported_darwin": "27.0",
+      "reported_cpu": "ARM64_T6031",
+      "report_date_local": "2026-10-07",
+      "nonarchive_ioreg_exit_each": 0,
+      "archive_ioreg_exit_each": 1,
+      "archive_error": "ioreg: error: can't open file.",
+      "privileged": false
+    },
+    "native_edge": {
+      "class": "AppleHPMInterface",
+      "method": "initSingleHPM",
+      "range": "0xfffffe00097f075c..0xfffffe00097f12a4",
+      "sha256": "dbc5568151c4e0242a99564d6a4dc24526037e741964cde67e309f6685089089",
+      "registration": "Reads interrupt-type/interrupts and passes array index to IOInterruptEventSource on the type==1 branch",
+      "board_select_semantics_established": false
+    },
+    "fault_irq_path": "AppleSPMI initializeFaultInterrupts/getIntParam is separate; no child select mapping proven",
+    "polling_alternative": {
+      "class": "AppleHPMARMSPMI",
+      "native_selection_irq_required": false,
+      "writeRegs_range": "0xfffffe0009805724..0xfffffe0009805a24",
+      "writeRegs_sha256": "3d4ad38d63b8b3d97c092b5100ad3987ae9b04e6ddba1d480b5e3d67f83c21e1",
+      "readRegs_range": "0xfffffe0009805b10..0xfffffe0009805e40",
+      "readRegs_sha256": "2ad295ef7705f01460d92fa77725a8baaf41aea649b728ac91cd40c80832e6e2",
+      "readRegs_payload_boundary": "Basic overload ends at 0x9805e40; fixed reg0x20 payload instruction at 0x9806134 belongs to separate length-taking overload 0x9805e40..0x980615c",
+      "readRegs_length_overload_sha256": "a5f3cfb010590fd235e42ce79f2bfcdff24a4cf11afd76051b55bcfad89bcd2f",
+      "selection": "Provider receives requested logical register and native mode 0x12 or 0x2; low-level Linux transaction equivalence not yet established",
+      "status_read": "Provider register argument 0",
+      "busy": "Bit 7 set and (status & 0x7f) equals requested register; IOSleep(1), up to 1000 iterations",
+      "ready": "Bit 7 clear and status equals requested register; provider result zero",
+      "mismatch": "Reissues selection and polls again",
+      "provider_error": "Nonzero provider results enter error paths",
+      "serialization": "Command gate surrounds transaction and native HPM RTPC timer is disabled; no explicit DMB/DSB in these two functions",
+      "native_busy_exhaustion": "Falls through post-selection without a distinct timeout error; not adopted as Linux policy",
+      "adapter_trace": {
+        "selection": "HPM provider slot +0x8e0 -> AppleARMSPMIDevice::register0Write, command kind 7",
+        "status": "HPM provider slot +0x8a8 -> AppleARMSPMIDevice::registerRead, command kind 6, register argument zero",
+        "register0Write_range": "0xfffffe0008cb699c..0xfffffe0008cb6a1c",
+        "register0Write_sha256": "32aeaac2ae77332fa81c335267ca5766a4ea3233cbedb91f58501482c5486702",
+        "registerRead_range": "0xfffffe0008cb6820..0xfffffe0008cb689c",
+        "registerRead_sha256": "4ba7d77d32440231983a9402a292c0513feac1a30e882f30adea1e19e94af6dd",
+        "sendCommand_range": "0xfffffe0008cb5ba8..0xfffffe0008cb5c9c",
+        "sendCommand_sha256": "e2e1fcb1dfb93efa12394d44cc607e8fa37cd1f4ac88ad2493dd958f115f5722",
+        "unresolved_receivers": [
+          "controller+0xe0 object class and receiver vtable +0x1e8 implementation",
+          "controller vtable +0x980 implementation"
+        ],
+        "wire_opcode_proven": false,
+        "native_completion_and_error_translation_proven": false,
+        "address_supersession": "verified-address report supersedes rebased wire-command call-site evidence; exact original BL at 0x8cb5bc4 targets 0x8ceaa78, not historical 0x981d828",
+        "verification": "Main checks all 520 original instruction-byte lines and 27 same-line address/instruction anchors across five functions, not independent substring presence"
+      },
+      "stale_ready_excluded": false,
+      "linux_provider_equivalence_proven": false,
+      "linux_polling_implemented": false,
+      "scope": "Captured native control flow, not J575d hardware timing or Linux implementation qualification"
+    },
+    "missing": "A J575d-specific producer mapping logical register-selection completion to local SPMI hwirq, including a2-bank allocation",
+    "exclusion": "Public property absence is not hardware/firmware absence; no irq+2, SID or sibling repetition promoted to a direct witness"
+  },
+  "linux_polling_contract": {
+    "selection": "Every custom regmap read/write reselects via SPMI_CMD_ZERO_WRITE, then checks register 0 before transferring the selected window",
+    "current_default": "Requires select IRQ; then up to four register-zero checks, busy reg|0x80, ready exact reg, mismatch/error rejected",
+    "windows": "Read 0x20 and write 0xa0 in chunks of at most 16 bytes",
+    "controller_completion": "Each SPMI command waits for response and checks ACK/parity under fifo_lock; controller lock alone is not whole-transaction serialization",
+    "transaction_serialization": "Default regmap mutex spans complete custom callback, including select/poll/payload; core.c config provides no custom or disabled locking",
+    "irq_name_lookup": "of_irq_get_byname propagates of_property_match_string error; does not normalize absence to -ENXIO",
+    "missing_name_with_valid_list": "-ENODATA",
+    "missing_names_property": "-EINVAL",
+    "unterminated_names_property": "-EILSEQ",
+    "irq_errors_to_preserve": "Parser/property errors, -EPROBE_DEFER and IRQ-zero mapping failure must not activate polling",
+    "apple_binding_pin": "77cb8f24c2381a8abb7272d7bbdec548d6426a8a",
+    "apple_binding_current_contract": "Cached apple,sn201202x binding requires irq/select/sleep/wake; generic ti,tps6598x binding is not this SPMI contract",
+    "proposed_configuration": "Explicit Apple-only polling opt-in with exact irq/sleep/wake tuple; preserve exact four-IRQ default, serialize callback and define timeout policy",
+    "configuration_implemented": false,
+    "supersession": "Linux followup/irq-binding supersedes initial report's speculative -ENXIO fallback; config-lock note limits earlier verifier's no-binding claim to generic TI file"
+  },
+  "cio80": {
+    "records": 30,
+    "rows_per_port": 5,
+    "ports": 6,
+    "native_mode": 2,
+    "numeric_linux_enum_identity_claimed": false,
+    "producer": "cioClientSetACIO power transition -> initACIO -> partB -> generic dispatcher",
+    "dispatcher": "Generic dispatcher directly calls +0xbf0 CIO then tail-dispatches +0xbf8 CIO80; the CIO helper itself does not access +0xbf8",
+    "default_application": "Five defaults are unconditional inside CIO80 after mode-2 dispatch and a valid provider; five 0x4004 checks only gate logging",
+    "linux_protocol_crosswalk_proven": false,
+    "linux_resource_lane_alias_proven": false,
+    "converted": false,
+    "supersession": "Corrected followup and followup2/followup3 supersede the historical claim that generic dispatch has no +0xbf8 edge; historical primary receipts are not edited",
+    "missing": "Source-backed native CIO-service-to-Linux protocol/caller mapping and resource/order qualification, not numeric-enum or method-name similarity"
+  },
+  "usb2": {
+    "records": 12,
+    "ports": 6,
+    "class": 4,
+    "offset": 8,
+    "mask": "0x7000",
+    "native_dev_value": "0x7000",
+    "native_host_value": "0x0",
+    "linux_existing_host_value": "0x7000",
+    "linux_existing_device_value": "0x0",
+    "named_sdb_consumers": [
+      "AppleUSBXDCI::applySDBTunables",
+      "AppleUSBXHCIARM::applySDBTunables"
+    ],
+    "usb2_named_consumer_route_proven": false,
+    "native_caller_base_proven": false,
+    "role_polarity_proven": false,
+    "converted": false,
+    "missing": "Provider-side tag route to a named USB2 consumer, native base/range and role timing relative to USB2 power/reset",
+    "exclusion": "Coincident offset/mask and DEV/HOST names do not resolve the opposite role polarity; no guessed writes",
+    "historical_report_preserved": true,
+    "historical_report_sha256": "2f3083fe33c89750c504f1406390899ce339f9d84df76d463cb514c363b55241"
+  },
+  "next_action": "Ask for independent source-backed native controller receiver mappings, transaction completion/error semantics and ready-state policy before implementing Linux polling; do not guess the select IRQ or wire opcode",
+  "needed_help": "Resolve native controller+0xe0 receiver/+0x1e8 and controller vtable +0x980 for command kinds 6/7. CIO80 protocol and USB2 consumer/base/role evidence remains needed. Select IRQ mapping remains unresolved; a qualified polling path may avoid that functional dependency. No new Pro consult launched.",
+  "unchanged": {
+    "driver_patches": true,
+    "candidate_dt": true,
+    "default_m1n1_pin": "4184923ffb2dff079b384d6a32cc02142aa14572",
+    "native_dispatch": false,
+    "m1n1_source_policy_hold": true,
+    "vm": true,
+    "firmware": true,
+    "nvram": true,
+    "disks_and_partitions": true,
+    "mmio_performed": false,
+    "native_execution_performed": false,
+    "security_remediation": false,
+    "pushed": false
+  },
+  "receipts": [
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/provider-equivalence/report.md",
+      "sha256": "17c36caa44734211b5018afb303ebd686868cf914667072ab17e02972f48d7d9"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/provider-equivalence/verify-provider-equivalence.py",
+      "sha256": "8b3eeba89498c8fac065df216c637943e120312b0d9d89a2c72bedf5d737c2d6"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/provider-equivalence/verifier.out",
+      "sha256": "9143f0a7dacdc3f6fc1de2c64669c0898d55708982e47ad82b99d550b3c39282"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/provider-equivalence/wire-command/report.md",
+      "sha256": "097fb130766c711939860c8b7f32cb3e56015bcd79446da7b9e45bfd1c1f0dc6"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/provider-equivalence/wire-command/verify-wire-command.py",
+      "sha256": "3154020f3911f259c8ec7f599ce83ddf9a8faaed1937a1d2099821948d97bfee"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/provider-equivalence/wire-command/verifier.out",
+      "sha256": "933f2aded699b1e17e2d7f815e5bf2b19031c2fd12f4abdb7fde244e9ee8eca6"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/provider-equivalence/wire-command/verified-address/report.md",
+      "sha256": "92485a975dc31674991c75a0f0453c6316bb0d6b6b65004fe4ce009592d3c46a"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/provider-equivalence/wire-command/verified-address/verify-address.py",
+      "sha256": "564d6ca06ca1e7e884d58723b6ca9071dd6c534848bec57c1814e1d47d432665"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/provider-equivalence/wire-command/verified-address/verifier.out",
+      "sha256": "b2305b1bc452c969d107e5f3731c0fee06a41c0330b22ba3e11dfe0618793f34"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/provider-equivalence/wire-command/verified-address/sendCommand.llvm.s",
+      "sha256": "f499f47df0665b752fd97e8eb4ca9273e8c8da9c2be8984ba6d53ad33f6929b9"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/provider-equivalence/wire-command/verified-address/hpm-write.s",
+      "sha256": "a2a0c29074f8d50ce277b1806e8f422d97056a21ec836c86443a5977eaff744c"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/provider-equivalence/wire-command/verified-address/hpm-read-basic.s",
+      "sha256": "5f6043dfa8dc39cb1c8bd40be45945faa670edbac9700931323a950b4b54654c"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/provider-equivalence/wire-command/verified-address/device-read.s",
+      "sha256": "6fe8fac3a97ec331a4350b94341fdf6f58d7f31f0b8c0c90e67776b03df45776"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/provider-equivalence/wire-command/verified-address/device-register0.s",
+      "sha256": "6b974baf115878f90ada8fa5f9c28d1b1e0b1b95bfe4af3bb8843075f216e25e"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/verify-contract-closure.py",
+      "sha256": "adf5ab54e65d1d3cf1750703abfd5648237f66db71e8a771f1b49edaaa6569c0"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/main-contract-closure-check.log",
+      "sha256": "7ca595fbf68adfed44495f7b762c44a963573e30294e324bd89138ddced8a341"
+    },
+    {
+      "path": "scratch/kernelcache-tool-reviewed.macho",
+      "sha256": "a24fefccc060854cecc996b40983499e1319008e4f16c0717a5fef6c4d4828dc"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/linux-polling-contract/report.md",
+      "sha256": "6ed5ad5fe51cb81dd453b0c54b313686aafb36d5f4d64150b7f18cc9afd021f1"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/linux-polling-contract/followup/report.md",
+      "sha256": "7e2dd23212b2cfdf705f17d8ad66bbb212c5d411a8d92c941ba0411ab03e4ff4"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/linux-polling-contract/followup/verify-linux-polling-contract.py",
+      "sha256": "86cfb849db48a9d6edee23f525e84dfa8be3edfac89fb44bc899fb054d5fac2e"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/linux-polling-contract/followup/verifier.out",
+      "sha256": "9ea3bbd0745e00c5174b29a231384b2f12c9576256a57ffdf225d4235a351cc3"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/linux-polling-contract/followup/irq-binding/report.md",
+      "sha256": "223f955d05f544977e7332a6bb35ccfd53605ed6ff9d07e608670f3dd2440e7b"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/linux-polling-contract/followup/irq-binding/verify-irq-binding.py",
+      "sha256": "22cd7caea8e0ee7f31a6aa2f254ad9fe8560217ec94404cacf7c6480ed448331"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/linux-polling-contract/followup/irq-binding/verifier.out",
+      "sha256": "6adf74fd70424976205992b90febc8bc328ee3ee601a390c7ff1b97dca8f22fc"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/linux-polling-contract/followup/config-lock/report.md",
+      "sha256": "30d515ca5f148a510ec81f641d44fa7fb58cdd93d92cb576568f0c292d874687"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/source/drivers/usb/typec/tipd/spmi.c",
+      "sha256": "a0f5b62407cdbf9c22bee02400864c7802be75ca7cb4a4fb170d18eb2937b17e"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/source/drivers/spmi/spmi.c",
+      "sha256": "b9c32a166645817850b8bbbb3a6373eb6e383aeb82a6ef4122970810dd648f38"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/source/drivers/spmi/spmi-apple-controller.c",
+      "sha256": "097a627f5acdb366b1637e56555802898b36a1e2ac34faa391695d16127bad98"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/source/include/linux/spmi.h",
+      "sha256": "dd914b47805a531c7d40f80d01f1b978dac2bb9b8482972230343fe4ad91c530"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/source/drivers/base/regmap/regmap.c",
+      "sha256": "3d4b622a577f2a008539727d9d26b422112da67dcea170e05ba9d567e2f5a7a9"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/source/include/linux/regmap.h",
+      "sha256": "d1b8dad14d1b10b49e4dc5e3a00ae319bfa94de87759031cc21f8c181e2540ca"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/source/drivers/of/irq.c",
+      "sha256": "ed2c8c56f65c6175fc1ed81c394ae8f29e676f89162139ebae5aa9bd1571a926"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/source/drivers/of/property.c",
+      "sha256": "60df87ac381220fc6b091bf470cb5e9d824dd87d958c5d3c47a08b92dfe929d3"
+    },
+    {
+      "path": "scratch/j575d-phy-usb-common.W3594q/source/drivers/usb/typec/tipd/core.c",
+      "sha256": "a08f8cee1ff379c8b9535ad1eed5892dc832e684024de3fb75ad480f6f04faff"
+    },
+    {
+      "path": "scratch/j575d-usb-typec-primary-2026-10-08/apple,sn201202x.yaml",
+      "sha256": "569d97fa64a39bc520f58b5666cabe842b37a528c1dadbb0da86ca985e9c55b3"
+    },
+    {
+      "path": "scratch/j575d-usb-typec-primary-2026-10-08/README.md",
+      "sha256": "db90960efa269b6cd38ffac286793add18dc762795f586bb62cfdde38d2d6d50"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/native-polling/report.md",
+      "sha256": "14e98416eb79589181d586b6c46658f72f6774e6dced456670f96f71898ad4c7"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/native-polling/verify-native-polling.py",
+      "sha256": "7fa6f231a4a83156b1fb0e994ba9ccaca6f908ff13b79b61ef86c9740c357551"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/native-polling/verify-native-polling.out",
+      "sha256": "ad1325b330f96abc522536c0ab8975a911a83077f3ec6986d173ac73050c4652"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/native-polling/hpm-snapshot.txt",
+      "sha256": "dbb9b9262fbf238ed8725ebf9be506939da6740590ede489f0f03e16ec5bb73a"
+    },
+    {
+      "path": "scratch/j575d-cio80-contract-2026-10-08/followup3/report.md",
+      "sha256": "96b03fabb19b2989f821f16de5517e7be46e1e56d6760590cc6b28c88b8b7865"
+    },
+    {
+      "path": "scratch/j575d-cio80-contract-2026-10-08/followup3/verify-cio80-mode2-producer.out",
+      "sha256": "84cfb21d37b88d3e25825daca8946787c8f2fb926c24db6282101cfe3dc8fa2b"
+    },
+    {
+      "path": "scratch/j575d-cio80-contract-2026-10-08/followup3/verify-cio80-mode2-producer.py",
+      "sha256": "5823976dc39ec48111136bceba4926463662a7674960eaa518b8cfe676c7419e"
+    },
+    {
+      "path": "scratch/j575d-cio80-contract-2026-10-08/followup/verify-cio80-edge.py",
+      "sha256": "130f46267456ee813da6542438748afa531e4c2cb1ebda9ab881d98797e3884b"
+    },
+    {
+      "path": "scratch/j575d-cio80-contract-2026-10-08/followup/verify-cio80-edge.out",
+      "sha256": "713d5f98410b0d5a4051b15f949aea4f50c08022b3e61bba2e680a4f6fc481ba"
+    },
+    {
+      "path": "scratch/j575d-cio80-contract-2026-10-08/followup/report.md",
+      "sha256": "b09751b76a49797474ea1fcb68d13dd9ef54758848cda126504f2a210d56ab77"
+    },
+    {
+      "path": "scratch/j575d-cio80-contract-2026-10-08/followup2/verify-cio80-applicability.py",
+      "sha256": "a2b693bfbabdac11914569344bc221e5c03fde8edf8331e6ea2657ddcd84a12a"
+    },
+    {
+      "path": "scratch/j575d-cio80-contract-2026-10-08/followup2/report.md",
+      "sha256": "f7105d26c1c4cc93b67179f350fa790b3d96dc4553145d4773af5b441c411d13"
+    },
+    {
+      "path": "scratch/j575d-cio80-contract-2026-10-08/followup2/verify-cio80-applicability.out",
+      "sha256": "1140548de8b3961af12a8c5097fb5e1cf571bd02082f3bfa942c724e59e4c7ea"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-device-tree.xml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/report.md",
+      "sha256": "ed2f717f77c197c0f9bfebf8b464211f6cec1705fc0f79bf676d06fbab99a2a1"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-service-text.txt",
+      "sha256": "cf4f681047520d666fea5f9ddfbb4b4b87875240740ecde3cc147e29c524ebad"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-device-tree-archive-f.stderr",
+      "sha256": "17c10cf474b10a1d18594b323d0407b87be523397b4e886434b671835abc5734"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-device-tree.exit",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-service.stderr",
+      "sha256": "17c10cf474b10a1d18594b323d0407b87be523397b4e886434b671835abc5734"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-device-tree-text.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/fresh-service-hpm-targeted.txt",
+      "sha256": "0f8d093884f3b77973ac608eb4aaab2b8a4d7e508bfa1d3bb62c332b8909516f"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-service.xml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-service-text.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/apple-provider/AppleSPMI.full.macho",
+      "sha256": "5c847efb573fc21ff2e8ad929b7ccef02616342ae3a5405461ab8a99ff7d06e3"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/apple-provider/verify-select-irq-provider.out",
+      "sha256": "bfa99fda470bf94e049fc558a2536f4fdf8f2edd4e1312569ca51865dbd44323"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/apple-provider/AppleHPM.strings.s",
+      "sha256": "ef57b0cb6e41fc476869edf7a4a33e26ec99b82e419015dafdf434205c8af3e8"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/fresh-hpm-targeted.txt",
+      "sha256": "1b7f51ef5614c8993095017c432faedecabd9ae0e517da1acf98493629194f46"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/apple-provider/AppleSPMI.header",
+      "sha256": "45d4cf9d3da3855214005b65c19857ad452388c763e1c7b1b064edd2886367c0"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/apple-provider/selected-symbols.tsv",
+      "sha256": "1423997d8ca6cae0bb2cac9532c77d3c57dcc51280ba7bb59076aa31670ed84c"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/apple-provider/AppleHPM.macho",
+      "sha256": "fd8c1aa87a1c59b2fbbf50643c868675fafb1cd213eb75e54d5ab1fe12346765"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/apple-provider/AppleHPM.full.macho",
+      "sha256": "39af506f1776804892e4136941a29770fcea95725a4711d759d28184b4a0aa5d"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/apple-provider/AppleSPMI.strings.s",
+      "sha256": "0442c8f252b4d3b2d25408982ceeaf6200f31b0ce9fd8f268831f81f93b6f257"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/apple-provider/verify-select-irq-provider.py",
+      "sha256": "ca2dc31b6b4480edcab85527d8e332f78622b5a4873e76d85e7e86bd48bcd4ea"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/apple-provider/AppleHPM.header",
+      "sha256": "5987735cdc89dbc6e00f4ee1a31bd364020841a54e527879eab0998259e9e268"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/apple-provider/AppleHPM.text.s",
+      "sha256": "b0bbf33d8ed207170080364fce385405c5bcfe5a55223a632a157a7f6ae38644"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/apple-provider/interrupt-symbols.tsv",
+      "sha256": "2265ed7527bcc99caaaf866745c5446d880d97c93a968703dc0809f43007e975"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/apple-provider/report.md",
+      "sha256": "eaa26499aab66bad9b5aa4d15085a497d44050cbde899d1749d7ab0439fec05a"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/apple-provider/AppleSPMI.text.s",
+      "sha256": "8dbf5ff3d4f6df3ed131eb9da1d8c8f5e518551b599f122f5273144a4447e278"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-device-tree-text.txt",
+      "sha256": "35076d5389f4b768c6b2c8dc3840c83eb50902552cee416472e97ac32b414ada"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/retained-hpm-interrupt-properties.json",
+      "sha256": "5378a34c7387fecfbe4c316840c2d431aa8d0b5ac8f6b4a565ef34595910d58c"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-device-tree.stderr",
+      "sha256": "17c10cf474b10a1d18594b323d0407b87be523397b4e886434b671835abc5734"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-service-text.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-device-tree-archive-f.xml",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/fresh-select-completion-lines.txt",
+      "sha256": "2689cb1a638d5272c271434de927f51c9fe44feec610b62222193ac4b9ca350f"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-device-tree-archive-f.exit",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-service.exit",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-targeted-lines.txt",
+      "sha256": "771b26053236be633e476833c3bd443b3824ae5294f8fa69bc88ae47df901aab"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-device-tree-text.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/host-registry/sha256sums.txt",
+      "sha256": "3619afda26506dc856d6d4e8f723354fc28572b9a6ea141734a775ef38970432"
+    },
+    {
+      "path": "scratch/j575d-usb2-contract-2026-10-08/report.md",
+      "sha256": "a33d93c0faf656b7d551f18d315e3c9bde538870b7b1fc68bf08954d2628541d"
+    },
+    {
+      "path": "scratch/j575d-phy-usb2-contract-2026-10-08/report.md",
+      "sha256": "2f3083fe33c89750c504f1406390899ce339f9d84df76d463cb514c363b55241"
+    },
+    {
+      "path": "scratch/j575d-phy-usb2-contract-2026-10-08/caller-routing-v2.md",
+      "sha256": "44a38e287bb612f41c288a8bed2362ab72530337d3346b0b8facc91826b01621"
+    },
+    {
+      "path": "scratch/j575d-phy-usb2-contract-2026-10-08/verify-usb2-contract.py",
+      "sha256": "f48d1d6c790d2167c5b17914d1da21d8e62d48ac3cf1af27fdd10e3e2286636a"
+    },
+    {
+      "path": "scratch/j575d-phy-usb2-contract-2026-10-08/byte-receipt.json",
+      "sha256": "e33872506fc5426826a08d3a384d125dbfe44569fa141fc7ffb41f9694f7f41d"
+    },
+    {
+      "path": "configs/j575d-ace3-candidate.dtsi",
+      "sha256": "4cb88fa61cfc7af43af5b585425424145a7a456877370ff7e6bc3c6abb8095b8"
+    },
+    {
+      "path": "docs/inventory/j575d-phy-usb-common-integration-2026-10-08.json",
+      "sha256": "a7400d0093ce68c7e1898880d319e6501881f9f579a787226347b99510ae1770"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/verify-final.py",
+      "sha256": "94f3f19a59e69c64be48efbb611e377839a1e256b25bcce284d66fa2f92559e8"
+    },
+    {
+      "path": "scratch/j575d-select-irq-audit.dzecri/main-final-check.log",
+      "sha256": "cf70dbdff974f10e5e7cfb6ea7dff907c1d6aab73d2d5d0e2518fa1459bda9ce"
+    }
+  ],
+  "verification": {
+    "main_script": "scratch/j575d-select-irq-audit.dzecri/verify-contract-closure.py",
+    "main_log": "scratch/j575d-select-irq-audit.dzecri/main-contract-closure-final.log",
+    "baseline_main_log": "scratch/j575d-select-irq-audit.dzecri/main-final-check.log",
+    "fresh_raw_hpm_nodes_each_plane": 6,
+    "exact_raw_interrupt_types_and_specifier_join_checked": true,
+    "baseline_receipt_checks": 54,
+    "original_byte_check_log_receipt_checks": 77,
+    "receipt_checks": 94,
+    "native_polling_verifier": "scratch/j575d-select-irq-audit.dzecri/native-polling/verify-native-polling.py",
+    "exact_original_instruction_lines": 520,
+    "same_line_address_instruction_anchors": 27,
+    "existing_usb_common_receipts": 134,
+    "frozen_fabric_receipts": 97,
+    "status_matrix_rows": 19,
+    "scope": "Retained receipts, public HPM arrays and bounded native polling witness; no fourth select IRQ, Linux provider equivalence, CIO protocol, USB2 role/base or physical qualification"
+  }
+}

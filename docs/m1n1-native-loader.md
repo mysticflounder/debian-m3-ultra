@@ -606,6 +606,51 @@ remain separate work. Physical power/clock/IRQ/DMA, native kernel entry,
 source-policy, verified-backup/recovery and separate-approval gates are unchanged.
 No default loader, native dispatch, persistent VM, firmware, NVRAM or disk changes.
 
+The [remaining Type-C contract audit](inventory/j575d-native-typec-contract-gaps-2026-10-08.json)
+narrows the three missing producer edges. Fresh, nonprivileged IODeviceTree
+and IOService captures still expose only three interrupts for each of six
+HPMs. The native `AppleHPMInterface::initSingleHPM` registration loop is
+traced, but neither that generic edge nor the public properties identify the
+J575d select hwirq; absence from public metadata is not hardware absence.
+The captured `AppleHPMARMSPMI::writeRegs/readRegs` paths instead poll provider
+register 0 after requesting selection. Bit 7 denotes busy; the requested
+register with bit 7 clear denotes ready. This is a native polling witness,
+not yet a Linux implementation: the provider's selection modes `0x12`/`0x2`
+still need mapping to Linux's register-zero transaction and synchronous
+completion. Stale-ready behavior is unproven, and the native busy-loop
+exhaustion falls through without a distinct timeout error; that behavior is
+not adopted as Linux policy. A proven polling path could remove the functional
+dependency on the missing select IRQ without inventing a board mapping.
+On Linux, the default regmap mutex spans selection, polling and payload;
+the SPMI controller separately completes each command with ACK/parity checks.
+A missing `select` in a valid name list returns `-ENODATA`, not `-ENXIO`.
+An eventual explicit three-IRQ polling opt-in must preserve the cached Apple
+binding's four-IRQ default and must not reinterpret malformed metadata,
+`-EPROBE_DEFER` or IRQ-zero mapping failure as absence. No opt-in is added yet.
+The native adapter reaches `AppleARMSPMIDevice::register0Write` (kind 7) and
+`registerRead` (kind 6), then `AppleARMSPMIController::sendCommand`. Two
+receiver implementations remain unresolved: the object at `controller+0xe0`
+with vtable slot `+0x1e8`, and the controller's slot `+0x980`. Method names
+and command kinds alone do not qualify the wire encoding, completion or error
+translation. Corrected exact-address views supersede rebased call-site
+evidence; the main verifier checks 520 original instruction-byte lines and
+27 same-line address/instruction anchors. Basic `readRegs` ends at
+`0x9805e40`; the fixed register-`0x20` payload instruction is in its separate
+length-taking overload, not that basic body.
+Native CIO mode 2 now traces from `cioClientSetACIO` through `initACIO` and
+part B. The generic dispatcher directly invokes CIO and then CIO80; the CIO
+helper itself does not call CIO80. Its Linux protocol crosswalk remains
+unproven. USB2's twelve records have offset 8 and mask `0x7000`, but captured
+HOST/DEV values have opposite polarity to the existing Linux role path;
+native consumer/base/timing remain unproven. No guessed mapping is added.
+The 822-record disabled candidate and all driver patches remain unchanged.
+Linux completion/serialization and exact IRQ-name errors now have pinned
+source receipts. The bounded native audit stops at those two unresolved
+receiver implementations; independent source-backed help is needed before
+qualifying a Linux polling change. CIO80 and USB2 also need independent
+evidence; no new Pro consult is launched. No native or device-register
+operation was used.
+
 ## Corrected USB4+2 provider profile — 2026-10-08 UTC
 
 Run `uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache

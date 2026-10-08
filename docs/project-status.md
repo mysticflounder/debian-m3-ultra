@@ -508,6 +508,30 @@ compatibility. The 16 PMGR errors narrow to eight MCA-domain external-clock
 booleans, with no identified Linux consumer and unresolved hardware meaning;
 those properties are left unchanged. See the
 [USB-common inventory](inventory/j575d-phy-usb-common-integration-2026-10-08.json).
+The [remaining Type-C contract audit](inventory/j575d-native-typec-contract-gaps-2026-10-08.json)
+records fresh three-entry public HPM IRQ arrays and a bounded native
+registration trace, neither of which supplies the fourth select hwirq.
+The captured native SPMI implementation polls register 0 instead of requiring
+that IRQ. Its busy/ready loop is traced. Linux's whole-callback regmap mutex
+and synchronous SPMI command completion are now source-qualified, but native
+provider equivalence and stale-ready behavior still need qualification before
+a Linux polling change. Native busy-loop exhaustion
+falls through without a distinct timeout error; no such Linux policy is added.
+Valid missing-name lookup returns `-ENODATA`, not the initially proposed
+`-ENXIO`; malformed metadata, deferred IRQ domains and IRQ-zero mapping failure
+cannot activate polling. The cached Apple binding's four-IRQ default remains.
+The native adapter reaches named register-zero-write/read APIs and command
+kinds 7/6, but `sendCommand`'s `controller+0xe0` receiver/slot `+0x1e8` and
+controller slot `+0x980` remain unresolved. Corrected original-address views
+supersede rebased call-site evidence; 520 instruction-byte lines and 27
+same-line anchors pass the main verifier, without claiming wire equivalence.
+CIO mode 2 has a traced native producer but no proven Linux protocol crosswalk;
+USB2's captured HOST/DEV values have opposite polarity to Linux, with native
+consumer/base/timing unresolved. The bounded controller trace stops at those
+two receiver implementations; independent source-backed help is needed before
+a qualified polling implementation and for CIO80/USB2. No new Pro
+consult is launched. The disabled candidate and driver patches are unchanged;
+no hardware claim is made.
 The latest Linux API check at 04:16 UTC still returns `7b63ef2d`;
 the retained source pin is not changed. See the [integration inventory](inventory/j575d-phy-fabric-integration-2026-10-08.json).
 
@@ -536,7 +560,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | Fresh twenty-module USB-common package builds; six source/eight DT tests pass, including 56 complete-source mode cases; Fabric and USB-only channels assigned | Package not installed or booted; CIO80/USB2, essential binding/PMGR clock contracts and select IRQ, then physical power/clock/IRQ/DMA qualification |
+| NVMe / USB / Ethernet | Fresh twenty-module USB-common package builds; six source/eight DT tests pass, including 56 complete-source mode cases; native polling and Linux locking/IRQ contracts traced offline | Package not installed or booted; independent help needed for two native controller receivers/completion and stale-ready policy before qualified polling; CIO80 protocol, USB2 consumer/base/role and select IRQ mapping remain open; essential binding/PMGR clock contracts and physical power/clock/IRQ/DMA qualification remain |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |
