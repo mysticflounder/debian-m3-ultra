@@ -1,0 +1,479 @@
+{
+  "schema_version": 1,
+  "board": "J575dAP",
+  "date_utc": "2026-10-08",
+  "parent_commit": "8521a0a",
+  "scope": "Static per-named-block PHY record normalization, not Linux property generation or native qualification",
+  "capture": "scratch/j575d-usb-live-2026-10-08/derived/collector.json",
+  "native_driver": {
+    "bundle": "com.apple.driver.AppleT6032TypeCPhy",
+    "host_build": "26A428",
+    "collection": "scratch/kernelcache-tool-reviewed.macho",
+    "collection_sha256": "a24fefccc060854cecc996b40983499e1319008e4f16c0717a5fef6c4d4828dc",
+    "signature_verified": false,
+    "view": "scratch/j575d-phy-kc-metadata-2026-10-08/AppleT6032TypeCPhy.macho",
+    "metadata": "scratch/j575d-phy-kc-metadata-2026-10-08/metadata.json",
+    "register_table": "scratch/j575d-phy-native-map-2026-10-08/sRegisters.json",
+    "register_table_vmaddr": "0xfffffe000cccd778",
+    "register_table_fileoff": 97294200,
+    "register_table_cells": 336,
+    "register_table_dimensions": [
+      42,
+      8
+    ],
+    "capture_register_joins": 252,
+    "captured_columns": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "uncaptured_columns": [
+      6,
+      7
+    ],
+    "runtime_driver_binding_verified": false,
+    "runtime_virtual_mapping_verified": false,
+    "input_record_bytes": 12,
+    "input_words": "three little-endian u32s",
+    "observed_high_five_bits": 4,
+    "offset": "sign-extended word0 bits26:0",
+    "masked_write": "(read32 & ~word1) | word2"
+  },
+  "decoder_sha256": "39d8af4f8a33a6bfb780edb4dbf50c741bb971ef41d49fb737e220959f9f3950",
+  "decoder_inputs": [
+    {
+      "path": "scratch/j575d-usb-live-2026-10-08/derived/collector.json",
+      "sha256": "4a16a0950b00f265bef58374f8ec4ef4263db253db993b62c231d313545fd46c"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/sRegisters.json",
+      "sha256": "d7352d12d1c19d7777482aeea5591aab2137f306c86cffc98f14ef479621da16"
+    },
+    {
+      "path": "scratch/j575d-phy-kc-metadata-2026-10-08/AppleT6032TypeCPhy.macho",
+      "sha256": "34766e9ca25405f64a08e25a47a71378ab2dd7df6b221d85f94c3aefbafdcc2e"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/tunable-selector-map.md",
+      "sha256": "6f22639fdd9a5b2d23be49bbea24a5d764dac20cc873053479c65ef22e2bd523"
+    },
+    {
+      "path": "scratch/j575d-ace3-candidate.dif94rf2/candidate.dtb",
+      "sha256": "832bdc15bcc9c0d5204a62e5d18b72574890b4df8e48b41dd2da5cf1f4c3d265"
+    },
+    {
+      "path": "scripts/build-j575d-usb-layout.py",
+      "sha256": "5617d5bf3ddf7c0c0fce7e8aa2a17a0a8dd264c4bc73b3f258b624c26efcbc2d"
+    },
+    {
+      "path": "scripts/build-j575d-pcie-dt.py",
+      "sha256": "574e2cf4a5cac153180b4a137cc1d8c6fc1048f147cc51620abc8634338a8f63"
+    },
+    {
+      "path": "scratch/j575d-usb-drivers.6s0L0J/source/drivers/phy/apple/atc.c",
+      "sha256": "1b9517fd9b79e1c5fb0be4cd56d8c1443b78d08a138e56c09ca7321505f51eae"
+    }
+  ],
+  "decoded_sha256": "1c4f6142872e40bc58b77288379fb3822b080414f59a11a024c2a2624b5fb782",
+  "decoder_runs": {
+    "main": {
+      "manifest": "scratch/j575d-phy-decoded.0o7yxpnz/manifest.json",
+      "decoded": "scratch/j575d-phy-decoded.0o7yxpnz/decoded.json",
+      "exit": 0
+    },
+    "independent": {
+      "manifest": "scratch/j575d-phy-decoded.18g_0e67/manifest.json",
+      "decoded": "scratch/j575d-phy-decoded.18g_0e67/decoded.json",
+      "exit": 0
+    }
+  },
+  "results": {
+    "ports": 6,
+    "named_blocks": 72,
+    "decoded_records": 852,
+    "unconverted_usb2_records": 12,
+    "source_register_joins": 252,
+    "containment_counts": {
+      "axi2af": 312,
+      "core": 150,
+      "unassigned_fabric": 390
+    },
+    "record_byte_order_preserved": true,
+    "source_capture_ordinals_preserved": true,
+    "inspection_groups_are_execution_schedule": false,
+    "test_cases_per_run": 10,
+    "test_runs": 2,
+    "test_exit_codes": [
+      0,
+      0
+    ],
+    "implementation_mutation_controls": 0,
+    "fixture_mutation_controls": true,
+    "linux_properties_emitted": false,
+    "native_validated": false,
+    "mmio": false
+  },
+  "test_logs": [
+    "scratch/j575d-phy-decoder-main-tests-2026-10-08.log",
+    "scratch/j575d-phy-decoder-tests-2026-10-08/test-output.txt"
+  ],
+  "linux_contract": {
+    "kernel_source_pin": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+    "board_dt_pin": "77cb8f24c2381a8abb7272d7bbdec548d6426a8a",
+    "compatible_pair": [
+      "apple,t6031-atcphy",
+      "apple,t8122-atcphy"
+    ],
+    "binding_already_accepts_pair": true,
+    "mapped_resources": [
+      "core",
+      "lpdptx",
+      "axi2af",
+      "usb2phy",
+      "pipehandler"
+    ],
+    "t8122_tunable_property_count": 7,
+    "source_content_review": "atc.c atcphy_apply_tunables, atcphy_load_tunables and atcphy_map_resources inspected separately; decoder computes DTB containment and does not parse C",
+    "fabric_selector": 40,
+    "port1_fabric_base": "0x703244000",
+    "fabric_length": "0x4000",
+    "port1_core_base": "0x703000000",
+    "core_length": "0x4c000",
+    "fabric_inside_current_linux_window": false,
+    "fabric_early_owner_or_new_linux_resource": "unresolved",
+    "common_a_common_b_and_lane_grouping": "unresolved",
+    "usb2_native_consumer": "unresolved"
+  },
+  "native_order": {
+    "generic": [
+      "ATC0AXI2AF",
+      "ATC_FABRIC",
+      "LN0_RX_CFG_TX_OF_RXCLK",
+      "LN1_RX_CFG_TX_OF_RXCLK"
+    ],
+    "usb_helper": [
+      "AUS40CMN_SHM",
+      "AUSPLL_CORE",
+      "CIO4PLL_CORE"
+    ],
+    "generic_mode_helpers": {
+      "1": [
+        "USB"
+      ],
+      "2": [
+        "CIO"
+      ],
+      "3": [
+        "DP"
+      ],
+      "4": [
+        "USB",
+        "DP"
+      ]
+    },
+    "cio80_on_proven_usb_dispatch": false,
+    "cio_to_cio80_reachability": "unproven",
+    "full_init_part_to_tunable_path": "unproven",
+    "linux_application_order_assigned": false
+  },
+  "dispatch_pointer_receipts": {
+    "aa0": {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/aa0.json",
+      "target": "0xfffffe000a2073d4"
+    },
+    "ba8": {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/ba8.json",
+      "target": "0xfffffe000a1ec72c"
+    },
+    "bb0": {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/bb0.json",
+      "target": "0xfffffe000a1eedf8"
+    },
+    "bb8": {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/bb8.json",
+      "target": "0xfffffe000a1eeeec"
+    },
+    "be8": {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/be8.json",
+      "target": "0xfffffe000a1ef8f0"
+    },
+    "bf0": {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/bf0.json",
+      "target": "0xfffffe000a1f0850"
+    },
+    "bf8": {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/bf8.json",
+      "target": "0xfffffe000a1f0e28"
+    },
+    "c00": {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/c00.json",
+      "target": "0xfffffe000a1efec8"
+    }
+  },
+  "native_disassembly_files": [
+    "scratch/j575d-phy-native-map-2026-10-08/applyTunables.disasm",
+    "scratch/j575d-phy-native-map-2026-10-08/start.disasm",
+    "scratch/j575d-phy-native-map-2026-10-08/aciophy-apply-tunables.disasm",
+    "scratch/j575d-phy-native-map-2026-10-08/aciophy-apply-usb.disasm",
+    "scratch/j575d-phy-native-map-2026-10-08/aciophy-apply-cio.disasm",
+    "scratch/j575d-phy-native-map-2026-10-08/aciophy-apply-cio80.disasm",
+    "scratch/j575d-phy-native-map-2026-10-08/aciophy-apply-dptx.disasm",
+    "scratch/j575d-phy-native-order-2026-10-08/j575d-phy-native-order-init-function.s"
+  ],
+  "unchanged": {
+    "ace3_candidate_dtb_sha256": "832bdc15bcc9c0d5204a62e5d18b72574890b4df8e48b41dd2da5cf1f4c3d265",
+    "ace3_children_disabled": 6,
+    "twenty_module_package": true,
+    "default_m1n1_source": "4184923ffb2dff079b384d6a32cc02142aa14572",
+    "native_dispatch_enabled": false,
+    "persistent_vm": true,
+    "firmware": true,
+    "disks": true,
+    "retained_m1n1_policy_hold": true
+  },
+  "remaining_gates": [
+    "Fabric programming ownership and explicit Linux resource/property decision",
+    "Linux common/lane grouping and complete initialization order",
+    "Separate USB2 host/device consumer contract",
+    "Independent select-IRQ witness",
+    "Physical clock/power/IRQ/DMA qualification",
+    "Verified backup/recovery readiness and separate native approval"
+  ],
+  "receipts": [
+    {
+      "path": "scripts/decode-j575d-phy-calibration.py",
+      "sha256": "39d8af4f8a33a6bfb780edb4dbf50c741bb971ef41d49fb737e220959f9f3950"
+    },
+    {
+      "path": "tests/test-j575d-phy-calibration.py",
+      "sha256": "2db6546213b19a5f476c27184129e0edf8856365e9862c599edebbb45ca5c93b"
+    },
+    {
+      "path": "scratch/j575d-usb-live-2026-10-08/derived/collector.json",
+      "sha256": "4a16a0950b00f265bef58374f8ec4ef4263db253db993b62c231d313545fd46c"
+    },
+    {
+      "path": "scratch/kernelcache-tool-reviewed.macho",
+      "sha256": "a24fefccc060854cecc996b40983499e1319008e4f16c0717a5fef6c4d4828dc"
+    },
+    {
+      "path": "scratch/kernelcache-tool-reviewed.json",
+      "sha256": "a9df2ce1af7136282b03891e41f8fa5842b49d52927723c58c68acec7b789ce8"
+    },
+    {
+      "path": "scratch/j575d-phy-kc-metadata-2026-10-08/AppleT6032TypeCPhy.macho",
+      "sha256": "34766e9ca25405f64a08e25a47a71378ab2dd7df6b221d85f94c3aefbafdcc2e"
+    },
+    {
+      "path": "scratch/j575d-phy-kc-metadata-2026-10-08/metadata.json",
+      "sha256": "17ba86b8235ed92d83acd581e83f02d1073a3b35a783d1b8a0c9668023107fd5"
+    },
+    {
+      "path": "scratch/j575d-phy-kc-metadata-2026-10-08/scan_metadata.py",
+      "sha256": "a5be250a5be1e7db1aafe9700ae08b6b1e51c18dd130af298e63a1480d2b79d0"
+    },
+    {
+      "path": "scratch/j575d-phy-kc-metadata-2026-10-08.md",
+      "sha256": "773de7d16297c5d691b2a7c94e40db5e6b1a2e1d760b817aa7bfb830831d3858"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/sRegisters.json",
+      "sha256": "d7352d12d1c19d7777482aeea5591aab2137f306c86cffc98f14ef479621da16"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/tunable-selector-map.md",
+      "sha256": "6f22639fdd9a5b2d23be49bbea24a5d764dac20cc873053479c65ef22e2bd523"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08.md",
+      "sha256": "e84295390b6d5845639b99fe4bcb700f1e6d41af02bb4961de8e81d2647d087d"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/trace_metadata.py",
+      "sha256": "06f4ba96b4b8ae67565b0951ec37d599aea929764a6afc82624bf8899e6c15e0"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/join_bridge.py",
+      "sha256": "439e92158e28a7ed94961d76272ca58b1ed99fdf2d5ba3a287491e15a70d9d20"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/manifest.json",
+      "sha256": "aabe56129deada83c5b750a3e65997f6299519b2ed0af2962218d9b324360556"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/applyTunables.disasm",
+      "sha256": "5ec40c0d691ef7494276e58e7eb578c319685b80fa591e5b704dac8f4be3132e"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/start.disasm",
+      "sha256": "a8db761a9c009487c86497d9c73962ee02cf4289d013d42d67e35dd737eb9d19"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/aciophy-apply-tunables.disasm",
+      "sha256": "977679eb7c8235c11d67c489bee3d1b598fc24c1adcee73071b914e9dc25af43"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/aciophy-apply-usb.disasm",
+      "sha256": "647c630cb9125ffbd15fd16b99467d9d6cf4079f38eaf5a7f1b93b6caef913ac"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/aciophy-apply-cio.disasm",
+      "sha256": "fdf2cb50e6d3adea9df422449236ea6a65d537477cc956f3a6e48969ab3c1a3f"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/aciophy-apply-cio80.disasm",
+      "sha256": "8df6cda497c35b6093e10a72d339c39feabd0e01fa7af3239734aaac49e2bd0f"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/aciophy-apply-dptx.disasm",
+      "sha256": "91cec08e000f9e3f305611d604da1f5cb8be7360c9dd2701e4c7faa2abb75310"
+    },
+    {
+      "path": "scratch/j575d-phy-native-map-2026-10-08/import-stubs.txt",
+      "sha256": "1a8fe23bedcf5f1d6e2691894e67788bdf71368a25470088d73ab01d2e46b606"
+    },
+    {
+      "path": "scratch/j575d-phy-native-order-2026-10-08.md",
+      "sha256": "ec3a482e0ca693ac2637423c701277c03cf78f7fa0e196d5a437cb289ee18c97"
+    },
+    {
+      "path": "scratch/j575d-phy-native-order-2026-10-08/dispatch-receipt.txt",
+      "sha256": "e89fa0dd9f271d5d4d502f91190b7623171ff314c0d5ebd1b8ecfddc1a632804"
+    },
+    {
+      "path": "scratch/j575d-phy-native-order-2026-10-08/j575d-phy-native-order-init-function.s",
+      "sha256": "aa937cc0ca180dd6e5ba0c0099e6d17ff3034ec822304bd0478c8f926ffcc2ac"
+    },
+    {
+      "path": "scratch/j575d-phy-native-order-2026-10-08/j575d-phy-native-order-usb.s",
+      "sha256": "b190d2c3bca196f21c589aba55a444bcd2d1b35370ac9be4396242a1d3d3f9fe"
+    },
+    {
+      "path": "scratch/j575d-phy-native-order-2026-10-08/j575d-phy-native-order-apply-tunables.s",
+      "sha256": "039e9e367209914cfb16c0020dd65992fa9c0d913ae9fa07ce0d32dd1df97ecd"
+    },
+    {
+      "path": "scratch/j575d-phy-native-order-2026-10-08/manifest.txt",
+      "sha256": "2d7a37e07c9b1bfcdaeac1d0af1451562e2b74862685394f6e78eb18dd77999c"
+    },
+    {
+      "path": "scratch/j575d-usb-drivers.6s0L0J/source/drivers/phy/apple/atc.c",
+      "sha256": "1b9517fd9b79e1c5fb0be4cd56d8c1443b78d08a138e56c09ca7321505f51eae"
+    },
+    {
+      "path": "scratch/j575d-usb-drivers.6s0L0J/source/Documentation/devicetree/bindings/phy/apple,atcphy.yaml",
+      "sha256": "cdc3c842cdc92dbaa5c70a3d9dfda704f80eb7089552c025baf3f9d4bfb1a78d"
+    },
+    {
+      "path": "scratch/j575d-ace3-candidate.dif94rf2/candidate.dtb",
+      "sha256": "832bdc15bcc9c0d5204a62e5d18b72574890b4df8e48b41dd2da5cf1f4c3d265"
+    },
+    {
+      "path": "scripts/build-j575d-usb-layout.py",
+      "sha256": "5617d5bf3ddf7c0c0fce7e8aa2a17a0a8dd264c4bc73b3f258b624c26efcbc2d"
+    },
+    {
+      "path": "scripts/build-j575d-pcie-dt.py",
+      "sha256": "574e2cf4a5cac153180b4a137cc1d8c6fc1048f147cc51620abc8634338a8f63"
+    },
+    {
+      "path": "scripts/inspect-kernelcache-fixup.py",
+      "sha256": "f17f0d41f9082b1058ed2fcf8117d5baad4c6da2fd187d3234bba6f1e9e0a476"
+    },
+    {
+      "path": "scripts/inspect-local-kernelcache.py",
+      "sha256": "efa3db4da85c4d55a5812ee8e5379bfe8f38b8c1edf4afc7ae9e1639fa945677"
+    },
+    {
+      "path": "docs/inventory/j575d-ace3-candidate-2026-10-08.json",
+      "sha256": "ca86cbb598618853642b518ef5f80bc772eceb339e83ef6274c01d82491ca9ca"
+    },
+    {
+      "path": "docs/inventory/j575d-usb-layout-2026-10-08.json",
+      "sha256": "4a3111048c6c31695beb682bf489b50e1eefb2a0ee767058b524b2074030ab75"
+    },
+    {
+      "path": "docs/inventory/j575d-usb-routing-2026-10-08.json",
+      "sha256": "4e68cedf0630efc01190538de6c110a5235bc242fb559a4cd62d1deabb30269d"
+    },
+    {
+      "path": "scratch/j575d-phy-decoded.0o7yxpnz/decoded.json",
+      "sha256": "1c4f6142872e40bc58b77288379fb3822b080414f59a11a024c2a2624b5fb782"
+    },
+    {
+      "path": "scratch/j575d-phy-decoded.0o7yxpnz/manifest.json",
+      "sha256": "43683010fe1079adeb6886f71a3bf23b104563c40c63e4d2aec67a99f4d81287"
+    },
+    {
+      "path": "scratch/j575d-phy-decoder-main-final-2026-10-08.log",
+      "sha256": "fbde739fbcac9304375b26cc722726c587b04418fd56edd0f99fbe0f27d56427"
+    },
+    {
+      "path": "scratch/j575d-phy-decoder-main-tests-2026-10-08.log",
+      "sha256": "aaa7e91013c9f824c7ce31d5912c1df0085b266a3e64f0a239e876901f82d4d9"
+    },
+    {
+      "path": "scratch/j575d-phy-decoded.18g_0e67/decoded.json",
+      "sha256": "1c4f6142872e40bc58b77288379fb3822b080414f59a11a024c2a2624b5fb782"
+    },
+    {
+      "path": "scratch/j575d-phy-decoded.18g_0e67/manifest.json",
+      "sha256": "6f0e6e8b4e7bfe325930ca032f19c07f30dc50e00dcb29f3a698a5ad14a56cf0"
+    },
+    {
+      "path": "scratch/j575d-phy-decoder-tests-2026-10-08/test-output.txt",
+      "sha256": "c8c92dd97d91086d5f72df9558295ce25954a2abd406b1fc8cd94e9004e654db"
+    },
+    {
+      "path": "scratch/j575d-phy-decoder-tests-2026-10-08/report.md",
+      "sha256": "094f61ee989132000d99cbcba7ee38cccc3549274c009a72b0ebe057014389f7"
+    },
+    {
+      "path": "scratch/j575d-phy-decoder-audit-2026-10-08.md",
+      "sha256": "79d738fda8a1b56d9319a52c0beb322b6572bac8583833b19e4a11db4b2420e0"
+    },
+    {
+      "path": "scratch/verify-j575d-phy-calibration-2026-10-08.py",
+      "sha256": "5a9eefb6edead588e6c63066873380c48cc6b5f04bb62fee4e0f679eae500a67"
+    },
+    {
+      "path": "scratch/j575d-phy-final-parent-verification-2026-10-08.log",
+      "sha256": "b8e115e470f1e579806b08714ec16f27089f5ed6b225d15c22415e509a9ef740"
+    },
+    {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/aa0.json",
+      "sha256": "5d0eb74d9b3f04630d4e4ff495d15d3089e9ad2e7c73a1922246523f1e7b05dd"
+    },
+    {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/ba8.json",
+      "sha256": "cdd0b6c0b30e8b92acc95980eb917823323a9c7f7c0b04a6221f9a6639f4e3c6"
+    },
+    {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/bb0.json",
+      "sha256": "e35620f427b928cb45d8c67468bb2c0a5a049cf770fd03ea08dee209adf0d9b8"
+    },
+    {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/bb8.json",
+      "sha256": "c8eaf45cd5111ddba7db0f6d4b1fe3f65da3cfd23e5bdc8afaa0da151b17d2b2"
+    },
+    {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/be8.json",
+      "sha256": "22ea110670f068ded21250d975e26e8a18b628abf99b8068f848f48bf4994961"
+    },
+    {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/bf0.json",
+      "sha256": "0c00670ea799ad717961b9b815607707e7b988d6646c8bf2f7d25749d1ee4151"
+    },
+    {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/bf8.json",
+      "sha256": "4b8ab08038c022cd31fd4e616602f0bd1317a79e76974d150a4219e8d74bd5da"
+    },
+    {
+      "path": "scratch/j575d-phy-vtable-main-2026-10-08/c00.json",
+      "sha256": "6bcf7d5c07dc723e46cff6db86125e5729246e48978ebdb0d60be16b215f42fd"
+    }
+  ]
+}

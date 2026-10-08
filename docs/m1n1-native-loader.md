@@ -376,6 +376,68 @@ need native qualification. No calibration, aliases, bootloader handoff,
 firmware, disk or VM change is included; the retained m1n1 policy-held lane
 and backup/recovery/native-approval gates remain unchanged.
 
+## Native PHY record normalization — 2026-10-08 UTC
+
+The retained macOS 27.0 / 26A428 collection contains
+`com.apple.driver.AppleT6032TypeCPhy`. Static inspection of that driver now
+supplies twelve named-property-to-register selectors and the actual
+`applyTunables` input/write contract. The 42-by-8 native register table matches
+all 252 captured address/size tuples for the six J575d ports, uniquely selecting
+columns 0–5. Columns 6–7 do not establish two additional physical ports.
+The [normalization inventory](inventory/j575d-phy-calibration-2026-10-08.json)
+binds the binary views, instruction/table receipts, source captures and tests.
+An independent byte check matches 4,542 disassembled instruction words and all
+336 register-table cells to the retained view, and verifies eight chained
+dispatch targets against the original collection. This is not PAC or runtime
+authentication.
+
+Native records are three little-endian u32 words. The observed high-five-bit
+value is 4; the offset is the sign-extended low 27 bits, not an M1-derived
+low-24-bit offset or a Linux resource index. The mismatch path writes
+`(read32 & ~word1) | word2` at the selected bank plus that offset.
+The decoder deliberately supports only the captured class-4, aligned,
+nonnegative records; it is not a general native record interpreter.
+
+```sh
+uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache \
+  python scripts/decode-j575d-phy-calibration.py
+uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache \
+  python tests/test-j575d-phy-calibration.py
+```
+
+These commands require the inventory's retained inputs. They generate only
+diagnostic JSON under `scratch/`, not a DTB, DTS property or loader payload.
+Two independent runs produce identical decoded bytes. Ten tests check all
+852 records independently, including masks/values, bank additions, record
+order, source provenance and port-specific differences; fixture controls
+reject wrong byte order, banks, board/ports, unsupported offsets and ambiguous
+containment. These are fixture controls, not implementation-mutation tests.
+
+| Current compiled Linux window containment | Records |
+| --- | ---: |
+| AXI2AF | 312 |
+| Core | 150 |
+| No current window: ATC_FABRIC | 390 |
+
+Containment does **not** assign a Linux calibration property. In particular,
+port 1's fabric bank is `0x703244000 + 0x4000`, outside its declared
+`0x703000000 + 0x4c000` core window and all four other windows. The pinned
+Linux driver maps five resources and loads seven T8122 tunable properties;
+it has no separate fabric channel. Whether early firmware already owns this
+programming or Linux needs an explicit resource/property is still open.
+Do not invent core-relative offsets or enlarge the core aperture to hide it.
+
+Whole-collection pointer-chain resolution confirms native USB helper calls
+in the order `AUS40CMN_SHM`, `AUSPLL_CORE`, `CIO4PLL_CORE`. The proven generic
+USB dispatch does not call the separate CIO80-default helper; those lane
+defaults must not simply be copied into USB properties. The Linux common-a /
+common-b and lane split, full initialization path, and separate USB2 host/device
+consumer remain open. The twelve USB2 source records are verified but not
+converted. No Linux properties are emitted and the disabled ACE3 candidate,
+twenty-module package, default loader, persistent VM and native-dispatch
+setting are unchanged. The m1n1 policy-held lane and physical safety gates
+remain unchanged too.
+
 ## Corrected USB4+2 provider profile — 2026-10-08 UTC
 
 Run `uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache
