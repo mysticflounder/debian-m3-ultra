@@ -1,0 +1,276 @@
+Linux ATCPHY M3 Fabric calibration support
+
+Adds an opt-in apple,t6031-atcphy Fabric window and tunable channel.
+The legacy five-resource path remains unchanged; Fabric requires the sixth
+resource named fabric and apple,tunable-fabric together.
+
+Application: patch --batch --forward --fuzz=0 -p0 from the pinned source root.
+
+--- drivers/phy/apple/atc.c
++++ drivers/phy/apple/atc.c
+@@ -599,6 +599,7 @@
+ 	enum atcphy_generation gen;
+ 	int aciophy_lane_mode;
+ 	int aciophy_crossbar;
++	bool fabric_tunables;
+ };
+ 
+ /**
+@@ -611,6 +612,7 @@
+  * @tunables.lane_usb3: USB3 lane-specific tunables
+  * @tunables.lane_dp: DisplayPort lane-specific tunables
+  * @tunables.lane_usb4: USB4 lane-specific tunables
++ * @tunables.fabric: Optional M3 Apple Fabric tunables
+  * @mode: Current PHY operating mode
+  * @swap_lanes: True if lanes must be swapped due to cable orientation
+  * @dp_link_rate: DisplayPort link rate
+@@ -618,12 +620,15 @@
+  * @regs: Memory-mapped registers
+  * @regs.core: Core registers
+  * @regs.axi2af: AXI to Apple Fabric interface registers
++ * @regs.fabric: Optional Apple Fabric register window
+  * @regs.usb2phy: USB2 PHY registers
+  * @regs.pipehandler: USB3 PIPE interface ("pipehandler") registers
+  * @regs.lpdptx: DisplayPort registers
+  * @res: Resources for memory-mapped registers, used to verify that tunables aren't out of bounds
+  * @res.core: Core register resource
+  * @res.axi2af: AXI to Apple Fabric interface resource
++ * @res.fabric: Optional Apple Fabric register resource
++ * @fabric_enabled: Optional M3 Fabric resource/property pair is present
+  * @phys: PHY instances
+  * @phys.usb2: USB2 PHY instance
+  * @phys.usb3: USB3 PHY instance
+@@ -644,6 +649,7 @@
+ 		struct apple_tunable *lane_usb3[2];
+ 		struct apple_tunable *lane_dp[2];
+ 		struct apple_tunable *lane_usb4[2];
++		struct apple_tunable *fabric;
+ 	} tunables;
+ 
+ 	const struct atcphy_hw *hw;
+@@ -655,6 +661,7 @@
+ 	struct {
+ 		void __iomem *core;
+ 		void __iomem *axi2af;
++		void __iomem *fabric;
+ 		void __iomem *usb2phy;
+ 		void __iomem *pipehandler;
+ 		void __iomem *lpdptx;
+@@ -663,7 +670,9 @@
+ 	struct {
+ 		struct resource *core;
+ 		struct resource *axi2af;
++		struct resource *fabric;
+ 	} res;
++	bool fabric_enabled;
+ 
+ 	struct {
+ 		struct phy *usb2;
+@@ -927,6 +936,8 @@
+ 
+ 	apple_tunable_apply(atcphy->regs.core, atcphy->tunables.common[0]);
+ 	apple_tunable_apply(atcphy->regs.axi2af, atcphy->tunables.axi2af);
++	if (atcphy->tunables.fabric)
++		apple_tunable_apply(atcphy->regs.fabric, atcphy->tunables.fabric);
+ 	apple_tunable_apply(atcphy->regs.core, atcphy->tunables.common[1]);
+ 
+ 	switch (mode) {
+@@ -2383,9 +2394,54 @@
+ 		}
+ 	}
+ 
++	if (atcphy->fabric_enabled) {
++		atcphy->tunables.fabric = devm_apple_tunable_parse(
++			atcphy->dev, atcphy->np, "apple,tunable-fabric", atcphy->res.fabric);
++		if (IS_ERR(atcphy->tunables.fabric)) {
++			dev_err(atcphy->dev, "Failed to read tunable apple,tunable-fabric: %ld\n",
++				PTR_ERR(atcphy->tunables.fabric));
++			return PTR_ERR(atcphy->tunables.fabric);
++		}
++	}
++
+ 	return 0;
+ }
+ 
++static int atcphy_validate_fabric(struct platform_device *pdev,
++					 struct apple_atcphy *atcphy)
++{
++	const struct property *fabric_prop;
++	bool property;
++	bool resource = !!platform_get_resource_byname(pdev, IORESOURCE_MEM, "fabric");
++
++	fabric_prop = of_find_property(atcphy->np, "apple,tunable-fabric", NULL);
++	property = !!fabric_prop;
++
++	if (!property && !resource)
++		return 0;
++
++	if (!atcphy->hw->fabric_tunables) {
++		dev_err(atcphy->dev,
++			"fabric resource/property is only supported with apple,t6031-atcphy\n");
++		return -EINVAL;
++	}
++
++	if (property != resource) {
++		dev_err(atcphy->dev,
++			"apple,tunable-fabric and fabric resource must be provided together\n");
++		return -EINVAL;
++	}
++
++	if (fabric_prop->length < 3 * sizeof(u32)) {
++		dev_err(atcphy->dev,
++			"apple,tunable-fabric must contain at least one tuple\n");
++		return -EINVAL;
++	}
++
++	atcphy->fabric_enabled = true;
++	return 0;
++}
++
+ static int atcphy_map_resources(struct platform_device *pdev, struct apple_atcphy *atcphy)
+ {
+ 	struct {
+@@ -2414,6 +2470,16 @@
+ 			*resources[i].res = res;
+ 	}
+ 
++	if (atcphy->fabric_enabled) {
++		res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "fabric");
++		addr = devm_ioremap_resource(&pdev->dev, res);
++		if (IS_ERR(addr))
++			return dev_err_probe(atcphy->dev, PTR_ERR(addr),
++					     "Unable to map fabric regs");
++		atcphy->regs.fabric = addr;
++		atcphy->res.fabric = res;
++	}
++
+ 	return 0;
+ }
+ 
+@@ -2466,6 +2532,9 @@
+ 	mutex_init(&atcphy->lock);
+ 	platform_set_drvdata(pdev, atcphy);
+ 
++	ret = atcphy_validate_fabric(pdev, atcphy);
++	if (ret)
++		return ret;
+ 	ret = atcphy_map_resources(pdev, atcphy);
+ 	if (ret)
+ 		return ret;
+@@ -2483,16 +2552,26 @@
+ 	.gen = ATCPHY_GENERATION_T8103,
+ 	.aciophy_lane_mode = ACIOPHY_LANE_MODE_T8103,
+ 	.aciophy_crossbar = ACIOPHY_CROSSBAR_T8103,
++	.fabric_tunables = false,
+ };
+ 
+ static const struct atcphy_hw atcphy_hw_t8122 = {
+ 	.gen = ATCPHY_GENERATION_T8122,
+ 	.aciophy_lane_mode = ACIOPHY_LANE_MODE_T8122,
+ 	.aciophy_crossbar = ACIOPHY_CROSSBAR_T8122,
++	.fabric_tunables = false,
+ };
+ 
++static const struct atcphy_hw atcphy_hw_t6031 = {
++	.gen = ATCPHY_GENERATION_T8122,
++	.aciophy_lane_mode = ACIOPHY_LANE_MODE_T8122,
++	.aciophy_crossbar = ACIOPHY_CROSSBAR_T8122,
++	.fabric_tunables = true,
++};
++
+ static const struct of_device_id atcphy_match[] = {
+ 	{ .compatible = "apple,t8103-atcphy", .data = &atcphy_hw_t8103 },
++	{ .compatible = "apple,t6031-atcphy", .data = &atcphy_hw_t6031 },
+ 	{ .compatible = "apple,t8122-atcphy", .data = &atcphy_hw_t8122 },
+ 	{},
+ };
+--- Documentation/devicetree/bindings/phy/apple,atcphy.yaml
++++ Documentation/devicetree/bindings/phy/apple,atcphy.yaml
+@@ -28,6 +28,49 @@
+ 
+ allOf:
+   - $ref: /schemas/usb/usb-switch.yaml#
++  - if:
++      properties:
++        compatible:
++          anyOf:
++            - const: apple,t6031-atcphy
++            - type: array
++              contains:
++                const: apple,t6031-atcphy
++    then:
++      oneOf:
++        - required:
++            - apple,tunable-fabric
++          properties:
++            reg:
++              minItems: 6
++              maxItems: 6
++            reg-names:
++              minItems: 6
++              maxItems: 6
++        - properties:
++            reg:
++              maxItems: 5
++            reg-names:
++              maxItems: 5
++          not:
++            required:
++              - apple,tunable-fabric
++  - if:
++      not:
++        properties:
++          compatible:
++            anyOf:
++              - const: apple,t6031-atcphy
++              - type: array
++                contains:
++                  const: apple,t6031-atcphy
++    then:
++      properties:
++        reg:
++          maxItems: 5
++        reg-names:
++          maxItems: 5
++        apple,tunable-fabric: false
+ 
+ $defs:
+   apple,tunable:
+@@ -60,20 +103,24 @@
+       - const: apple,t8103-atcphy
+ 
+   reg:
++    minItems: 5
+     items:
+       - description: Common controls for all PHYs (USB2/3/4, DisplayPort, TBT)
+       - description: DisplayPort Alternate Mode PHY specific controls
+       - description: Type-C PHY AXI to Apple Fabric interconnect controls
+       - description: USB2 PHY specific controls
+       - description: USB3 PIPE interface controls
++      - description: Optional M3 Apple Fabric controls
+ 
+   reg-names:
++    minItems: 5
+     items:
+       - const: core
+       - const: lpdptx
+       - const: axi2af
+       - const: usb2phy
+       - const: pipehandler
++      - const: fabric
+ 
+   "#phy-cells":
+     const: 1
+@@ -122,6 +169,12 @@
+     description: >
+       Common tunables required for all modes, applied after tunable-axi2af.
+ 
++  apple,tunable-fabric:
++    $ref: "#/$defs/apple,tunable"
++    description: >
++      Optional M3 Apple Fabric tunables, applied to the sixth fabric register
++      region after tunable-axi2af and before tunable-common-b.
++
+   apple,tunable-lane0-usb:
+     $ref: "#/$defs/apple,tunable"
+     description: USB3 tunables for lane 0.

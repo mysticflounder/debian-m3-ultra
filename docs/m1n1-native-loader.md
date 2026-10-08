@@ -438,6 +438,103 @@ twenty-module package, default loader, persistent VM and native-dispatch
 setting are unchanged. The m1n1 policy-held lane and physical safety gates
 remain unchanged too.
 
+## Generic PHY calibration integration — 2026-10-08 UTC
+
+The native init-to-calibration edge is now resolved: `aciophy_phy_init`
+dispatches part B, whose `vptr + 0xbe0` target is the generic tunable helper.
+That helper requests AXI2AF, Fabric, LN0 RX-clock and LN1 RX-clock in that
+order before its mode-specific helpers. Its `0x4004` tests select diagnostic
+logging paths; they do not disable Fabric calibration. An independent check
+matches 65,685 disassembled words against the original collection and views,
+three complete function ranges, four logging-branch targets and eight
+format-8 pointer targets. These remain static witnesses, not runtime binding
+or PAC authentication.
+
+The [Linux-only Fabric patch](../patches/linux/j575d-602042bf/0004-apple-atcphy-m3-fabric-calibration.patch)
+adds an explicit sixth `fabric` resource and `apple,tunable-fabric` channel.
+It is opt-in through the T6031-compatible descriptor used by J575d's
+T6031/T8122 pair. Both new resource and property must be present together;
+both absent preserve the five-resource path. Other generation descriptors
+reject the new channel. The resource is separate, not an enlarged core
+aperture. Application is after AXI2AF and before common-b under the existing
+configure lock. Six source-extracted host tests check compatibility gating,
+legacy/new call order, pair validation, big-endian tuples and bounds; these
+are not a blanket cross-architecture or hardware regression proof.
+
+```sh
+bash scripts/build-j575d-phy-fabric-offline.sh
+uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache \
+  python scripts/build-j575d-phy-fabric-dt.py
+uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache \
+  python tests/test-j575d-phy-fabric.py
+uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache \
+  python tests/test-j575d-phy-fabric-dt.py
+```
+
+The fresh isolated Linux build applies all four patches and produces twenty
+AArch64 modules with checked dependency closure, depmod and aliases. Base
+Image and kernel link artifacts are unchanged. It is a separate package,
+not installed or booted; the previously validated persistent VM and package
+remain unchanged.
+
+The new DT candidate assigns only the proven generic sequence:
+
+| Linux property | Native source groups | Records, six ports |
+| --- | --- | ---: |
+| `apple,tunable-axi2af` | ATC0AXI2AF | 312 |
+| `apple,tunable-fabric` | ATC_FABRIC | 390 |
+| `apple,tunable-common-b` | LN0 RX-clock, then LN1 RX-clock | 48 |
+
+All 750 offsets, masks, values and record order are checked independently
+against little-endian capture bytes and big-endian compiled DT properties.
+The five legacy windows stay byte-identical; the sixth translates to each
+port's native Fabric bank, including die 1. All six PHY nodes are explicitly
+disabled and all six ACE3 nodes stay disabled. Only 36 targeted properties
+change; other nodes, graphs, phandles and resources are unchanged. DTC
+round-trip compilation preserves the tree, boot CPU and reservation map.
+Independent candidate outputs are byte-identical, and four DT tests pass.
+
+This is an inert integration candidate, **not boot approved**. Seventy-two
+USB-helper records still need a mode-scoped channel; thirty CIO80-default
+records must not be assigned without their caller/protocol evidence. The
+twelve USB2 records remain unconverted: generic SDB parsers match their
+shape, but neither named routing nor the base/role sequence is established.
+The apparent difference between captured role values and Linux's hardcoded
+host field is not a proven bug and no role-bit change is made. The existing
+scratch-only dt-schema 2026.9 cache is available offline; no dependency
+download is needed. Validation caught two redundant resource `maxItems`
+declarations and a property-level `minItems: 1` that caused the schema processor
+to infer a one-row maximum. The corrected Fabric property
+inherits the shared matrix type's nonempty, unbounded row count; no driver
+code changed for these binding corrections. Binding-document validation,
+the fresh twenty-module build and all twenty source/DT/decoder tests pass.
+The full processed-schema run reports no ATCPHY errors and no new diagnostics
+relative to the frozen parent. The whole board is **not schema-clean**:
+80 existing validation errors and 86 unmatched compatibles remain for
+functional triage, including PMGR, DART, NVMe, SPMI and USB descriptions.
+
+Copy-only controls accept 65 Fabric rows and diagnose malformed/empty rows,
+missing resources and the wrong generation. For a conditional-only missing
+Fabric property, dt-schema 2026.9 skips the disabled-node mismatch but rejects
+an otherwise identical enabled copy. This validator limitation does not make
+the pair optional: the driver and exact-property DT builder enforce it
+independently. The separate bounds fixture exercises the DT builder, not the
+kernel parser. Select IRQ, power/clocks, IRQ/DMA and physical operation remain
+open.
+
+The complete native USB helper also establishes an ordered 1/7/4-row sequence
+for AUS40, AUSPLL and CIO4PLL, all within the core resource. A single ordered
+USB-common property is a possible next implementation only if it retains
+all twelve records per port, their order and USB-only mode gating, after
+generic calibration and before lane setup. No such mode channel is implemented
+here, and static ordering does not qualify the Linux reset/analog timing.
+
+The [integration inventory](inventory/j575d-phy-fabric-integration-2026-10-08.json)
+retains the patch, builds, byte checks and tests. The original normalization
+receipts remain reproducible. No default payload, native dispatch, firmware,
+NVRAM, disk, partition or persistent-VM setting changes. The m1n1 source-policy
+hold, verified-backup/recovery requirement and separate native approval remain.
+
 ## Corrected USB4+2 provider profile — 2026-10-08 UTC
 
 Run `uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache

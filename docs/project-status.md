@@ -456,16 +456,42 @@ package are unchanged. See the [candidate inventory](inventory/j575d-ace3-candid
 Next: faithful per-port calibration and independent select-IRQ evidence;
 the candidate stays disabled pending physical qualification.
 
-The [native PHY normalization follow-up](m1n1-native-loader.md#native-phy-record-normalization--2026-10-08-utc)
+The initial [native PHY normalization follow-up](m1n1-native-loader.md#native-phy-record-normalization--2026-10-08-utc)
 identifies the retained `AppleT6032TypeCPhy` driver and joins all 252 six-port
 register tuples to its 42-by-8 table. Two identical offline decoder outputs
 preserve 852 records from twelve named groups; ten independent-reference tests
 pass. Physical containment is 312 AXI2AF, 150 core and 390 unassigned fabric
-records. The fabric bank is outside the five current Linux resources; early
-ownership versus a new Linux resource/property remains to be established.
-Common/lane grouping and the separate USB2 consumer are not qualified; no
-calibration properties are emitted and the disabled candidate is unchanged.
+records. At that checkpoint, the fabric bank was outside the five Linux
+resources and native caller ownership was still open. Common/lane grouping
+and the separate USB2 consumer were not qualified; the original decoder
+emits no calibration properties and its frozen inputs remain unchanged.
 See the [normalization inventory](inventory/j575d-phy-calibration-2026-10-08.json).
+
+The [generic PHY integration follow-up](m1n1-native-loader.md#generic-phy-calibration-integration--2026-10-08-utc)
+now resolves native init part B to the generic helper and its AXI2AF → Fabric
+→ LN0/LN1 RX-clock sequence; the flag tests select logging, not a calibration
+gate. A new opt-in Linux Fabric resource/property preserves the legacy
+five-window path, rejects unsupported generations and applies after AXI2AF
+before common-b. A fresh isolated twenty-module build and six source tests
+pass. The separate candidate contains 750 generic records (312 AXI2AF, 390
+Fabric, 48 RX-clock), keeps all six PHY and ACE3 nodes disabled and preserves
+legacy windows, graphs, other properties, boot CPU and reservations. Four
+independent DT tests and DTC round-trip compilation pass. No package/profile
+is installed or booted. The cached dt-schema 2026.9 validator is available
+offline, without a dependency download. Its checks caught two redundant
+resource bounds and an inferred one-row Fabric limit. The corrected binding
+inherits the shared nonempty matrix type without restricting row count;
+binding-document validation, the fresh twenty-module build and all twenty
+source/DT/decoder tests pass. Full processed-schema validation adds no
+diagnostics and reports no ATCPHY errors. The whole board still has 80
+existing validation errors and 86 unmatched compatibles; essential
+PMGR/DART/NVMe/SPMI/USB descriptions need functional triage. Negative controls
+also document dt-schema's disabled-node conditional-coverage limitation;
+driver and exact-property builder checks independently enforce the Fabric pair.
+The 72 USB-helper records have a proven ordered core-resource sequence but
+still need USB-only Linux mode integration; 30 CIO80 defaults and 12 USB2
+records remain unassigned. The latest Linux API check at 04:16 UTC still returns `7b63ef2d`;
+the retained source pin is not changed. See the [integration inventory](inventory/j575d-phy-fabric-integration-2026-10-08.json).
 
 At the earlier 14:04:34 UTC checkpoint, the official-API refresh returned HTTP
 200 for all four endpoints;
@@ -485,14 +511,14 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff / loader | Full32 comparison builds, inline candidate/official packet assembly, payload tests and handoff fixtures pass; no native boot | Qualify physical placement/source backing and Linux entry; security findings are report-only, not bring-up gates |
-| Exact T6032/J575d board DT | Disabled six-ACE3 graph passes two builds/11 tests each; native PHY table joins 252 tuples and decoder checks 852 records with 10 passing tests | Resolve fabric ownership/resource, common/lane grouping, USB2 consumer and select IRQ; no calibration properties emitted, full schema/native qualification open |
+| Exact T6032/J575d board DT | Disabled candidate integrates 750 generic records; four DT tests/round-trip and targeted binding checks pass with zero new schema diagnostics | Triage 80 existing validation errors/86 unmatched compatibles; USB mode calibration, CIO80, USB2 and select IRQ remain open; no boot approval |
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | Twenty-module package unchanged; six-port graphs and static PHY decoding pass; 390 fabric records have no current Linux window | Resolve calibration integration and select IRQ; SPMI PMGR/recovery, IRQ/DMA and native hardware remain unqualified |
+| NVMe / USB / Ethernet | Fresh twenty-module Fabric package builds; twenty source/DT/decoder tests pass; 390 Fabric records have explicit candidate windows and no ATCPHY schema errors | Package not installed or booted; complete mode/USB2 integration, essential binding triage and select IRQ, then physical power/clock/IRQ/DMA qualification |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |

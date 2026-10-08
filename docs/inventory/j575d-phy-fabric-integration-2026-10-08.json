@@ -1,0 +1,694 @@
+{
+  "schema_version": 1,
+  "date_utc": "2026-10-08",
+  "parent_commit": "0c40a2a",
+  "scope": "Linux-only opt-in Fabric channel and disabled generic-calibration candidate; not boot approved",
+  "native_contract": {
+    "bundle": "com.apple.driver.AppleT6032TypeCPhy",
+    "collection_sha256": "a24fefccc060854cecc996b40983499e1319008e4f16c0717a5fef6c4d4828dc",
+    "path": [
+      "aciophy_phy_init",
+      "init_partB",
+      "vptr+0xbe0",
+      "aciophy_apply_tunables"
+    ],
+    "order": [
+      "ATC0AXI2AF",
+      "ATC_FABRIC",
+      "LN0_RX_CFG_TX_OF_RXCLK",
+      "LN1_RX_CFG_TX_OF_RXCLK"
+    ],
+    "flags_0x4004": "logging paths, not a calibration-enable gate",
+    "instruction_words_verified_against_collection_and_views": 65685,
+    "complete_function_ranges": 3,
+    "logging_branch_targets": 4,
+    "format8_pointer_targets": 8,
+    "runtime_binding_verified": false,
+    "pac_authenticated": false
+  },
+  "linux": {
+    "source_pin": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+    "board_dt_pin": "77cb8f24c2381a8abb7272d7bbdec548d6426a8a",
+    "patch": {
+      "path": "patches/linux/j575d-602042bf/0004-apple-atcphy-m3-fabric-calibration.patch",
+      "sha256": "30a6398b2c7bf568b7b02db75e40fb2f8f1bcbf1d935353fb0a54acb9649f038"
+    },
+    "opt_in_compatible": "apple,t6031-atcphy",
+    "fallback_compatible": "apple,t8122-atcphy",
+    "channel": "separate sixth fabric resource and apple,tunable-fabric property",
+    "pair_required": true,
+    "legacy_both_absent_preserved": true,
+    "other_generations_rejected": true,
+    "application_order": [
+      "common-a",
+      "axi2af",
+      "fabric if present",
+      "common-b",
+      "existing mode lanes"
+    ],
+    "resources_not_enlarged": true,
+    "usb2_role_behavior_unchanged": true,
+    "mode_specific_calibration_unchanged": true,
+    "recipe": {
+      "path": "scripts/build-j575d-phy-fabric-offline.sh",
+      "sha256": "714bc239c85d867c69b5ea1806a662cd02a19b7bbb8b3d484c762ae9cb575f83"
+    },
+    "build_workspace": "scratch/j575d-phy-fabric.1M5jQC",
+    "builder_image": "sha256:1cc5bb4ef152a16785acce551084a41c973be8d0c9c7718524f67cd9d7d78121",
+    "build_exit": 0,
+    "modules": 20,
+    "module_elf_machine": "AArch64",
+    "dependency_closure_and_depmod_passed": true,
+    "baseline_image_and_kernel_link_artifacts_preserved": true,
+    "package_installed": false,
+    "package_booted": false
+  },
+  "candidate": {
+    "builder": {
+      "path": "scripts/build-j575d-phy-fabric-dt.py",
+      "sha256": "813c55a65af4dda2161c9aeabbbfa22328f101681d41a9fd208e44bcac0f92e7"
+    },
+    "path": "scratch/j575d-phy-fabric-dt.xnjftvg9/candidate.dtb",
+    "sha256": "084170a921fdcf1b49d34454a089bf6990cafbe9e47657cb167b8b1e8ebf822e",
+    "ports": 6,
+    "legacy_resources_per_port": 5,
+    "added_resources_per_port": 1,
+    "changed_properties": 36,
+    "property_source_order": {
+      "apple,tunable-axi2af": [
+        "tunable_ATC0AXI2AF"
+      ],
+      "apple,tunable-fabric": [
+        "tunable_ATC_FABRIC"
+      ],
+      "apple,tunable-common-b": [
+        "tunable_LN0_RX_CFG_TX_OF_RXCLK",
+        "tunable_LN1_RX_CFG_TX_OF_RXCLK"
+      ]
+    },
+    "records": {
+      "axi2af": 312,
+      "fabric": 390,
+      "common_b_rx_clock": 48,
+      "total": 750
+    },
+    "source_format": "12-byte little-endian native triples, observed class4/signed-low27 offset",
+    "linux_format": "big-endian resource-relative offset/mask/value triples; source masks, values and per-property record order preserved",
+    "phy_statuses_disabled": 6,
+    "ace3_statuses_disabled": 6,
+    "a2_bank_status_disabled": true,
+    "all_other_nodes_properties_phandles_and_legacy_windows_unchanged": true,
+    "dtc_roundtrip_tree_identical": true,
+    "boot_cpu_and_reservation_map_preserved": true,
+    "mode_specific_records_unconverted": 102,
+    "usb2_records_unconverted": 12,
+    "common_a_and_mode_lane_properties_emitted": false
+  },
+  "tests": {
+    "source_tests": 6,
+    "compiled_dtb_tests": 4,
+    "prior_decoder_tests": 10,
+    "source_extracted_c_fixture_compiled": true,
+    "all_750_tuples_independently_unpacked": true,
+    "byte_identical_candidate_builds": true,
+    "controls": "fixture and source-level mock controls; not a native hardware or blanket cross-architecture regression proof",
+    "full_dt_schema_passed": false,
+    "full_dt_schema_status": "Completed with no new diagnostics versus the frozen parent and no ATCPHY diagnostics; whole-board baseline is not schema-clean",
+    "parent_regression": {
+      "receipts": 44,
+      "layout_receipts": 31,
+      "routing_receipts": 38,
+      "closure_receipts": 19,
+      "byte_tuples": 426,
+      "builds": 2,
+      "tests_per_build": 11,
+      "controls_per_build": 8,
+      "matrix_rows": 19,
+      "current_receipt_recheck": "scratch/j575d-phy-integration-main-2026-10-08/final-parent.log"
+    },
+    "schema_initial_findings": {
+      "redundant_list_maxItems": 2,
+      "property_minItems_inferred_one_row_max": true,
+      "driver_changed_by_schema_fixes": false
+    },
+    "baseline_schema_findings": {
+      "validation_errors": 80,
+      "unmatched_compatibles": 86,
+      "whole_dt_clean": false,
+      "security_finding": false
+    },
+    "schema_validation": {
+      "workspace": "scratch/j575d-phy-fabric-schema-final-2026-10-08",
+      "tool_versions": {
+        "dtschema": "2026.9",
+        "dtc_fdtput": "1.8.1"
+      },
+      "existing_offline_cache": "scratch/j575d-schema-validation-2026-10-07/uv-cache",
+      "dependency_download_performed": false,
+      "binding_document_passed": true,
+      "full_processed_schema_built": true,
+      "binding_sha256": "c4bcbb44a00b6888d8817b98d61b80e094a775b10b9f5c5e1576d1e84ce9050e",
+      "full_schema_sha256": "4d0831d649ec64c61bb2aa404f82a10f08bd2f1309250a7dd215dae8909251d3",
+      "full_bindings_manifest_sha256": "151ef948f168a01b89f3151b2690f8f42278fd31e8de6e82233fcff65f356ce4",
+      "binding_input_files": 6362,
+      "binding_differences_from_intermediate_build": 1,
+      "validated_candidate_path": "scratch/j575d-phy-fabric-dt.dmtzise2/candidate.dtb",
+      "validated_candidate_sha256": "084170a921fdcf1b49d34454a089bf6990cafbe9e47657cb167b8b1e8ebf822e",
+      "canonical_candidate_byte_identical": true,
+      "baseline_dtb_sha256": "832bdc15bcc9c0d5204a62e5d18b72574890b4df8e48b41dd2da5cf1f4c3d265",
+      "command_exits": {
+        "binding_doc_validate_exit": 0,
+        "full_schema_build_exit": 0,
+        "candidate_validate_exit": 0,
+        "baseline_validate_exit": 0
+      },
+      "exit_zero_is_not_clean_validation_proof": true,
+      "candidate_vs_baseline": {
+        "candidate_stderr_lines": 449,
+        "baseline_stderr_lines": 449,
+        "candidate_schema_id_lines": 80,
+        "baseline_schema_id_lines": 80,
+        "normalized_diagnostics_identical": true,
+        "new_diagnostics": 0,
+        "new_atcphy_diagnostics": 0,
+        "candidate_atcphy_diagnostics": 0,
+        "baseline_atcphy_diagnostics": 0
+      },
+      "controls": {
+        "valid_65_rows": {
+          "fdtput_exit": 0,
+          "dt_validate_exit": 0,
+          "atcphy_diagnostics": 0
+        },
+        "malformed_matrix": {
+          "fdtput_exit": 0,
+          "dt_validate_exit": 0,
+          "atcphy_diagnostics": 1
+        },
+        "empty_matrix": {
+          "fdtput_exit": 0,
+          "dt_validate_exit": 0,
+          "atcphy_diagnostics": 2
+        },
+        "missing_fabric_property_disabled": {
+          "fdtput_exit": 0,
+          "dt_validate_exit": 0,
+          "atcphy_diagnostics": 0
+        },
+        "missing_fabric_property_enabled": {
+          "fdtput_exit": 0,
+          "dt_validate_exit": 0,
+          "atcphy_diagnostics": 1,
+          "dtb_sha256": "18e4f442caff38b98349e71cffd4e850e05784dc1f469e5279ef2b6e989b2fce"
+        },
+        "missing_fabric_resource": {
+          "fdtput_exit": 0,
+          "dt_validate_exit": 0,
+          "atcphy_diagnostics": 1
+        },
+        "wrong_generation": {
+          "fdtput_exit": 0,
+          "dt_validate_exit": 0,
+          "atcphy_diagnostics": 6
+        }
+      },
+      "disabled_conditional_missing_pair_detected": false,
+      "otherwise_identical_enabled_missing_pair_detected": true,
+      "driver_and_exact_property_builder_pair_checks_independent": true,
+      "bounds_fixture_scope": "DT builder tuples() only; not kernel devm_apple_tunable_parse"
+    }
+  },
+  "usb2": {
+    "structural_records": 12,
+    "source_offset": 8,
+    "mask": "0x7000",
+    "host_value": "0",
+    "device_value": "0x7000",
+    "exact_property_literals_in_whole_collection": 0,
+    "generic_xdci_and_xhci_sdb_record_parsers": "structurally compatible, but not proven consumers of these captured properties",
+    "routing_base_and_role_order_unproven": true,
+    "linux_host_field_value": "0x7000",
+    "apparent_role_difference": "not a bug proof; no role-bit fix or conversion made"
+  },
+  "upstream": {
+    "checked_utc": "2026-10-08 04:16 UTC",
+    "endpoint": "https://api.github.com/repos/torvalds/linux/commits/master",
+    "linux_head": "7b63ef2d55f24519e7e9e5f4d15dbea03f126e40",
+    "unchanged_since_previous_check": true,
+    "source_pin_changed": false
+  },
+  "remaining": [
+    "Triage the retained 80 whole-board validation errors and 86 unmatched compatibles; target Fabric binding qualification is complete",
+    "Implement and test the 72 USB-helper records through a T6031-only ordered USB-mode channel; physical reset/analog timing remains unqualified",
+    "30 CIO80-default records need proven caller/protocol applicability",
+    "12 USB2 records need named consumer, base and role semantics",
+    "Independent J575d select-IRQ witness",
+    "Physical power/clock/IRQ/DMA and native kernel-entry qualification",
+    "Verified backup, recovery readiness and separate native approval",
+    "Retained m1n1 source-policy lane remains held"
+  ],
+  "unchanged": {
+    "default_m1n1_pin": "4184923ffb2dff079b384d6a32cc02142aa14572",
+    "native_dispatch": false,
+    "persistent_vm": true,
+    "firmware": true,
+    "nvram": true,
+    "disks_and_partitions": true,
+    "mmio_performed": false,
+    "pushed": false,
+    "asahi_submission": false,
+    "security_remediation": false
+  },
+  "receipts": [
+    {
+      "path": "patches/linux/j575d-602042bf/0004-apple-atcphy-m3-fabric-calibration.patch",
+      "sha256": "30a6398b2c7bf568b7b02db75e40fb2f8f1bcbf1d935353fb0a54acb9649f038"
+    },
+    {
+      "path": "scripts/build-j575d-phy-fabric-offline.sh",
+      "sha256": "714bc239c85d867c69b5ea1806a662cd02a19b7bbb8b3d484c762ae9cb575f83"
+    },
+    {
+      "path": "scripts/build-j575d-phy-fabric-dt.py",
+      "sha256": "813c55a65af4dda2161c9aeabbbfa22328f101681d41a9fd208e44bcac0f92e7"
+    },
+    {
+      "path": "tests/test-j575d-phy-fabric.py",
+      "sha256": "b6e0330edea297967871be616974622cfe9fc8a13278ba834f49290863e428c7"
+    },
+    {
+      "path": "tests/test-j575d-phy-fabric-dt.py",
+      "sha256": "9bf7cb7696a7adddd38513554916a809085422758c91a0a9d587a2fd7d132f55"
+    },
+    {
+      "path": "docs/inventory/j575d-phy-calibration-2026-10-08.json",
+      "sha256": "765d76e4ebebec337bfe540186276eacd31d1824f8463bd0a8758f3c685f9aa4"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-owner-2026-10-08/flags-and-init-v3.md",
+      "sha256": "71c0a4ce205acb51265734046a151880ec4987d2f544d269db4a8751a67472e5"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-owner-2026-10-08/verify-flags-and-init-v3.py",
+      "sha256": "0ecf9954afad0391501ebc737325baabcd1a1924be08661192a690f5147b9a0e"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-owner-2026-10-08/reverse-calls-v2.json",
+      "sha256": "ca5522bff318f7d7d7f651b4cdb6e35dcfcf97fab2a8bfce0ec817560d71358c"
+    },
+    {
+      "path": "scratch/j575d-phy-usb2-contract-2026-10-08/caller-routing-v2.md",
+      "sha256": "44a38e287bb612f41c288a8bed2362ab72530337d3346b0b8facc91826b01621"
+    },
+    {
+      "path": "scratch/j575d-phy-usb2-contract-2026-10-08/caller-routing-receipt-v2.json",
+      "sha256": "c23625dd56c66d9d67ab1bef47955bb70fdc6ac0b6ba6f8e404e57391fde8b03"
+    },
+    {
+      "path": "scratch/j575d-phy-usb2-contract-2026-10-08/report.md",
+      "sha256": "2f3083fe33c89750c504f1406390899ce339f9d84df76d463cb514c363b55241"
+    },
+    {
+      "path": "scratch/j575d-phy-integration-main-2026-10-08/verify-native-and-package.py",
+      "sha256": "b07a54dc3f2e33d090f6dc6146142406547ce8187887a3b89bbed161007282e5"
+    },
+    {
+      "path": "scratch/j575d-phy-integration-main-2026-10-08/receipt.json",
+      "sha256": "d367f244ac41db4a73bf84fc35ca83d60f3c45e991671c75dd2a62e74a28808b"
+    },
+    {
+      "path": "scratch/j575d-phy-integration-main-2026-10-08/source-tests-final.log",
+      "sha256": "d99dfc1783d41672f4b2fc3a84f618866fe7b53eccd76b89b9525ac3f62d131f"
+    },
+    {
+      "path": "scratch/j575d-phy-integration-main-2026-10-08/dt-tests-final.log",
+      "sha256": "07a28cbde175ac5ddcb042acccffd4069b593d35d022481767ed8462b7be03ce"
+    },
+    {
+      "path": "scratch/j575d-phy-integration-main-2026-10-08/decoder-tests-final.log",
+      "sha256": "aaa7e91013c9f824c7ce31d5912c1df0085b266a3e64f0a239e876901f82d4d9"
+    },
+    {
+      "path": "scratch/j575d-phy-integration-main-2026-10-08/parent-regression.log",
+      "sha256": "b8e115e470f1e579806b08714ec16f27089f5ed6b225d15c22415e509a9ef740"
+    },
+    {
+      "path": "scratch/j575d-phy-integration-main-2026-10-08/native-package-final.log",
+      "sha256": "009575723d536a64a0ebde82923d7749d966b9670250fd58a82f9a0c80246e24"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric.1M5jQC/build-recipe.sh",
+      "sha256": "714bc239c85d867c69b5ea1806a662cd02a19b7bbb8b3d484c762ae9cb575f83"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric.1M5jQC/build-inputs.txt",
+      "sha256": "c4b3397b87293a03733bd98decb7e205b13179f9a7a5953b5e202164210e972a"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric.1M5jQC/build.log",
+      "sha256": "3d8af7f8a3dd1d1dfa14920eb202059e94017bedc9731dd13693ca7b8d04c967"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric.1M5jQC/build.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric.1M5jQC/SHA256SUMS",
+      "sha256": "bbda90ed433f97bfda0fdff239de517f30c1c1c70245372b96676349fbd05819"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric.1M5jQC/PACKAGE_SHA256SUMS",
+      "sha256": "898738d0190a4774aed8a7f2d91dcf0b11196170cbab5d5c99574899e1a9abd7"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric.1M5jQC/metadata/config.diff",
+      "sha256": "32707ea9c41edb53b4b3f72027867604c0373ac5d436c0b12eb22ebd02e87409"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric.1M5jQC/metadata/config.diff.merge",
+      "sha256": "7b5494cb8fbb7057f5c2b3b776e5952bb82a37a274e1f8c6a7a3daac6238a872"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric.1M5jQC/metadata/patched-source.sha256",
+      "sha256": "eb539269c089e3af39ed9636992c36b24a7212af1c4c3c91ac355a048212c430"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric.1M5jQC/metadata/patched-binding.sha256",
+      "sha256": "efc11431032015e1c5a35ca8fe897c058781167c24b5bff8aafda2f0b3ee6b16"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric.1M5jQC/metadata/drivers__phy__apple__phy-apple-atc.ko.modinfo",
+      "sha256": "15ff9983f7d0992fea12af09aa5c4c3b44dc88d1be470d0d151da8d4ce65346e"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric.1M5jQC/source/drivers/phy/apple/atc.c",
+      "sha256": "90261b5d057777e3e93bd20b4deea1595535a6b00663caf863139dc273bb3895"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric.1M5jQC/source/Documentation/devicetree/bindings/phy/apple,atcphy.yaml",
+      "sha256": "c4bcbb44a00b6888d8817b98d61b80e094a775b10b9f5c5e1576d1e84ce9050e"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric.1M5jQC/package/lib/modules/7.3.0-rc6/kernel/drivers/phy/apple/phy-apple-atc.ko",
+      "sha256": "bd26b54ae5a25eb91678d05fbfe3a38dacfa87ba05b979e32d306fac52e604e7"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-dt.xnjftvg9/candidate.dtb",
+      "sha256": "084170a921fdcf1b49d34454a089bf6990cafbe9e47657cb167b8b1e8ebf822e"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-dt.xnjftvg9/candidate.dts",
+      "sha256": "4cc7bfdc13df225ea91d5fb2877a8e1502f7e3ea01c76b3b3b5717c933d3def0"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-dt.xnjftvg9/roundtrip.dtb",
+      "sha256": "3c8cbfbee4fea3968797b24eacfed523809c7fd80f0b918cdc2ddbb6ae5f426b"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-dt.xnjftvg9/manifest.json",
+      "sha256": "554043ea1754365f61e24730659efcb29ecf905cb9a5ec0e27badbca1505fcae"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-dt.xnjftvg9/dtc.stderr",
+      "sha256": "33458f2d6fb8692ea028c8a910f6bbf8872277171a0d877fbb5ecab30c8cb5f1"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-dt.xnjftvg9/roundtrip.stderr",
+      "sha256": "be27050f4a3c72bb9ebcb5187298fada6385d2f9c1714f7f34ef8df2cd1e1741"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-dt-tests-2026-10-08/dt-cli-reproducibility.log",
+      "sha256": "3bb3b5df0526f07be876dcbf000f3ac3a02c2948400f5e723b2b429e5af39a59"
+    },
+    {
+      "path": "scratch/j575d-phy-upstream.fh2xiz/linux-master.json",
+      "sha256": "da7e4bf7ae3144c0288b602f80ada22d93ef2a458d628643a28a345692b128bf"
+    },
+    {
+      "path": "scratch/j575d-phy-upstream.fh2xiz/dtschema-pypi.json",
+      "sha256": "8d50d8a69163cdcc1bbd281228cb25cb75c07a4a2b2506e401c6d1b9c2a8226d"
+    },
+    {
+      "path": "scratch/j575d-fabric-final-build-2026-10-08/build-report.md",
+      "sha256": "d7116ab2399c2e524232c4b231bfa3e05dde315eb4b7cef8e0aae5a1246383fb"
+    },
+    {
+      "path": "scratch/j575d-phy-integration-main-2026-10-08/closeout-package-final.log",
+      "sha256": "0f7e9604ecb4e26a625fbec246faa4b246bbb875588d435c058d88eb8adc18eb"
+    },
+    {
+      "path": "scratch/j575d-phy-integration-main-2026-10-08/closeout-build-final.log",
+      "sha256": "685903dc59f9e51ed11982afa87367649e3453cf2a6d974a725060bd429ce7ab"
+    },
+    {
+      "path": "scratch/j575d-usb-mode-scope-2026-10-08/report.md",
+      "sha256": "0c5e22f2ecfcf9da8a0fdcdfd638e50c28d47fa7a0ebebdb22706b06a6cac4c1"
+    },
+    {
+      "path": "scratch/j575d-usb-mode-scope-2026-10-08/verify-usb-helper-v4.py",
+      "sha256": "f4ff3bf34a26611281c586100f3190fe2e87631529d6d4908cf4f43a469181d7"
+    },
+    {
+      "path": "scratch/j575d-usb-mode-scope-2026-10-08/linux-usb-overlap-check.md",
+      "sha256": "1c9a269d6428a6cb1b743d9ebdff523ec11baeeeb426cf39b3b3abd68b701690"
+    },
+    {
+      "path": "scratch/j575d-fabric-main-schema-2026-10-08/baseline-diagnostics.json",
+      "sha256": "b0ac0b79011749d53bd5b9191987141676c860e4bbe5ba0bf99091d2bd6568e2"
+    },
+    {
+      "path": "scratch/j575d-fabric-main-schema-2026-10-08/atc-diagnostics.json",
+      "sha256": "79c2b0722a75f9af96707e4acd7f9a14813fec466dd5be6d083e66827f85e75c"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/report.md",
+      "sha256": "75ae51ea0ac8304e6ac74bac883da3d7a4012b1f9ca6668122169586f5a03b71"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/diagnostic-comparison.json",
+      "sha256": "e450bb06d671aa43c4e9c8aedbc33e63f6cee6c6432c2e89710bae0f45c4315d"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/full-schema.yaml",
+      "sha256": "4d0831d649ec64c61bb2aa404f82a10f08bd2f1309250a7dd215dae8909251d3"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/bindings-input-manifest.sha256",
+      "sha256": "151ef948f168a01b89f3151b2690f8f42278fd31e8de6e82233fcff65f356ce4"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/bindings-vs-A2uIKA.diff",
+      "sha256": "375ece6b51b02f1b62720d44cbe2e27ad6181b034909a73d8add7908a42b39b4"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/selected-statuses.txt",
+      "sha256": "4b953f7324eedb406b489b3d38b82b7a4ca9b5dc84e5ffaac496d5ce2d2152e9"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/binding-doc.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/binding-doc.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/binding-doc.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/schema-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/schema-build.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/schema-build.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/candidate.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/candidate.stderr",
+      "sha256": "b6b6e7a8bc32daf4d6a78e2bffb73c9e0ee28e3fa5fef0d1f7265f129102b6a3"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/candidate.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/baseline.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/baseline.stderr",
+      "sha256": "54e39e214e1a692d8c2d4917bcb84f9e6a72686289a7b2c73b5f8f1f14760537"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/baseline.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/parser-fixture.py",
+      "sha256": "d0c95107fb3b38ef4cd1b52dd91e1974e6d7cb0dbb4168752fd1b032167244df"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/parser-fixture.stdout",
+      "sha256": "1acf5ee8502d8260a43ae812d2d1dfee7ba38e4072b659402617ba04621f4fab"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/parser-fixture.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/parser-fixture.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/run-controls.sh",
+      "sha256": "959493ebda4fab5b67e89fb33c33aa402debb1b40f82f13cb174c29267532bf0"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/README",
+      "sha256": "9984dbec8be3e11c89b3004438c8ae9618f24a9bfbfed15321808ec22acbc0f9"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/valid-65-rows.dtb",
+      "sha256": "6b1f1ef636d3d4991876e621cb9b90d2add26740657142456557bea1f4e3e868"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/valid-65-rows.stderr",
+      "sha256": "4c97aa638246e0e51ecf3a1918e5b98b5a16912815c1a442bff9026040136365"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/valid-65-rows.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/malformed-matrix.dtb",
+      "sha256": "27a0625f3fbae7906f4082f73c2150a3c40a4116c7b7d860cb38a65c07a6a645"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/malformed-matrix.stderr",
+      "sha256": "1934d3e72b3df23d11ef23174dd1861df4b62895455f99ce8ee6ae876f99c858"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/malformed-matrix.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/empty-matrix.dtb",
+      "sha256": "37efa33a6e453b24499b73eed2851955eb83b0239af1465b15a517b6cfd3b2c8"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/empty-matrix.stderr",
+      "sha256": "f62fe0f4d8daa30c459c0d145bc3397da5d19274fb521927a4be06dbfbd565db"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/empty-matrix.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/missing-fabric-resource.dtb",
+      "sha256": "b07479054d95a5d529c80bc7f31f0d63830c8c11283d8ffda31a0d18c3fb2433"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/missing-fabric-resource.stderr",
+      "sha256": "138c7618be30cf72c7c5c7af64e57656d0eeeaf38b55107d0821267b092201c0"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/missing-fabric-resource.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/wrong-generation.dtb",
+      "sha256": "b50d52fc236878d0a73393276fd2cbbadde240db015a4356aec484d3809a47c5"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/wrong-generation.stderr",
+      "sha256": "54fb5a44e59fd461019744425b88d5845df5ff9b0e358db722678c4661e79b78"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/wrong-generation.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/missing-fabric-property.dtb",
+      "sha256": "6afabacc3bfaf2e0d1c82f90236dc1ca87fd30a4fd06bdc17a0b3345acccfff7"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/missing-fabric-property.stderr",
+      "sha256": "65d8fc08f465059d9d51294c9fea7276019983d880cd7dbf5e029b52b635929d"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/missing-fabric-property.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/missing-fabric-property-enabled.dtb",
+      "sha256": "18e4f442caff38b98349e71cffd4e850e05784dc1f469e5279ef2b6e989b2fce"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/missing-fabric-property-enabled.stderr",
+      "sha256": "d5ee6f6f0fc4a657e114dd9a81c53323a0c5f51aab6ab7adfd227eb05570a298"
+    },
+    {
+      "path": "scratch/j575d-usb-mode-scope-2026-10-08/verify-usb-helper-v4.out",
+      "sha256": "96e00cf92ab6aeb99b783fe885e22de79f8ea13c4fb0c41b8e879c5750d5498b"
+    },
+    {
+      "path": "scratch/j575d-phy-integration-main-2026-10-08/final-parent.log",
+      "sha256": "b8e115e470f1e579806b08714ec16f27089f5ed6b225d15c22415e509a9ef740"
+    },
+    {
+      "path": "scratch/j575d-phy-fabric-schema-final-2026-10-08/controls/missing-fabric-property-enabled.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "usb_mode_next": {
+    "implementation_in_this_change": false,
+    "source_groups": [
+      "AUS40CMN_SHM",
+      "AUSPLL_CORE",
+      "CIO4PLL_CORE"
+    ],
+    "source_records_per_port": [
+      1,
+      7,
+      4
+    ],
+    "ports": 6,
+    "total_records": 72,
+    "linux_resource": "core",
+    "complete_native_helper_bytes": 1496,
+    "complete_native_helper_sha256": "a389ef0a4abb911a9d9148a1c49ccdba15536c61175336d08423da12c4a44c0d",
+    "view_and_original_collection_bytes_equal": true,
+    "source_call_order_proven": true,
+    "native_modes": [
+      1,
+      4
+    ],
+    "linux_semantic_modes": [
+      "APPLE_ATCPHY_MODE_USB3",
+      "APPLE_ATCPHY_MODE_USB3_DP"
+    ],
+    "numeric_enum_identity_claimed": false,
+    "semantic_crosswalk": "constrained caller-path inference, not decoded native enum names",
+    "combined_property_proposal": "one ordered T6031-only USB-common property, after generic calibration and before existing USB lane programming",
+    "combined_property_conditions": [
+      "all 12 records per port present",
+      "exact 1/7/4 group order",
+      "core-relative big-endian triples",
+      "same USB-only mode gating"
+    ],
+    "no_inter_group_hardware_wait_or_memory_barrier_in_pinned_helper": true,
+    "barrier_decoder_all_immediate_options_tested": true,
+    "later_hardcoded_linux_exact_write_overlap": false,
+    "reset_and_analog_timing_hardware_qualified": false,
+    "cio80_and_usb2_excluded": true
+  }
+}
