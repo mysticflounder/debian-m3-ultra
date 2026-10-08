@@ -1,0 +1,373 @@
+{
+  "schema": "j575d-pcie-profile-evidence-v1",
+  "date_utc": "2026-10-08",
+  "parent_commit": "09c5366",
+  "status": "offline_four_port_board_profile_pass",
+  "native_boot_approved": false,
+  "scope": "Independent Debian board-description integration only; no native PCIe enumeration, setup, DART binding, IRQ/DMA, link, peripheral-driver or traffic qualification.",
+  "decision": "Enable all four observed root ports and matching DARTs, preserving the authored map. Disabled DT bridges can still enumerate; do not guess Linux RIDs from macOS BDFs or set unproven probe-only handoff.",
+  "recipes": [
+    {
+      "path": "configs/j575d-pcie-ports.dtsi",
+      "sha256": "1408e38cc8fccaf1c02513e5c21a89da327be863ee4fbe6386f74a41f49fb399"
+    },
+    {
+      "path": "scripts/build-j575d-pcie-dt.py",
+      "sha256": "574e2cf4a5cac153180b4a137cc1d8c6fc1048f147cc51620abc8634338a8f63"
+    }
+  ],
+  "producer_manifest": {
+    "path": "scratch/j575d-pcie-dt.z4iac0rm/manifest.json",
+    "sha256": "5b79ae5380bfc93f13c1dfe5815d633bc45bd81852b0d8d9f77ba86277ab3a37"
+  },
+  "original_candidate_dtb": {
+    "path": "scratch/m1n1-board-dt/t6032-j575d.dtb",
+    "sha256": "e92e5c9dc86731d76dc060759bb622cbad073e4e32e831bf0ca68deef3ff4cd5"
+  },
+  "baseline_dtb": {
+    "path": "scratch/j575d-pcie-dt.z4iac0rm/baseline.dtb",
+    "sha256": "e92e5c9dc86731d76dc060759bb622cbad073e4e32e831bf0ca68deef3ff4cd5"
+  },
+  "profile_dtb": {
+    "path": "scratch/j575d-pcie-dt.z4iac0rm/profile.dtb",
+    "sha256": "ed4623024f6d06bd816fc483735027e53798ad7f3de489775b77c5c2f5ea54a6"
+  },
+  "source_manifest": {
+    "path": "docs/inventory/t6032-board-dt-sources-2026-09-26.json",
+    "sha256": "904df7708deb7fde29dae228dce8ea522d42085d2b69a48389297d86a4a6410c"
+  },
+  "source_closure": [
+    {
+      "path": "scratch/m1n1-board-dt/t6032-j575d.dts",
+      "sha256": "28ffa9037b10eac9140b3881b47583e91347aabb72ab686decfd1fa17693aeb6"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/t6032.dtsi",
+      "sha256": "326f3f9839f6017099e987402176923cb1d65af29ee21d1e34c3b95837ff7fbf"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/multi-die-cpp.h",
+      "sha256": "692ecc0cb7340122da7a558e02ac6c70ed2e49811136d58c4b21d82e8e79abc3"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/t6031-base.dtsi",
+      "sha256": "c1f08bc5b31cda11f94ce193316af5fc8403b4593782b0d25c515d176c37ca5a"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/t6031-die0.dtsi",
+      "sha256": "417ea802824a583d94a1b4c9933c629444d199faf4aa2edd87f5e1a9c7c3975f"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/t6031-dieX.dtsi",
+      "sha256": "6d9ff0c6fe73715f37fe49dbfd4d17ff182a6e8022b18ef128c3cd41b9bc7317"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/t6031-pmgr.dtsi",
+      "sha256": "d14dff6ac71140b534dbaa43b22208a960eb1b7258df1760f0b53f91f562d817"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/t6031-gpio-pins.dtsi",
+      "sha256": "65069ae20dfc2eb95d2dafbda618cba47b89bcd0c5bc649348601f18c802e4af"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/t6031-nvme.dtsi",
+      "sha256": "0b9ab097a7e973f05b2237e51b89aa6d93e1d60beff1f5ad01605e4426068b6d"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/spi1-nvram.dtsi",
+      "sha256": "a4a26dd2abe3412221761fcbe05958599a7ff07b2fd980ab8a739a175966cc5e"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/hwmon-common.dtsi",
+      "sha256": "240f138526ff84717ee8a65b47f749b2d855ddd472b6c16e9b5a93dcd8bea601"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/hwmon-fan.dtsi",
+      "sha256": "05a5627c1087415e7e42d09d0d6cf04ac5167394fa1246143dca1a19c6318b59"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/hwmon-fan-dual.dtsi",
+      "sha256": "ebc824c95d4195f424d1918a1ac96026f7214b77dcafa1581daf3304b38d3368"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/dt-bindings/gpio/gpio.h",
+      "sha256": "5423b3866877ead0920ec978b5b072f06087443033a72445b39faed8f288ddc1"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/dt-bindings/interrupt-controller/apple-aic.h",
+      "sha256": "6a67506ab5333d6e552b3a656e03b34f9769af5c88cf7202b1458e1ba5067f25"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/dt-bindings/interrupt-controller/irq.h",
+      "sha256": "392400a309a54ea5b1a2ac2e52773d3ab68e07323109b9aed88a69fedc74e082"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/dt-bindings/pinctrl/apple.h",
+      "sha256": "2079cb60617b0bb054e2e9e346ec6f5b3fdf8b4464ac9da89e09655e3af183b0"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/dt-bindings/phy/phy.h",
+      "sha256": "1bd66286362f02487d3b5eeefb4be3221b949b1eecbfc4ca717fbbbe5e8a61be"
+    },
+    {
+      "path": "scratch/m1n1-board-dt/dt-bindings/spmi/spmi.h",
+      "sha256": "c2952b040e5c24726c423e52ba939d389141ff27eb2307fb3888657b455e2b9b"
+    }
+  ],
+  "compiled_receipts": [
+    {
+      "path": "scratch/j575d-pcie-dt.z4iac0rm/profile-wrapper.dts",
+      "sha256": "00db741c2a2cb7d55a841c39200d656e1a00a39a41ecfabe195dfa5e93d86209"
+    },
+    {
+      "path": "scratch/j575d-pcie-dt.z4iac0rm/baseline.pp.dts",
+      "sha256": "818de055ff4ea5ea43c5e6f85365e49acd9b255d661ff511f493d30f8a3591f0"
+    },
+    {
+      "path": "scratch/j575d-pcie-dt.z4iac0rm/profile.pp.dts",
+      "sha256": "bcdee879ef0d25ef9fca17cccb4583aa7b5d1859f8d217e1fe51fc387baa1105"
+    },
+    {
+      "path": "scratch/j575d-pcie-dt.z4iac0rm/baseline.decompiled.dts",
+      "sha256": "bb046547a1b36e70eb2d794fa56a2083bc9c8a8f3763418640292c364c3cd6ee"
+    },
+    {
+      "path": "scratch/j575d-pcie-dt.z4iac0rm/profile.decompiled.dts",
+      "sha256": "e5a940f3ae39286f3a6b4f48e6a60ef11757f4f775a874eacbad2d79415e6be5"
+    },
+    {
+      "path": "scratch/j575d-pcie-dt.z4iac0rm/baseline-profile.diff",
+      "sha256": "95ec5951a6a5b602993baebf43f121734fa00304075eb4146c8f8d504bf08273"
+    },
+    {
+      "path": "scratch/j575d-pcie-dt.z4iac0rm/baseline.warnings",
+      "sha256": "7e3fc2ff9b8883b3b528e0a154733d501eb68a7c15c5910010ebb61c531f578a"
+    },
+    {
+      "path": "scratch/j575d-pcie-dt.z4iac0rm/profile.warnings",
+      "sha256": "7e3fc2ff9b8883b3b528e0a154733d501eb68a7c15c5910010ebb61c531f578a"
+    }
+  ],
+  "status_changes": 6,
+  "profile_labels": {
+    "pcie0_dart_0": {
+      "path": "/soc@200000000/iommu@594000000",
+      "status": "okay"
+    },
+    "pcie0_dart_1": {
+      "path": "/soc@200000000/iommu@595000000",
+      "status": "okay"
+    },
+    "pcie0_dart_2": {
+      "path": "/soc@200000000/iommu@596000000",
+      "status": "okay"
+    },
+    "pcie0_dart_3": {
+      "path": "/soc@200000000/iommu@597000000",
+      "status": "okay"
+    },
+    "port00": {
+      "path": "/soc@200000000/pcie@580000000/pci@0,0",
+      "status": "okay"
+    },
+    "port01": {
+      "path": "/soc@200000000/pcie@580000000/pci@1,0",
+      "status": "okay"
+    },
+    "port02": {
+      "path": "/soc@200000000/pcie@580000000/pci@2,0",
+      "status": "okay"
+    },
+    "port03": {
+      "path": "/soc@200000000/pcie@580000000/pci@3,0",
+      "status": "okay"
+    }
+  },
+  "all_non_status_properties_unchanged": true,
+  "command_receipts": {
+    "commands": 41,
+    "files": 164,
+    "all_exit_zero": true,
+    "checksums": {
+      "path": "scratch/j575d-pcie-command-checksums-2026-10-08.txt",
+      "sha256": "eb1ecfd3e8c540ed3600e86155afd765c0176076e8e87142258f86bfdedd317a"
+    }
+  },
+  "dtc_warnings": {
+    "count_each": 6,
+    "categories": [
+      "simple_bus_reg",
+      "unit_address_vs_reg"
+    ]
+  },
+  "schema_validation": {
+    "schema_clean": false,
+    "stderr_lines_each": 431,
+    "diagnostics_identical_after_dtb_filename_normalization": true,
+    "normalization_note": "Raw validator diagnostics name ROOT-relative DTB files. The retained normalized comparison corrects the first report's absolute-path-only comparison; raw runs are not changed or rerun.",
+    "receipts": [
+      {
+        "path": "scratch/j575d-pcie-schema.4npcqmf0/report.json",
+        "sha256": "7853afa08ae051bb215948d9ed954d212989b9545cebd8275ea1d2b162fb68a8"
+      },
+      {
+        "path": "scratch/j575d-pcie-schema.4npcqmf0/normalized-comparison.json",
+        "sha256": "a8b3a9a7477edb4fc85184e4e2df9b22409a82526040b8e43083f274b344b826"
+      },
+      {
+        "path": "scratch/j575d-pcie-schema.4npcqmf0/baseline.stdout",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "scratch/j575d-pcie-schema.4npcqmf0/baseline.stderr",
+        "sha256": "082d3c6ffc32b62d0d7029c0aacc08f3b7734f3f52cebcc1554d6a268fc65348"
+      },
+      {
+        "path": "scratch/j575d-pcie-schema.4npcqmf0/baseline.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+      },
+      {
+        "path": "scratch/j575d-pcie-schema.4npcqmf0/baseline.argv.json",
+        "sha256": "867cb074fee782b8158d08afa5fe91a37e7dd0da7e148f5a22de162915577737"
+      },
+      {
+        "path": "scratch/j575d-pcie-schema.4npcqmf0/profile.stdout",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "scratch/j575d-pcie-schema.4npcqmf0/profile.stderr",
+        "sha256": "5e1678f6de9b62bddd87888f6dcc003554a3cf9a912f54013c7cf07ba1bbd950"
+      },
+      {
+        "path": "scratch/j575d-pcie-schema.4npcqmf0/profile.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+      },
+      {
+        "path": "scratch/j575d-pcie-schema.4npcqmf0/profile.argv.json",
+        "sha256": "fe78c59dc47276d3456b5d71bd3cd0aff629d74df57d5076df3d5ca4d44e50c4"
+      }
+    ],
+    "schema_input": {
+      "path": "scratch/m3-candidate-dt-integration-2026-10-07/official-schema.yaml",
+      "sha256": "4c6942938e40babb7dcb0620bed227deb2e618b5608060777d18de3c9fc4a7e6"
+    }
+  },
+  "host_evidence": {
+    "method": "retained read-only macOS IORegistry and restore ADT template, not native Linux probing",
+    "raw_receipts": [
+      {
+        "path": "scratch/m3-pci-host-2026-10-08.txt",
+        "sha256": "a48b8a7a09287f0a54fa232443f98879d5bf8e7e360fad60b460ef72af6fe3d5"
+      },
+      {
+        "path": "scratch/adt-j575d-decoded.bin",
+        "sha256": "4a818ecc7f3d71195c1def12c6eed0c90b287f82cad2a6a4ffd6f0849fe13c12"
+      }
+    ],
+    "privacy": "Raw host snapshot stays local/uncommitted; no MAC, IP, or serial fields copied here.",
+    "ports": {
+      "0": "direct Wi-Fi and Bluetooth",
+      "1": "direct SD controller",
+      "2": "direct AQC113 Ethernet",
+      "3": "direct ASM3142 xHCI"
+    },
+    "linux_bdf_or_requester_mapping_proven": false
+  },
+  "audits": [
+    {
+      "path": "scratch/m3-pcie-port2-host-contract-2026-10-08.md",
+      "sha256": "37725d76da0634816dbdef00eef50d7483f0fba521184189ddfd1339e1e4b51d"
+    },
+    {
+      "path": "scratch/m3-pcie-bus-adjudication-2026-10-08.md",
+      "sha256": "44fa48c5d17e3953add0869d0e8e07b03fc86204fd17020444dee6d9c565ecbb"
+    },
+    {
+      "path": "scratch/m3-pcie-dt-final-review-2026-10-08.md",
+      "sha256": "c2501e0ead1646aa2a97cd55ef1659800cc1fcf6af3e5952bc1d1b91c4212552"
+    }
+  ],
+  "linux_pin": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+  "linux_sources": [
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/pci/controller/pcie-apple.c",
+      "sha256": "416dce904eabc6859f36a051cf9ce0d77473634b3f1526587a9d58870b70898c"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/pci/controller/pci-host-common.c",
+      "sha256": "e07f790ebb0c0f2b25301669829693c14d7a6f8c6e1dbbc88be6ad5a82affd3f"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/pci/of.c",
+      "sha256": "3e7f4058bb03e4605add027e60f712502dfc50b2d1bbf3f3f48920f2a9c23d38"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/pci/ecam.c",
+      "sha256": "e640d92ac96b697d38513ea7e776c9e9027cb2e1f8ddda082c10819b35aaa993"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/pci/probe.c",
+      "sha256": "21a640912b96c44fe5ec6bf652d51b184aed275631d3dacca35bc14c82fa5a0c"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/iommu/of_iommu.c",
+      "sha256": "45b8483228d75a20a8d0aa3360ef8571ac1e1edbab373cb733a6bdaa3dedf61d"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/drivers/of/base.c",
+      "sha256": "dfdd57270d1d5a5e4a57d55674b35a4f4051c8553b782ca776235acc44d8e4e1"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/arch/arm64/include/asm/pci.h",
+      "sha256": "a43730c3c887defac334deae08a66a6d697bf270ecd8b465033d7690720b8832"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/Documentation/devicetree/bindings/pci/apple,pcie.yaml",
+      "sha256": "fd08049bcd35e3674e669e1bd462dc2584703c8318c4de1822682b1bf302c9d1"
+    },
+    {
+      "path": "scratch/linux-j575d-kernel.HdzQNm/source/Documentation/devicetree/bindings/iommu/apple,dart.yaml",
+      "sha256": "aecb2ab67765aa88c255a8c04fd8158f30226a0989a1148c699104a1fea8be43"
+    }
+  ],
+  "prior_module_evidence": {
+    "path": "docs/inventory/m1n1-j575d-io-modules-2026-10-08.json",
+    "sha256": "7111218c87cd589e2bf13f4ed27e5399528c4c48c4040d468d35c80014b5080e"
+  },
+  "integration": "This profile has not yet been combined with the 17-module inline package or exercised through the combined handoff fixture.",
+  "upstream": {
+    "checked_utc": "2026-10-08 00:39 UTC",
+    "heads": {
+      "linux-master": "7b63ef2d55f24519e7e9e5f4d15dbea03f126e40",
+      "m1n1-main": "2460b604c6f016956ead711823605eea840c602e",
+      "qemu-master": "f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c"
+    },
+    "responses": [
+      {
+        "path": "scratch/upstream-refresh-pcie-2026-10-08/linux-master.json",
+        "sha256": "da7e4bf7ae3144c0288b602f80ada22d93ef2a458d628643a28a345692b128bf"
+      },
+      {
+        "path": "scratch/upstream-refresh-pcie-2026-10-08/m1n1-main.json",
+        "sha256": "7d069eb7ca8a2e96d4aadcb116c4475154ae900da9dc0bbb762fa0fa4fb52399"
+      },
+      {
+        "path": "scratch/upstream-refresh-pcie-2026-10-08/qemu-master.json",
+        "sha256": "66d9ee4fdda4bb40de9ac8006e900b5be9e2b7825388d56ff1151cf6262cff85"
+      }
+    ],
+    "linux_comparison": {
+      "path": "scratch/upstream-refresh-usb-network-2026-10-08/linux-compare.json",
+      "sha256": "d3969c9dc12aaee7943d9bbdca6f184c27bf072825c4f48d56320a9127498a47"
+    },
+    "applicable_io_changes": 0,
+    "qemu_source": "GitHub mirror; GitLab not checked this turn"
+  },
+  "remaining": [
+    "Actual four-root-bridge ECAM visibility and ordinary Linux bus assignment; no extra bridge/reservation/fixed-number effects assumed away.",
+    "T6032 PCIe fallback operations, fatal per-port setup, electrical reset/clock/power/link, physical DART attachment and RID/SID programming, MSI/IRQ/DMA, Ethernet binding and traffic.",
+    "USB ATC compatible/operations, live tunable format, die1 alias handoff and Type-C graph; ASM3142 xHCI is not proof of SoC Type-C PHY support.",
+    "Wi-Fi PCI ID/firmware support and optional Bluetooth/SD driver configuration remain separate peripheral work.",
+    "Verified backup, recovery readiness and separate native approval; default m1n1/native dispatch remain unchanged."
+  ]
+}

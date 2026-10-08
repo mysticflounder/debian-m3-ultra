@@ -906,9 +906,10 @@ extended-17 manifest checks pass in
 records inputs and scope.
 
 Read-only host I/O inspection reports primary AQC113 `1d6a04c0`, Apple
-subsystem `106b0223`, bound driver port 2/BDF `2:0:0`. Candidate port 02/DART2
-remains disabled, and cached m1n1 does not enable a Linux DT node; `pcie_init`
-is hardware initialization only. This is not a native probe or USB result.
+subsystem `106b0223`, bound driver port 2/BDF `2:0:0`. In the cached candidate
+before this separate profile, port 02/DART2 is disabled and cached m1n1 does
+not enable a Linux DT node; `pcie_init` is hardware initialization only. This
+is not a native probe or USB result.
 USB remains open: the driver compatible is only `t8103` against T6031/T8122
 candidates, full32 ATC fixup misses die-1 aliases, restore ADT tunables use
 device/host topics not expected here, and the Type-C graph is absent. USB
@@ -921,7 +922,8 @@ the same 16 commits across `drivers/md` and `fs/btrfs` have no applicable I/O
 changes. m1n1 `2460b604c6f016956ead711823605eea840c602e` and QEMU
 `f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c` remain unchanged. Responses are
 retained in `scratch/upstream-refresh-usb-network-2026-10-08`; no pin, fork,
-push, issue or Asahi submission changed.
+push, issue or Asahi submission changed. No GitLab check was performed this
+turn.
 
 Reproduce only the build/package steps with:
 
@@ -934,6 +936,53 @@ bash scripts/build-j575d-initramfs-offline.sh \
 No native command, MMIO, firmware, disk, persistent VM, security hardening,
 fuzzing or issue action occurred. Default m1n1 pin `4184923ffb2dff079b384d6a32cc02142aa14572`
 and native dispatch remain unchanged.
+
+## J575d PCIe four-port DT profile — 2026-10-08 UTC
+
+The independent `build-j575d-pcie-dt.py` profile (SHA-256 prefix `574e2cf4`)
+uses `configs/j575d-pcie-ports.dtsi` (prefix `1408e38c`) and verifies the
+19-file closure. It retains the original DTB SHA-256
+`e92e5c9dc86731d76dc060759bb622cbad073e4e32e831bf0ca68deef3ff4cd5` and
+produces profile DTB SHA-256
+`ed4623024f6d06bd816fc483735027e53798ad7f3de489775b77c5c2f5ea54a6` in
+`scratch/j575d-pcie-dt.z4iac0rm/manifest.json`. Exactly six status changes
+occur: ports 01/02/03 and DARTs 1/2/3 become `okay`; every other DT property,
+map, reset, compatible and resource is unchanged. All four ports and DARTs are
+enabled in the profile. All 41 final command JSON receipts exit zero.
+
+The old and profile DTBs each retain six DTC warnings in
+`unit_address_vs_reg` and `simple_bus_reg`. Cached dtschema 2026.9 receipts
+contain 431 stderr lines per DTB; zero exit does not mean clean schema. The
+normalized comparison in `scratch/j575d-pcie-schema.4npcqmf0/normalized-comparison.json`
+confirms identical diagnostics after relative-filename normalization. No
+candidate schema issue is hidden or resolved by this profile.
+
+Read-only host inspection maps ports 0–3 to Wi-Fi/BT, SD, AQC113 and ASM3142
+xHCI. A disabled DT node does not exclude ECAM enumeration despite the stale
+`pci_set_of_node` comment. Linux slot order gives buses 1–4 only conditionally,
+for four ordinary visible bridges without extra bus reserves; this is not a
+guessed bus-2 map and does not prove physical config/setup, fallback T602x
+behavior, link, DMA, IRQ or driver binding. Do not claim USB, Wi-Fi, Bluetooth,
+SD or port-3 Type-C SoC PHY completion.
+
+The [independent final review](../scratch/m3-pcie-dt-final-review-2026-10-08.md)
+and [PCIe profile inventory](inventory/m1n1-j575d-pcie-profile-2026-10-08.json)
+record the retained evidence. Reproduce only the host profile with:
+
+```sh
+UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --offline --no-project scripts/build-j575d-pcie-dt.py
+```
+
+The original DTB/default m1n1/native dispatch remain untouched. No native,
+MMIO, VM, persistent-VM, disk, firmware, network configuration, issue, push or
+Asahi submission action occurred. The 00:39 UTC official API refresh retained
+Linux `7b63ef2d55f24519e7e9e5f4d15dbea03f126e40`, m1n1
+`2460b604c6f016956ead711823605eea840c602e` and QEMU
+`f9587d4045c67cd0d8d8bdcd5d0bb5b6b395b63c` unchanged in
+`scratch/upstream-refresh-pcie-2026-10-08`; no applicable changes or fetches
+were made, and no GitLab check was performed this turn. Security remains
+report/record-only.
 
 ## Native loader destination bounds — 2026-10-07 UTC
 
@@ -1070,11 +1119,11 @@ Security fixes and additional hardening are outside this Debian bring-up
 project's scope. Report and record findings, and advise Adam whether an upstream
 issue is warranted; do not make them boot-completion gates or file without approval.
 
-1. Continue candidate PCIe port-2/DART2 board enablement and invariants. The
-   extended 17-module package and manifest/HVF checks pass, but candidate port
-   02/DART2 remains disabled and no native probe or binding is established.
-   Resolve DT/driver integration without claiming fallback matches prove T6032
-   hardware.
+1. Package and hand off the all-port PCIe profile, then qualify candidate
+   port-2/DART2 board invariants. The profile enables ports 01/02/03 and DARTs
+   1/2/3 in a host-only DTB; no native probe or binding is established. Resolve
+   USB actual-compatible, live-ADT-tunable, die-1-alias and Type-C graph
+   contracts without claiming fallback matches prove T6032 hardware.
 2. Continue early-DVFS qualification: six-complex/die routing, safe raw states,
    physical busy/completion semantics, feature/restore prerequisites and voltage error policy.
    Do not infer these from upstream constants or a successful mock build.

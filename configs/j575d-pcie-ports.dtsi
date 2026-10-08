@@ -1,0 +1,33 @@
+/*
+ * J575d offline PCIe board profile.
+ *
+ * This fragment is intentionally included after the pinned candidate board
+ * DTS.  It changes only port/DART node status; all PCIe resources, reset GPIOs,
+ * interrupt maps, RID/SID mappings, and compatibles remain in the source
+ * board description.  It is a build input, not proof of native hardware
+ * visibility or successful probe.
+ */
+
+&port01 {
+	status = "okay";
+};
+
+&port02 {
+	status = "okay";
+};
+
+&port03 {
+	status = "okay";
+};
+
+&pcie0_dart_1 {
+	status = "okay";
+};
+
+&pcie0_dart_2 {
+	status = "okay";
+};
+
+&pcie0_dart_3 {
+	status = "okay";
+};

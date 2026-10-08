@@ -370,13 +370,22 @@ The [I/O module inventory](inventory/m1n1-j575d-io-modules-2026-10-08.json)
 records the exact inputs and scope.
 
 Read-only host I/O identifies AQC113 `1d6a04c0`, Apple subsystem `106b0223`,
-bound port 2/BDF `2:0:0`; candidate port 02/DART2 remains disabled and cached
-m1n1 does not enable a Linux DT node (`pcie_init` is hardware initialization
-only). USB remains open: `t8103` compatibility, missing die-1 ATC aliases,
+bound port 2/BDF `2:0:0`; in the cached candidate before the separate profile,
+port 02/DART2 is disabled and cached m1n1 does not enable a Linux DT node
+(`pcie_init` is hardware initialization only). USB remains open: `t8103` compatibility, missing die-1 ATC aliases,
 restore ADT tunables and absent Type-C graph are unresolved. Do not label USB
 hardware complete. The 00:12 UTC official refresh leaves Linux
 `7b63ef2d55f24519e7e9e5f4d15dbea03f126e40`, m1n1 and QEMU unchanged; its
 responses are retained in `scratch/upstream-refresh-usb-network-2026-10-08`.
+
+The [PCIe profile milestone](m1n1-upstream-reconciliation-2026-10-06.md#j575d-pcie-four-port-dt-profile--2026-10-08-utc)
+now produces `scratch/j575d-pcie-dt.z4iac0rm/manifest.json`: the original DTB
+hash is preserved, the profile hash is
+`ed4623024f6d06bd816fc483735027e53798ad7f3de489775b77c5c2f5ea54a6`, exactly
+six status changes enable ports/DARTs 1–3, and all 41 command receipts exit
+zero. Six DTC warnings remain; both dtschema receipts retain 431 stderr lines.
+This host-only profile does not prove physical PCIe, DART, link, DMA, IRQ or
+driver binding.
 
 At the earlier 14:04:34 UTC checkpoint, the official-API refresh returned HTTP
 200 for all four endpoints;
@@ -396,14 +405,14 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff / loader | Full32 comparison builds, inline candidate/official packet assembly, payload tests and handoff fixtures pass; no native boot | Qualify physical placement/source backing and Linux entry; security findings are report-only, not bring-up gates |
-| Exact T6032/J575d board DT | Candidate and official DTBs are retained; candidate/official inline packets and synthetic four-fixup handoff pass | Host post-fixup DTBs remain test-only; qualify runtime placeholders and native DT/memory/release contracts; official DT lacks M3 frequency, DART and intended storage/network descriptions |
+| Exact T6032/J575d board DT | Candidate/official packets and handoff pass; independent 19-file four-port profile changes only six port/DART status values and preserves the baseline hash | Package/profile handoff next; six DTC warnings and 431-line schema receipts remain, and host profile does not prove physical PCIe/DART/link/driver contracts |
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
-| Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; extended 17-module closure builds and loads in RAM-only HVF; candidate DT warnings/schema diagnostics remain | Qualify candidate PCIe port 2/DART2, physical layout, power/clocks, IRQ, DMA and driver binding on native hardware |
+| Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; extended 17-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final 17-module initramfs HVF run loads all modules and reports 17 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | AQC113 alias resolves `atlantic` and extended package passes host/HVF checks; USB Type-C/DT/physical contract remains open | Resolve candidate port 2/DART2 and USB compatibility/ADT/Type-C graph; qualify storage/network hardware only after early boot |
+| NVMe / USB / Ethernet | AQC113 alias resolves `atlantic`; four-port profile and extended package pass host checks, but USB compatibility/ADT/Type-C graph and physical contracts remain open | Resolve actual USB compatibles, live ADT tunables, die-1 ATC aliases and Type-C graph; qualify PCIe/DART/network hardware only after early boot |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |

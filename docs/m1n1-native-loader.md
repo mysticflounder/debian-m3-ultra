@@ -208,9 +208,10 @@ disks or persistent VM and cleanup exit zero. The legacy-six and extended-17
 manifest checks pass in `scratch/j575d-module-manifest-checks.c32siftq`.
 
 Read-only host I/O inspection identifies primary AQC113 PCI ID `1d6a04c0`,
-Apple subsystem `106b0223`, bound driver port 2/BDF `2:0:0`. The candidate
-port 02/DART2 remains disabled, and cached m1n1 does not enable a Linux DT
-node; `pcie_init` is hardware initialization only. This is not a native probe
+Apple subsystem `106b0223`, bound driver port 2/BDF `2:0:0`. In the cached
+candidate before the separate profile, port 02/DART2 is disabled and cached
+m1n1 does not enable a Linux DT node; `pcie_init` is hardware initialization
+only. This is not a native probe
 or USB qualification. USB remains open: the driver compatible is only `t8103`
 against T6031/T8122 candidates, full32 ATC fixup misses die-1 aliases, restore
 ADT tunables use device/host topics not expected here, and the Type-C graph is
@@ -229,6 +230,48 @@ These are build/package and disposable HVF checks only; no native commands,
 MMIO, firmware, disk, persistent-VM, security-fix or submission action is
 authorized by this milestone. The [I/O module inventory](inventory/m1n1-j575d-io-modules-2026-10-08.json)
 records the exact scope.
+
+## PCIe four-port DT profile — 2026-10-08 UTC
+
+The independent `build-j575d-pcie-dt.py` profile (SHA-256 prefix `574e2cf4`)
+uses `configs/j575d-pcie-ports.dtsi` (SHA-256 prefix `1408e38c`) and produces
+`scratch/j575d-pcie-dt.z4iac0rm/manifest.json`. Its 19-file closure is
+verified; the baseline DTB remains unchanged at SHA-256
+`e92e5c9dc86731d76dc060759bb622cbad073e4e32e831bf0ca68deef3ff4cd5`, while
+the profile DTB is `ed4623024f6d06bd816fc483735027e53798ad7f3de489775b77c5c2f5ea54a6`.
+Exactly six status changes are made: ports 01/02/03 and DARTs 1/2/3 change
+from `disabled` to `okay`; all other DT properties, maps, resets, compatibles
+and resources remain unchanged. All four ports and DARTs are enabled in the
+profile. All 41 final command receipts exit zero.
+
+Both old and profile DTBs retain six DTC warnings in the
+`unit_address_vs_reg` and `simple_bus_reg` categories. Cached dtschema 2026.9
+receipts contain 431 stderr lines for each DTB; the zero exit code is not a
+clean-schema result. Relative-filename normalization in
+`scratch/j575d-pcie-schema.4npcqmf0/normalized-comparison.json` confirms the
+diagnostics are identical. No candidate schema issue is silently resolved.
+
+Read-only host inspection maps ports 0–3 to Wi-Fi/BT, SD, AQC113 and ASM3142
+xHCI. Corrected interpretation: a disabled DT node does not exclude ECAM
+enumeration despite the stale `pci_set_of_node` comment. Linux slot order gives
+buses 1–4 only conditionally, for four ordinary visible bridges without extra
+bus reserves; this is not a guessed bus-2 map and does not establish physical
+config/setup, fallback T602x behavior, link, DMA, IRQ or driver binding. Do not
+claim USB, Wi-Fi, Bluetooth or SD hardware completion, and do not claim
+port-3 Type-C SoC PHY support.
+
+Reproduce the host profile only with:
+
+```sh
+UV_CACHE_DIR="$PWD/scratch/uv-cache" \
+  uv run --offline --no-project scripts/build-j575d-pcie-dt.py
+```
+
+The profile leaves the original DTB, default m1n1, native dispatch and all
+hardware/firmware/VM state untouched. The [PCIe profile inventory](inventory/m1n1-j575d-pcie-profile-2026-10-08.json)
+binds the retained inputs, output and warning/schema receipts; the
+[independent review](../scratch/m3-pcie-dt-final-review-2026-10-08.md) records
+the final interpretation.
 
 The candidate compatible tables already select fallback implementations, but
 this is not a hardware contract. NVMe uses SART/mailbox/RTKit/reset and three
