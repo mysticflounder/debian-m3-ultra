@@ -1,0 +1,79 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * J575d offline USB provider profile: four ports on die 0, two on die 1.
+ * Include after the pinned board DTS (and the independent PCIe profile).
+ *
+ * Provider bases and raw IRQ numbers are witnessed by the 2026-10-08 macOS
+ * routing inventory. Register subdivisions, compatible fallbacks, AIC tuple
+ * conversion and power links follow the pinned Linux templates; they are not
+ * native validation. Connector graphs and ATCPHY calibration are separate.
+ */
+
+&die0 {
+	dwc3_3: usb@1302280000 {
+		compatible = "apple,t6031-dwc3", "apple,t8103-dwc3";
+		reg = <0x13 0x02280000 0x0 0xcd00>,
+		      <0x13 0x0228cd00 0x0 0x3200>;
+		reg-names = "dwc3-core", "dwc3-apple";
+		interrupt-parent = <&aic>;
+		interrupts = <AIC_IRQ 0 1446 IRQ_TYPE_LEVEL_HIGH>;
+		dr_mode = "otg";
+		usb-role-switch;
+		role-switch-default-mode = "host";
+		iommus = <&dwc3_3_dart_0 0>, <&dwc3_3_dart_1 1>;
+		power-domains = <&ps_atc3_usb>;
+		resets = <&atcphy3>;
+		phys = <&atcphy3 PHY_TYPE_USB2>, <&atcphy3 PHY_TYPE_USB3>;
+		phy-names = "usb2-phy", "usb3-phy";
+	};
+
+	dwc3_3_dart_0: iommu@1302f00000 {
+		compatible = "apple,t6031-dart", "apple,t8110-dart";
+		reg = <0x13 0x02f00000 0x0 0x4000>;
+		interrupt-parent = <&aic>;
+		interrupts = <AIC_IRQ 0 1450 IRQ_TYPE_LEVEL_HIGH>;
+		power-domains = <&ps_atc3_usb>;
+		#iommu-cells = <1>;
+	};
+
+	dwc3_3_dart_1: iommu@1302f80000 {
+		compatible = "apple,t6031-dart", "apple,t8110-dart";
+		reg = <0x13 0x02f80000 0x0 0x4000>;
+		interrupt-parent = <&aic>;
+		interrupts = <AIC_IRQ 0 1450 IRQ_TYPE_LEVEL_HIGH>;
+		power-domains = <&ps_atc3_usb>;
+		#iommu-cells = <1>;
+	};
+
+	atcphy3: phy@1303000000 {
+		compatible = "apple,t6031-atcphy", "apple,t8122-atcphy";
+		reg = <0x13 0x03000000 0x0 0x4c000>,
+		      <0x13 0x03050000 0x0 0x8000>,
+		      <0x13 0x00000000 0x0 0x8000>,
+		      <0x13 0x02a90000 0x0 0x4000>,
+		      <0x13 0x02a84000 0x0 0x4000>;
+		reg-names = "core", "lpdptx", "axi2af", "usb2phy", "pipehandler";
+		#phy-cells = <1>;
+		#reset-cells = <0>;
+		orientation-switch;
+		mode-switch;
+		power-domains = <&ps_atc3_usb>;
+	};
+};
+
+/* This generic third die-1 quartet has no J575d provider witness. */
+&dwc3_2_die1 {
+	status = "disabled";
+};
+
+&dwc3_2_dart_0_die1 {
+	status = "disabled";
+};
+
+&dwc3_2_dart_1_die1 {
+	status = "disabled";
+};
+
+&atcphy2_die1 {
+	status = "disabled";
+};

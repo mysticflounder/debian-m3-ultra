@@ -320,10 +320,44 @@ Companion patch `0004-apple-spmi-and-ace3-bindings.patch` adds the matching
 SPMI interrupt/domain schema and ACE3's four named IRQs/connector binding.
 Zero-fuzz application and offline `dtschema==2026.9` document/reference checks
 pass; no full board-DTB schema validation is claimed. It is not applied to the
-frozen twenty-module build recipe/receipt. The next source change is the actual
-four-plus-two board layout, followed by connector graphs and faithful per-port
-calibration. The default DT/loader is unchanged and the m1n1 policy-held lane
-remains held.
+frozen twenty-module build recipe/receipt. The independent Linux profile below
+now corrects the four-plus-two provider layout; connector graphs and faithful
+per-port calibration remain open. The default DT/loader is unchanged and the
+m1n1 policy-held lane remains held.
+
+## Corrected USB4+2 provider profile — 2026-10-08 UTC
+
+Run `uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache
+python scripts/build-j575d-usb-layout.py`
+with the existing nineteen-file Linux DT closure and routing receipts present.
+The builder includes the pinned board, the unchanged PCIe fragment and
+`configs/j575d-usb-layout.dtsi` in that order. It does not execute m1n1, install
+anything, launch a VM or access hardware. The [profile inventory](inventory/j575d-usb-layout-2026-10-08.json)
+binds the build and regression evidence.
+
+The fragment adds `dwc3_3`, `atcphy3` and two DARTs on die 0. It disables
+`dwc3_2_die1`, `atcphy2_die1` and their two DARTs without deleting the generic
+source nodes. Six witnessed DWC3/PHY pairs and twelve USB DARTs are active
+in the offline profile. All six provider groups' translated resources, PHY,
+reset, IOMMU/stream-ID and power-domain links are checked. New register
+subdivisions and AIC tuples retain their source-derived status; the unassigned
+raw DRD IRQ words are not assumed to be ACE3 SPMI child interrupts.
+
+The unchanged baseline DTB hash and independent PCIe status-only check pass.
+Full-tree comparison resolves phandle identities, rather than rejecting valid
+dtc renumbering or silently comparing stale numeric IDs. The intended delta is
+four nodes, four symbols and four disabled statuses. Mutation controls check
+resources, DART IRQ/size, IOMMU links, an unwitnessed port and unrelated root
+changes. Run `uv run --offline --no-project --cache-dir scratch/j575d-spmi-routing-uv-cache
+python tests/test-j575d-usb-layout.py
+<compiled-workspace>` for the independent regression suite.
+
+All three compile variants retain six DTC warnings, in `simple_bus_reg` and
+`unit_address_vs_reg`; no complete board-DTB schema qualification is claimed.
+This profile does not add connector graphs, calibration tables or loader
+aliases, or change the frozen twenty-module build. Native USB power, IRQ,
+DMA, SPMI and PHY operation remain untested. Default loader/native dispatch
+and backup/recovery/explicit-native-approval gates are unchanged.
 
 ## PCIe four-port DT profile — 2026-10-08 UTC
 

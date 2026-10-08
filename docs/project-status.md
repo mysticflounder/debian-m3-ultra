@@ -426,10 +426,23 @@ AIC controller `0x170` and IRQ 767; its source-sized register window is covered,
 but the PMGR runtime join and hardware operation remain unqualified.
 The companion SPMI/ACE3 binding patch applies without fuzz and passes offline
 schema-document/reference validation; it does not change the frozen driver
-build or establish full board-DTB schema validity. Next is a faithful four-plus-two
-Linux DT correction, then the connector graphs and per-port calibration.
-No board source, boot-entry, firmware, disk or persistent-VM change was made;
+build or establish full board-DTB schema validity. The offline profile below
+now corrects the provider layout; connector graphs and per-port calibration
+remain open. No pinned board source, boot-entry, firmware, disk or persistent-VM change was made;
 no confirmed security finding was identified.
+
+The [USB layout profile inventory](inventory/j575d-usb-layout-2026-10-08.json)
+records a separately compiled Linux fragment adding the missing die-0 DWC3,
+ATCPHY and two DARTs and disabling the unwitnessed die-1 quartet. Its combined
+PCIe/USB DTB contains six active DWC3/PHY pairs and twelve USB DARTs. The
+unchanged nineteen-file baseline still produces its pinned DTB hash; the PCIe
+fragment still changes only six statuses. Resolved-reference comparison limits
+the USB changes to four added nodes, four added symbols and four disabled
+statuses, despite dtc phandle renumbering. Designated wrong-resource/IRQ/link,
+unwitnessed-port and unrelated-change controls are rejected. DTC diagnostics
+remain visible; this is not full schema or hardware validation. No connector,
+calibration, alias handoff, default loader or native-dispatch change is included.
+Next: SPMI/ACE3 connector graphs and faithful per-port calibration.
 
 At the earlier 14:04:34 UTC checkpoint, the official-API refresh returned HTTP
 200 for all four endpoints;
@@ -449,14 +462,14 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff / loader | Full32 comparison builds, inline candidate/official packet assembly, payload tests and handoff fixtures pass; no native boot | Qualify physical placement/source backing and Linux entry; security findings are report-only, not bring-up gates |
-| Exact T6032/J575d board DT | PCIe profile passes offline; live USB resources prove four die0 plus two die1 ports, exposing a missing fourth die0 pair and unwitnessed third die1 pair | Correct USB provider layout before six connector graphs; preserve PCIe evidence. DTC/schema diagnostics and native physical contracts remain open |
+| Exact T6032/J575d board DT | Combined PCIe/USB4+2 profile compiles and passes resolved-reference/mutation checks; missing die0 quartet added, unwitnessed die1 quartet disabled | Add six connector graphs and faithful calibration/handoff; DTC/schema diagnostics and native physical contracts remain open |
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | Twenty modules build/load; companion SPMI/ACE3 binding documents validate; physical USB 4+2 layout and a2 die0/IRQ767 captured without register access | Correct provider layout; add four-IRQ/six-connector graphs and faithful per-port tunables. PMGR/runtime SPMI recovery and native hardware remain unqualified |
+| NVMe / USB / Ethernet | Twenty modules build/load; SPMI/ACE3 binding documents validate; corrected USB4+2 provider profile passes offline; a2 die0/IRQ767 metadata captured | Add SPMI/ACE3 four-IRQ/six-connector graphs and faithful per-port tunables. PMGR/runtime SPMI recovery and native hardware remain unqualified |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |
