@@ -1,4 +1,4 @@
-# Project status — 2026-10-08 UTC
+# Project status — 2026-10-09 UTC
 
 Updated at task completion. Source/offline validation is not native-hardware
 validation. External PR, VM and MacBook states below are last recorded states,
@@ -515,7 +515,7 @@ The captured native SPMI implementation polls register 0 instead of requiring
 that IRQ. Its busy/ready loop is traced. Linux's whole-callback regmap mutex
 and synchronous SPMI command completion are now source-qualified, but native
 provider equivalence and stale-ready behavior still need qualification before
-a Linux polling change. Native busy-loop exhaustion
+enabling polling on hardware. Native busy-loop exhaustion
 falls through without a distinct timeout error; no such Linux policy is added.
 Valid missing-name lookup returns `-ENODATA`, not the initially proposed
 `-ENXIO`; malformed metadata, deferred IRQ domains and IRQ-zero mapping failure
@@ -529,11 +529,21 @@ CIO mode 2 has a traced native producer but no proven Linux protocol crosswalk;
 USB2's captured HOST/DEV values have opposite polarity to Linux, with native
 consumer/base/timing unresolved. The bounded controller trace stops at those
 two receiver implementations; independent source-backed help is needed before
-a qualified polling implementation and for CIO80/USB2. No new Pro
-consult is launched. The disabled candidate and driver patches are unchanged;
-no hardware claim is made.
-The latest Linux API check at 04:16 UTC still returns `7b63ef2d`;
-the retained source pin is not changed. See the [integration inventory](inventory/j575d-phy-fabric-integration-2026-10-08.json).
+a qualified polling implementation and for CIO80/USB2. Pro consult
+`01M4EWE11E4FR4ZNSBYPZBFKYQ` has since completed (channel message 18760),
+and its Linux source references were checked. It supports developing an
+[optional offline polling prototype](j575d-select-polling-prototype.md)
+at the logical SPMI API boundary. The prototype requires observed matching
+busy then ready on every selection; this rejects ready-only traces but does
+not establish a hardware command epoch. The sanitized actual-source host
+suite and exact-exit-1 mutation control pass, as do two valid/seven invalid
+binding fixtures and the ARM64 20-module dependency build. The three TIPD
+modules are packaged offline. Empty-interrupt schema validation is limited by
+a cached dtschema decoder crash; runtime zero-entry rejection is tested.
+The normal build recipes and 822-record disabled candidate remain unchanged.
+The earlier October 8 Linux API checkpoint at 04:16 UTC returned `7b63ef2d`;
+this is historical evidence, not a current-head claim. The retained source
+pin is unchanged. See the [integration inventory](inventory/j575d-phy-fabric-integration-2026-10-08.json).
 
 At the earlier 14:04:34 UTC checkpoint, the official-API refresh returned HTTP
 200 for all four endpoints;
@@ -560,7 +570,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | Fresh twenty-module USB-common package builds; six source/eight DT tests pass, including 56 complete-source mode cases; native polling and Linux locking/IRQ contracts traced offline | Package not installed or booted; independent help needed for two native controller receivers/completion and stale-ready policy before qualified polling; CIO80 protocol, USB2 consumer/base/role and select IRQ mapping remain open; essential binding/PMGR clock contracts and physical power/clock/IRQ/DMA qualification remain |
+| NVMe / USB / Ethernet | USB-common package and tests pass; optional select-polling prototype passes actual-source sanitized host tests, mutation control, two valid/seven invalid binding fixtures and the 20-module dependency build | Prototype default-off; no package installed or booted. Native freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; CIO80 protocol and USB2 consumer/base/role remain open; physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |

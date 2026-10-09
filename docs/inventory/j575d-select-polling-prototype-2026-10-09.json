@@ -1,0 +1,181 @@
+{
+  "date_utc": "2026-10-09",
+  "status": "complete_offline_prototype_only",
+  "base_commit": "90ecc57",
+  "linux_revision": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+  "consult": {
+    "id": "01M4EWE11E4FR4ZNSBYPZBFKYQ",
+    "response_message": 18760,
+    "source_review_completed": true
+  },
+  "scope": {
+    "default_enabled": false,
+    "explicit_property": "apple,experimental-select-polling",
+    "default_irq_names": [
+      "irq",
+      "select",
+      "sleep",
+      "wake"
+    ],
+    "polling_irq_names": [
+      "irq",
+      "sleep",
+      "wake"
+    ],
+    "normal_build_recipes_changed": false,
+    "board_candidate_changed": false,
+    "native_validation": false
+  },
+  "policy": {
+    "timeout_us": 100000,
+    "sleep_us": [
+      1000,
+      1500
+    ],
+    "max_samples": 128,
+    "busy_then_ready_each_selection": true,
+    "ready_only_rejected": true,
+    "hardware_epoch_proven": false,
+    "mismatch_errno": "EIO",
+    "deadline_errno": "ETIMEDOUT",
+    "spmi_errors_propagated": true
+  },
+  "validation": {
+    "host": {
+      "source_functions": 7,
+      "sanitizers": [
+        "address",
+        "undefined"
+      ],
+      "exit": 0,
+      "groups": [
+        "polling and payload",
+        "stale-only callbacks",
+        "legacy IRQ",
+        "runtime probe and metadata"
+      ],
+      "mutation": {
+        "removed": "busy_seen guard",
+        "control_exit": 0,
+        "mutant_exit": 1,
+        "designated_failure": "expect_select(ready, 1, -ETIMEDOUT)"
+      },
+      "path": "scratch/j575d-typec-pro-consult.SV9kFD/final-host-uv/select-polling-5g2oy77k"
+    },
+    "binding": {
+      "tool": "dtschema 2026.9",
+      "offline": true,
+      "document_pass": true,
+      "valid_fixtures": 2,
+      "rejected_fixtures": 7,
+      "empty_interrupts_fixture": "compile-only; cached decoder crashes, not schema-rejection evidence",
+      "runtime_zero_and_extra_irq_counts_rejected": true,
+      "path": "scratch/j575d-typec-pro-consult.SV9kFD/final-binding"
+    },
+    "modules": {
+      "exit": 0,
+      "architecture": "AArch64",
+      "release": "7.3.0-rc6",
+      "modpost_dependency_modules": 20,
+      "packaged_tipd_modules": 3,
+      "compiler_warnings": 0,
+      "unresolved_symbols": 0,
+      "bounded_base_inputs_unchanged": 10,
+      "host_and_build_spmi_identical": true,
+      "build_manifest_checks": 10,
+      "package_manifest_checks": 19,
+      "path": "scratch/j575d-select-polling-offline.4sRveR"
+    },
+    "review": "GO for offline prototype validation only"
+  },
+  "limitations": [
+    "A busy observation does not establish a current-command epoch or hardware freshness.",
+    "Fast hardware completion may be rejected when its busy interval is missed.",
+    "The host fixture does not exercise kernel scheduling, real regmap locking or cross-client serialization.",
+    "Native provider completion/error, repeated-selector cursor reset, IRQ routing and J575d applicability remain unqualified.",
+    "CIO80 protocol/resource mapping and USB2 consumer/base/role phase remain unresolved.",
+    "Native boot requires verified backup, recovery readiness and separate approval."
+  ],
+  "receipts": [
+    {
+      "path": "patches/linux/j575d-602042bf/0006-typec-tipd-experimental-select-polling.patch",
+      "sha256": "30c259c12da621fec8218ff9356a24dac21c931db6aac7d4ab06c421dd7b37d1"
+    },
+    {
+      "path": "scripts/build-j575d-select-polling-offline.sh",
+      "sha256": "fb199dacbba573cf15d00360aca8ea730c9c70f08fd098b83b4905c70f2e426b"
+    },
+    {
+      "path": "scripts/test-j575d-select-polling.py",
+      "sha256": "c2ef05cc8ade1669289bf47a696514ad2c48067d7decda5a70c5407d102cd005"
+    },
+    {
+      "path": "tests/test-j575d-select-polling.c",
+      "sha256": "77a4f4d2992400662d37ec54dfc902423694e6f9e28dc202c6ff3dd70345d630"
+    },
+    {
+      "path": "tests/test-j575d-select-polling-binding.py",
+      "sha256": "4e8832c4f8eae55f17763d8f8d3654700ea6a41cf9e630993d3fe2c3791aca08"
+    },
+    {
+      "path": "scratch/j575d-typec-pro-consult.SV9kFD/pro-response.txt",
+      "sha256": "5d085af09b3ac6c6f30d841f6f401239d01ce0e24831fdf8b7f7056a787c23f1"
+    },
+    {
+      "path": "scratch/j575d-typec-pro-consult.SV9kFD/prototype-final-review.md",
+      "sha256": "1992f55fda44f4b7616e4d660b04ad71b802ec475b209defd5e7112ccea6d1f7"
+    },
+    {
+      "path": "scratch/j575d-typec-pro-consult.SV9kFD/final-host-uv/select-polling-5g2oy77k/receipt.txt",
+      "sha256": "9c464ed9a46e168a36fdd714e9d7f1ea4517b45678349adb48c635d028886962"
+    },
+    {
+      "path": "scratch/j575d-typec-pro-consult.SV9kFD/final-host-uv/select-polling-5g2oy77k/fixture.c",
+      "sha256": "fe67f91936000e0a654a7e95b82886509e0a213b00ba06dcc23fc306a931fdb8"
+    },
+    {
+      "path": "scratch/j575d-typec-pro-consult.SV9kFD/final-host-uv/select-polling-5g2oy77k/host.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-typec-pro-consult.SV9kFD/final-host-uv/select-polling-5g2oy77k/host.stdout",
+      "sha256": "d68eeae6f8ce9169e6b519fdf1e863a944bd2200224002534177442cc3fd2795"
+    },
+    {
+      "path": "scratch/j575d-typec-pro-consult.SV9kFD/final-host-uv/select-polling-5g2oy77k/mutation.stderr",
+      "sha256": "e908a958c0ddaeccffd072236aebb53716ad57616050e14d576a296257f35bfe"
+    },
+    {
+      "path": "scratch/j575d-typec-pro-consult.SV9kFD/final-binding.log",
+      "sha256": "3c65290297b5fa9711c8ce23c70e7027faded004a6526f59f675f1ed79605a6a"
+    },
+    {
+      "path": "scratch/j575d-typec-pro-consult.SV9kFD/final-binding/dt-doc-validate.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "scratch/j575d-select-polling-offline.4sRveR/build.log",
+      "sha256": "2f8d0d1bbd3279123cc59bd9f2180c58b45077360e19e170e62ca82b25c0dac5"
+    },
+    {
+      "path": "scratch/j575d-select-polling-offline.4sRveR/build.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "scratch/j575d-select-polling-offline.4sRveR/SHA256SUMS",
+      "sha256": "32403812dac2f4ccbf3b979fa00d9bf6d6faaa7b428f6a2d5b146f107c71e3f5"
+    },
+    {
+      "path": "scratch/j575d-select-polling-offline.4sRveR/metadata/changed-modules.sha256",
+      "sha256": "e77521e82202dfc22548b2725d0485c5a7fe94b846b64a0fc22b059efe4eee92"
+    },
+    {
+      "path": "scratch/j575d-select-polling-offline.4sRveR/metadata/base-inputs.before.sha256",
+      "sha256": "40eb1561aad7ff763aaa382c9b003b535c0921213b7d470fa45be56716d47364"
+    },
+    {
+      "path": "scratch/j575d-select-polling-offline.4sRveR/metadata/base-inputs.after.sha256",
+      "sha256": "40eb1561aad7ff763aaa382c9b003b535c0921213b7d470fa45be56716d47364"
+    }
+  ]
+}

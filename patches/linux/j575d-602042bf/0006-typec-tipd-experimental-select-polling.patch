@@ -1,0 +1,269 @@
+From: J575d offline prototype
+Subject: [PATCH] usb: typec: tipd: add opt-in experimental select polling
+
+This optional, default-off prototype polls ACE3 logical-register selection.
+Each selector write must produce observed busy (reg | 0x80) and then ready
+(reg); ready-only, including repeated-selector ready, times out without
+payload I/O. This does not establish command freshness, an epoch, or
+hardware safety; a brief busy transition may be missed and cause timeout.
+
+The existing four-IRQ completion path is unchanged unless the explicit DT
+boolean is present. Polling accepts only irq/sleep/wake interrupts and
+validates the exact three-name/count contract before requesting them.
+
+---
+ Documentation/devicetree/bindings/usb/apple,sn201202x.yaml | 48 +++++++++++++
+ drivers/usb/typec/tipd/spmi.c                              | 107 +++++++++++++++++-
+ drivers/usb/typec/tipd/tps6598x.h                          |  1 +
+ 3 files changed, 151 insertions(+), 10 deletions(-)
+
+diff --git Documentation/devicetree/bindings/usb/apple,sn201202x.yaml Documentation/devicetree/bindings/usb/apple,sn201202x.yaml
+--- Documentation/devicetree/bindings/usb/apple,sn201202x.yaml
++++ Documentation/devicetree/bindings/usb/apple,sn201202x.yaml
+@@ -20,25 +20,52 @@
+     enum:
+       - apple,sn201202x
+ 
++  apple,experimental-select-polling:
++    type: boolean
++    description: Use the offline experimental select/status polling path (default false)
++
+   reg:
+     maxItems: 1
+ 
+   interrupts:
+-    items:
+-      - description: Primary irq used for tps6598x events
+-      - description: Logical register selection completed
+-      - description: Standby command completed
+-      - description: Wakeup command completed
++    description: Type-C controller interrupts
+ 
+   interrupt-names:
+-    items:
+-      - const: irq
+-      - const: select
+-      - const: sleep
+-      - const: wake
++    description: Names corresponding to the controller interrupts
+ 
+   connector:
+     $ref: /schemas/connector/usb-connector.yaml#
++
++allOf:
++  - if:
++      required:
++        - apple,experimental-select-polling
++    then:
++      properties:
++        interrupts:
++          items:
++            - description: Primary irq used for tps6598x events
++            - description: Standby command completion IRQ
++            - description: Wakeup command completion IRQ
++        interrupt-names:
++          items:
++            - const: irq
++            - const: sleep
++            - const: wake
++    else:
++      properties:
++        interrupts:
++          items:
++            - description: Primary irq used for tps6598x events
++            - description: Logical register selection completed
++            - description: Standby command completion IRQ
++            - description: Wakeup command completion IRQ
++        interrupt-names:
++          items:
++            - const: irq
++            - const: select
++            - const: sleep
++            - const: wake
+ 
+ required:
+   - compatible
+diff --git drivers/usb/typec/tipd/spmi.c drivers/usb/typec/tipd/spmi.c
+--- drivers/usb/typec/tipd/spmi.c
++++ drivers/usb/typec/tipd/spmi.c
+@@ -1,6 +1,9 @@
+ // SPDX-License-Identifier: GPL-2.0
+ 
++#include <linux/delay.h>
+ #include <linux/interrupt.h>
++#include <linux/ktime.h>
++#include <linux/of.h>
+ #include <linux/of_device.h>
+ #include <linux/of_irq.h>
+ #include <linux/regmap.h>
+@@ -10,6 +13,80 @@
+ 
+ #define tps_to_sn(tps) container_of_const((tps), struct sn201202x, cd.tps)
+ 
++#define SN201202X_POLL_TIMEOUT_US	100000
++#define SN201202X_POLL_SLEEP_US	1000
++#define SN201202X_POLL_MAX_SAMPLES	128
++
++static int sn201202x_validate_polling_irqs(const struct device_node *np)
++{
++	static const char * const names[] = { "irq", "sleep", "wake" };
++	const char *name;
++	int ret, count, i;
++
++	count = of_property_count_strings(np, "interrupt-names");
++	if (count < 0)
++		return count;
++	if (count != ARRAY_SIZE(names))
++		return -EINVAL;
++
++	for (i = 0; i < ARRAY_SIZE(names); i++) {
++		ret = of_property_read_string_index(np, "interrupt-names", i,
++						    &name);
++		if (ret)
++			return ret;
++		if (strcmp(name, names[i]))
++			return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int sn201202x_select_reg_poll(struct spmi_device *sdev, u8 reg)
++{
++	ktime_t deadline;
++	unsigned int samples = 0;
++	bool busy_seen = false;
++	int err;
++	u8 val;
++
++	/*
++	 * Busy then ready is only a conservative witness; it does not establish
++	 * an epoch or safety proof.
++	 */
++
++	if (reg >= 0x80)
++		return -EINVAL;
++
++	deadline = ktime_add_us(ktime_get(), SN201202X_POLL_TIMEOUT_US);
++	err = spmi_register_zero_write(sdev, reg);
++	if (err)
++		return err;
++
++	while (samples++ < SN201202X_POLL_MAX_SAMPLES &&
++	       ktime_before(ktime_get(), deadline)) {
++		err = spmi_register_read(sdev, 0, &val);
++		if (err)
++			return err;
++		if (!ktime_before(ktime_get(), deadline))
++			return -ETIMEDOUT;
++
++		if (val == (reg | 0x80)) {
++			busy_seen = true;
++		} else if (val == reg) {
++			if (busy_seen)
++				return 0;
++		} else {
++			/* Do not guess by reselecting after a status mismatch. */
++			return -EIO;
++		}
++
++		usleep_range(SN201202X_POLL_SLEEP_US,
++			     SN201202X_POLL_SLEEP_US + 500);
++	}
++
++	return -ETIMEDOUT;
++}
++
+ static int regmap_sn201202x_select_reg(struct spmi_device *sdev, u8 reg)
+ {
+ 	int err;
+@@ -19,6 +96,9 @@
+ 	struct tps6598x *tps = spmi_device_get_drvdata(sdev);
+ 	struct sn201202x *sn = tps_to_sn(tps);
+ 
++	if (sn->experimental_polling)
++		return sn201202x_select_reg_poll(sdev, reg);
++
+ 	reinit_completion(&sn->select_completion);
+ 	err = spmi_register_zero_write(sdev, reg);
+ 	if (err)
+@@ -165,6 +245,9 @@
+ 	struct tps6598x *tps;
+ 	int irq_select, irq_sleep, irq_wake;
+ 	int ret;
++	bool experimental_polling;
++	const struct property *poll_prop;
++	int irq_count;
+ 
+ 	match = of_match_device(sn201202x_of_match, &device->dev);
+ 	if (!match)
+@@ -178,12 +261,37 @@
+ 	tps = &sn->cd.tps;
+ 
+ 	mutex_init(&tps->lock);
++	poll_prop = of_find_property(device->dev.of_node,
++					     "apple,experimental-select-polling", NULL);
++	if (poll_prop && poll_prop->length)
++		return -EINVAL;
++	experimental_polling = !!poll_prop;
+ 	tps->dev = &device->dev;
+ 	tps->data = data;
+ 
+ 	tps->irq = of_irq_get_byname(device->dev.of_node, "irq");
+ 	if (tps->irq < 0)
+ 		return tps->irq;
++	sn->experimental_polling = experimental_polling;
++	if (experimental_polling) {
++		ret = sn201202x_validate_polling_irqs(device->dev.of_node);
++		if (ret)
++			return ret;
++		irq_sleep = of_irq_get_byname(device->dev.of_node, "sleep");
++		if (irq_sleep < 0)
++			return irq_sleep;
++		irq_wake = of_irq_get_byname(device->dev.of_node, "wake");
++		if (irq_wake < 0)
++			return irq_wake;
++		if (!tps->irq || !irq_sleep || !irq_wake)
++			return -EINVAL;
++		irq_count = of_irq_count(device->dev.of_node);
++		if (irq_count < 0)
++			return irq_count;
++		if (irq_count != 3)
++			return -EINVAL;
++		goto irqs_ready;
++	}
+ 	irq_select = of_irq_get_byname(device->dev.of_node, "select");
+ 	if (irq_select < 0)
+ 		return irq_select;
+@@ -194,14 +302,19 @@
+ 	if (irq_wake < 0)
+ 		return irq_wake;
+ 
++irqs_ready:
++
+ 	init_completion(&sn->select_completion);
+ 	init_completion(&sn->sleep_completion);
+ 	init_completion(&sn->wake_completion);
+ 
++	if (experimental_polling)
++		goto skip_select_irq;
+ 	ret = devm_request_irq(&device->dev, irq_select, sn201202x_irq,
+ 			       0, NULL, &sn->select_completion);
+ 	if (ret)
+ 		return ret;
++skip_select_irq:
+ 	ret = devm_request_irq(&device->dev, irq_sleep, sn201202x_irq,
+ 			       0, NULL, &sn->sleep_completion);
+ 	if (ret)
+diff --git drivers/usb/typec/tipd/tps6598x.h drivers/usb/typec/tipd/tps6598x.h
+--- drivers/usb/typec/tipd/tps6598x.h
++++ drivers/usb/typec/tipd/tps6598x.h
+@@ -384,6 +384,7 @@
+ 	struct completion sleep_completion;
+ 	struct completion wake_completion;
+ 	struct spmi_device *sdev;
++	bool experimental_polling;
+ };
+ 
+ extern const struct tipd_data tipd_cd321x_data;
+
