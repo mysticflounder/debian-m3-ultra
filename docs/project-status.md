@@ -697,10 +697,35 @@ checked receipt is
 (SHA-256 `b82f9448604f8ba494d3ef58e212410ec36489d0f7be7471a4046b88396152ac`).
 Five XHCI slot-`0x880` calls are also byte-anchored, but their presence does
 not identify the J575d runtime controller or exclude subclass overrides.
-Later writes to `+0x40` and the external interface-open flags are not
-qualified by this receipt. No role meaning, timing change, or Linux patch
-follows from the zero initializer alone. The next trace must join an actual
-interface receiver to its open arguments, rather than repeat import searches.
+Later writes to `+0x40` are not qualified by this receipt. No role meaning,
+timing change, or Linux patch follows from the zero initializer alone.
+
+The next receiver trace now joins the captured client class to a concrete
+startup call. The retained Studio registry has six `AppleT8122USBXHCI`
+controller headers and three nonempty PHY USB2 client records naming that
+class (three other records are empty). The earlier `AppleUSBXHCIARM` view
+did not contain this class; its code is in the full collection's
+`AppleSynopsysUSB40XHCI` view. T8122 `start` stores the USB2 factory result
+at controller `+0xfb8` (`0xfffffe000b5382a4`), reloads it at `...b53837c`,
+and calls interface slot `+0x138` at `...b5383b8` with power argument two,
+flags `0x40000`, and final argument `0x1f4`. Both USB2 and USB3 interface
+pointers must be nonnull on this path. The concrete T6032 factory and
+allocated USB-interface open vtable slots resolve to the reviewed methods.
+All 84 instructions from the PHY-result check through the open-return check
+match the original collection. The checked receipt is
+`scratch/j575d-usb2-client-role-2026-10-10/open-receiver/verify.py`
+(SHA-256 `e1a0c0a8355532472e5b0451676483d867fd526b8d586cfdaddef545c1b6e4b2`).
+
+With interface `+0x40` retaining its initialized zero, the reviewed open
+bridge gives descriptor `0x40000`. Its bit19 is clear and its masked
+`0x60000` value is not `0x20000`, producing `eusb2phy_init(false, false)`.
+That branch sets the offset-eight `0x7000` family, matching Linux's
+`PHY_MODE_USB_HOST` operation. This narrows the host-startup polarity question;
+it is not a universal role-enum definition, a device-mode trace, or proof of
+physical behavior. No polarity patch follows from this evidence. Timing,
+status-conditional signal changes, reserved-bit handling, and other power
+transitions remain open. The T8160 comparison call at `...b57e0cc` belongs
+to `setPowerStateGated`, not `start`; it is not used as the Studio-class join.
 
 The full-body power review now identifies a use of **both** initialization
 booleans near the final write (`0xfffffe000a1d1b8c..0xfffffe000a1d1ba4`).
