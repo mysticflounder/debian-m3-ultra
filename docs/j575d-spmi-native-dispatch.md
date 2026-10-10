@@ -13,7 +13,7 @@ target at `0xfffffe000be75860` reads DAIF and tests `~DAIF & 0x1c0`.
 The false-result branch sets bit `0x4` at command offset `0x10` before taking
 the controller's own dispatch path.
 
-The constructors install vptrs at the vtable symbol plus `0x10`. Omitting
+The constructors install primary vptrs at the vtable symbol plus `0x10`. Omitting
 that address-point adjustment produced incorrect method labels in the first
 October 10 scratch report. Independent review and the corrected byte checks
 establish these mappings for the retained base factory/constructor path:
@@ -200,9 +200,10 @@ protocol or error-policy equivalence.
 
 Unlike Linux's baseline below, native code therefore contains a masked
 response-versus-command comparison. Whether Linux needs such a check on
-this hardware remains unresolved. The configuration producer, mismatch
-policy and hardware response contract still need qualification; no driver
-change is inferred from this difference alone. The reviewed original-address
+this hardware remains unresolved. The static configuration producer and
+mismatch policy are traced below; the hardware response contract still needs
+qualification. No driver change is inferred from this difference alone.
+The reviewed original-address
 disassembly and passing byte/table verifier are retained under
 `scratch/j575d-spmi-response-2026-10-10/native/`.
 
@@ -240,26 +241,102 @@ at controller `+0x194` (`0x9de3720/0x9de3724`). Its concrete vtable entry
 is symbol-relative `+0x960`, hence runtime slot `+0x950` after the address
 point adjustment. The bounded byte/vtable verifier passes.
 
-This establishes a configuration-to-field edge, not the configuration's
-producer, value or USID meaning. The command helper shifts the full 32-bit
-field left by eight without an observed narrowing mask; its contribution
+This establishes the configuration-to-field edge. The command helper shifts
+the full 32-bit field left by eight without an observed narrowing mask; its contribution
 must not be described as confined to bits 8–15. An immediate-offset scan
 found this matching store, but cannot exclude computed or other access
 forms. Receipts are under
 `scratch/j575d-spmi-response-2026-10-10/controller-field/`.
 
-A follow-up identifies an inherited controller method at `0x8cb48e8`
+A follow-up identifies `AppleARMSPMIController::updateConfig` at `0x8cb48e8`
 (runtime slot `+0x968` in both base and concrete vtables). It zeroes 24
 stack bytes, calls its source object's runtime slot `+0x888` with that output
 buffer, and passes the same buffer to `setConfig` through runtime `+0x950`.
-It then retains the source object at controller `+0xf8`. This closes the
-buffer handoff, not the source object's class, getter implementation or
-configuration values. Captured HPM `reg` properties are not sufficient to
-fill that gap. The reviewed bytes and passing verifier are retained in
+It then retains the source object at controller `+0xf8`. The reviewed bytes
+and passing verifier for this buffer handoff are retained in
 `scratch/j575d-spmi-config-producer-2026-10-10/`.
 
-The next configuration edge is the source object's `+0x888` getter and its
-caller/receiver identity, not the already-verified stack-buffer handoff.
+### Device configuration source
+
+The full retained module names the source method
+`AppleARMSPMIDevice::getSPMIConfig` at `0x8cb64ac`. Its complete 48-byte
+body copies device `+0x90..+0xa7` to the caller's 24-byte buffer, or returns
+`0xe00002c2` for a null output pointer. The device constructor installs the
+vtable address point at symbol `0x7fffdc8 + 0x10`; runtime slot `+0x888`
+therefore resolves to this getter. The adjacent runtime `+0x890` resolves
+to `setSPMIConfig` at `0x8cb64dc`.
+
+`initWithRegistryEntry` requests the literal `reg` property at
+`0x8cb6d28..0x8cb6d38`, casts it to `OSData`, requires a length of at least
+24 bytes (`0x8cb6d78/0x8cb6d7c`), and passes its bytes to `setSPMIConfig`
+at `0x8cb6dd0`. The setter copies those 24 bytes only after its controller
+interface's runtime `+0x10` returns a set low bit. Its diagnostic paths also
+return zero, so the initializer's return-value test is not by itself a
+write-success witness.
+
+For the retained concrete `AppleSPMIController`, the constructor installs
+the secondary interface vptr at object `+0xa0` using **symbol `+0xa50`**,
+not primary address point `+0xa50`. At address `0x83086c0`, interface slot
+`+0x10` contains encoded qword `0x80110f8201cb21d0`, which resolves under
+the pinned collection's image-base/low-32-bit convention to `0x8cb61d0`.
+That inherited `isValidConfig` adjustor body returns one. `publishBelow`
+passes controller `+0xa0` to the device factory, and the device initializer
+stores that interface at device `+0x88`. This closes the validation gate for
+this static construction path; it does not measure live object contents.
+
+The captured registry's six `AppleARMSPMIDevice` HPM children provide these
+little-endian configuration words:
+
+| Device | First `reg` word | Remaining five words |
+| --- | --- | --- |
+| hpm0 | 12 | 3, 0, 4, 0, 0 |
+| hpm1 | 10 | 3, 0, 4, 0, 0 |
+| hpm2 | 8 | 3, 0, 4, 0, 0 |
+| hpm3 | 6 | 3, 0, 4, 0, 0 |
+| hpm4 | 12 | 3, 0, 4, 0, 0 |
+| hpm5 | 10 | 3, 0, 4, 0, 0 |
+
+These are captured inputs to the proven initialization path, not sampled
+controller `+0x194` values. The public setter can replace the device's
+configuration later. No complete writer census, runtime USID observation,
+or wire-equivalence claim follows. Registry evidence is retained in
+`scratch/j575d-select-irq-audit.dzecri/host-registry/ioreg-service-text.txt`;
+getter/initializer/interface receipts are in
+`scratch/j575d-spmi-config-getter-2026-10-10/`.
+
+### Configuration refresh before commands
+
+The secondary interface's first entry at `0x83086b0` resolves to
+`0x8cb5c9c`, the `sendCommand` adjustor which subtracts `0xa0` from the
+interface receiver before entering `0x8cb5ba8`. Device register commands
+place the device pointer in command word zero and dispatch through the
+interface stored at device `+0x88`.
+
+With interrupts enabled, `sendCommand` bypasses the command gate only when
+controller byte `+0x100` is set and command word zero equals the source
+retained at controller `+0xf8`. Otherwise it tail-calls `runAction` on the
+command gate. The gated enqueue path calls `updateConfig` with command word
+zero at `0x8cb4aa0`, then `executeLoggedCommand` at `0x8cb4adc`. The explicit
+bus-lock path calls `updateConfig` with its device argument at `0x8cb4c9c`
+before setting byte `+0x100`; final unlock clears the retained source.
+These establish refresh/serialization edges, not hardware completion.
+
+When interrupts are disabled, `sendCommand` instead sets command flag
+`0x4` and dispatches directly; this body does not refresh configuration on
+that branch. It is therefore incorrect to claim that every command refreshes
+configuration. Likewise, the startup load at `0x8cb4130` is runtime
+`+0x978` method-pointer setup, not an `updateConfig` call. Reviewed caller
+receipts are in `scratch/j575d-spmi-config-callers-2026-10-10/`.
+
+Both final verifiers pass against the pinned original image. Main review
+also checked the disassembled branches and receiver/argument flow; byte
+hashes alone do not prove those interpretations. Final verifier SHA-256s:
+
+- Getter/source: `8ba098e12a4cf84d228c19be86690ab2777aa1ab38555741a9f46e23339d519a`.
+- Callers: `d28b6473074557d484827675af7adb2cad0884b9736fd2d36dea4c884bfc3a2b`.
+
+The next functional questions are selector freshness and the remaining
+CIO80/USB2 contracts, not the now-traced 24-byte configuration source.
 
 ## Linux response baseline
 

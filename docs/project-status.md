@@ -556,10 +556,16 @@ matrix, two write-ACK cases and FIFO/timeout cases with two semantic mutation
 controls. It accepts a mismatched response header in the tested case, unlike
 the native masked-comparison path. This is not yet a demonstrated hardware
 bug or justification for a driver change. Native controller `+0x194` is
-loaded from configuration word 0 by `setConfig`; its producer, concrete
-value and USID identity remain unresolved. The configuration handoff now
-traces a zeroed 24-byte buffer from source runtime slot `+0x888` into
-`setConfig`; the source object's identity/getter remain open. The mismatch
+loaded from configuration word 0 by `setConfig`. The configuration producer
+now traces from the device's `reg` property through its 24-byte setter/getter
+and `updateConfig` into `setConfig`. The concrete secondary interface's
+validator returns one; its first entry resolves the device-to-controller
+`sendCommand` join. Captured HPM first words are 12, 10, 8, 6, 12 and 10,
+but this is initialization-input evidence, not sampled live controller state
+or wire/USID equivalence. Gated enqueue refreshes before execution; an explicit
+lock refreshes before enabling same-device reuse. The interrupts-disabled
+direct path does not refresh in `sendCommand`, so refresh on every command
+is not claimed. The mismatch
 call resolves to `spmiPanic` and then kernel `_panic`. Its start-path opt-out
 is the integer parameter `req-resp-mismatch-no-panic`: successful nonzero
 lookup selects the error-return branch. This is static policy evidence, not
@@ -569,8 +575,8 @@ views supersede rebased call-site evidence; 520 instruction-byte lines and 27
 same-line anchors pass the main verifier, without claiming wire equivalence.
 CIO mode 2 has a traced native producer but no proven Linux protocol crosswalk;
 USB2's captured HOST/DEV values have opposite polarity to Linux, with native
-consumer/base/timing unresolved. Next work targets the configuration source
-getter/receiver and selector freshness; static dispatch and
+consumer/base/timing unresolved. Next work targets selector freshness and
+the CIO80/USB2 contracts; static configuration provenance, dispatch and
 software wait loops do not establish hardware completion or wire equivalence.
 Hardware-qualified polling and CIO80/USB2 still require the
 remaining contracts. Pro consult
@@ -616,7 +622,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | USB-common package and tests pass; optional select-polling prototype and the local 0007 FIFO-target correction pass actual-source sanitized host tests, mutation control, two valid/seven invalid binding fixtures and the 20-module dependency build | Prototype default-off; no package installed or booted. Response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; the FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol and USB2 consumer/base/role remain open; physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
+| NVMe / USB / Ethernet | USB-common package and tests pass; optional select-polling prototype and local 0007 FIFO-target correction pass host tests and the 20-module build; native SPMI configuration source/interface and gated refresh path statically traced | Prototype default-off; no package installed or booted. Hardware response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; the FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol and USB2 consumer/base/role remain open; physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |
