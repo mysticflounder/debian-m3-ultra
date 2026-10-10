@@ -23,6 +23,25 @@
     "unchanged_binding_sha256": "e57780a19cef194aca3a51e6e903f90c1d11f240d0435a396d77cac32ca0c4bc",
     "atc_module_sha256": "cfdd34ec212cb221f264444515f98b6cef21d0bd97add5cff54244fcaf5ea6f4"
   },
+  "diagnostic_initramfs": {
+    "workspace": "scratch/j575d-initramfs.AxUPO0",
+    "recipe": "scripts/build-j575d-initramfs-offline.sh",
+    "recipe_sha256": "a9f1a58d8230be55c59fb884a7c6715b7464aca99c3a94af834cf8aa69c9b9ae",
+    "module_package": "scratch/j575d-usb2-role-signals.C3wVyi/package",
+    "build_exit": 0,
+    "archive_sha256": "807b823e87a53304106e5f49e48ed5fc918040f21570cbc77e87df26df5613ee",
+    "init_sha256": "23cd25952f28096572559b9de7b4073c478f396d7a5e71112e208f824c3cfd91",
+    "init_equals_previous_vm_tested_executable": true,
+    "build_manifest_sha256": "23296a5e0527fe8025f93bc2b2f770f5c2358fb733612e39e8b33e8c1a43292e",
+    "verified_build_checksum_entries": 11,
+    "archive_review": "scratch/j575d-first-boot-gates-2026-10-10/initramfs-review.md",
+    "archive_modules_equal_package": 20,
+    "archive_package_regular_files_equal": 35,
+    "archive_modules_load_paths_resolve": true,
+    "archive_booted": false,
+    "inline_loader_package_updated": false,
+    "qualification": "Offline diagnostic archive only; no native operation or experimental PHY approval"
+  },
   "host_tests": {
     "path": "tests/test-j575d-phy-usb2-role-signals.py",
     "sha256": "ebd9b3fb2cc0a90d937da5d2621c7c2a3c9bf3e0acdaf0dcc1f490a9bc5ef852",

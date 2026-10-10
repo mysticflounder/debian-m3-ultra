@@ -926,6 +926,18 @@ physical role-switch qualification. The candidate providers remain disabled;
 no installation, VM change or native boot occurred. Reset/timing behavior,
 CIO80 and the remaining Type-C selection/IRQ contracts are still outstanding.
 
+The 0010 package now has a separate build-only diagnostic initramfs at
+`scratch/j575d-initramfs.AxUPO0/output/initramfs.cpio.gz`, SHA-256
+`807b823e87a53304106e5f49e48ed5fc918040f21570cbc77e87df26df5613ee`.
+The isolated network-disabled build returned zero, all 11 build receipt
+checksums pass, and `/init` is byte-identical to the earlier VM-tested
+diagnostic executable. This archive has **not** been booted; the existing
+inline loader package was not rebuilt or promoted. The experimental PHY
+patch and disabled-provider qualification boundaries are unchanged.
+Independent gzip/newc extraction confirms that all 35 package files,
+including the 20 modules and their metadata, match byte-for-byte and that
+all 20 `modules.load` paths exist in the archive.
+
 The next bounded comparison finds no additional CTL, MISCTUNE or USBCTL
 operation/order mismatch in the reviewed host/device startup paths. Both
 reviewed descriptors have bit 19 clear and select native RUN `2`; the native
@@ -1064,6 +1076,15 @@ USB4 pipehandler remain in the full SoC scope, but are not prerequisites for
 those three milestones. Prioritize the remaining first-boot contracts before
 further optional Type-C capability tracing; native testing still requires a
 verified backup, recovery readiness and separate approval.
+
+The first-boot audit on October 10 found no retained authoritative physical
+handoff ledger to replace the synthetic placement fixtures. Native RAM and
+reservation addresses, entry state and usable console transport remain
+unobserved. Repeating those fixtures cannot close that gap. Ask Adam for
+backup/recovery readiness and direction before native evidence collection;
+separately resolve the existing m1n1 source-policy hold before resuming
+source-based loader work. Building the new module initramfs above resolves
+an offline integration gap, not either of these prerequisites.
 
 | Workstream | Status | Next action / gate |
 | --- | --- | --- |
