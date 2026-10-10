@@ -1,4 +1,4 @@
-# Project status — 2026-10-09 UTC
+# Project status — 2026-10-10 UTC
 
 Updated at task completion. Source/offline validation is not native-hardware
 validation. External PR, VM and MacBook states below are last recorded states,
@@ -521,15 +521,21 @@ Valid missing-name lookup returns `-ENODATA`, not the initially proposed
 `-ENXIO`; malformed metadata, deferred IRQ domains and IRQ-zero mapping failure
 cannot activate polling. The cached Apple binding's four-IRQ default remains.
 The native adapter reaches named register-zero-write/read APIs and command
-kinds 7/6, but `sendCommand`'s `controller+0xe0` receiver/slot `+0x1e8` and
-controller slot `+0x980` remain unresolved. Corrected original-address views
-supersede rebased call-site evidence; 520 instruction-byte lines and 27
+kinds 7/6. The October 10 [dispatch trace](j575d-spmi-native-dispatch.md)
+resolves the retained base command-gate slot `+0x1e8` to `runAction` and
+controller slot `+0x980` to `executeLoggedCommand`, using the constructor's
+`__ZTV + 0x10` address point. The concrete `AppleSPMIController` exists in
+both retained symbols and the HPM providers' registry hierarchy. Its corrected
+nested slot `+0x958` resolves to `executeCommand`; the transaction helpers'
+wire/completion paths remain under investigation. Corrected original-address
+views supersede rebased call-site evidence; 520 instruction-byte lines and 27
 same-line anchors pass the main verifier, without claiming wire equivalence.
 CIO mode 2 has a traced native producer but no proven Linux protocol crosswalk;
 USB2's captured HOST/DEV values have opposite polarity to Linux, with native
-consumer/base/timing unresolved. The bounded controller trace stops at those
-two receiver implementations; independent source-backed help is needed before
-a qualified polling implementation and for CIO80/USB2. Pro consult
+consumer/base/timing unresolved. The next controller trace follows the concrete
+execution path; the base dispatch bodies do not establish completion or wire
+equivalence. Hardware-qualified polling and CIO80/USB2 still require the
+remaining contracts. Pro consult
 `01M4EWE11E4FR4ZNSBYPZBFKYQ` has since completed (channel message 18760),
 and its Linux source references were checked. It supports developing an
 [optional offline polling prototype](j575d-select-polling-prototype.md)
