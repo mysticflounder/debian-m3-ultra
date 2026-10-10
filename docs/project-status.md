@@ -983,6 +983,31 @@ resource-initializer proof or Linux lifecycle equivalence. The USB-common
 reviewed USB-helper evidence and constrained Linux mode mapping remain,
 without gaining CIO80 or hardware qualification from this correction.
 
+The static CIO80 resource crosswalk now checks all 42 captured `reg` and
+`IODeviceMemory` tuples for each of the six controllers. It also decodes
+30 original-binary `_sRegisters` cells: selectors 3, 16, 18, 25 and 27
+select addresses at core offsets `0x400`, `0x9000`, `0xb000`, `0x19000`
+and `0x1b000`, respectively, each with length `0x4000`. Adding the five
+helper-local offsets reproduces the retained decoder's core-relative
+targets (`0x41c`, `0x935c`, `0xb008`, `0x1935c`, `0x1b008`). Main reran
+the crosswalk successfully; verifier
+`scratch/j575d-cio80-resource-crosswalk-2026-10-10/verify.py` has SHA-256
+`b9ff3308995f901d657fdcda6601b7e009fc2b2795d21b7270348326805d2b77`.
+
+A separate main receipt checks all **1,007 instructions of `start()`**
+against the original collection, including the table-to-descriptor copy:
+`scratch/j575d-cio80-apply-selector-2026-10-10/verify-initializer.py`, SHA-256
+`a1f89d130136fee3ddd43b5e9f9c80a4e5ee70c965da131bc20b8455fe8749a6`.
+Descriptors are at `self+0x208`, stride 32. Their `+0x10/+0x18` fields
+receive the static address/length pair; `+0x8` receives
+`table_address + slot_0x138_result - getPhysicalAddress_result`, not a
+second independent physical base. The initializer enumerates provider
+mappings and tests containment, so overlapping host windows do not justify
+equating the descriptor selector with the provider mapping index. Concrete
+provider-method identity, runtime mapping, Linux mode/lifecycle correspondence
+and physical operation remain unqualified. These checks establish intended
+static addresses, not permission to apply CIO80 settings or enable a PHY.
+
 Controller-node coverage is distinct from PHY readiness. The retained event
 candidate has seven DWC3 nodes: six have no `status` property and one is
 explicitly disabled; all seven referenced ATCPHY providers remain disabled.
@@ -1027,6 +1052,18 @@ m1n1 `2460b604`, Linux `602042bf`, and QEMU `f9587d40` remain unchanged from
 Here, **native validation means bare-metal execution**, outside macOS, not
 the QEMU/HVF VM. HVF runs guest CPU instructions on the host CPU but exposes
 virtual hardware; it cannot validate the Studio's physical SoC initialization.
+
+Bring-up priority is distinct from completing every SoC capability. The first
+serial/PID1 RAM-only boot does not require CIO80/USB4 or storage/network DMA;
+its outstanding gates are native loader/entry, physical memory placement,
+CPU/interrupt/console/power contracts and recovery readiness. Internal NVMe
+uses the separately documented SART/mailbox/RTKit/reset/PMGR path; do not add
+PCIe/DART as a prerequisite merely because it is NVMe. Built-in AQC113
+Ethernet does require its PCIe/DART/power/IRQ/DMA path. CIO80 and the missing
+USB4 pipehandler remain in the full SoC scope, but are not prerequisites for
+those three milestones. Prioritize the remaining first-boot contracts before
+further optional Type-C capability tracing; native testing still requires a
+verified backup, recovery readiness and separate approval.
 
 | Workstream | Status | Next action / gate |
 | --- | --- | --- |
