@@ -576,7 +576,8 @@ same-line anchors pass the main verifier, without claiming wire equivalence.
 CIO mode 2 has a traced native producer but no proven Linux protocol crosswalk;
 USB2's captured HOST/DEV values have opposite polarity to Linux. The native
 hardcoded initialization consumer and descriptor wrapper are now traced;
-physical resource equivalence, role semantics and timing remain unresolved.
+captured resource-index equivalence is now traced as described below, while
+role semantics, timing and physical operation remain unresolved.
 The additional
 [timeout/retry fixture](j575d-select-polling-prototype.md#timeoutretry-ambiguity--2026-10-10)
 passes against actual extracted polling/read code: the first full read times
@@ -623,6 +624,40 @@ checks, not execution or electrical validation. Next trace the native
 descriptor producer and original provider's resource-zero mapping; do not
 invert Linux polarity, emit USB2 tunables or enable hardware from these facts.
 
+The subsequent provider follow-up closes the **captured resource-index**
+comparison, not hardware qualification. In the retained IOService registry,
+each of the six `atc-phy0..5@2A90000` nodes is an `AppleARMIODevice` with
+a direct `AppleT6032TypeCPhy@0..5` child. Its own `IODeviceMemory[0]` has
+length `0x4000` and base respectively `0x702a90000`, `0xb02a90000`,
+`0xf02a90000`, `0x1302a90000`, `0x2702a90000`, `0x2b02a90000`.
+All six match the raw registry's first `reg` tuple and Linux's named USB2
+resource. Original-image symbols and chained fixups resolve the provider's
+slots `0x710`/`0x708` to `IOService::mapDeviceMemoryWithIndex` and
+`getDeviceMemoryWithIndex`; the latter retrieves `IODeviceMemory` and passes
+the supplied index to `OSArray::getObject`. The generic `IOMemoryMap` slot
+`0x138` resolves to `getVirtualAddress`. This connects the known mapping loop
+to captured resource metadata; it does not observe a running map object,
+live virtual address, power state or successful register access.
+
+The same six parent nodes expose **two** USB2 setting families. Generic
+`tunable-host`/`tunable-device` encode `(resource=0, offset=8, mask=0x7000)`
+with values `0x7000`/`0`, agreeing with Linux. The separately named
+`tunable_USB2PHY_HOST`/`DEV` encode values `0`/`0x7000` instead. The property
+names alone do not tell us which is consumed by the hardcoded initialization
+path, nor justify changing Linux. Descriptor role production and sequencing
+remain the next investigation. The provider receipt is
+`scratch/j575d-usb2-provider-2026-10-10/report.md`; generic API checks are in
+`scratch/j575d-usb2-map-api-2026-10-10/verify.py` (SHA-256
+`0f7e32c5e6925831cd530e0040b376857ae4c4a9bcfcf969613d985aa6086cd3`).
+The provider verifier (SHA-256
+`ce26544bdec086e6c9a8d01eae2b97eba0b6859bd4fcd6d4f76a28fff4dc0380`)
+passes against the pinned service registry
+`cf4f681047520d666fea5f9ddfbb4b4b87875240740ecde3cc147e29c524ebad`.
+It checks same-node property ownership and direct child identity, with an
+accepted baseline and four designated parser rejects. The final parent rerun
+is `scratch/j575d-usb2-provider-2026-10-10/parent-review.txt`. No driver, DT
+enablement or hardware state was changed.
+
 Hardware-qualified polling and CIO80/USB2 still require the
 remaining contracts. Pro consult
 `01M4EWE11E4FR4ZNSBYPZBFKYQ` has since completed (channel message 18760),
@@ -667,7 +702,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | USB-common package and tests pass; optional select-polling prototype and local 0007 FIFO-target correction pass host tests and the 20-module build; native SPMI configuration/refresh and USB2 hardcoded consumer/descriptor wrapper statically traced; Linux USB2 candidate ranges/links checked | Prototype default-off; no package installed or booted. Hardware response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; the FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol and USB2 physical base/role/timing remain open; physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
+| NVMe / USB / Ethernet | USB-common package and tests pass; optional select-polling prototype and local 0007 FIFO-target correction pass host tests and the 20-module build; native SPMI configuration/refresh and USB2 consumer/descriptor wrapper traced; six captured provider resource-zero windows agree with Linux USB2 ranges | Prototype default-off; no package installed or booted. Hardware response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; the FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol and USB2 role/timing remain open; captured base agreement is not physical access validation. Physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |
