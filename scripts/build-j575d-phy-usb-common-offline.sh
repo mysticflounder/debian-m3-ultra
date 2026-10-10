@@ -20,6 +20,7 @@ patches=(
     0003-typec-tipd-common-core-and-ace3.patch
     0004-apple-atcphy-m3-fabric-calibration.patch
     0005-apple-atcphy-m3-usb-common-calibration.patch
+    0007-spmi-apple-fifo-recovery-register.patch
 )
 mkdir -p "$EVIDENCE"
 if [[ $# -ne 0 ]]; then

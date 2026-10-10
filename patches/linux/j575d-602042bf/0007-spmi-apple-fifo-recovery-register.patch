@@ -1,0 +1,17 @@
+J575d corrective SPMI FIFO recovery register target
+
+The retained v10 FIFO recovery implementation clears the controller FIFO
+through the ACT register.  This single functional hunk corrects the inherited
+RSP-register target; no normal command, ACK, parity, or payload path changes.
+
+Application: patch --batch --fuzz=0 -p0 from the pinned source root.
+
+--- drivers/spmi/spmi-apple-controller.c
++++ drivers/spmi/spmi-apple-controller.c
+@@ -168,5 +168,5 @@ static int spmi_raw_cmd(struct spmi_controller *ctrl, u8 opc, u8 sid,
+ 	if (spmi->prev_fail) {
+-		writel(SPMI_ACT_FIFO_FLUSH, spmi->regs + SPMI_RSP_REG);
++		writel(SPMI_ACT_FIFO_FLUSH, spmi->regs + SPMI_ACT_REG);
+ 		apple_spmi_irq_ack_raw(spmi, SPMI_IRQ_NOTIFY);
+ 		spmi->prev_fail = false;
+ 	}

@@ -95,10 +95,89 @@ The requested flag values are hexadecimal `0x2` and `0x12`; both have bit
 payload-byte packing depends on `((kind - 1) & 0xf9)`, not these flags.
 Neither numeric flag is assigned a protocol meaning by this trace.
 
-The remaining immediate edge is the concrete handler/descriptor construction
-and register mapping, followed by response decoding and command freshness.
 Helper and completion byte checks pass; their corrected semantic review is
-retained in `scratch/j575d-spmi-controller-2026-10-10-review/`.
+retained in `scratch/j575d-spmi-controller-2026-10-10-review/`. The subsequent
+mapping trace below closes the descriptor-construction edge; response
+decoding and command freshness remain separate work.
+
+## Gen3 descriptor and provider mapping
+
+Both captured HPM providers, `nub-spmi-a0` and `nub-spmi-a2`, have
+`gen=<03000000>`. The factory selects `AppleGen3SPMIHandler`, whose vtable
+slot 0 is `getSPMIRegisters`. It returns the embedded descriptor at handler
+offset `0x28`.
+
+The controller maps provider resource index 0, retaining the `IOMemoryMap*`
+at `self+0x110` and its `getVirtualAddress()` result at `self+0x118`.
+Resource index 1 uses distinct fields `self+0x1aa8` and `self+0x1ab0`.
+Both values passed to handler initialization are mapped virtual addresses,
+not memory-map objects. Call arguments, stores and biased virtual slots were
+independently reviewed and the strengthened byte verifier passes.
+
+For the first mapped address `base`, Gen3 initialization establishes:
+
+| Descriptor field | Value | Traced use |
+| --- | --- | --- |
+| `+0x8` | `base` | Pointer used for queue-state reads |
+| `+0x10` | `base + 4` | Pointer used for command-word writes |
+| `+0x18` | `base + 8` | Pointer used for response-word reads |
+| `+0x2c` | `0x01000000` | Queue response-empty mask, bit 24 |
+
+These offsets and the empty mask agree with the retained Linux register
+definitions. The captured first physical resources are `0x2a1188000` for a0
+and `0x2a11a8000` for a2, each `0x4000` bytes. Numeric kernel virtual
+addresses are not captured, and this is not a live hardware test.
+
+Receipts are under `execute/handler/` and `execute/provider-map/` within the
+SPMI scratch directory above. Their checks pin the image and registry, verify
+the scoped generation properties and explicitly decode the mask as a
+little-endian 32-bit value. The first scratch interpretation, `0x10000`, was
+incorrect and is superseded by `0x01000000`.
+
+Register-window provenance is now established at this static/captured-metadata
+boundary. Remaining work includes response decoding, the meaning of the
+shifted controller field, downstream selector-bit interpretation and
+freshness. Matching register offsets alone does not settle those contracts.
+
+## Linux FIFO recovery correction
+
+Patch `0007-spmi-apple-fifo-recovery-register.patch` corrects the retained
+Linux recovery write from `SPMI_RSP_REG` (`+0x8`) to `SPMI_ACT_REG`
+(`+0xa4`). It changes only the flush target when `prev_fail` is set.
+The [published upstream v10 FIFO patch](https://lists.openwall.net/linux-kernel/2026/10/01/2633)
+already uses ACT; this is alignment with that authored correction, not a
+claim of a new upstream discovery or of mainline acceptance.
+
+All four USB/Fabric/USB-common/select-polling offline recipes include the
+correction. Historical build receipts remain unchanged. A fresh build at
+`scratch/j575d-select-polling-offline.dfzHSr/` exits 0 and links the
+20-module closure. The package includes the three TIPD modules and the
+corrected `spmi-apple-controller.ko`, which is byte-identical to the built
+module (SHA-256
+`c128daf99e96a5527c94fb7fa1ff4bf212415c6d5ead931d9340a481cec3082f`).
+The earlier `p34D6W` build compiled the correction but omitted it from the
+package; it is retained as historical evidence, not the corrected overlay.
+The final build's `SHA256SUMS`, `PACKAGE_SHA256SUMS`,
+patch-application log and bounded base-input manifests retain the evidence.
+
+`scripts/test-j575d-spmi-fifo-recovery.py` copies the retained source into a
+disposable tree, applies the patch with zero fuzz, extracts the actual
+pack/wait/raw-command functions and compiles them with ASan/UBSan.
+The normal command emits no recovery write; a timeout followed by retry
+emits an ACT flush before the next command. ACK/reset counts and final
+`prev_fail` state are checked, but their relative ordering is not separately
+asserted. Reverting the target to RSP causes exactly exit 1 at the designated
+ACT-address assertion. Payload loops, parity/ACK errors, concurrency and
+hardware behavior are outside this fixture's coverage.
+
+The independent audit and original test receipt are retained under
+`scratch/j575d-spmi-fifo-recovery-2026-10-10/`; the parent rerun is
+`parent-review/fifo-recovery-un32vx1j/`. Patch SHA-256:
+`5c14ed442baf9aa557d0d64a59a0c739ad5904521777d50ce639ee90fea3227f`.
+Patched controller SHA-256:
+`480acad25605cd8b3867b71fb4e3abab50fa7a9fc42ca6d7bbb7e7df4d70e389`.
+The correction does not enable experimental polling or authorize native
+testing; response interpretation and selector freshness remain unresolved.
 
 ## Evidence and limits
 

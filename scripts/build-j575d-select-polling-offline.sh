@@ -9,6 +9,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 BASE="$ROOT/scratch/j575d-phy-usb-common.W3594q"
 PREREQ="$ROOT/patches/linux/j575d-602042bf/0004-apple-spmi-and-ace3-bindings.patch"
 PATCH="$ROOT/patches/linux/j575d-602042bf/0006-typec-tipd-experimental-select-polling.patch"
+CORRECTIVE="$ROOT/patches/linux/j575d-602042bf/0007-spmi-apple-fifo-recovery-register.patch"
 BUILDER="sha256:1cc5bb4ef152a16785acce551084a41c973be8d0c9c7718524f67cd9d7d78121"
 REV=602042bf29f6efde39cfb5fdd9289bf4854bc0c5
 RELEASE=7.3.0-rc6
@@ -20,16 +21,19 @@ MODULES=(
 SOURCES=(
     Documentation/devicetree/bindings/spmi/apple,spmi.yaml
     Documentation/devicetree/bindings/usb/apple,sn201202x.yaml
+    drivers/spmi/spmi-apple-controller.c
     drivers/usb/typec/tipd/spmi.c
     drivers/usb/typec/tipd/tps6598x.h
 )
 BASE_SOURCES=(
     Documentation/devicetree/bindings/spmi/apple,spmi.yaml
+    drivers/spmi/spmi-apple-controller.c
     drivers/usb/typec/tipd/spmi.c
     drivers/usb/typec/tipd/tps6598x.h
 )
 BOUNDED_BASE_FILES=(
     source/Documentation/devicetree/bindings/spmi/apple,spmi.yaml
+    source/drivers/spmi/spmi-apple-controller.c
     source/drivers/usb/typec/tipd/spmi.c
     source/drivers/usb/typec/tipd/tps6598x.h
     build/.config
@@ -52,6 +56,7 @@ for path in "$BASE/source" "$BASE/build" "$BASE/build/.config" \
             "$BASE/build/Module.symvers" "$PREREQ" "$PATCH"; do
     test -e "$path" || { echo "Missing required input: $path" >&2; exit 1; }
 done
+test -s "$CORRECTIVE" || { echo "Missing required input: $CORRECTIVE" >&2; exit 1; }
 for rel in "${BASE_SOURCES[@]}"; do
     test -f "$BASE/source/$rel" || {
         echo "Prepared source is missing patch target: $BASE/source/$rel" >&2
@@ -80,8 +85,10 @@ cp -cR "$BASE/source/." "$OUT/source/"
 cp -cR "$BASE/build/." "$OUT/build/"
 cp "$PREREQ" "$OUT/input/0004-apple-spmi-and-ace3-bindings.patch"
 cp "$PATCH" "$OUT/input/0006-typec-tipd-experimental-select-polling.patch"
+cp "$CORRECTIVE" "$OUT/input/0007-spmi-apple-fifo-recovery-register.patch"
 cmp "$PREREQ" "$OUT/input/0004-apple-spmi-and-ace3-bindings.patch"
 cmp "$PATCH" "$OUT/input/0006-typec-tipd-experimental-select-polling.patch"
+cmp "$CORRECTIVE" "$OUT/input/0007-spmi-apple-fifo-recovery-register.patch"
 cp "$0" "$OUT/build-recipe.sh"
 patch --batch --forward --fuzz=0 -p0 -d "$OUT/source" \
     -i "$OUT/input/0004-apple-spmi-and-ace3-bindings.patch" \
@@ -89,10 +96,14 @@ patch --batch --forward --fuzz=0 -p0 -d "$OUT/source" \
 patch --batch --forward --fuzz=0 -p0 -d "$OUT/source" \
     -i "$OUT/input/0006-typec-tipd-experimental-select-polling.patch" \
     > "$OUT/metadata/0006.apply.log" 2>&1
+patch --batch --forward --fuzz=0 -p0 -d "$OUT/source" \
+    -i "$OUT/input/0007-spmi-apple-fifo-recovery-register.patch" \
+    > "$OUT/metadata/0007.apply.log" 2>&1
 
-printf 'revision=%s\nbuilder=%s\nbase=%s\nprerequisite_patch=%s\nprerequisite_patch_sha256=%s\npatch=%s\npatch_sha256=%s\n' \
+printf 'revision=%s\nbuilder=%s\nbase=%s\nprerequisite_patch=%s\nprerequisite_patch_sha256=%s\npatch=%s\npatch_sha256=%s\ncorrective_patch=%s\ncorrective_patch_sha256=%s\n' \
     "$REV" "$BUILDER" "$BASE" "$PREREQ" "$(shasum -a 256 "$PREREQ" | awk '{print $1}')" \
     "$PATCH" "$(shasum -a 256 "$PATCH" | awk '{print $1}')" \
+    "$CORRECTIVE" "$(shasum -a 256 "$CORRECTIVE" | awk '{print $1}')" \
     > "$OUT/build-inputs.txt"
 printf 'base_inputs_sha256_manifest=%s\n' \
     "$OUT/metadata/base-inputs.before.sha256" \
@@ -103,6 +114,7 @@ done
 {
     sed -n "s/^patching file '\(.*\)'$/\1/p" "$OUT/metadata/0004.apply.log"
     sed -n "s/^patching file '\(.*\)'$/\1/p" "$OUT/metadata/0006.apply.log"
+    sed -n "s/^patching file '\(.*\)'$/\1/p" "$OUT/metadata/0007.apply.log"
 } | sort -u > "$OUT/metadata/source.changed"
 printf '%s\n' "${SOURCES[@]}" | sort -u > "$OUT/metadata/source.expected-changed"
 cmp "$OUT/metadata/source.changed" "$OUT/metadata/source.expected-changed"
@@ -164,7 +176,8 @@ target="/package/lib/modules/$release/kernel"
 for rel in \
     drivers/usb/typec/tipd/tps6598x.ko \
     drivers/usb/typec/tipd/tps6598x-core.ko \
-    drivers/usb/typec/tipd/sn201202x.ko; do
+    drivers/usb/typec/tipd/sn201202x.ko \
+    drivers/spmi/spmi-apple-controller.ko; do
     test -s "/out/$rel"
     mkdir -p "$target/$(dirname "$rel")"
     cp "/out/$rel" "$target/$rel"
@@ -178,7 +191,9 @@ done
 grep -F "spmi_register_zero_write" /metadata/base.Module.symvers
 grep -F "spmi_register_read" /metadata/base.Module.symvers
 printf "select_polling_modules=3\n" >> /metadata/provenance.txt
-printf "PASS: select-polling tipd modules built and linked against the prepared Module.symvers\n"
+printf "corrective_spmi_modules=1\n" >> /metadata/provenance.txt
+printf "packaged_modules=4\n" >> /metadata/provenance.txt
+printf "PASS: select-polling TIPD plus corrective SPMI modules built, linked, and packaged against the prepared Module.symvers\n"
 ' > "$OUT/build.log" 2>&1
 BUILD_RC=$?
 set -e
@@ -200,6 +215,7 @@ find "$OUT/package" "$OUT/metadata" -type f -print0 | sort -z | xargs -0 shasum 
 shasum -a 256 "$OUT/build-recipe.sh" "$OUT/build-inputs.txt" \
     "$OUT/input/0004-apple-spmi-and-ace3-bindings.patch" \
     "$OUT/input/0006-typec-tipd-experimental-select-polling.patch" \
+    "$OUT/input/0007-spmi-apple-fifo-recovery-register.patch" \
     "$OUT/metadata/patched-source.sha256" "$OUT/metadata/source.changed" \
     "$OUT/build.log" "$OUT/build.exit" "$OUT/build/Module.symvers" \
     "$OUT/metadata/changed-modules.sha256" > "$OUT/SHA256SUMS"

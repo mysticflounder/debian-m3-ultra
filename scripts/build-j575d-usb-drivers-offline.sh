@@ -17,6 +17,7 @@ patches=(
     0001-apple-spmi-ace3-transactions-and-irqs.patch
     0002-apple-atcphy-m3-generation-support.patch
     0003-typec-tipd-common-core-and-ace3.patch
+    0007-spmi-apple-fifo-recovery-register.patch
 )
 if [[ $# -ne 0 ]]; then
     echo 'Usage: build-j575d-usb-drivers-offline.sh' >&2

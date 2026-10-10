@@ -404,14 +404,31 @@ byte-identical. The TIPD port preserves all four existing variant data tables,
 packed status layouts, newer power-status callbacks and TPS66993 matches.
 The new RAM-only HVF run loads all twenty modules and passes thirty markers;
 there are no unresolved-symbol/load diagnostics. This is ABI/registration
-evidence, not physical Apple driver operation. An inherited SPMI ACT/RSP
-FIFO-recovery discrepancy is recorded as an unverified reliability item;
-no speculative register fix or issue filing was made. The subsequent routing
-evidence below resolves the second bank's physical placement; the runtime
-power-domain join, fourth ACE3 IRQ, all six connector graphs and final per-port
-tunable handoff remain open. The separate m1n1 comparison lane awaits Adam's
-decision on its local no-AI instruction; no alternate copy or policy override
-was used. No firmware, disk or persistent-VM state was changed.
+evidence, not physical Apple driver operation. The inherited SPMI ACT/RSP
+FIFO-recovery discrepancy is now corrected by local patch 0007, changing the
+flush target from `SPMI_RSP_REG` (`+0x8`) to `SPMI_ACT_REG` (`+0xa4`). It is
+referenced against the published upstream v10 FIFO series
+([source](https://lists.openwall.net/linux-kernel/2026/10/01/2633)); this is a
+published-series reference, not a claim that the correction is mainline.
+The actual-source offline build at
+`scratch/j575d-select-polling-offline.dfzHSr` completes the 20-module closure
+and packages the three TIPD modules plus the corrected SPMI controller module.
+The parent review fixture at
+`scratch/j575d-spmi-fifo-recovery-2026-10-10/parent-review/fifo-recovery-un32vx1j`
+passes `normal=1 timeout-retry=1`; its designated wrong-target mutation exits
+exactly 1. That fixture checks the ACT flush before the retry command and
+recovery counts, but does not prove ACK/reinitialization ordering or hardware
+behavior. Separate captured Gen3 mapping evidence verifies provider resource 0
+and descriptor offsets status `+0`, command `+4`, response `+8`, with the
+response-empty mask at `BIT(24)`; captured physical resources are a0
+`0x2a1188000` and a2 `0x2a11a8000`. No runtime virtual address or native
+enablement is claimed. Response decoding, selector freshness, CIO80 and USB2
+remain unresolved. The subsequent routing evidence below resolves the second
+bank's physical placement; the runtime power-domain join, fourth ACE3 IRQ, all
+six connector graphs and final per-port tunable handoff remain open. The
+separate m1n1 comparison lane awaits Adam's decision on its local no-AI
+instruction; no alternate copy or policy override was used. No firmware, disk
+or persistent-VM state was changed.
 
 The [USB physical-routing inventory](inventory/j575d-usb-routing-2026-10-08.json)
 now binds an additional filtered read-only observation and eleven passing
@@ -529,16 +546,17 @@ both retained symbols and the HPM providers' registry hierarchy. Its corrected
 nested slot `+0x958` resolves to `executeCommand`. Helper tracing reaches
 `waitForResponse` and `queuePop`; an actual-source Linux host fixture passes
 2,560 packing cases. Native/Linux intermediate selector words differ, but
-that does not establish a wire mismatch or driver bug. Concrete handler
-mapping, response decoding and freshness remain under investigation.
+that does not establish a wire mismatch or driver bug. The captured Gen3
+handler/provider mapping is now statically closed; response decoding, the
+shifted controller field and selector freshness remain under investigation.
 Corrected original-address
 views supersede rebased call-site evidence; 520 instruction-byte lines and 27
 same-line anchors pass the main verifier, without claiming wire equivalence.
 CIO mode 2 has a traced native producer but no proven Linux protocol crosswalk;
 USB2's captured HOST/DEV values have opposite polarity to Linux, with native
-consumer/base/timing unresolved. The next controller trace follows handler
-construction and register mapping; static dispatch and software wait loops
-do not establish hardware completion or wire equivalence.
+consumer/base/timing unresolved. Next work targets response decoding, shifted
+controller-field interpretation and selector freshness; static dispatch and
+software wait loops do not establish hardware completion or wire equivalence.
 Hardware-qualified polling and CIO80/USB2 still require the
 remaining contracts. Pro consult
 `01M4EWE11E4FR4ZNSBYPZBFKYQ` has since completed (channel message 18760),
@@ -549,9 +567,11 @@ busy then ready on every selection; this rejects ready-only traces but does
 not establish a hardware command epoch. The sanitized actual-source host
 suite and exact-exit-1 mutation control pass, as do two valid/seven invalid
 binding fixtures and the ARM64 20-module dependency build. The three TIPD
-modules are packaged offline. Empty-interrupt schema validation is limited by
+modules and corrected SPMI controller module are packaged offline.
+Empty-interrupt schema validation is limited by
 a cached dtschema decoder crash; runtime zero-entry rejection is tested.
-The normal build recipes and 822-record disabled candidate remain unchanged.
+The normal build recipes include the FIFO correction but do not enable
+experimental polling; the 822-record disabled candidate remains unchanged.
 The earlier October 8 Linux API checkpoint at 04:16 UTC returned `7b63ef2d`;
 this is historical evidence, not a current-head claim. The retained source
 pin is unchanged. See the [integration inventory](inventory/j575d-phy-fabric-integration-2026-10-08.json).
@@ -581,7 +601,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | USB-common package and tests pass; optional select-polling prototype passes actual-source sanitized host tests, mutation control, two valid/seven invalid binding fixtures and the 20-module dependency build | Prototype default-off; no package installed or booted. Native freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; CIO80 protocol and USB2 consumer/base/role remain open; physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
+| NVMe / USB / Ethernet | USB-common package and tests pass; optional select-polling prototype and the local 0007 FIFO-target correction pass actual-source sanitized host tests, mutation control, two valid/seven invalid binding fixtures and the 20-module dependency build | Prototype default-off; no package installed or booted. Response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; the FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol and USB2 consumer/base/role remain open; physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |
