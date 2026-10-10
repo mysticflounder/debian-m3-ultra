@@ -549,13 +549,22 @@ nested slot `+0x958` resolves to `executeCommand`. Helper tracing reaches
 that does not establish a wire mismatch or driver bug. The captured Gen3
 handler/provider mapping is now statically closed; response decoding, the
 shifted controller field and selector freshness remain under investigation.
+The bounded response follow-up establishes native masks `0x0fe0`/`0x0f80`
+for kinds 6/7, post-comparison bit-16/bit-15 checks, and the one-byte FIFO
+copy. The corrected Linux source passes a queue-driven 1,024-case read
+matrix, two write-ACK cases and FIFO/timeout cases with two semantic mutation
+controls. It accepts a mismatched response header in the tested case, unlike
+the native masked-comparison path. This is not yet a demonstrated hardware
+bug or justification for a driver change. Native controller `+0x194` is
+loaded from configuration word 0 by `setConfig`; its producer, concrete
+value and USID identity remain unresolved.
 Corrected original-address
 views supersede rebased call-site evidence; 520 instruction-byte lines and 27
 same-line anchors pass the main verifier, without claiming wire equivalence.
 CIO mode 2 has a traced native producer but no proven Linux protocol crosswalk;
 USB2's captured HOST/DEV values have opposite polarity to Linux, with native
-consumer/base/timing unresolved. Next work targets response decoding, shifted
-controller-field interpretation and selector freshness; static dispatch and
+consumer/base/timing unresolved. Next work targets the configuration producer,
+response mismatch policy and selector freshness; static dispatch and
 software wait loops do not establish hardware completion or wire equivalence.
 Hardware-qualified polling and CIO80/USB2 still require the
 remaining contracts. Pro consult

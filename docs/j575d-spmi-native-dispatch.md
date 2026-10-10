@@ -179,6 +179,79 @@ Patched controller SHA-256:
 The correction does not enable experimental polling or authorize native
 testing; response interpretation and selector freshness remain unresolved.
 
+## Native response comparison
+
+The original-address table at `0xfffffe000774673c` supplies mask `0x0fe0`
+for kind 6 and `0x0f80` for kind 7. The helpers test
+`(response ^ submitted_word) & mask` at `0x9de23c4/0x9de23c8` and
+`0x9de2adc/0x9de2ae0`. Zero difference reaches further checks, not an
+immediate success return. A mismatch with controller flag `+0x125` bit 0
+set marks `+0x1a8` and takes an error return. With that flag clear, an
+unresolved virtual call at runtime `+0x960` precedes the later checks if it
+returns. This is not a traced command retry or a freshness guarantee.
+
+For kind 6, the later register path requires response bit 16 before consuming
+a second FIFO word through `queuePop` at `0x9de2540`. A cold helper copies
+that word's low byte into the supplied destination at `0x9de7c8c/0x9de7c90`.
+The kind-7 payloadless path checks response bit 15 at `0x9de2bec`.
+These bit positions correspond structurally to Linux's one-byte parity and
+write-ACK checks, but that comparison alone does not establish complete
+protocol or error-policy equivalence.
+
+Unlike Linux's baseline below, native code therefore contains a masked
+response-versus-command comparison. Whether Linux needs such a check on
+this hardware remains unresolved. The configuration producer, mismatch
+policy and hardware response contract still need qualification; no driver
+change is inferred from this difference alone. The reviewed original-address
+disassembly and passing byte/table verifier are retained under
+`scratch/j575d-spmi-response-2026-10-10/native/`.
+
+## Configuration-field provenance
+
+The concrete `setConfig(AppleSPMIConfig*)` body at
+`0xfffffe0009de3718` loads the first 32-bit configuration word and stores it
+at controller `+0x194` (`0x9de3720/0x9de3724`). Its concrete vtable entry
+is symbol-relative `+0x960`, hence runtime slot `+0x950` after the address
+point adjustment. The bounded byte/vtable verifier passes.
+
+This establishes a configuration-to-field edge, not the configuration's
+producer, value or USID meaning. The command helper shifts the full 32-bit
+field left by eight without an observed narrowing mask; its contribution
+must not be described as confined to bits 8–15. An immediate-offset scan
+found this matching store, but cannot exclude computed or other access
+forms. The dynamic caller remains unresolved. Receipts are under
+`scratch/j575d-spmi-response-2026-10-10/controller-field/`.
+
+## Linux response baseline
+
+The corrected Linux source checks bit 15 for an acknowledgment when no input
+payload is requested. For a one-byte read it instead checks bit 16 of the
+reply's parity-status field and copies the low byte of a second FIFO word.
+ACK is not required for that read. It does not compare the response's command
+or slave fields against the submitted word in this path.
+
+An actual-source ASan/UBSan fixture exercises two write-ACK cases, all 256
+payload bytes times two parity states times two ACK states (1,024 reads),
+missing/extra FIFO data and a completion timeout. Typed, ordered status and
+response-read queues must be fully consumed. An invalid register offset is
+rejected by the fixture. ACK/parity failures return `-EIO` without setting
+`prev_fail`; missing payload data and timeout set it. Extra FIFO data sets it
+but does not by itself fail the otherwise valid command. A failed parity
+check occurs after the byte has been copied; callers must honor the error.
+
+The explicit mismatched-header case (`reply = BIT(16) | 0x1234`, request
+opcode `0x60`, slave 1) still returns the supplied byte successfully. This
+records source behavior, not a demonstrated hardware failure or a decision
+to add response matching. It does not establish freshness.
+
+Main review and rerun passed at
+`scratch/j575d-spmi-response-2026-10-10/linux/parent-review/response-yeiqxwvv/`.
+Both ACK-condition and parity-condition mutations fail with exit 1 at their
+expected assertions. The runner, fixture and scoped report are in the parent
+`linux/` directory. These tests simulate register reads; they do not run the
+native implementation or validate hardware timing, interrupt delivery,
+multi-byte transactions or concurrent callers.
+
 ## Evidence and limits
 
 Input: `scratch/kernelcache-tool-reviewed.macho`, SHA-256
