@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-10",
+  "scope": "Offline M3 USBCTL upper-bit preservation; not hardware qualification",
+  "patch": {
+    "path": "patches/linux/j575d-602042bf/0009-apple-atcphy-m3-usbctl-preserve.patch",
+    "sha256": "774b6a9be65962094bee2ae04c70729d24889339437a886b00d90bbbc32715bf",
+    "contract": "Dedicated T6031-only flag changes power-on USBCTL to (old & ~7) | 2; legacy whole-word writes, role selection, signal writes, delays and power-off remain unchanged"
+  },
+  "build": {
+    "workspace": "scratch/j575d-usbctl.w3QGd5",
+    "recipe": "scripts/build-j575d-phy-usbctl-offline.sh",
+    "recipe_sha256": "58a458cf5c3e256307b4501491391f23c419cc0efdb5537ec3b784ee4b0b6d67",
+    "kernel_revision": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+    "builder": "sha256:1cc5bb4ef152a16785acce551084a41c973be8d0c9c7718524f67cd9d7d78121",
+    "modules": 20,
+    "depmod_diagnostics_bytes": 0,
+    "original_image_and_builtin_abi_unchanged": true,
+    "build_manifest_sha256": "9e00d295f551a2355668697ccc5d49272326c65b75dc22ee4e274933e8112078",
+    "package_manifest_sha256": "695f924670941168f25bcd6de1a400efe762d6f8cdc4db48f8a2bd761a44e55e",
+    "verified_checksum_entries": 111,
+    "patched_driver_sha256": "d8b745b09b34542553f7c86e3280fcbffaefcbefc435bde23129a16a1fdc331c",
+    "unchanged_binding_sha256": "e57780a19cef194aca3a51e6e903f90c1d11f240d0435a396d77cac32ca0c4bc",
+    "atc_module_sha256": "dada2e6761e32a8b725adaad878064027e5f792c492f0502c8de7976765e66f0"
+  },
+  "host_tests": {
+    "path": "tests/test-j575d-phy-usbctl.py",
+    "sha256": "e0d95ff3d7a97bfda8e16c2c880a846f81bb86fe44a749c4ec32af34e81baf86",
+    "tests": 5,
+    "sanitizers": ["address", "undefined"],
+    "comparison": "Actual after-0008 power-on versus actual after-0009 power-on, source-extracted descriptors and helpers",
+    "m3_write_delay_interleaving": "Identical before final USBCTL write; final write location and expected value checked",
+    "legacy_comparison": "Separate write-order and delay-value traces for T8103/T8122",
+    "unchanged_functions": ["atcphy_usb2_set_mode", "atcphy_usb2_power_off", "atcphy_map_resources", "mask32", "set32", "clear32"],
+    "mutation": "Removing M3 RMW fails with exact exit 1 and designated upper-bit-loss message",
+    "parent_log": "scratch/j575d-usbctl-tests-parent-v2.log",
+    "parent_log_sha256": "489df5ad7c91d0126a7e930de72896ca8bb882f1bbd5f2daceb48e8d25e82210",
+    "independent_workspace": "scratch/j575d-usbctl-preserve-2026-10-10/independent-final",
+    "existing_event_tests": "Seven frozen 0008 tests rerun and passed; not a substitute for combined 0009 tests"
+  },
+  "native_evidence": {
+    "host_startup_verifier": "scratch/j575d-usb2-client-role-2026-10-10/open-receiver/verify.py",
+    "host_startup_verifier_sha256": "e1a0c0a8355532472e5b0451676483d867fd526b8d586cfdaddef545c1b6e4b2",
+    "power_byte_verifier": "scratch/j575d-usb2-power-order-2026-10-10/verify.py",
+    "power_byte_verifier_sha256": "a9f11ce7ba15f0780faef8b9079d1d849bb0b1c8afdcfce120180b97568ffc46",
+    "signal_cfg_verifier": "scratch/j575d-usb2-signal-status-2026-10-10/verify.py",
+    "signal_cfg_verifier_sha256": "cda4fc9f1c8baa2c1953c777e4cffbbfb1e87971bff29f4c2b19d0851ab057a0",
+    "correction": "Signal CFG supersedes old power-verifier interpretation: bool1 false ORs 3 and preserves C; true ORs F. Late resource-one status does not select those operations.",
+    "limit": "Static instruction/resource/caller joins, not electrical behavior, timing sufficiency or complete role-transition qualification"
+  },
+  "dt_or_binding_changed": false,
+  "fresh_schema_validation_claimed": false,
+  "installed_or_booted": false,
+  "native_boot_approved": false
+}

@@ -1,0 +1,25 @@
+--- drivers/phy/apple/atc.c
++++ drivers/phy/apple/atc.c
+@@ -602,4 +602,5 @@
+ 	bool fabric_tunables;
+ 	bool usb_common_tunables;
+ 	bool separate_usb2_event;
++	bool preserve_usbctl_upper;
+ };
+@@ -1846,5 +1846,9 @@
+ 	clear32(atcphy->regs.usb2phy + USB2PHY_MISCTUNE, USB2PHY_MISCTUNE_REFCLK_GATE_OFF);
+ 
+ 	/* Enable the PHY */
+-	writel(USB2PHY_USBCTL_RUN, atcphy->regs.usb2phy + USB2PHY_USBCTL);
++	if (atcphy->hw->preserve_usbctl_upper)
++		mask32(atcphy->regs.usb2phy + USB2PHY_USBCTL,
++		       USB2PHY_USBCTL_USB_MODE, USB2PHY_USBCTL_RUN);
++	else
++		writel(USB2PHY_USBCTL_RUN, atcphy->regs.usb2phy + USB2PHY_USBCTL);
+ }
+@@ -2632,4 +2632,5 @@
+ 	.fabric_tunables = true,
+ 	.usb_common_tunables = true,
+ 	.separate_usb2_event = true,
++	.preserve_usbctl_upper = true,
+ };

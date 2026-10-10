@@ -723,7 +723,7 @@ That branch sets the offset-eight `0x7000` family, matching Linux's
 `PHY_MODE_USB_HOST` operation. This narrows the host-startup polarity question;
 it is not a universal role-enum definition, a device-mode trace, or proof of
 physical behavior. No polarity patch follows from this evidence. Timing,
-status-conditional signal changes, reserved-bit handling, and other power
+argument-dependent signal changes, reserved-bit handling, and other power
 transitions remain open. The T8160 comparison call at `...b57e0cc` belongs
 to `setPowerStateGated`, not `start`; it is not used as the Studio-class join.
 
@@ -734,8 +734,9 @@ bits 0–2 with zero when both booleans are true, or two otherwise. Linux's
 retained `atcphy_usb2_power_on()` instead writes the whole base word as two.
 The known descriptor gate excludes the false/true pair before this caller's
 initialization dispatch; the helper's truth table is not proof that every
-input pair is reachable. Role meaning and required hardware behavior remain
-unresolved, so this difference is not yet a bug or a proposed driver change.
+input pair is reachable. The later host-startup join supports the narrowly
+scoped upper-bit-preservation patch described below; it does not justify
+changing Linux's mode value or claim a physically observed failure.
 
 Native init also clears control bits `0x8`, `0x1`, `0x2` at resource-zero
 offset four, sets bit `0x4`, then clears clock-gate bits `0x20000000` and
@@ -747,10 +748,29 @@ Apple's kernel API documents
 [IOSleep in milliseconds](https://developer.apple.com/documentation/kernel/1575320-iosleep)
 and [IODelay in microseconds](https://developer.apple.com/documentation/kernel/1575328-iodelay).
 Linux's retained path uses `udelay(10)` calls. These observed software delays
-do not establish the hardware's minimum timing requirements. No timing,
-reserved-bit or role-mode change is being copied into Linux without the
-remaining contracts. Full views and the original-image/source byte checker
+do not establish the hardware's minimum timing requirements. No timing or
+role-mode change is being copied into Linux without the remaining contracts.
+Full views and the original-image/source byte checker
 are retained under `scratch/j575d-usb2-power-order-2026-10-10/`.
+
+The subsequent signal CFG audit corrects the earlier scratch power report's
+description of bits `0x4/0x8` as "status-conditional". The first initialization
+boolean selects two separate paths: true clears role bits `0x7000` and ORs
+signal bits `0x1`, `0x2`, `0x4`, `0x8`; false sets role bits `0x7000` and ORs
+only `0x1`, `0x2`, preserving bits `0xc`. Diagnostic branches after those
+writes select logging, not additional signal writes. The false path bypasses
+the OR4/OR8 blocks and rejoins at `0xfffffe000a1d0d28`. The later resource-one
+offset-`0x20` read does not control this earlier sequence. The checked receipt
+`scratch/j575d-usb2-signal-status-2026-10-10/verify.py`
+(SHA-256 `cda4fc9f1c8baa2c1953c777e4cffbbfb1e87971bff29f4c2b19d0851ab057a0`)
+compares all 1,111 consecutive CFG instructions with the original collection,
+plus 40 selected anchors and pinned helper hashes. This supersedes the old
+power verifier's printed "conditional/preserved" interpretation; byte checks
+alone did not prove that interpretation. For the traced host-startup path,
+native ORs `0x3` where Linux ORs `0xf`. No signal patch is included yet:
+role-transition behavior and the appropriate Linux lifecycle location remain
+to be checked. This is a static operation difference, not an observed physical
+failure or hardware qualification.
 
 The event operation supplies a narrower mapping correction candidate.
 Native init reads mapped resource one (`this+0x230`) at offset zero,
@@ -820,6 +840,28 @@ does not replace the outstanding whole-board schema work. See the
 [event integration inventory](inventory/j575d-usb2-event-integration-2026-10-10.json).
 No modules were installed and no native boot is approved by this mapping change.
 
+Follow-up `0009-apple-atcphy-m3-usbctl-preserve.patch` replaces only the M3
+USBCTL whole-word write with `mask32(USB_MODE, RUN)`: `(old & ~7) | 2`.
+A dedicated `preserve_usbctl_upper` descriptor flag is true only for T6031;
+it is independent of the event-resource mapping flag. T8103 and ordinary
+T8122 retain the whole-word write. Mode two, signal writes, delays, role
+selection and power-off behavior are unchanged. This follows the retained
+native register operation, not a claim that the upper bits' hardware meanings
+or physical USB operation are qualified.
+
+Five source-extracted ASan/UBSan host tests pass in both main and independent
+runs. They cover zero/nonzero M3 USBCTL values, legacy write behavior,
+M3 write/delay interleaving against the exact after-0008 source, an exact-exit-1
+whole-write mutation witness, and source equality for role-setting, power-off,
+mapping and helpers. A fresh combined 20-module build in
+`scratch/j575d-usbctl.w3QGd5/` passes with empty dependency diagnostics;
+all 111 build/package checksum entries verify. The driver matches the host
+fixture's source hash; the binding, original kernel image and built-in ABI
+artifacts are unchanged. No fresh DT/schema qualification is claimed, since
+this patch changes neither the DT nor binding. See the
+[USBCTL inventory](inventory/j575d-usbctl-preserve-2026-10-10.json).
+No package was installed, no VM changed and no native boot performed.
+
 Hardware-qualified polling and CIO80/USB2 still require the
 remaining contracts. Pro consult
 `01M4EWE11E4FR4ZNSBYPZBFKYQ` has since completed (channel message 18760),
@@ -864,7 +906,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | New 0008 M3-only event mapping passes seven host tests, five DT tests, 16 targeted binding cases and the combined 20-module build; all 109 build/package checksums verified | No package installed or booted; select-polling remains default-off. Hardware response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol and USB2 role/timing remain open; event mapping is not physical access validation. Physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
+| NVMe / USB / Ethernet | 0008 event mapping passes seven host tests, five DT tests and 16 targeted binding cases; 0009 M3-only USBCTL preservation passes five host tests and a fresh combined 20-module build, with 111 build/package checksums verified | No package installed or booted; select-polling remains default-off. Hardware response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol, USB2 signal lifecycle and timing remain open; static host-role agreement and register operations are not physical validation. Physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |
