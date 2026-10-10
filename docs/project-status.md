@@ -926,6 +926,35 @@ physical role-switch qualification. The candidate providers remain disabled;
 no installation, VM change or native boot occurred. Reset/timing behavior,
 CIO80 and the remaining Type-C selection/IRQ contracts are still outstanding.
 
+The next bounded comparison finds no additional CTL, MISCTUNE or USBCTL
+operation/order mismatch in the reviewed host/device startup paths. Both
+reviewed descriptors have bit 19 clear and select native RUN `2`; the native
+low-`0` branch needs the separate masked descriptor form `0xa0000`, not either
+reviewed startup descriptor. Shutdown remains different: native sets port
+reset before OR-ing USBCTL with `4`, whereas Linux first replaces the USBCTL
+mode field with `4`, then sets SIDDQ and port reset. Linux also clears
+APB_RESET_N with no counterpart among the six reviewed native shutdown
+writes. These differences do not establish interchangeable controller
+lifecycles or justify a shutdown patch. Native delay units are known;
+hardware minima and reset effects are not. See
+`scratch/j575d-usb2-sequence-gap-2026-10-10/report.md`.
+
+The retained service snapshot now joins all six `atc-phy` nodes' `acio-phy-cpu`
+properties (`0x7f`, `0x81`, `0x83`, `0x85`, `0x87`, `0x89`) to matching
+RTBuddy ACIOPHY0–5 route keys. It explicitly witnesses CIO80 MBI endpoint
+services for ACIOPHY0, 2 and 3; it does not establish absence of the others.
+A new receipt checks all 133 MBI-start instructions against the original
+collection, pins its inputs, and checks the captured ATC/route associations;
+the main rerun passes. Verifier SHA-256:
+`18bbe7b8600512e733fe2172df9a101d7b411959385fffde0580963f6b3d16b4`, at
+`scratch/j575d-cio80-gap-2026-10-10/verify.py`.
+The older `followup/verify-cio80-edge.py` checks text patterns and reports
+hashes; it does **not** itself validate original bytes or chained pointers.
+The new receipt strengthens the MBI-start span only, not every prior CIO
+dispatch assertion. Linux resource ownership and mode/lifecycle equivalence
+remain open; the next check is the captured ATCPHY memory-window crosswalk,
+not aliasing CIO80 to USB4 based on its name.
+
 Controller-node coverage is distinct from PHY readiness. The retained event
 candidate has seven DWC3 nodes: six have no `status` property and one is
 explicitly disabled; all seven referenced ATCPHY providers remain disabled.
@@ -987,7 +1016,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | 0008 event mapping passes seven host tests, five DT tests and 16 targeted binding cases; 0009 M3-only USBCTL preservation passes five host tests and a fresh combined 20-module build, with 111 build/package checksums verified | No package installed or booted; select-polling remains default-off. Hardware response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol, USB2 signal lifecycle and timing remain open; static host-role agreement and register operations are not physical validation. Physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
+| NVMe / USB / Ethernet | 0008 event mapping passes seven host tests, five DT tests and 16 targeted binding cases; 0009 USBCTL preservation passes five tests; experimental 0010 M3 role signals pass nine sanitizer tests and a fresh combined 20-module build, with 113 build/package checksums verified | No package installed or booted; PHY providers remain disabled and select-polling default-off. Hardware response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol and USB2 reset/sequencing/timing remain open; bounded descriptor mapping and register-value tests are not physical validation. Physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |
