@@ -617,7 +617,8 @@ ATCPHY declaration is inherited, disabled and lacks a connector witness.
 The audited candidate is byte-identical to the integration inventory's
 candidate, not a stale alternative. Native opcode/fixup and Linux source/DT
 verifiers pass in `scratch/j575d-usb2-consumer-2026-10-10/verify.py` (SHA-256
-`0f83dffadae169f900f4d7c5e223533be08746b28a45f7c83ed949f03be8e637`) and
+`fc871987fa6d622793801b98846c69a0997313c6718ec87b59604264e50966e1`,
+including the address-point correction below) and
 `scratch/j575d-usb2-linux-contract-2026-10-10/verify.py` (SHA-256
 `c52cc62b902a5a391abf87d1b504aea05d829edfe86f35d9b78f5b5fce21d232`). These are static
 checks, not execution or electrical validation. Next trace the native
@@ -657,6 +658,31 @@ It checks same-node property ownership and direct child identity, with an
 accepted baseline and four designated parser rejects. The final parent rerun
 is `scratch/j575d-usb2-provider-2026-10-10/parent-review.txt`. No driver, DT
 enablement or hardware state was changed.
+
+USB2 dispatch correction: the earlier scratch report confused offsets from
+the vtable symbol with offsets from the object's vtable address point.
+The constructor explicitly installs symbol `0xfffffe00083bac50 + 0x10`.
+Therefore `initUSB2` is runtime slot `0x9d8` (symbol offset `0x9e8`), called
+at `0xfffffe000a1c1768`; runtime slot `0x9e8` instead selects `sleepUSB2`.
+The earlier power-level-1/sleep call is not an initialization witness.
+The corrected verifier checks the constructor, actual init call and both
+distinct fixup targets. The hardcoded init's bit behavior is unchanged.
+
+The upstream caller edge within the retained binary is now identified:
+`AppleTypeCPhy::open(interface, power, unsigned, unsigned)` saves its
+incoming `x2`/`x3` in `w20`/`w21`, captures them at stack offsets
+`0x80`/`0x84` in the block beginning at `sp+0x50`, and its block reloads
+those words at block `+0x30` as `w1`/`w2`. The call at
+`0xfffffe000a1bd924` uses runtime slot `0x920`, resolving to
+`configureUSB2`. Thus the descriptor comes from the first unsigned argument
+to `open`; the role encoding of that caller argument is still unresolved.
+The full base-class disassembly is retained at
+`scratch/j575d-usb2-consumer-2026-10-10/base-full.disasm`.
+Separately, the initial `init.disasm` was a 662-line excerpt ending at
+`0xfffffe000a1d05cc`, not the whole initialization body through
+`0xfffffe000a1d1d18`. Absence of later writes or argument uses cannot be
+inferred from that excerpt. Full init/shutdown views have now been generated
+for the pending power-sequence review; no timing fix is yet justified.
 
 Hardware-qualified polling and CIO80/USB2 still require the
 remaining contracts. Pro consult
