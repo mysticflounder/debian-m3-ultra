@@ -862,6 +862,35 @@ this patch changes neither the DT nor binding. See the
 [USBCTL inventory](inventory/j575d-usbctl-preserve-2026-10-10.json).
 No package was installed, no VM changed and no native boot performed.
 
+The next lifecycle audit joins `apple,sn201202x` to `tipd_sn201202x_data`
+and the CD321x status worker, not generic TPS6598x or TCPM attach handling.
+That worker can switch an active role to NONE before updating the mux and
+launching the new role; its update-mode call need not invoke the mux callback
+when the lane configuration is unchanged. Consequently, a role transition
+cannot be assumed to rerun `atcphy_usb2_power_on()`. The Apple DWC3 callback
+sets the USB2 role before reset deassert/core initialization; with the ATC
+reset provider, its preceding active-role teardown asserts reset and calls
+`atcphy_usb2_power_off()`. The retained source audit is
+`scratch/j575d-usb2-signal-lifecycle-2026-10-10/report.md`.
+This is source ordering, not proof of physical power state or timing.
+
+Controller-node coverage is distinct from PHY readiness. The retained event
+candidate has seven DWC3 nodes: six have no `status` property and one is
+explicitly disabled; all seven referenced ATCPHY providers remain disabled.
+Direct reads of the candidate DTB confirm that each of the six witnessed
+controllers uses the same ATCPHY phandle for its reset and both PHY arguments
+(`3` for USB2, `4` for USB3), and that each reset provider has zero reset cells.
+Each controller's compatible pair includes `apple,t8103-dwc3`, which matches
+the retained driver's OF table. The first string, `apple,t6031-dwc3`, is absent
+from the retained binding enum, so the schema gap does not demonstrate a
+missing runtime driver match. Existing `modules.builtin` DWC3 entries are
+built-in metadata, not packaged loadable modules or proof of physical probe.
+The controller graph still requires qualification of its IRQ, DART, power,
+reset, PHY and Type-C endpoints before enabling the providers. The seventh
+unwitnessed port remains disabled. No controller-driver extension or compatible
+substitution is justified by the schema omission alone. See
+`scratch/j575d-usb2-controller-closure-2026-10-10/report.md`.
+
 Hardware-qualified polling and CIO80/USB2 still require the
 remaining contracts. Pro consult
 `01M4EWE11E4FR4ZNSBYPZBFKYQ` has since completed (channel message 18760),
