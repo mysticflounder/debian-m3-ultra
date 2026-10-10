@@ -874,6 +874,31 @@ reset provider, its preceding active-role teardown asserts reset and calls
 `scratch/j575d-usb2-signal-lifecycle-2026-10-10/report.md`.
 This is source ordering, not proof of physical power state or timing.
 
+The subsequent retained-binary device trace closes the T8122 XDCI start
+dispatch to `AppleUSBXDCIARM::start`, the Type-C PHY USB2 factory, its
+`self+0x2680` interface field, and the conditional interface-open call in
+`powerOn`. That call supplies flags `0x20000`, compared with `0x40000` in
+the previously checked XHCI host startup. The strengthened device verifier
+checks the base-start chained pointer, exact metaclass symbol address, and
+all 70 consecutive instructions from `0xb41cad4` through `0xb41cbe8`
+against the original collection. Its SHA-256 is
+`0b6155b172125eb2502a8b38da768f4608340e196bf8dfb9bbcf65d8a8dab978`;
+see `scratch/j575d-usb2-device-role-2026-10-10/verify.py`.
+The main rerun passes, as do the existing factory, host receiver, descriptor
+bridge and SIG control-flow receipts.
+
+Combining those bounded traces, **if the interface descriptor field retains
+its factory-initialized zero**, OR-ing the device open flags yields native
+init booleans `(true, false)`; the host flags yield `(false, false)`.
+This is not a proof that no intervening writer changes that field or that
+every open path uses these flags. The native false branch preserves SIG
+bits `0xc`, rather than clearing them. A proposed common `OR 3` plus device
+role `OR 0xc` therefore commutes at the register-value level; callback order
+alone does not require stored role state. Linux power-off contains no explicit
+SIG write, but that does not establish retention across hardware reset.
+No SIG patch or hardware qualification follows from this checkpoint alone;
+descriptor lifetime and physical reset/timing behavior remain distinct gates.
+
 Controller-node coverage is distinct from PHY readiness. The retained event
 candidate has seven DWC3 nodes: six have no `status` property and one is
 explicitly disabled; all seven referenced ATCPHY providers remain disabled.
