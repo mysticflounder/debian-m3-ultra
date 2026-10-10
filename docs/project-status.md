@@ -955,6 +955,34 @@ dispatch assertion. Linux resource ownership and mode/lifecycle equivalence
 remain open; the next check is the captured ATCPHY memory-window crosswalk,
 not aliasing CIO80 to USB4 based on its name.
 
+The subsequent original-byte audit corrects an older CIO dispatch claim:
+the T6032 constructor installs the vtable address point at symbol `+0x10`.
+Using the symbol itself shifts every runtime slot by two entries. The
+reviewed CIO-client tail at `0xfffffe000a209654` uses runtime slot `0xa08`,
+which resolves to `shutdownACIOS2RtoOff`, **not** `initACIO`; its argument
+`2` therefore does not prove the previously claimed initialization edge.
+Independently, `initACIO` calls runtime `0xbc0` (`aciophy_phy_init`), and
+that wrapper calls runtime `0xbb0` (Part B). The generic tunable dispatcher's
+mode-2 branch calls CIO (`0xbf0`) then tail-calls CIO80 (`0xbf8`), so that
+helper evidence remains valid. The actual client initialization branch is
+still being traced; the rejected shutdown edge does not prove absence of
+an initialization path.
+
+Main reran `scratch/j575d-cio80-apply-selector-2026-10-10/verify.py`:
+**1,618 contiguous instructions match the original collection**, and eight
+address-point-relative targets pass chained-pointer membership/target checks.
+The receipt pins both fixup helpers and the original/disassembly inputs;
+its SHA-256 is
+`617ffefea617e9f0c2b050278e8426e9484f6117e43e7b15468468c6c72a4756`.
+Its spans cover the constructor address-point setup, complete reviewed
+CIO-client function, `initACIO`, physical-init wrapper, generic dispatcher,
+CIO80 helper, and the selected `applyTunables` resource-access prefix.
+This is static byte/control-flow evidence, not execution, PAC validation,
+resource-initializer proof or Linux lifecycle equivalence. The USB-common
+0005 patch does not rely on the rejected client edge: its separately
+reviewed USB-helper evidence and constrained Linux mode mapping remain,
+without gaining CIO80 or hardware qualification from this correction.
+
 Controller-node coverage is distinct from PHY readiness. The retained event
 candidate has seven DWC3 nodes: six have no `status` property and one is
 explicitly disabled; all seven referenced ATCPHY providers remain disabled.
