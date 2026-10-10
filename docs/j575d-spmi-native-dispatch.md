@@ -186,9 +186,9 @@ for kind 6 and `0x0f80` for kind 7. The helpers test
 `(response ^ submitted_word) & mask` at `0x9de23c4/0x9de23c8` and
 `0x9de2adc/0x9de2ae0`. Zero difference reaches further checks, not an
 immediate success return. A mismatch with controller flag `+0x125` bit 0
-set marks `+0x1a8` and takes an error return. With that flag clear, an
-unresolved virtual call at runtime `+0x960` precedes the later checks if it
-returns. This is not a traced command retry or a freshness guarantee.
+set marks `+0x1a8` and takes an error return. With that flag clear, a
+virtual call at runtime `+0x960` reaches `spmiPanic`, as resolved below.
+This is not a traced command retry or a freshness guarantee.
 
 For kind 6, the later register path requires response bit 16 before consuming
 a second FIFO word through `queuePop` at `0x9de2540`. A cold helper copies
@@ -206,9 +206,35 @@ change is inferred from this difference alone. The reviewed original-address
 disassembly and passing byte/table verifier are retained under
 `scratch/j575d-spmi-response-2026-10-10/native/`.
 
+## Mismatch diagnostic target
+
+Concrete runtime slot `+0x960` is vtable-symbol offset `+0x970`, containing
+raw pointer `0x8011ca6802de29b0`. It resolves to
+`AppleSPMIController::spmiPanic` at `0xfffffe0009de69b0`. The reviewed body
+converges on the four-instruction authenticated veneer at `0x9de828c`.
+That veneer's data slot at `0x8308fd8` contains `0x8011000005614edc`, which
+rebases to the full-image `_panic` symbol at `0xfffffe000c618edc`.
+The extracted wrapper has no return instruction and calls the internal panic
+implementation. This is a kernel-panic dispatch, not an ordinary returning
+log call. The internal panic implementation was not executed or qualified.
+
+The response helper's policy guard is controller `+0x125` bit 0. A separate
+`+0x124` test inside `spmiPanic` controls additional diagnostic work; it does
+not replace the helper's guard. The bounded `start` path calls
+`getIntParam` at `0x9de0f10` with the exact name
+`req-resp-mismatch-no-panic` (string at `0x7747ad2`), index zero and a
+zero-initialized output word. A successful nonzero result sets `+0x125`;
+missing/failed lookup or a zero value leaves it clear. Thus this observed
+initialization selects an error-return opt-out versus kernel-panic dispatch
+for a masked mismatch. This is static policy evidence, not a read of the
+running controller's flag or an exhaustive audit of all writers. Linux
+should not acquire a kernel-panic policy merely to imitate this implementation.
+Receipts and the reviewed verifier are under
+`scratch/j575d-spmi-mismatch-policy-2026-10-10/`.
+
 ## Configuration-field provenance
 
-The concrete `setConfig(AppleSPMIConfig*)` body at
+The concrete `setConfig(AppleARMSPMIConfig*)` body at
 `0xfffffe0009de3718` loads the first 32-bit configuration word and stores it
 at controller `+0x194` (`0x9de3720/0x9de3724`). Its concrete vtable entry
 is symbol-relative `+0x960`, hence runtime slot `+0x950` after the address
@@ -219,8 +245,21 @@ producer, value or USID meaning. The command helper shifts the full 32-bit
 field left by eight without an observed narrowing mask; its contribution
 must not be described as confined to bits 8–15. An immediate-offset scan
 found this matching store, but cannot exclude computed or other access
-forms. The dynamic caller remains unresolved. Receipts are under
+forms. Receipts are under
 `scratch/j575d-spmi-response-2026-10-10/controller-field/`.
+
+A follow-up identifies an inherited controller method at `0x8cb48e8`
+(runtime slot `+0x968` in both base and concrete vtables). It zeroes 24
+stack bytes, calls its source object's runtime slot `+0x888` with that output
+buffer, and passes the same buffer to `setConfig` through runtime `+0x950`.
+It then retains the source object at controller `+0xf8`. This closes the
+buffer handoff, not the source object's class, getter implementation or
+configuration values. Captured HPM `reg` properties are not sufficient to
+fill that gap. The reviewed bytes and passing verifier are retained in
+`scratch/j575d-spmi-config-producer-2026-10-10/`.
+
+The next configuration edge is the source object's `+0x888` getter and its
+caller/receiver identity, not the already-verified stack-buffer handoff.
 
 ## Linux response baseline
 

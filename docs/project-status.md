@@ -557,14 +557,20 @@ controls. It accepts a mismatched response header in the tested case, unlike
 the native masked-comparison path. This is not yet a demonstrated hardware
 bug or justification for a driver change. Native controller `+0x194` is
 loaded from configuration word 0 by `setConfig`; its producer, concrete
-value and USID identity remain unresolved.
+value and USID identity remain unresolved. The configuration handoff now
+traces a zeroed 24-byte buffer from source runtime slot `+0x888` into
+`setConfig`; the source object's identity/getter remain open. The mismatch
+call resolves to `spmiPanic` and then kernel `_panic`. Its start-path opt-out
+is the integer parameter `req-resp-mismatch-no-panic`: successful nonzero
+lookup selects the error-return branch. This is static policy evidence, not
+a runtime flag observation or a policy to copy into Linux.
 Corrected original-address
 views supersede rebased call-site evidence; 520 instruction-byte lines and 27
 same-line anchors pass the main verifier, without claiming wire equivalence.
 CIO mode 2 has a traced native producer but no proven Linux protocol crosswalk;
 USB2's captured HOST/DEV values have opposite polarity to Linux, with native
-consumer/base/timing unresolved. Next work targets the configuration producer,
-response mismatch policy and selector freshness; static dispatch and
+consumer/base/timing unresolved. Next work targets the configuration source
+getter/receiver and selector freshness; static dispatch and
 software wait loops do not establish hardware completion or wire equivalence.
 Hardware-qualified polling and CIO80/USB2 still require the
 remaining contracts. Pro consult
