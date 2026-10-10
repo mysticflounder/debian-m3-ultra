@@ -42,6 +42,46 @@ not prove a new hardware command epoch: an earlier timed-out operation or
 another client remains an unresolved case. Host tests establish the stated
 software behavior only.
 
+### Timeout/retry ambiguity — 2026-10-10
+
+An additional actual-source host fixture now exercises two complete read
+callbacks on the same driver/device object. The first times out while status
+remains busy and performs no payload transfer. Without resetting the driver
+or modeled clock, the second writes the same selector, observes busy then
+ready, and transfers one payload byte. The environment labels those two
+status samples as belonging to the older request; those labels are deliberately
+invisible to the driver. The same visible trace could instead be a fresh
+completion. Thus the result demonstrates an observational ambiguity, **not**
+that J575d hardware actually returns stale status.
+
+Clean busy/ready success and ready-only rejection also pass. Both baseline
+and mutation builds use ASan/UBSan; removing the busy-observation guard fails
+the designated ready-only assertion with exit 1. Main review strengthened the
+first-timeout case to invoke the full read callback, checked both selector
+writes and second-call payload transfer, and reran the suite. Receipts:
+`scratch/j575d-selector-epoch-fixture-2026-10-10/parent-review/epoch-27km9xva/`.
+The runner SHA-256 is
+`de348ae5d7c311a7a6ff42399aad980e24c30f9a3b46691620005426372c2498`;
+the extracted patched driver is
+`dd78cc3bbd35b2283363d9a3e49b69bec84bc66ea6454b3b1ae872a4b2104f1d`.
+
+The bounded native HPM trace does not resolve this ambiguity. In the basic
+read method, a matching ready sample can enter the post-poll path without
+observing busy first (`0x9805c44..0x9805cc0`). Counter exhaustion can also
+reach that path when the tracked helper result is zero. Imported
+`IOEventSource::closeGate/openGate` establish local serialization, not the
+age of hardware status or exclusion of every other client. These observations
+are not a reason to copy native error/timeout policy into Linux. The original
+image verifier passes; retained report and verifier are under
+`scratch/j575d-selector-freshness-2026-10-10/`.
+
+Further host tests cannot establish the missing device semantics. Promotion
+needs independent evidence that selector submission invalidates prior state,
+or a documented completion/abort/reset contract that distinguishes requests
+(or a qualified select-IRQ route). No such hardware operation is inferred
+or authorized here. Keep the prototype default-off; do not add speculative
+reset writes or claim that busy/ready alone proves freshness.
+
 ## Validation
 
 Patch `0006-typec-tipd-experimental-select-polling.patch` is optional and

@@ -575,9 +575,19 @@ views supersede rebased call-site evidence; 520 instruction-byte lines and 27
 same-line anchors pass the main verifier, without claiming wire equivalence.
 CIO mode 2 has a traced native producer but no proven Linux protocol crosswalk;
 USB2's captured HOST/DEV values have opposite polarity to Linux, with native
-consumer/base/timing unresolved. Next work targets selector freshness and
-the CIO80/USB2 contracts; static configuration provenance, dispatch and
-software wait loops do not establish hardware completion or wire equivalence.
+consumer/base/timing unresolved. The additional
+[timeout/retry fixture](j575d-select-polling-prototype.md#timeoutretry-ambiguity--2026-10-10)
+passes against actual extracted polling/read code: the first full read times
+out with no payload, then the unchanged driver accepts a same-register
+busy/ready sequence attributed externally to the older request and transfers
+one byte. ASan/UBSan runs and the designated ready-only mutation control pass.
+This demonstrates modeled ambiguity, not a hardware stale-response defect.
+Native ready-first acceptance and local command-gate serialization do not
+resolve it. Further host-only freshness qualification is parked pending a
+device invalidation/completion/recovery contract or qualified select IRQ;
+the prototype remains default-off. Next offline work targets the CIO80/USB2
+contracts. Static configuration provenance, dispatch and software wait loops
+do not establish hardware completion or wire equivalence.
 Hardware-qualified polling and CIO80/USB2 still require the
 remaining contracts. Pro consult
 `01M4EWE11E4FR4ZNSBYPZBFKYQ` has since completed (channel message 18760),
