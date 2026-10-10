@@ -574,8 +574,10 @@ Corrected original-address
 views supersede rebased call-site evidence; 520 instruction-byte lines and 27
 same-line anchors pass the main verifier, without claiming wire equivalence.
 CIO mode 2 has a traced native producer but no proven Linux protocol crosswalk;
-USB2's captured HOST/DEV values have opposite polarity to Linux, with native
-consumer/base/timing unresolved. The additional
+USB2's captured HOST/DEV values have opposite polarity to Linux. The native
+hardcoded initialization consumer and descriptor wrapper are now traced;
+physical resource equivalence, role semantics and timing remain unresolved.
+The additional
 [timeout/retry fixture](j575d-select-polling-prototype.md#timeoutretry-ambiguity--2026-10-10)
 passes against actual extracted polling/read code: the first full read times
 out with no payload, then the unchanged driver accepts a same-register
@@ -588,6 +590,39 @@ device invalidation/completion/recovery contract or qualified select IRQ;
 the prototype remains default-off. Next offline work targets the CIO80/USB2
 contracts. Static configuration provenance, dispatch and software wait loops
 do not establish hardware completion or wire equivalence.
+
+USB2 follow-up (2026-10-10): the pinned native `initUSB2(unsigned)` wrapper
+at `0xfffffe000a2096b4` computes its first boolean as
+`(descriptor & 0x60000) == 0x20000`, and its second as descriptor bit 19.
+It branches to `eusb2phy_init(bool,bool)` at `0xfffffe000a1cfb90`. That
+consumer reads the pointer at `this+0x210` and separately updates bits
+`0x4000`, `0x2000` and `0x1000` at pointer offset eight: first boolean true
+clears them, false sets them. This does not assign host/device meaning.
+The caller's bit-19-clear branch skips its masked comparison; bit 19 is
+not a mandatory prerequisite. Other state/power checks still govern dispatch.
+
+The `start()` mapping loop stores its index-zero map's virtual-method
+`+0x138` result at `this+0x210`; entries have a `0x20` stride. Its receiver
+is the original `start` provider: `x1` is saved in `x26`, temporarily spilled
+at `sp+0x38`, and restored at `0xfffffe000a1cca70` before the loop. The
+intermediate `x25` to `x26` copy followed by a PAC discriminator is **not**
+the map-owner provenance. Numeric physical base/aperture and equivalence
+to Linux's named `usb2phy` resource are not established by this trace.
+
+Linux source review confirms named-resource lookup and HOST-set/DEVICE-clear
+behavior for offset eight, mask `0x7000`. The current generic candidate's
+six inventoried physical USB2 bases and DWC3 USB2 links agree; its seventh
+ATCPHY declaration is inherited, disabled and lacks a connector witness.
+The audited candidate is byte-identical to the integration inventory's
+candidate, not a stale alternative. Native opcode/fixup and Linux source/DT
+verifiers pass in `scratch/j575d-usb2-consumer-2026-10-10/verify.py` (SHA-256
+`0f83dffadae169f900f4d7c5e223533be08746b28a45f7c83ed949f03be8e637`) and
+`scratch/j575d-usb2-linux-contract-2026-10-10/verify.py` (SHA-256
+`c52cc62b902a5a391abf87d1b504aea05d829edfe86f35d9b78f5b5fce21d232`). These are static
+checks, not execution or electrical validation. Next trace the native
+descriptor producer and original provider's resource-zero mapping; do not
+invert Linux polarity, emit USB2 tunables or enable hardware from these facts.
+
 Hardware-qualified polling and CIO80/USB2 still require the
 remaining contracts. Pro consult
 `01M4EWE11E4FR4ZNSBYPZBFKYQ` has since completed (channel message 18760),
@@ -632,7 +667,7 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | USB-common package and tests pass; optional select-polling prototype and local 0007 FIFO-target correction pass host tests and the 20-module build; native SPMI configuration source/interface and gated refresh path statically traced | Prototype default-off; no package installed or booted. Hardware response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; the FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol and USB2 consumer/base/role remain open; physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
+| NVMe / USB / Ethernet | USB-common package and tests pass; optional select-polling prototype and local 0007 FIFO-target correction pass host tests and the 20-module build; native SPMI configuration/refresh and USB2 hardcoded consumer/descriptor wrapper statically traced; Linux USB2 candidate ranges/links checked | Prototype default-off; no package installed or booted. Hardware response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; the FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol and USB2 physical base/role/timing remain open; physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |
