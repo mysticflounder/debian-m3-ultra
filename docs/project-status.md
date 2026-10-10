@@ -899,6 +899,33 @@ SIG write, but that does not establish retention across hardware reset.
 No SIG patch or hardware qualification follows from this checkpoint alone;
 descriptor lifetime and physical reset/timing behavior remain distinct gates.
 
+The follow-up bounded lifetime audit verifies the factory, argument forwarding,
+initializer and open-read spans against original bytes. Its direct-immediate
+store scan finds only the initializer at `0xa1cad38`; this is not a proof
+against computed, pair/vector or external alias writes. Based on the reviewed
+caller paths, experimental optional patch `0010` now implements T6031-only
+SIG handling: power-on ORs `3`, device mode additionally ORs `0xc` after the
+existing HOST-bit clear, and host mode preserves `0xc`. A dedicated descriptor
+flag leaves T8103/T8122 unchanged. It adds no stored role or callback and
+changes no delays, reset handling, power-off, USBCTL or binding. Device mode
+does gain one register read-modify-write; native timing is not reproduced.
+
+Nine source-extracted ASan/UBSan tests pass in implementer and main runs.
+They exercise both actual power-on/set-mode callback orders, host/device
+transitions without power-on, all 16 initial low-nibble values with upper-bit
+seeds, invalid-mode rejection, exact legacy traces and the M3 power-on trace
+outside its first SIG value. Three designated mutations fail with exact
+exit 1. A fresh combined 20-module build in
+`scratch/j575d-usb2-role-signals.C3wVyi/` passes; dependency diagnostics are
+empty and all 113 manifest entries verify. The host fixture and build use
+byte-identical patched drivers, and the original kernel image and built-in
+ABI remain unchanged. See the
+[role-signal inventory](inventory/j575d-usb2-role-signals-2026-10-10.json).
+This is an offline software checkpoint, not complete USB2 initialization or
+physical role-switch qualification. The candidate providers remain disabled;
+no installation, VM change or native boot occurred. Reset/timing behavior,
+CIO80 and the remaining Type-C selection/IRQ contracts are still outstanding.
+
 Controller-node coverage is distinct from PHY readiness. The retained event
 candidate has seven DWC3 nodes: six have no `status` property and one is
 explicitly disabled; all seven referenced ATCPHY providers remain disabled.

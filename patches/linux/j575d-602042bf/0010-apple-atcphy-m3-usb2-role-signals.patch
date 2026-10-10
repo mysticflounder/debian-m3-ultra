@@ -1,0 +1,44 @@
+--- drivers/phy/apple/atc.c
++++ drivers/phy/apple/atc.c
+@@ -511,5 +511,7 @@
+ #define USB2PHY_SIG_VBUSVLDEXT_FORCE_VAL BIT(2)
+ #define USB2PHY_SIG_VBUSVLDEXT_FORCE_EN BIT(3)
+ #define USB2PHY_SIG_HOST (7 << 12)
++#define USB2PHY_SIG_M3_POWER_ON (USB2PHY_SIG_VBUSDET_FORCE_VAL | USB2PHY_SIG_VBUSDET_FORCE_EN)
++#define USB2PHY_SIG_M3_DEVICE (USB2PHY_SIG_VBUSVLDEXT_FORCE_VAL | USB2PHY_SIG_VBUSVLDEXT_FORCE_EN)
+ 
+ #define USB2PHY_MISCTUNE 0x1c
+@@ -602,4 +604,5 @@
+ 	bool usb_common_tunables;
+ 	bool separate_usb2_event;
+ 	bool preserve_usbctl_upper;
++	bool m3_role_signals;
+ };
+@@ -1821,6 +1824,7 @@
+ static void atcphy_usb2_power_on(struct apple_atcphy *atcphy)
+ {
+ 	set32(atcphy->regs.usb2phy + USB2PHY_SIG,
+-	      USB2PHY_SIG_VBUSDET_FORCE_VAL | USB2PHY_SIG_VBUSDET_FORCE_EN |
+-		      USB2PHY_SIG_VBUSVLDEXT_FORCE_VAL | USB2PHY_SIG_VBUSVLDEXT_FORCE_EN);
++	      atcphy->hw->m3_role_signals ? USB2PHY_SIG_M3_POWER_ON :
++		      USB2PHY_SIG_VBUSDET_FORCE_VAL | USB2PHY_SIG_VBUSDET_FORCE_EN |
++		      USB2PHY_SIG_VBUSVLDEXT_FORCE_VAL | USB2PHY_SIG_VBUSVLDEXT_FORCE_EN);
+ 	udelay(10);
+@@ -1988,9 +1995,11 @@
+ 	guard(mutex)(&atcphy->lock);
+ 
+ 	switch (mode) {
+ 	case PHY_MODE_USB_HOST:
+ 		set32(atcphy->regs.usb2phy + USB2PHY_SIG, USB2PHY_SIG_HOST);
+ 		break;
+ 	case PHY_MODE_USB_DEVICE:
+ 		clear32(atcphy->regs.usb2phy + USB2PHY_SIG, USB2PHY_SIG_HOST);
++		if (atcphy->hw->m3_role_signals)
++			set32(atcphy->regs.usb2phy + USB2PHY_SIG, USB2PHY_SIG_M3_DEVICE);
+ 		break;
+@@ -2637,4 +2651,5 @@
+ 	.usb_common_tunables = true,
+ 	.separate_usb2_event = true,
+ 	.preserve_usbctl_upper = true,
++	.m3_role_signals = true,
+ };

@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-10",
+  "scope": "Experimental offline M3 USB2 role signals; not hardware qualification",
+  "patch": {
+    "path": "patches/linux/j575d-602042bf/0010-apple-atcphy-m3-usb2-role-signals.patch",
+    "sha256": "e3d5a74e63a3a573aa3b93c6d7372b1ff1371dfb53006feb94518a10c977c3b8",
+    "contract": "Dedicated T6031-only flag: power-on ORs SIG with 3; device mode additionally ORs C after clearing HOST; host preserves C. Legacy operations unchanged.",
+    "timing_limit": "No delay changes; device mode gains one SIG RMW. Native instruction timing and electrical sufficiency are not reproduced or qualified."
+  },
+  "build": {
+    "workspace": "scratch/j575d-usb2-role-signals.C3wVyi",
+    "recipe": "scripts/build-j575d-phy-usb2-role-signals-offline.sh",
+    "recipe_sha256": "ad3d356809773cc0e21ee9982650c06e6e4a23114a90899c4f8a555c522311e8",
+    "kernel_revision": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+    "builder": "sha256:1cc5bb4ef152a16785acce551084a41c973be8d0c9c7718524f67cd9d7d78121",
+    "modules": 20,
+    "depmod_diagnostics_bytes": 0,
+    "original_image_and_builtin_abi_unchanged": true,
+    "build_manifest_sha256": "53a5f8e61ac4cf332f56c8ab6eb1ee0431644a838380a267e7fbc0b7f6c76362",
+    "package_manifest_sha256": "ab32db57096b4faac7340740427930eebd413f4a66529592eb9e2c1591ea9b37",
+    "verified_checksum_entries": 113,
+    "patched_driver_sha256": "8901ccc5ea5a80e266dceb2981def63d2a035822d8432730e4dcecd1dc12c1f1",
+    "unchanged_binding_sha256": "e57780a19cef194aca3a51e6e903f90c1d11f240d0435a396d77cac32ca0c4bc",
+    "atc_module_sha256": "cfdd34ec212cb221f264444515f98b6cef21d0bd97add5cff54244fcaf5ea6f4"
+  },
+  "host_tests": {
+    "path": "tests/test-j575d-phy-usb2-role-signals.py",
+    "sha256": "ebd9b3fb2cc0a90d937da5d2621c7c2a3c9bf3e0acdaf0dcc1f490a9bc5ef852",
+    "tests": 9,
+    "sanitizers": ["address", "undefined"],
+    "comparison": "Actual after-0009 versus after-0010 source-extracted functions, helpers and descriptors",
+    "callback_orders": "Actual power-on then set-mode and set-mode then power-on; host/device, 16 low-nibble values, two upper/HOST seeds; expected SIG and equal final register banks",
+    "transitions": "Host/device transitions without power-on; host preserves C; invalid mode writes nothing",
+    "traces": "Legacy write/delay interleaving unchanged; M3 power-on trace unchanged except initial SIG value",
+    "unchanged_functions": ["atcphy_usb2_power_off", "atcphy_map_resources", "mask32", "set32", "clear32"],
+    "mutation_controls": ["host clears C", "power-on unconditionally ORs F", "device omits C"],
+    "mutation_expectation": "Each fails with exact exit 1 and designated message",
+    "parent_log": "scratch/j575d-usb2-role-signals-tests-parent.log",
+    "parent_log_sha256": "561a1225d7447c15385c14dad07ec41c0ac0af0e7e4961cea6c51355931eb87c",
+    "parent_workspace": "scratch/j575d-usb2-role-signals-tests-2026-10-10/parent-final",
+    "implementer_workspace": "scratch/j575d-usb2-role-signals-tests-2026-10-10/run6"
+  },
+  "native_evidence": {
+    "device_trace_verifier": "scratch/j575d-usb2-device-role-2026-10-10/verify.py",
+    "device_trace_verifier_sha256": "0b6155b172125eb2502a8b38da768f4608340e196bf8dfb9bbcf65d8a8dab978",
+    "descriptor_lifetime_verifier": "scratch/j575d-usb2-descriptor-lifetime-2026-10-10/verify.py",
+    "descriptor_lifetime_verifier_sha256": "7cfef31f6df183928b530da7d0539c212f2237608474b7439338bd9cfcb65971",
+    "signal_cfg_verifier": "scratch/j575d-usb2-signal-status-2026-10-10/verify.py",
+    "signal_cfg_verifier_sha256": "cda4fc9f1c8baa2c1953c777e4cffbbfb1e87971bff29f4c2b19d0851ab057a0",
+    "basis": "Reviewed XDCI open flags 20000 yield true,false; XHCI flags 40000 yield false,false, conditional on the reviewed factory descriptor remaining zero. Native false branch preserves incoming C; true ORs F.",
+    "lifetime_limit": "One direct-immediate +40 store in retained TypeC view; not proof against computed, pair/vector or external alias writes.",
+    "reset_limit": "Linux power-off has no explicit SIG write; hardware reset/power-gating retention remains unqualified."
+  },
+  "dt_or_binding_changed": false,
+  "fresh_schema_validation_claimed": false,
+  "providers_enabled": false,
+  "installed_or_booted": false,
+  "native_boot_approved": false
+}
