@@ -526,15 +526,20 @@ resolves the retained base command-gate slot `+0x1e8` to `runAction` and
 controller slot `+0x980` to `executeLoggedCommand`, using the constructor's
 `__ZTV + 0x10` address point. The concrete `AppleSPMIController` exists in
 both retained symbols and the HPM providers' registry hierarchy. Its corrected
-nested slot `+0x958` resolves to `executeCommand`; the transaction helpers'
-wire/completion paths remain under investigation. Corrected original-address
+nested slot `+0x958` resolves to `executeCommand`. Helper tracing reaches
+`waitForResponse` and `queuePop`; an actual-source Linux host fixture passes
+2,560 packing cases. Native/Linux intermediate selector words differ, but
+that does not establish a wire mismatch or driver bug. Concrete handler
+mapping, response decoding and freshness remain under investigation.
+Corrected original-address
 views supersede rebased call-site evidence; 520 instruction-byte lines and 27
 same-line anchors pass the main verifier, without claiming wire equivalence.
 CIO mode 2 has a traced native producer but no proven Linux protocol crosswalk;
 USB2's captured HOST/DEV values have opposite polarity to Linux, with native
-consumer/base/timing unresolved. The next controller trace follows the concrete
-execution path; the base dispatch bodies do not establish completion or wire
-equivalence. Hardware-qualified polling and CIO80/USB2 still require the
+consumer/base/timing unresolved. The next controller trace follows handler
+construction and register mapping; static dispatch and software wait loops
+do not establish hardware completion or wire equivalence.
+Hardware-qualified polling and CIO80/USB2 still require the
 remaining contracts. Pro consult
 `01M4EWE11E4FR4ZNSBYPZBFKYQ` has since completed (channel message 18760),
 and its Linux source references were checked. It supports developing an

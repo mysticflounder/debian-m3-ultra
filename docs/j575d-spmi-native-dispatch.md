@@ -45,7 +45,60 @@ available for further static tracing; it is not a live vptr or execution
 observation. The concrete constructor also installs symbol plus `0x10`;
 its execution slot resolves to `executeCommand`. The next step is to follow
 the transaction helpers reached by that dispatcher, including their wire,
-completion and error paths.
+completion and error paths. The bounded follow-up below establishes part of
+that path, but not hardware qualification.
+
+## Command packing and completion follow-up
+
+The reviewed helper bodies establish a kind-indexed table containing `0x60`
+for kind 6 and `0x80` for kind 7. Kind 7 requires a zero register parameter
+and one data byte. Its packed word includes that byte at bits 24–31, but does
+not OR it into the low byte. The helper's boolean controls bit 15; the field
+at controller offset `0x194` is shifted by eight. The identity of that field
+must not be assumed from its position alone.
+
+For a seven-bit selector `d`, the retained Linux controller instead packs:
+
+```text
+0x80 | d | (sid << 8) | 0x8000 | (d << 24)
+```
+
+Thus, even assuming the same shifted field and bit 15, the two intermediate
+words differ in their low seven bits for nonzero selectors. This is not a
+demonstrated wire mismatch or Linux bug: downstream register interpretation
+and handler behavior still need tracing. No driver change follows from this
+comparison.
+
+The Linux reference executes five extracted source functions in a sanitized
+host fixture. The parent reviewed the runner and fixture and reran all 2,048
+zero-write cases (16 USIDs × 128 selectors) and 512 ordinary-read cases
+(16 × 32 addresses), plus the invalid-address cutoff. They pass. Raw command
+wrappers are captures, not a bus simulation; the test establishes software
+packing only. Receipts are in
+`scratch/j575d-spmi-linux-packing-2026-10-10/linux-packing-5d80c701/`.
+
+The native helper's runtime slot `+0x9c0`, after the address-point adjustment,
+resolves to `waitForResponse` at `0xfffffe0009de1500`, not `lockBus`.
+Its interrupt and polled branches resolve to `runInterruptMode` and
+`runPolledMode`. The helpers subsequently call `queuePop`.
+
+`queuePop` obtains a descriptor through handler slot **0**: `0x198` in the
+authentication sequence is a PAC discriminator, not a vtable offset. It loads
+the state through the pointer at descriptor `+8` and tests the mask at
+`+0x2c`. While the mask is set it waits and retries, propagating a nonzero
+wait result. When clear, it reads the status through the pointer at `+0x18`
+and copies that word to the caller. This does not yet identify those pointers
+as hardware registers or prove a fresh response to this command.
+
+The requested flag values are hexadecimal `0x2` and `0x12`; both have bit
+`0x4` clear in the caller's boolean gate. The register helper's optional
+payload-byte packing depends on `((kind - 1) & 0xf9)`, not these flags.
+Neither numeric flag is assigned a protocol meaning by this trace.
+
+The remaining immediate edge is the concrete handler/descriptor construction
+and register mapping, followed by response decoding and command freshness.
+Helper and completion byte checks pass; their corrected semantic review is
+retained in `scratch/j575d-spmi-controller-2026-10-10-review/`.
 
 ## Evidence and limits
 
