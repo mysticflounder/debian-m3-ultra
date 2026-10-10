@@ -684,6 +684,24 @@ Separately, the initial `init.disasm` was a 662-line excerpt ending at
 inferred from that excerpt. Full init/shutdown views have now been generated
 for the pending power-sequence review; no timing fix is yet justified.
 
+The follow-up caller review corrects an ABI interpretation in the scratch
+open-role report. `createTypeCPhyUSB2Interface` supplies zero in `w3` to
+static `withTypeCPhy`; the latter saves it in `x20` and passes it as `x4`
+to the instance initializer. The USB-interface initializer's `+0x178`
+vtable slot and its base-initializer dispatch both resolve in the original
+collection. The base initializer stores that zero at interface `+0x40`.
+Thus this factory path does not depend on an unknown incoming factory `x4`.
+The reviewed 149 instructions match the original collection bytes; the
+checked receipt is
+`scratch/j575d-usb2-client-role-2026-10-10/virtual-callers/verify.py`
+(SHA-256 `b82f9448604f8ba494d3ef58e212410ec36489d0f7be7471a4046b88396152ac`).
+Five XHCI slot-`0x880` calls are also byte-anchored, but their presence does
+not identify the J575d runtime controller or exclude subclass overrides.
+Later writes to `+0x40` and the external interface-open flags are not
+qualified by this receipt. No role meaning, timing change, or Linux patch
+follows from the zero initializer alone. The next trace must join an actual
+interface receiver to its open arguments, rather than repeat import searches.
+
 The full-body power review now identifies a use of **both** initialization
 booleans near the final write (`0xfffffe000a1d1b8c..0xfffffe000a1d1ba4`).
 The native code preserves the base register's upper bits, replacing only
