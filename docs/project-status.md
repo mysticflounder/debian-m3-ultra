@@ -684,6 +684,99 @@ Separately, the initial `init.disasm` was a 662-line excerpt ending at
 inferred from that excerpt. Full init/shutdown views have now been generated
 for the pending power-sequence review; no timing fix is yet justified.
 
+The full-body power review now identifies a use of **both** initialization
+booleans near the final write (`0xfffffe000a1d1b8c..0xfffffe000a1d1ba4`).
+The native code preserves the base register's upper bits, replacing only
+bits 0–2 with zero when both booleans are true, or two otherwise. Linux's
+retained `atcphy_usb2_power_on()` instead writes the whole base word as two.
+The known descriptor gate excludes the false/true pair before this caller's
+initialization dispatch; the helper's truth table is not proof that every
+input pair is reachable. Role meaning and required hardware behavior remain
+unresolved, so this difference is not yet a bug or a proposed driver change.
+
+Native init also clears control bits `0x8`, `0x1`, `0x2` at resource-zero
+offset four, sets bit `0x4`, then clears clock-gate bits `0x20000000` and
+`0x40000000` at offset `0x1c`. The corresponding Linux fields/order overlap,
+but neither that overlap nor the final register values prove equivalent
+sequencing: native calls include `IOSleep(10)`, `IODelay(10)`,
+`IODelay(30)` and `IOSleep(5)`, with intervening resource-one operations.
+Apple's kernel API documents
+[IOSleep in milliseconds](https://developer.apple.com/documentation/kernel/1575320-iosleep)
+and [IODelay in microseconds](https://developer.apple.com/documentation/kernel/1575328-iodelay).
+Linux's retained path uses `udelay(10)` calls. These observed software delays
+do not establish the hardware's minimum timing requirements. No timing,
+reserved-bit or role-mode change is being copied into Linux without the
+remaining contracts. Full views and the original-image/source byte checker
+are retained under `scratch/j575d-usb2-power-order-2026-10-10/`.
+
+The event operation supplies a narrower mapping correction candidate.
+Native init reads mapped resource one (`this+0x230`) at offset zero,
+ORs the value with `0x9`, then writes it back. Its diagnostic field names
+are `AUSBC_CORE_EVT_BLK_C0_USB2_CTL.LOAD_CNT` and `EVT_EN`.
+Linux's event operation also sets those two bits with a read-modify-write,
+but uses its named `core` bank. The local T6031 descriptor selects the
+T8122 generation and therefore reaches that operation. The captured native
+event window for the first PHY is `0x702800000`, whereas the candidate's
+core window is `0x703000000`; these are not the same physical address.
+This is evidence for a separate event mapping, not hardware proof that the
+two windows cannot alias or that the entire USB2 sequence is qualified.
+
+The original-image and same-node capture check passes for all six ports;
+the candidate core addresses below include the second die's parent-range
+translation. Each captured event window is `0x4000` bytes and lies
+`0x800000` below that port's candidate core window.
+
+| PHY | Captured event base | Candidate core base |
+|---|---|---|
+| `atcphy0` | `0x702800000` | `0x703000000` |
+| `atcphy1` | `0xb02800000` | `0xb03000000` |
+| `atcphy2` | `0xf02800000` | `0xf03000000` |
+| `atcphy3` | `0x1302800000` | `0x1303000000` |
+| `atcphy0_die1` | `0x2702800000` | `0x2703000000` |
+| `atcphy1_die1` | `0x2b02800000` | `0x2b03000000` |
+
+The checked verifier is
+`scratch/j575d-usb2-resource1-2026-10-10/verify.py` (SHA-256
+`04eb822d95cf6f7e0b104956c465ec2ac240c8c70c56c3ac495b091bd356c26a`).
+Its negative controls mutate the actual captured bank, swap two real port
+headers, and move a valid parent memory property into a descendant; each
+fails its designated check.
+
+Follow-up patch `0008-apple-atcphy-m3-usb2-event-resource.patch` introduces
+a T6031-only `usb2-event` resource. It leaves legacy chips on the core bank
+and preserves the existing event bits, operation order and delays. Missing
+or undersized M3 event resources and mapping errors fail probe before
+`atcphy_probe_finalize()`; there is no M3 fallback to the old core address.
+The follow-up DT builder appends the named window to those six calibrated
+nodes, preserving all other properties and the seventh, unwitnessed disabled
+PHY. Parent-range translation, DTC tree roundtrip and reservations are checked.
+The delta is 12 properties relative to the USB-common candidate, and remains
+42 distinct properties relative to the earlier pre-calibration baseline.
+Host tests compile the patched resource mapper, power-on function, hardware
+descriptors and register helpers from the real source with ASan/UBSan.
+Seven tests pass, including M3 mapping failures, mapped-resource-to-power-on
+execution, register-bit preservation, T8103/T8122 behavior, and an exact
+T8122 write/delay comparison against the independently extracted unpatched
+function. Wrong-core targeting, missing-resource fallback and a disabled M3
+descriptor flag each fail their designated runtime check. Probe error cutoff
+is checked at source level, not by executing the complete probe in this fixture.
+Five DT tests pass. The combined patch builds all 20 modules in
+`scratch/j575d-phy-usb2-event.afKoek/`; dependency checks are clean and the
+original kernel image and built-in ABI artifacts remain unchanged. All 109
+build/package checksum entries were verified. Final targeted binding validation
+passes 16 cases (seven accepted, nine rejected), with each negative requiring
+the intended node, schema and constraint in the same diagnostic. Enabled
+event-only and Fabric-plus-event forms pass; enabled M3 forms missing the
+event bank fail, including absent status. The existing binding already rejects
+a sole `apple,t8122-atcphy` compatible, so that control is not a regression or
+a new promise of legacy DT support. T8122 driver behavior is tested separately.
+The standalone binding-doc check still reports an unresolved USB-switch
+reference; the merged full-schema fixture resolves it. Disabled-node acceptance
+alone does not establish validation of every constraint, and this targeted run
+does not replace the outstanding whole-board schema work. See the
+[event integration inventory](inventory/j575d-usb2-event-integration-2026-10-10.json).
+No modules were installed and no native boot is approved by this mapping change.
+
 Hardware-qualified polling and CIO80/USB2 still require the
 remaining contracts. Pro consult
 `01M4EWE11E4FR4ZNSBYPZBFKYQ` has since completed (channel message 18760),
@@ -721,14 +814,14 @@ virtual hardware; it cannot validate the Studio's physical SoC initialization.
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
 | M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
 | M3 m1n1 capacity / handoff / loader | Full32 comparison builds, inline candidate/official packet assembly, payload tests and handoff fixtures pass; no native boot | Qualify physical placement/source backing and Linux entry; security findings are report-only, not bring-up gates |
-| Exact T6032/J575d board DT | Disabled candidate integrates 822 records (750 generic plus 72 USB-only); eight independent DT tests/round-trip and targeted USB schema controls pass with no new diagnostics | Triage 80 existing errors/86 unmatched compatibles; CIO80, USB2 and select IRQ remain open; no boot approval |
+| Exact T6032/J575d board DT | Disabled USB-common candidate integrates 822 records (750 generic plus 72 USB-only); follow-up adds six separate USB2 event windows and passes five DT tests/round-trip and 16 targeted binding cases | Triage 80 existing errors/86 unmatched compatibles (historical whole-board results); CIO80, USB2 and select IRQ remain open; no boot approval |
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |
 | Secondary-start failure handling | RVBAR/start-timeout/status/index and stop/reset containment pass offline checks; current readiness placement checked structurally | Raw SMP proxy matrix remains structural; native reset/deep-sleep/first-registration identity unqualified; no degraded-SMP recovery claim |
 | MCC/cache initialization | MCC/carveout/mapping/readiness guards adapted; 25-patch build, five current-source fixtures and linked layout pass | All 64 controller/plane contexts, register access, cache effects and DMA still need hardware qualification |
 | Six-cluster frequency / DVFS | 0011/0023 failure containment preserved; 0029 prewait/reread, full27 build/layout and 90-case sanitized suite plus two controls pass independently | Safe raw APSC/default indices, physical busy/routing and feature/restore/voltage contracts remain open; default native dispatch disabled |
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
-| NVMe / USB / Ethernet | USB-common package and tests pass; optional select-polling prototype and local 0007 FIFO-target correction pass host tests and the 20-module build; native SPMI configuration/refresh and USB2 consumer/descriptor wrapper traced; six captured provider resource-zero windows agree with Linux USB2 ranges | Prototype default-off; no package installed or booted. Hardware response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; the FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol and USB2 role/timing remain open; captured base agreement is not physical access validation. Physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
+| NVMe / USB / Ethernet | New 0008 M3-only event mapping passes seven host tests, five DT tests, 16 targeted binding cases and the combined 20-module build; all 109 build/package checksums verified | No package installed or booted; select-polling remains default-off. Hardware response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol and USB2 role/timing remain open; event mapping is not physical access validation. Physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
 | Recovery / boot-entry setup | Adam confirms no current backup; MacBook inventory requested in 18031, Finder procedure clarified in 18043 | Complete and verify backup; confirm data cable and host readiness. Native actions need separate approval; local MMU guard is not recovery evidence |
 | Linux storage / partitioning | Researched only; not authorized | Verify backup, refresh disk identifiers/limits, choose layout and obtain approval; no USB/internal-disk changes |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |

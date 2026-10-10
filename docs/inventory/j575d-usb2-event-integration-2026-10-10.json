@@ -1,0 +1,73 @@
+{
+  "date": "2026-10-10",
+  "scope": "Offline T6031 USB2 event-resource correction; not hardware qualification",
+  "patch": {
+    "path": "patches/linux/j575d-602042bf/0008-apple-atcphy-m3-usb2-event-resource.patch",
+    "sha256": "ab9ae8a827707dc0fa26fe2ce20fc7155d92dc03b08f6f0ce43be95d39ea172b",
+    "contract": "T6031 requires a separate named event mapping; legacy chips retain core mapping; missing or undersized resources and mapping errors fail probe before finalization"
+  },
+  "build": {
+    "workspace": "scratch/j575d-phy-usb2-event.afKoek",
+    "kernel_revision": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+    "builder": "sha256:1cc5bb4ef152a16785acce551084a41c973be8d0c9c7718524f67cd9d7d78121",
+    "modules": 20,
+    "depmod_diagnostics_bytes": 0,
+    "original_image_and_builtin_abi_unchanged": true,
+    "build_manifest_sha256": "645f63d8ba6d7295a06c12f7d168115d135008f95a30653d8c152aefabff187e",
+    "package_manifest_sha256": "3fb9cd7136ecdcaa8d705a4107211112d3c3f6863dff51cecf278f556982f90f",
+    "verified_checksum_entries": 109,
+    "patched_driver_sha256": "bf58c73315cc67fa6cacb713f76f4b0d8bb9741d96fd487ddd6191b79ab893c6",
+    "patched_binding_sha256": "e57780a19cef194aca3a51e6e903f90c1d11f240d0435a396d77cac32ca0c4bc",
+    "atc_module_sha256": "c9448d7dac19c481f9aeb50e431ff3d4f3de96a30e748222187a2b3b0d031a01"
+  },
+  "host_tests": {
+    "tests": 7,
+    "source_extracted": true,
+    "sanitizers": ["address", "undefined"],
+    "runtime_mutants": ["wrong core bank", "missing-resource fallback", "M3 descriptor flag disabled"],
+    "probe_cutoff_evidence": "source ordering only; complete probe not executed",
+    "log": "scratch/j575d-usb2-event-tests-2026-10-10/parent-final.log",
+    "log_sha256": "fbb1e05189fee31fed2c7a55d256159a48ad13f6db6159f89f82e58cea8f4d2c"
+  },
+  "device_tree": {
+    "workspace": "scratch/j575d-usb2-event-dt.93istlf1",
+    "tests": 5,
+    "candidate_sha256": "be4ab6f0f5dcd508a5aa25df4e7692246715ce356142b2c8bcc9b1aff1dab861",
+    "roundtrip_sha256": "0769d5866fae86c1b500defcef14a9e773472e4cb795096a68c29980160e3ee7",
+    "event_windows": 6,
+    "property_delta_from_usb_common": 12,
+    "distinct_property_delta_from_precalibration": 42,
+    "all_other_properties_unchanged": true,
+    "phy_and_ace_remain_disabled": true
+  },
+  "binding": {
+    "status": "Targeted offline validation passed; 16 cases, seven accepted, nine rejected",
+    "workspace": "scratch/j575d-usb2-event-binding-2026-10-10",
+    "runner_sha256": "0a7fbf87953ee26f30cd42d18ba1376235310a5ad646ca677365fb2de0edb15b",
+    "results_sha256": "5eab7ca77193c89bc9368deee203bfa98c4cc59be07d8c1c4920cead3338415c",
+    "parent_run_log": "scratch/j575d-usb2-event-binding-2026-10-10/parent-final.log",
+    "negative_witness": "Same diagnostic must match node, schema URI and exact expected schema_path",
+    "legacy_caveat": "Sole apple,t8122-atcphy compatible is rejected by both baseline and patched binding; T8122 driver regression is tested separately",
+    "doc_validation_caveat": "Standalone fragment reports unresolved USB-switch reference; merged full schema resolves it",
+    "disabled_node_caveat": "Acceptance alone does not establish enforcement of every constraint on disabled nodes",
+    "whole_board_schema_revalidated": false
+  },
+  "native_evidence": {
+    "resource_verifier": "scratch/j575d-usb2-resource1-2026-10-10/verify.py",
+    "resource_verifier_sha256": "04eb822d95cf6f7e0b104956c465ec2ac240c8c70c56c3ac495b091bd356c26a",
+    "power_order_verifier": "scratch/j575d-usb2-power-order-2026-10-10/verify.py",
+    "power_order_verifier_sha256": "a9f11ce7ba15f0780faef8b9079d1d849bb0b1c8afdcfce120180b97568ffc46",
+    "basis": "Retained original Apple binary and same-node captured resource tuples; all six event windows differ from candidate core addresses by 0x800000",
+    "hardware_aliasing_disproven": false
+  },
+  "remaining": [
+    "External USB2 interface caller and descriptor bits 17..19 semantics",
+    "USB2 role, reserved-bit preservation and hardware timing contracts",
+    "CIO80 and selector response/freshness/IRQ contracts",
+    "Physical power, clocks, IRQ, DMA and register access qualification",
+    "Verified backup, recovery readiness and explicit approval before native actions"
+  ],
+  "installed": false,
+  "booted": false,
+  "native_boot_approved": false
+}

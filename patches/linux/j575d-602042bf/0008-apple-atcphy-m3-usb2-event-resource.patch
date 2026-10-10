@@ -1,0 +1,136 @@
+--- drivers/phy/apple/atc.c
++++ drivers/phy/apple/atc.c
+@@ -601,6 +601,7 @@
+ 	int aciophy_crossbar;
+ 	bool fabric_tunables;
+ 	bool usb_common_tunables;
++	bool separate_usb2_event;
+ };
+ 
+ /**
+@@ -666,6 +667,7 @@
+ 		void __iomem *axi2af;
+ 		void __iomem *fabric;
+ 		void __iomem *usb2phy;
++		void __iomem *usb2_event;
+ 		void __iomem *pipehandler;
+ 		void __iomem *lpdptx;
+ 	} regs;
+@@ -1834,8 +1836,8 @@
+ 	udelay(10);
+ 
+ 	if (atcphy->hw->gen == ATCPHY_GENERATION_T8122) {
+-		core_set32(atcphy, ATCPHY_EVT_USB2_CTL, ATCPHY_EVT_USB2_CTL_LOAD_CNT |
+-			ATCPHY_EVT_USB2_CTL_EVT_EN);
++		set32(atcphy->regs.usb2_event + ATCPHY_EVT_USB2_CTL,
++		      ATCPHY_EVT_USB2_CTL_LOAD_CNT | ATCPHY_EVT_USB2_CTL_EVT_EN);
+ 		udelay(10);
+ 	}
+ 
+@@ -2512,6 +2514,20 @@
+ 			*resources[i].res = res;
+ 	}
+ 
++	/* M3 exposes USB2 event controls in a separate register window. */
++	atcphy->regs.usb2_event = atcphy->regs.core;
++	if (atcphy->hw->separate_usb2_event) {
++		res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "usb2-event");
++		if (!res || resource_size(res) < ATCPHY_EVT_USB2_CTL + sizeof(u32))
++			return dev_err_probe(atcphy->dev, -EINVAL,
++					     "Missing or undersized USB2 event regs");
++		addr = devm_ioremap_resource(&pdev->dev, res);
++		if (IS_ERR(addr))
++			return dev_err_probe(atcphy->dev, PTR_ERR(addr),
++					     "Unable to map USB2 event regs");
++		atcphy->regs.usb2_event = addr;
++	}
++
+ 	if (atcphy->fabric_enabled) {
+ 		res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "fabric");
+ 		addr = devm_ioremap_resource(&pdev->dev, res);
+@@ -2615,6 +2631,7 @@
+ 	.aciophy_crossbar = ACIOPHY_CROSSBAR_T8122,
+ 	.fabric_tunables = true,
+ 	.usb_common_tunables = true,
++	.separate_usb2_event = true,
+ };
+ 
+ static const struct of_device_id atcphy_match[] = {
+--- Documentation/devicetree/bindings/phy/apple,atcphy.yaml
++++ Documentation/devicetree/bindings/phy/apple,atcphy.yaml
+@@ -42,19 +42,52 @@
+             - apple,tunable-fabric
+           properties:
+             reg:
++              minItems: 7
++              maxItems: 7
++            reg-names:
++              minItems: 7
++              maxItems: 7
++              contains:
++                const: fabric
++        - not:
++            required:
++              - apple,tunable-fabric
++          properties:
++            reg:
+               minItems: 6
+               maxItems: 6
+             reg-names:
+               minItems: 6
+               maxItems: 6
+-        - properties:
++              contains:
++                const: usb2-event
++        # Old descriptions are retained only while explicitly disabled.
++        - required:
++            - status
++            - apple,tunable-fabric
++          properties:
++            status:
++              const: disabled
+             reg:
+-              maxItems: 5
++              minItems: 6
++              maxItems: 6
+             reg-names:
+-              maxItems: 5
++              minItems: 6
++              maxItems: 6
++              contains:
++                const: fabric
++        - required:
++            - status
+           not:
+             required:
+               - apple,tunable-fabric
++          properties:
++            status:
++              const: disabled
++            reg:
++              maxItems: 5
++            reg-names:
++              maxItems: 5
+   - if:
+       not:
+         properties:
+@@ -111,7 +144,8 @@
+       - description: Type-C PHY AXI to Apple Fabric interconnect controls
+       - description: USB2 PHY specific controls
+       - description: USB3 PIPE interface controls
+-      - description: Optional M3 Apple Fabric controls
++      - description: Optional M3 Apple Fabric or T6031 USB2 event controls
++      - description: T6031 USB2 event controls
+ 
+   reg-names:
+     minItems: 5
+@@ -121,7 +155,8 @@
+       - const: axi2af
+       - const: usb2phy
+       - const: pipehandler
+-      - const: fabric
++      - enum: [fabric, usb2-event]
++      - const: usb2-event
+ 
+   "#phy-cells":
+     const: 1
