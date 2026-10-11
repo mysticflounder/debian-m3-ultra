@@ -32,6 +32,57 @@ INITRAMFS_MAGIC = b"m1n1_initramfs"
 LOADER_PATH = SOURCE_ROOT / "build/m1n1.bin"
 LOADER_ELF_PATH = SOURCE_ROOT / "build/m1n1-raw.elf"
 
+FORK_SOURCE_ROOT = ROOT / "scratch/m1n1-fork.xd2NO8"
+FORK_REPORT_ROOT = ROOT / "scratch/m1n1-inline-package-tests-fork-current-2026-10-11"
+FORK_COMMIT = "b91ede42c1eabe5feaebe575df0016191f003ac5"
+FORK_LOADER_SHA256 = "7c1c0ef40b0ce7a578fd3fba74333655f89f3ee234968db44ae3fde4e0ba1c70"
+FORK_LOADER_ELF_SHA256 = "427d01dc8df26aa9d9f56e5593b50dbc7a26b72f6f840039d2921b5b24f22d7a"
+FORK_COMPILED_SOURCE_SHA256 = {
+    "src/payload.c": "39dd637c06938dec8559008f2890bd15925b367e8c517f66dcbced2a53258e35",
+    "src/tinf/adler32.c": "f35e2d7e6864cccccbdf6d8f1a34caacbbb69dbb70de276829a22216cbc4710f",
+    "src/tinf/crc32.c": "7f9b8a8149134e4b9c8ed36d2f0426eebd7264f4117d4648a971fe207cea2350",
+    "src/tinf/tinfgzip.c": "c7bdb2d4e14bba50f4d7c8835d504e5b523d75940100335f430f5f5c7fee509d",
+    "src/tinf/tinflate.c": "1d4f7879a504a19745f5e88fe00de29bfc697c95fd9c56c08bcaa6b745e2fc83",
+    "src/tinf/tinfzlib.c": "ba3df9315f8b547443052d277852f57a0ecde8a43f75c0a266ae470ec16696ca",
+    "src/libfdt/fdt.c": "6c5e4ff1207fff0edd3c24762bd970880df3df519b442bf335a67785509eb7c8",
+    "src/libfdt/fdt_addresses.c": "fdcac2596f2ce6b3cfc62fd0b29a1fdb5801002178ca018cffa3a5f4ad95a0e4",
+    "src/libfdt/fdt_empty_tree.c": "aa6aa13010ea8a0a85320c0c177a4fb42193bce80a6bb72116ae4f8bb6317909",
+    "src/libfdt/fdt_overlay.c": "550be2c090ea864130a3c895fa0cdaaeb168a49cf8abb39117b9ca272bdb0967",
+    "src/libfdt/fdt_ro.c": "a365e54f12f9247e5c8653b69a7ae4ac6e661b46af435f6f6539640eac71f605",
+    "src/libfdt/fdt_rw.c": "0f089361a8d954a1b07e739f38d958672b77b14986695cf36dc84c8fed29d226",
+    "src/libfdt/fdt_strerror.c": "6ef50e24ae08912f621cb3c201efb2814e72dfa3b60fea002cce0b3e6bab6a4c",
+    "src/libfdt/fdt_sw.c": "74996fdc1e036867ee3daa2fca9d39655f1a1f18a88f8664fff60bac09ec0661",
+    "src/libfdt/fdt_wip.c": "b436653fb5d5d75ef54a909afd3be5affed97286aef5432947c194a278e1ca54",
+}
+
+
+def profile_config(name: str) -> dict[str, object]:
+    if name == "historical":
+        return {
+            "name": name,
+            "source_root": SOURCE_ROOT,
+            "report_root": REPORT_ROOT,
+            "loader": SOURCE_ROOT / "build/m1n1.bin",
+            "loader_elf": SOURCE_ROOT / "build/m1n1-raw.elf",
+            "expected_commit": None,
+            "expected_loader_sha256": None,
+            "expected_loader_elf_sha256": None,
+            "expected_source_sha256": None,
+        }
+    if name == "fork-current":
+        return {
+            "name": name,
+            "source_root": FORK_SOURCE_ROOT,
+            "report_root": FORK_REPORT_ROOT,
+            "loader": FORK_SOURCE_ROOT / "build/m1n1.bin",
+            "loader_elf": FORK_SOURCE_ROOT / "build/m1n1-raw.elf",
+            "expected_commit": FORK_COMMIT,
+            "expected_loader_sha256": FORK_LOADER_SHA256,
+            "expected_loader_elf_sha256": FORK_LOADER_ELF_SHA256,
+            "expected_source_sha256": FORK_COMPILED_SOURCE_SHA256,
+        }
+    raise SystemExit(f"unknown profile: {name}")
+
 
 def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -64,8 +115,8 @@ def checked_path(path: Path, label: str) -> Path:
     return path
 
 
-def source_files() -> list[Path]:
-    src = SOURCE_ROOT / "src"
+def source_files(source_root: Path) -> list[Path]:
+    src = source_root / "src"
     files = [src / "payload.c"]
     # This positive package contains gzip, FDT and the initramfs wrapper.  The
     # pinned payload source declares XzDecode too, so the fixture supplies a
@@ -97,6 +148,17 @@ def parse_fixture_output(data: bytes) -> dict[str, str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--profile", choices=("historical", "fork-current"),
+                        default="historical",
+                        help="source/artifact profile (default: historical)")
+    parser.add_argument("--source-root", type=Path,
+                        help="override the selected profile's source root")
+    parser.add_argument("--loader", type=Path,
+                        help="override the selected profile's m1n1.bin")
+    parser.add_argument("--loader-elf", type=Path,
+                        help="override the selected profile's raw ELF")
+    parser.add_argument("--report-root", type=Path,
+                        help="override the selected profile's scratch report root")
     parser.add_argument("--payload", required=True, type=Path,
                         help="full32 m1n1 prefix or assembled inline payload.bin")
     parser.add_argument("--image", required=True, type=Path,
@@ -109,16 +171,62 @@ def main() -> int:
                         help="chosen.bootargs value without its terminating newline")
     args = parser.parse_args()
 
+    profile = profile_config(args.profile)
+    source_root = (args.source_root.resolve() if args.source_root
+                   else profile["source_root"])
+    loader_path = (args.loader.resolve() if args.loader
+                   else profile["loader"])
+    loader_elf_path = (args.loader_elf.resolve() if args.loader_elf
+                       else profile["loader_elf"])
+    report_root = (args.report_root.resolve() if args.report_root
+                   else profile["report_root"])
+    source_root = Path(source_root)
+    loader_path = Path(loader_path)
+    loader_elf_path = Path(loader_elf_path)
+    report_root = Path(report_root)
+    expected_commit = profile["expected_commit"]
+    expected_loader_sha256 = profile["expected_loader_sha256"]
+    expected_loader_elf_sha256 = profile["expected_loader_elf_sha256"]
+    expected_source_sha256 = profile["expected_source_sha256"]
+
     if "\n" in args.bootargs or "\r" in args.bootargs:
         raise SystemExit("--bootargs must not contain a newline; the package adds one")
     payload_path = checked_path(args.payload, "--payload")
     image_path = checked_path(args.image, "--image")
     dtb_path = checked_path(args.dtb, "--dtb")
     initrd_path = checked_path(args.initramfs, "--initramfs")
-    if not SOURCE_ROOT.is_dir():
-        raise SystemExit(f"pinned source tree is missing: {SOURCE_ROOT}")
+    if not source_root.is_dir():
+        raise SystemExit(f"selected source tree is missing: {source_root}")
     if not FIXTURE.is_file():
         raise SystemExit(f"fixture is missing: {FIXTURE}")
+    loader_path = checked_path(loader_path, "--loader")
+    loader_elf_path = checked_path(loader_elf_path, "--loader-elf")
+    loader_digest = digest_file(loader_path)
+    loader_elf_digest = digest_file(loader_elf_path)
+    if (expected_loader_sha256 and
+            loader_digest["sha256"] != expected_loader_sha256):
+        raise SystemExit(
+            f"{args.profile} loader SHA256 mismatch: expected {expected_loader_sha256}, "
+            f"got {loader_digest['sha256']}")
+    if (expected_loader_elf_sha256 and
+            loader_elf_digest["sha256"] != expected_loader_elf_sha256):
+        raise SystemExit(
+            f"{args.profile} raw ELF SHA256 mismatch: expected {expected_loader_elf_sha256}, "
+            f"got {loader_elf_digest['sha256']}")
+    compiled_sources = source_files(source_root)
+    source_digests = {str(path.relative_to(source_root)): digest_file(path)
+                      for path in compiled_sources}
+    if expected_source_sha256:
+        for relative, expected in expected_source_sha256.items():
+            actual = source_digests.get(relative, {}).get("sha256")
+            if actual != expected:
+                raise SystemExit(
+                    f"{args.profile} compiled source SHA256 mismatch for {relative}: "
+                    f"expected {expected}, got {actual}")
+        unexpected = sorted(set(source_digests) - set(expected_source_sha256))
+        if unexpected:
+            raise SystemExit(
+                f"{args.profile} compiled source set changed: {', '.join(unexpected)}")
 
     payload = read(payload_path)
     image = read(image_path)
@@ -141,7 +249,7 @@ def main() -> int:
     wrapper = INITRAMFS_MAGIC + struct.pack("<I", len(initrd)) + initrd
     trailer = bytes(64)
     inline_stream = bootargs_record + image_gz + dtb + wrapper + trailer
-    pinned_loader = read(LOADER_PATH)
+    pinned_loader = read(loader_path)
     if payload == pinned_loader:
         input_mode = "raw-prefix-assembled"
         m1n1_prefix = payload
@@ -161,8 +269,8 @@ def main() -> int:
 
     prefix_len = len(m1n1_prefix)
 
-    REPORT_ROOT.mkdir(parents=True, exist_ok=True)
-    run_dir = Path(tempfile.mkdtemp(prefix="run-", dir=REPORT_ROOT))
+    report_root.mkdir(parents=True, exist_ok=True)
+    run_dir = Path(tempfile.mkdtemp(prefix="run-", dir=report_root))
     package_path = run_dir / "payload-package.bin"
     m1n1_path = run_dir / "m1n1-prefix.bin"
     generated_fixture = run_dir / "m1n1-inline-package.generated.c"
@@ -170,7 +278,7 @@ def main() -> int:
     write_bytes(package_path, package)
     write_bytes(m1n1_path, m1n1_prefix)
 
-    include_path = str((SOURCE_ROOT / "src/payload.c").resolve()).replace('"', '\\"')
+    include_path = str((source_root / "src/payload.c").resolve()).replace('"', '\\"')
     fixture_text = FIXTURE.read_text()
     marker = "/* INSERT_PAYLOAD_INCLUDE */"
     if fixture_text.count(marker) != 1:
@@ -184,8 +292,8 @@ def main() -> int:
         compiler_path = shutil.which("clang") or shutil.which("cc") or shutil.which("gcc")
     if compiler_path is None:
         raise SystemExit("no C compiler found (tried CC, clang, cc, gcc)")
-    libs = source_files()[1:]
-    include_dirs = [SOURCE_ROOT / "src", SOURCE_ROOT / "build"]
+    libs = source_files(source_root)[1:]
+    include_dirs = [source_root / "src", source_root / "build"]
     compile_argv = [compiler_path, "-std=c11", "-O1", "-g",
                     "-Wno-unused-function", "-Wno-unused-parameter",
                     "-Wno-unused-variable", "-Wno-unused-but-set-variable",
@@ -198,7 +306,21 @@ def main() -> int:
     if compile_exit != 0:
         report = {
             "status": "compile-failed",
+            "profile": args.profile,
             "run_dir": str(run_dir),
+            "source_provenance": {
+                "root": str(source_root), "recorded_commit": expected_commit,
+                "compiled_source_sha256": source_digests,
+                "expected_source_sha256": expected_source_sha256,
+                "expected_match": expected_source_sha256 is None or all(
+                    source_digests.get(path, {}).get("sha256") == digest
+                    for path, digest in expected_source_sha256.items()),
+            },
+            "loader_provenance": {
+                "loader": loader_digest, "raw_elf": loader_elf_digest,
+                "expected_loader_sha256": expected_loader_sha256,
+                "expected_loader_elf_sha256": expected_loader_elf_sha256,
+            },
             "compile": {"argv": compile_argv, "exit": compile_exit,
                         "stdout": str(compile_stdout), "stderr": str(compile_stderr)},
         }
@@ -258,16 +380,29 @@ def main() -> int:
     status = "pass" if not mismatches else "fail"
     report = {
         "status": status,
+        "profile": args.profile,
         "run_dir": str(run_dir),
         "input_mode": input_mode,
         "original_input": digest_file(payload_path),
         "inline_suffix": {"offset": prefix_len, "size": len(package) - prefix_len,
                            "sha256": sha256(package[prefix_len:])},
-        "pinned_loader": digest_file(LOADER_PATH),
-        "pinned_loader_elf": digest_file(LOADER_ELF_PATH),
-        "source": {"root": str(SOURCE_ROOT), "payload_c": digest_file(SOURCE_ROOT / "src/payload.c"),
+        "pinned_loader": loader_digest,
+        "pinned_loader_elf": loader_elf_digest,
+        "source_provenance": {
+            "root": str(source_root), "recorded_commit": expected_commit,
+            "compiled_source_sha256": source_digests,
+            "expected_source_sha256": expected_source_sha256,
+            "expected_match": expected_source_sha256 is None or all(
+                source_digests.get(path, {}).get("sha256") == digest
+                for path, digest in expected_source_sha256.items()),
+        },
+        "loader_provenance": {
+            "expected_loader_sha256": expected_loader_sha256,
+            "expected_loader_elf_sha256": expected_loader_elf_sha256,
+        },
+        "source": {"root": str(source_root), "payload_c": digest_file(source_root / "src/payload.c"),
                    "fixture": digest_file(FIXTURE),
-                   "decoder_sources": [digest_file(path) for path in source_files()[1:]]},
+                   "decoder_sources": [digest_file(path) for path in source_files(source_root)[1:]]},
         "inputs": {"payload": digest_file(payload_path), "image": digest_file(image_path),
                    "dtb": digest_file(dtb_path), "initramfs": digest_file(initrd_path),
                    "bootargs": args.bootargs},
@@ -282,7 +417,7 @@ def main() -> int:
                 "fields": values},
         "expected_fields": expected,
         "mismatches": mismatches,
-        "scope": "positive valid contiguous payload recognition and stream advancement only; no native handoff or security testing",
+        "scope": "positive valid contiguous payload recognition and stream advancement only; host compilation exercises selected source, not ARM loader execution or native handoff",
     }
     (run_dir / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps({"status": status, "run_dir": str(run_dir), "package_size": len(package),

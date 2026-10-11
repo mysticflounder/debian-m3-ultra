@@ -1,5 +1,25 @@
 # J575d native loader contract
 
+## Fork package integration — 2026-10-11
+
+The explicit `fork-current` profile packages fork revision `b91ede42` with
+the retained Linux Image and updated 20-module diagnostic initramfs. Historical
+defaults are unchanged. Use `scripts/build-j575d-inline-package.py --profile
+fork-current --board official` or explicitly select `--board event`.
+
+Both assembled packages passed the actual combined-input host fixture with
+zero mismatches. The fixture compiles the selected payload parser and decoders;
+it does not execute the ARM loader prefix. Five builder tests and two synthetic
+DT handoff checks also passed. All seven PHY nodes remain disabled in the event
+candidate, and its existing schema caveats remain. Synthetic post-fixup DTBs
+are not packaged. Input pins, output hashes and receipts are in
+[the integration inventory](inventory/m1n1-fork-inline-package-2026-10-11.json).
+
+These are **UNQUALIFIED offline packages**, not boot-approved artifacts. There
+was no VM or native boot. Backup, recovery readiness and native-test approval
+remain outstanding; physical memory placement, cache visibility and hardware
+bring-up still require qualification.
+
 This is Debian/project-fork work, not an Asahi submission. Source analysis,
 host fixtures and comparison builds do not authorize or establish native boot.
 The default m1n1 pin and disabled native dispatch remain unchanged. Native

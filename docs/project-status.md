@@ -1,4 +1,13 @@
-# Project status — 2026-10-10 UTC
+# Project status — 2026-10-11 UTC
+
+Latest checkpoint: the pushed m1n1 fork (`b91ede42`) is now integrated with the
+updated diagnostic initramfs in explicit offline packages. Official and disabled
+event-DT packages both pass the actual combined-input host parser fixture with
+zero mismatches; five builder tests and two synthetic DT handoff checks pass.
+Historical defaults are unchanged. This is not a VM/native boot or hardware
+qualification. See [the package inventory](inventory/m1n1-fork-inline-package-2026-10-11.json).
+The local fork source-policy hold is resolved; backup, recovery and native-test
+approval gates remain. Older checkpoints below retain their historical scope.
 
 Updated at task completion. Source/offline validation is not native-hardware
 validation. External PR, VM and MacBook states below are last recorded states,

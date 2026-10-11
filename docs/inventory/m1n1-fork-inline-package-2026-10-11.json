@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-11",
+  "scope": "Offline integration of fork loader, retained Linux Image, disabled board candidate and updated diagnostic initramfs; no native qualification",
+  "native_boot_approved": false,
+  "fork_revision": "b91ede42c1eabe5feaebe575df0016191f003ac5",
+  "fork_build_base": "7f208771b1352cde2dbce37a866ad46caca978ac",
+  "linux_revision": "602042bf29f6efde39cfb5fdd9289bf4854bc0c5",
+  "inputs": {
+    "loader": {
+      "path": "scratch/m1n1-fork.xd2NO8/build/m1n1.bin",
+      "sha256": "7c1c0ef40b0ce7a578fd3fba74333655f89f3ee234968db44ae3fde4e0ba1c70"
+    },
+    "loader_raw_elf": {
+      "path": "scratch/m1n1-fork.xd2NO8/build/m1n1-raw.elf",
+      "sha256": "427d01dc8df26aa9d9f56e5593b50dbc7a26b72f6f840039d2921b5b24f22d7a"
+    },
+    "initramfs": {
+      "path": "scratch/j575d-initramfs.AxUPO0/output/initramfs.cpio.gz",
+      "sha256": "807b823e87a53304106e5f49e48ed5fc918040f21570cbc77e87df26df5613ee",
+      "module_count": 20
+    },
+    "event_candidate": {
+      "path": "scratch/j575d-usb2-event-dt.93istlf1/candidate.dtb",
+      "sha256": "be4ab6f0f5dcd508a5aa25df4e7692246715ce356142b2c8bcc9b1aff1dab861",
+      "all_seven_phy_nodes_disabled": true
+    }
+  },
+  "packages": {
+    "event": {
+      "manifest": "scratch/j575d-inline-package.yb8r3ut4/manifest.json",
+      "combined_sha256": "381403de8e7355216e398afe075078c078be55e4b69cb5f3004895987d4321e3",
+      "report": "scratch/m1n1-inline-package-tests-fork-current-2026-10-11/run-8izjopi9/report.json"
+    },
+    "official": {
+      "manifest": "scratch/j575d-inline-package.6uf7698y/manifest.json",
+      "combined_sha256": "b2b2fbeefd35f953ca67b9d3315bd33a95df9ed8e447e7a5756d1899aa1ab30e",
+      "report": "scratch/m1n1-inline-package-tests-fork-current-2026-10-11/run-lmcw958e/report.json"
+    }
+  },
+  "host_checks": {
+    "both_input_modes": "whole-combined-actual",
+    "both_compile_exit": 0,
+    "both_run_exit": 0,
+    "both_mismatch_count": 0,
+    "pinned_compiled_c_files": 15,
+    "builder_tests_passed": 5,
+    "builder_test_command": "uv run --offline --no-project python tests/test-j575d-inline-package-builder.py",
+    "negative_controls": {
+      "wrong_prefix": "scratch/m1n1-inline-package-tests-fork-current-2026-10-11/wrong-prefix-v2.stderr",
+      "corrupt_inline_suffix_wrapper": "scratch/m1n1-inline-package-tests-fork-current-2026-10-11/corrupt-wrapper-v2.stderr",
+      "both_exit": 1,
+      "scope": "Python input rejection; not native execution or a corrupt whole-package parser test"
+    },
+    "limits": "Host parser and decoders only; ARM prefix not executed; no VM or native boot; physical placement and hardware unqualified"
+  },
+  "dt_fixup_fixture": {
+    "receipt": "scratch/m1n1-linux-package-handoff.u556akvh/execution-manifest.json",
+    "dtbs": ["event_candidate", "official"],
+    "runs_passed": 2,
+    "functions": ["kboot_set_initrd", "dt_set_chosen", "dt_set_memory", "dt_set_cpus"],
+    "source": "Retained full32 kboot.c and libfdt, byte-identical to the fork copies",
+    "memory_provider": "synthetic ADT; not real hardware handoff",
+    "post_fixup_outputs_used_in_package": false
+  }
+}
