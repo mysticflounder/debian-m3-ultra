@@ -1086,6 +1086,26 @@ separately resolve the existing m1n1 source-policy hold before resuming
 source-based loader work. Building the new module initramfs above resolves
 an offline integration gap, not either of these prerequisites.
 
+Later on October 10, Adam explicitly authorized AI-assisted changes in our
+own m1n1 fork and created `https://github.com/flound1129/m1n1`. The local
+m1n1 source-policy hold is therefore lifted; older hold references above
+are historical. No patches are to be submitted to upstream m1n1 while its
+policy remains unchanged. Adam authorized direct pushes to the fork without
+PRs. Backup/recovery readiness and separate approval for native execution,
+firmware, boot-policy or disk changes remain required.
+
+The fork's `main` now contains all 32 patches from the tested
+`xz-seek-guards` series as individual commits, plus the fork-specific agent
+policy commit, pushed directly and confirmed through GitHub at
+`b91ede42c1eabe5feaebe575df0016191f003ac5`. No PR or upstream submission was
+created. Its starting revision `7f208771` adds only two upstream Rust/build
+changes to our tested `2460b604` baseline. Imported C/Rust sources and the
+changed Python helper match the retained full32 tree byte-for-byte (excluding
+patch-tool backup files). A fresh offline build passed at
+`scratch/m1n1-fork-build.fHiV6m`, with all four artifact checksums verified.
+This is not native boot qualification. The dedicated checkout is
+`scratch/m1n1-fork.xd2NO8`; existing project build pins are unchanged.
+
 | Workstream | Status | Next action / gate |
 | --- | --- | --- |
 | M3 persistent Debian VM | Previously validated; unchanged | Preserve working configuration; regression-test before promoting replacement QEMU |
