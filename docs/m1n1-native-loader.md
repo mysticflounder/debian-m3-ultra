@@ -171,6 +171,102 @@ and Recovery compression/resource fork. All three mounted volumes were
 device nodes disappeared. The retained image and receipts are recorded in
 the [APFS test inventory](inventory/j575d-boot-stub-apfs-2026-10-13.json).
 
+### Modern loader caller trace — 2026-10-13
+
+Static inspection of the host's readable `BootabilityService` executable
+(88.0.2, SHA-256
+`e18be9ed618a84638dd7e9cb3be39f7eb5955da026de32e2b67d660622bc4d5a`)
+now establishes an external caller, rather than inferring one from the
+framework's install name. `BYBrainLoader._selectSpecifier` at `0x100002730`
+tries override, Preboot, then built-in specifiers. The built-in framework is
+`/System/Library/PrivateFrameworks/Bootability.framework/Versions/A/Frameworks/BootabilityBrain.framework`.
+`_loadFrameworkForSpecifier:` at `0x100003860` appends
+`Versions/A/BootabilityBrain` to the selected framework path and calls
+`dlopen` at `0x100003a20`.
+
+The subsequent `BYPrebootBrainPolicy.evaluate` trace resolves the previously
+missing Preboot joins at `0x10000416c..0x1000041ec`. With
+`A = <Preboot mount>/<target volume-group UUID>/restore/Bootability`:
+
+| Selected field | Path |
+| --- | --- |
+| Framework | `A/BootabilityBrain.framework` |
+| Global trust cache | `A/Bootability.trustcache` |
+| Optional personalization bundle | `A/Restore/BootabilityCryptex` |
+| Restore version | `<Preboot mount>/<target volume-group UUID>/restore/RestoreVersion.plist` |
+
+Missing framework or trust cache takes rejection branches. A missing optional
+bundle instead clears its field to nil (`0x100004224..0x100004230`); the caller
+has a global-signed trust-cache fallback. Presence does not bypass the remaining
+version/policy checks or establish that AMFI accepts the trust cache.
+The policy's successful branch constructs and assigns the specifier at
+`0x100004e18..0x100004e40`. The Preboot loader copies the framework to a fresh
+`NSTemporaryDirectory()/bootability-staging-<random UUID>/BootabilityBrain.framework`
+before loading it. Static mapping of 81 relevant Objective-C stubs was checked
+against their actual arm64 ADRP/LDR selector-reference instructions, with zero
+mismatches.
+
+This establishes the **host caller's default path contract**, including the
+framework and trust-cache destinations already used by the experimental copy
+recipe. It does not prove that the complete minimal stub passes its selection
+policy, that the 26A428 Recovery caller is identical, or that personalization
+and native boot succeed. The optional Bootability personalization bundle is
+distinct from the outer macOS restore bundle. No Apple framework or service
+was executed for this inspection. Retained traces are
+`scratch/boot-stub-provisioning/selector-map-*`.
+
+### Inert installer extras and firmware inputs — 2026-10-13
+
+Two bounded tools now assemble additional files into fresh project-scratch
+directories, without installing them into the APFS image or physical volumes:
+
+```sh
+uv run --offline --no-project python scripts/stage-j575d-fud-inputs.py
+uv run --offline --no-project python scripts/stage-j575d-stub-extras.py \
+  --stage scratch/boot-stub-provisioning/stage-ohgqmpjl
+```
+
+These commands require the retained, hash-pinned local inputs. Neither accepts
+an arbitrary output directory. All regular output files are non-executable.
+
+| Prepared input | Files / links | Logical bytes |
+| --- | --- | ---: |
+| Selected J575d FUD source payloads | 4 files, 4 relative aliases | 5,816,677 (regular files) |
+| Inert installer templates and marker | 5 files | 5,805 |
+| Installer-data exports | 4 files | 33,729,738 |
+| Unchanged official fork-current inline candidate | 1 file | 20,648,267 |
+
+The FUD selection is exactly identity 153's non-iBoot/non-stage1 `.im4p`
+inputs: ANE1, DCP2, SecurePageTableMonitor and TrustedExecutionMonitor.
+Their aliases remain contained under `fud_firmware/`. These are source inputs,
+**not extracted or complete Linux runtime firmware**.
+
+The installer app is renamed `Finish Installation.app.inert`; its two scripts
+have `.inert` suffixes and an unconditional `exit 97` before the original
+body. Rendering uses `Debian` and a synthetic volume-group UUID. Initial guard
+tests invoked the disabled copies and returned 97 without executing original
+commands; the final tests only inspect the guard and templates. No installer
+entry point, boot-policy command or Apple framework was executed.
+
+The exported files are the selected `BuildManifest.plist`, `RestoreVersion.plist`,
+stub `SystemVersion.plist` and `kernelcache.release.mac15j`. The separate
+`candidates/UNQUALIFIED-boot.bin` is a byte-identical copy of the retained
+20,648,267-byte official fork-current inline package, not a newly qualified
+deployment boot object. No ESP UUID or chainload variables were appended.
+
+Both receipts retain `native_approved: false`. The extras receipt separately
+identifies the staged-layout receipt and the original asset receipt; they are
+different hashes. Administrator metadata, a complete firmware package,
+`stub_info.json`, icon, deployable `boot.bin`, personalization and full/peak
+space qualification remain unresolved. WiFi/Bluetooth/ISP collection requires
+the Recovery tree; ALS collection uses machine-specific inputs excluded from
+this offline task. No claim is made that every collector is necessary for the
+first RAM-only diagnostic. The earlier APFS image is unchanged and detached;
+these workspace bytes do not update its measured allocation.
+
+See the [extras inventory](inventory/j575d-boot-stub-extras-2026-10-13.json)
+for artifact and evidence pins.
+
 Source pins and local artifact receipts are recorded in the
 [provisioning inventory](inventory/j575d-boot-stub-inputs-2026-10-13.json).
 
