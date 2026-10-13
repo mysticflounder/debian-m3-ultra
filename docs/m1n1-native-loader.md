@@ -113,6 +113,64 @@ Apple personalization and actual boot remain separate requirements. No
 installer code or Apple framework was executed; no disk image was attached
 or physical boot volume modified during this staging work.
 
+### Disposable APFS test — 2026-10-13
+
+A subsequent test created a new 8,000,000,000-byte ASIF sparse image under
+project scratch. Its device was verified as a non-internal virtual Disk Image;
+the container, backing-store and volume UUIDs were checked before mutations.
+No physical partition was created, resized or formatted.
+
+The test established a real APFS System/Data volume group and separate Preboot
+and Recovery roles. **Create Data first, then add System with `-groupWith`
+pointing to Data**, as the pinned installer does. On this host, changing an
+ordinary volume directly to System failed with `-69599`, and adding Data
+grouped with an existing System failed with `-69624`. The sole empty System
+test volume from that attempt was removed after UUID/allocation/mount checks;
+the corrected Data-first sequence succeeded. These are observations on this
+host, not universal claims about every macOS version.
+
+The 128 staged entries were copied into the image, substituting its actual
+test volume-group UUID for the synthetic staging UUID. System, Preboot and
+Recovery were mounted `noexec,nosuid,nodev,nobrowse`; Data remained empty.
+No executable in the candidate was run.
+
+Recovery was prepared with the pinned installer's `stream_compress` helper
+on a disposable file, then copied with resource forks preserved. This was
+execution of that inspected helper, **not the installer entry point**. It sets
+`UF_COMPRESSED`, stores LZFSE chunks in a resource fork, and preserves the
+original AEA bytes on transparent reads. Both source and copied Recovery
+file read back as SHA-256
+`8f803be243b57ca8dd0e33493f60c98441f33d94696ae078e19d67f31d0a81c3`.
+The 1,323,703,674-byte resource fork is 15,080,826 bytes larger than the AEA
+input. Compression parity is demonstrated; compression being mandatory for
+boot is not established. APFS hides the decmpfs xattr after setting the flag,
+so validation uses the compressed flag, resource fork and transparent hash.
+
+| Measured allocation | Bytes |
+| --- | ---: |
+| APFS container ceiling | 7,999,959,040 |
+| Data volume | 20,480 |
+| System volume | 61,440 |
+| Preboot volume | 64,274,432 |
+| Recovery volume | 1,323,732,992 |
+| Total container use, including metadata | 1,413,390,336 |
+| Container free | 6,586,568,704 |
+
+The **current incomplete candidate fits an 8 GB image**. This does not yet
+qualify the full install budget: firmware package, local installer/loader,
+administrator metadata, personalization and peak temporary allocations
+remain unmeasured. The image is not bootable or personalized. Bootability
+copy-recipe confirmation does not establish the modern external loader's
+framework/trustcache selection; that caller contract remains separate.
+
+After clean ejection, the image was reopened read-only. An independent audit
+verified all 125 regular-file sizes/hashes, three link bodies, the actual test
+volume-group remapping, four required restore paths, single J575d identity,
+and Recovery compression/resource fork. All three mounted volumes were
+`read-only,noexec,nosuid,nodev,nobrowse`. The image was ejected again; its
+device nodes disappeared. The retained image and receipts are recorded in
+the [APFS test inventory](inventory/j575d-boot-stub-apfs-2026-10-13.json).
+
 Source pins and local artifact receipts are recorded in the
 [provisioning inventory](inventory/j575d-boot-stub-inputs-2026-10-13.json).
 

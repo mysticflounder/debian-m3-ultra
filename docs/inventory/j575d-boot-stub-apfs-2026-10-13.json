@@ -1,0 +1,54 @@
+{
+  "schema": "j575d-boot-stub-apfs-test-v1",
+  "date_utc": "2026-10-13",
+  "profile": "26A428",
+  "status": "disposable APFS storage and persistence checks passed; boot unqualified",
+  "image": {
+    "path": "scratch/boot-stub-provisioning/apfs-test-BuP6CFmL/stub-test.asif",
+    "format": "ASIF",
+    "virtual_bytes": 8000000000,
+    "file_bytes": 1405091840,
+    "sha256_after_final_ejection": "170f28513296f11057c7eb34775dbb4b2099b527be42fc0597c8e15cfe8896d4",
+    "attached_at_completion": false
+  },
+  "test_container_uuid": "487049EF-A5FA-4AC7-87BC-5F9758A654B7",
+  "test_volume_group_uuid": "6C48ECEE-50E5-49F0-ACEF-9BA7C36926F7",
+  "system_data_group_verified": true,
+  "roles": ["System", "Data", "Preboot", "Recovery"],
+  "allocation_bytes": {
+    "container_ceiling": 7999959040,
+    "data": 20480,
+    "system": 61440,
+    "preboot": 64274432,
+    "recovery": 1323732992,
+    "container_used_including_metadata": 1413390336,
+    "container_free": 6586568704
+  },
+  "source_stage_receipt_sha256": "3ac2361891b4d61a1b8285ea4bdc47b7e03a173ac1b2dab0a607df981535210b",
+  "persisted_regular_files": 125,
+  "persisted_symlinks": 3,
+  "independent_readonly_reopen_audit": "PASS",
+  "recovery": {
+    "transparent_bytes": 1308622848,
+    "transparent_sha256": "8f803be243b57ca8dd0e33493f60c98441f33d94696ae078e19d67f31d0a81c3",
+    "resource_fork_bytes": 1323703674,
+    "uf_compressed": true,
+    "helper_source_sha256": "38ed1430a14497c6e8731a1beb470bdf53f45bb4f35bb34e02ddc5cecb2a23aa",
+    "helper_executed_on_disposable_file": true,
+    "compression_required_for_boot": null
+  },
+  "incomplete_candidate_fits_8gb": true,
+  "full_install_fit_verified": false,
+  "boot_qualified": false,
+  "installer_entrypoint_executed": false,
+  "apple_framework_executed": false,
+  "personalization_attempted": false,
+  "physical_partition_or_boot_policy_changes": false,
+  "remaining": ["modern external Bootability caller contract", "generated firmware package", "installer and loader files", "administrator metadata", "personalization", "peak provisioning space", "native boot"],
+  "evidence": [
+    {"path": "scratch/boot-stub-provisioning/apfs-test-BuP6CFmL/container-populated.plist", "sha256": "07947af3bb9325ae22be7bf63dc4b7c1d120e642edb34871ae30d888d182f442"},
+    {"path": "scratch/boot-stub-provisioning/apfs-test-BuP6CFmL/copy-receipt.json", "sha256": "608d9e571a81e37f57a35fd9ec6ef73f7710eccee1a656ad8ccaeabd374c7389"},
+    {"path": "scratch/boot-stub-provisioning/apfs-test-BuP6CFmL/independent-audit.md", "sha256": "e59e751399d2da1ad780bb2f66c7f863c0a1513380407ed3ebf5baa0bf70477e"},
+    {"path": "scratch/boot-stub-provisioning/recovery-format-report.md", "sha256": "f5b9ffa9fbf3b8ab720911604ddde47f11414761110386e4651e8356266dd838"}
+  ]
+}
