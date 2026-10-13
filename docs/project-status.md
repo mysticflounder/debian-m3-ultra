@@ -1,12 +1,14 @@
 # Project status — 2026-10-13 UTC
 
 Latest storage checkpoint: the portable Debian UEFI disk passes two HVF cold
-boots, and the staged `complete-candidate-YFOQRXya` passes disposable 8 GB
-APFS, read-only reopen and byte-integrity checks with 136 regular files and
-three symlinks. Its measured container use is 1,467,834,368 bytes, with
-6,532,124,672 bytes free under a 7,999,959,040-byte ceiling; full
-personalized-install and peak space remain unqualified. The candidate and
-separate Recovery image are safely detached (last devices disk9 and disk7).
+boots, and the staged `complete-candidate-YFOQRXya` passed its disposable
+8 GB APFS, read-only reopen and byte-integrity checks before physical staging.
+The user then created the physical 8 GB APFS target; scoped provisioning added
+its System/Data/Preboot/Recovery roles. 139 staged records plus three admin records passed
+read-only remount audits for hashes, UUID substitution, ownership, modes,
+Recovery compression and required paths. The target currently uses
+1,468,968,960 bytes with 6,531,031,040 bytes free, and all four volumes are
+unmounted. Full personalization and runtime bootability remain unqualified.
 Offline follow-up stages four FUD inputs/aliases, inert installer templates,
 four installer-data exports and the unchanged unqualified diagnostic loader.
 The current twenty-module RAM-only diagnostic needs no additional Linux vendor firmware;
@@ -14,11 +16,13 @@ firmware collection is an optional later-profile manifest, not a first-RAM
 gate. The modern host Bootability caller's Preboot framework/trust-cache paths
 are traced, and static eligibility comparator result 3 accepts the actual host
 `love` value; runtime selection, Recovery approval and personalization remain
-unqualified. No physical Linux partitions, personalization or native boot have
-been performed. Backup and data cable are confirmed; DFU recovery is not
+unqualified. No physical Linux root/ESP partitions, personalization or native
+boot have been performed. Backup and data cable are confirmed; DFU recovery is not
 exercised. See the
 [current provisioning checkpoint](m1n1-native-loader.md#boot-stub-provisioning-checkpoint--2026-10-13).
-The current bounded stub/FUD/adapter checkpoint has 43 passing tests.
+The current bounded stub/FUD/adapter checkpoint has 43 passing tests. See the
+[physical staging inventory](inventory/j575d-physical-boot-stub-2026-10-13.json)
+for the target identifiers and receipts.
 
 Earlier package checkpoint: the pushed m1n1 fork (`b91ede42`) is now integrated with the
 updated diagnostic initramfs in explicit offline packages. Official and disabled
@@ -33,22 +37,20 @@ Updated at task completion. Source/offline validation is not native-hardware
 validation. External PR, VM and MacBook states below are last recorded states,
 not a fresh remote or live-machine check.
 
-Current physical boundary: Adam explicitly retains the next 8 GB APFS
-partition as a user-run action. The current read-only gap is 130,329,329,664
-bytes after `disk0s2` macOS UUID
-`3BCA8FEC-8E47-4A01-8BE2-25C5E2B793A1` and before Recovery `disk0s3`.
-Documentation-only command (never automatic):
-
-```sh
-sudo diskutil addPartition disk0s2 APFS 'Debian Boot' 8g
-```
-
-Require fresh partition UUID/free-space checks before the command and a fresh
-identifier/role check afterward. Do not use
-`eraseDisk`, whole-disk repartitioning, or a stale target identifier. After
-that user-run boundary, target metadata and interactive Apple
-authentication/paired Recovery precede any separately approved first RAM-only
-native diagnostic; actual root/ESP creation is later.
+Current physical boundary: the user-created target is `disk0s5`, store UUID
+`9D38BA18-6581-413B-815C-17D69DE44BDF`, in APFS container
+`F6577F6B-0EB5-4E21-9761-3EE18E4A2C29` (`disk7`, 8 GB decimal). Data/VGID is
+`DAD29544-6687-4B2C-B0E0-87A1D6A700B5` (`disk7s1`); System, Preboot and
+Recovery are `F78D7027-7D09-4A12-8165-9B6374513A13` (`disk7s2`),
+`68A1164D-90DE-473B-A9D6-AA6658C60021` (`disk7s3`), and
+`846EEAE0-79F7-482D-B8D3-885EE745845C` (`disk7s4`). Physical staging and readonly
+remount audits passed; admin metadata staging also passed. This does not claim
+provisioning complete or bootable: personalization, `schg`, boot policy,
+startup selection, `bless`, `bputil`, `kmutil`, and native boot remain undone.
+The next boundary requires interactive Apple admin authorization, new boot
+environment/paired-Recovery selection, and separate native approval. The old
+`diskutil addPartition` command was already run by the user and is historical;
+do not rerun it.
 
 Scope: this is functional Debian/M3 Ultra SoC bring-up, not security work.
 Report and record security findings, distinguishing verified issues from
@@ -1169,11 +1171,11 @@ This is not native boot qualification. The dedicated checkout is
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
 | NVMe / USB / Ethernet | 0008 event mapping passes seven host tests, five DT tests and 16 targeted binding cases; 0009 USBCTL preservation passes five tests; experimental 0010 M3 role signals pass nine sanitizer tests and a fresh combined 20-module build, with 113 build/package checksums verified | No package installed or booted; PHY providers remain disabled and select-polling default-off. Hardware response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol and USB2 reset/sequencing/timing remain open; bounded descriptor mapping and register-value tests are not physical validation. Physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
-| Recovery / boot-entry setup | Verified backup and USB-C data cable confirmed; detached candidate/Recovery images were reopened read-only; DFU not exercised | Obtain fresh physical target metadata, interactive Apple authentication and paired Recovery evidence before separately approved native actions |
+| Recovery / boot-entry setup | Physical target roles and 142 staged/admin records passed readonly remount audits; all four volumes are unmounted; verified backup and USB-C data cable confirmed; DFU not exercised | Interactive Apple admin authorization, new boot-environment/paired-Recovery selection, then separately approved native actions |
 | Portable Debian UEFI disk | Two HVF cold boots, SSH/network and persistence checks passed | Preserve image; VM success does not qualify Apple physical boot |
-| Minimal Apple boot stub | Complete-candidate image has 136 regular files/3 links, uses 1,467,834,368 bytes of a 7,999,959,040-byte ceiling, and is detached; static comparator result 3 accepts host `love`; host/Recovery normalized disassembly/data parity matches | Runtime Bootability selection, Recovery/authentication, admin metadata, Apple personalization, peak-space and native boot remain unqualified; see [candidate inventory](inventory/j575d-boot-stub-candidate-2026-10-13.json) |
-| Offline stub extras / firmware inputs | Inert templates plus separately rendered original scripts, four installer-data exports, unqualified direct-inline loader and four FUD files/aliases staged; current 20-module RAM diagnostic needs no additional Linux vendor firmware; isolated restore-root adapter/pure renderer tested | Linux runtime firmware collection is later-profile work, not a first-RAM gate; Apple boot-firmware qualification remains separate; provide target admin/personalization inputs at the approved boundary; no install or boot approval |
-| Linux storage / partitioning | User-created free extent 130,329,329,664 bytes after macOS `disk0s2` UUID `3BCA8FEC-8E47-4A01-8BE2-25C5E2B793A1` before Recovery `disk0s3`; Linux partitions not created | User-run only: `sudo diskutil addPartition disk0s2 APFS 'Debian Boot' 8g`, then fresh identifier/role check; no `eraseDisk`; root/ESP later |
+| Minimal Apple boot stub | Physical target has 142 staged/admin records; 1,468,968,960 bytes used and 6,531,031,040 free; root:wheel, modes, hashes, UUID substitution, compressed Recovery/resource fork, required paths and admin byte-equality audits passed; see [physical inventory](inventory/j575d-physical-boot-stub-2026-10-13.json) | Runtime Bootability, Apple authentication, personalization, `schg`, boot policy, startup selection and native boot remain unknown; do not call the target complete or bootable |
+| Offline stub extras / firmware inputs | Staged target includes the adapter outputs, extras and admin metadata; `stub_info.json` remains `complete: false` with personalization pending, and legacy `schg` compatibility was not applied | Perform interactive Apple authorization and approved personalization/boot-entry work; Linux runtime firmware remains later-profile work; no install or boot approval |
+| Linux storage / partitioning | User-created APFS container `F6577F6B-0EB5-4E21-9761-3EE18E4A2C29` on `disk7` has the System/Data/Preboot/Recovery roles; Linux root/ESP are outside this boot-stub target | The user-run `diskutil addPartition` command is historical; create Linux root/ESP only in a later, separately reviewed storage step |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |
 | NFS follow-up | Deferred by Adam | Resume only when requested; historical VM NFS evidence is not native-driver validation |
 

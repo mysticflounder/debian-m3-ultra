@@ -2,6 +2,11 @@
 
 ## Boot-stub provisioning checkpoint — 2026-10-13
 
+Latest: [physical staging](#physical-staging-checkpoint--2026-10-13) now passes
+read-only persistence checks for 142 entries in the new internal boot container.
+Apple authorization/personalization and native boot remain untested. The
+disposable-image checkpoints below record the preceding preparation work.
+
 The bounded candidate has now been assembled into the disposable APFS image
 `scratch/boot-stub-provisioning/complete-candidate-YFOQRXya`: 136 regular
 files and three symlinks, with measured container use 1,467,834,368 bytes,
@@ -315,36 +320,35 @@ for artifact and evidence pins.
 Source pins and local artifact receipts are recorded in the
 [provisioning inventory](inventory/j575d-boot-stub-inputs-2026-10-13.json).
 
-### Next physical boundary — user-run only
+### Physical staging checkpoint — 2026-10-13
 
-Both disposable images are detached. The next real boundary is the user's
-explicitly supervised physical 8 GB APFS partition, followed by fresh target
-metadata, interactive Apple authentication/paired Recovery work, and only
-then a separately approved first RAM-only native diagnostic. Actual Linux root
-and ESP creation comes later; no physical partition, personalization, or
-native entrypoint was performed in this checkpoint.
+The user created the physical APFS target: `disk0s5`, store UUID
+`9D38BA18-6581-413B-815C-17D69DE44BDF`, in container
+`F6577F6B-0EB5-4E21-9761-3EE18E4A2C29` (`disk7`, 8 GB decimal). The reused Data
+volume/VGID is `DAD29544-6687-4B2C-B0E0-87A1D6A700B5` (`disk7s1`); System is
+`F78D7027-7D09-4A12-8165-9B6374513A13` (`disk7s2`), Preboot is
+`68A1164D-90DE-473B-A9D6-AA6658C60021` (`disk7s3`), and Recovery is
+`846EEAE0-79F7-482D-B8D3-885EE745845C` (`disk7s4`).
 
-The current read-only layout has 130,329,329,664 bytes free after
-`disk0s2` (macOS, UUID
-`3BCA8FEC-8E47-4A01-8BE2-25C5E2B793A1`) and before Recovery `disk0s3`.
-If Adam elects to run the next step himself, the exact candidate command is:
+Target staging wrote 139 records and passed the read-only remount audit for
+hashes, UUID substitution, root:wheel ownership, modes, required Preboot
+paths, and compressed Recovery/resource-fork preservation. The subsequent
+admin-target pass copied two private admin plists and `stub_info.json`; its
+three-file byte-equality/read-only audit passed without logging private
+contents or copying them into the project. The target now has 142 records, with 1,468,968,960 bytes
+used and 6,531,031,040 bytes free; all four volumes are unmounted. See the
+[physical staging inventory](inventory/j575d-physical-boot-stub-2026-10-13.json).
 
-```sh
-sudo diskutil addPartition disk0s2 APFS 'Debian Boot' 8g
-```
-
-This command is documentation only and must not be run automatically. Recheck
-the physical disk, partition UUID and free extent immediately before running it. After
-it returns, identifiers and roles must be freshly re-read and checked before
-any further action. Do not substitute `eraseDisk`, whole-disk repartitioning,
-or an unreviewed target identifier.
-
-The user has confirmed a verified backup and a USB-C data cable. DFU recovery
-has not been exercised. The user-created free extent is 130,329,329,664 bytes;
-Linux partitions have not been created. The proposed 8 GB stub / 2 GB ESP /
-120 GB root split remains provisional. The user will run physical partition
-commands, and provisioning/personalization/native testing require separate
-approval. This checkpoint made no physical-disk or boot-policy changes.
+This is a physical-staging pass, not a provisioning-complete or bootable
+artifact. `stub_info.json` remains `complete: false` with personalization
+pending; the historical incomplete stub-info file is retained. The legacy
+`schg` administrator-file compatibility flag was not applied. No personalization, `bless`, `bputil`,
+`kmutil`, boot-policy change, startup selection, or native boot was performed,
+so runtime Bootability acceptance remains unknown. The next boundary is
+interactive Apple admin authorization, selection of the new boot environment
+and paired Recovery, and separately approved native work; passwords must not
+be placed in chat. The former `diskutil addPartition` command was already run
+by the user and is historical; do not rerun it.
 
 ## Fork package integration — 2026-10-11
 

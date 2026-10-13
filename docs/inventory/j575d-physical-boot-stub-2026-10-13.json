@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-13",
+  "scope": "Physical boot-stub volume preparation and file staging; not personalization or native boot",
+  "artifact_directory": "scratch/boot-stub-provisioning/physical-target-LtWIwTof",
+  "target": {
+    "partition_uuid": "9D38BA18-6581-413B-815C-17D69DE44BDF",
+    "partition_device_at_verification": "disk0s5",
+    "partition_offset": 3866524311552,
+    "container_uuid": "F6577F6B-0EB5-4E21-9761-3EE18E4A2C29",
+    "container_device_at_verification": "disk7",
+    "capacity_bytes": 8000000000,
+    "volume_group_uuid": "DAD29544-6687-4B2C-B0E0-87A1D6A700B5",
+    "volumes": {
+      "Data": "DAD29544-6687-4B2C-B0E0-87A1D6A700B5",
+      "System": "F78D7027-7D09-4A12-8165-9B6374513A13",
+      "Preboot": "68A1164D-90DE-473B-A9D6-AA6658C60021",
+      "Recovery": "846EEAE0-79F7-482D-B8D3-885EE745845C"
+    },
+    "all_volumes_unmounted_at_handoff": true,
+    "device_identifiers_must_be_refreshed_before_actions": true
+  },
+  "performed": [
+    "User created the 8 GB physical APFS partition",
+    "Reused the existing empty volume as Data and renamed it; no deletion",
+    "Created grouped System, Preboot and Recovery volumes inside the new container",
+    "Staged 139 public/generated entries using real UUIDs with noexec mounts",
+    "Read-only remount audit passed for all 139 entries, file/directory ownership and modes, UUIDs, required loader paths and Recovery compression",
+    "Copied two private administrator recovery plists and generated target stub_info.json without logging private contents",
+    "Read-only persistence audit passed for the three private metadata files",
+    "Unmounted all target volumes and verified macOS/Recovery partition UUIDs, offsets and sizes unchanged"
+  ],
+  "measurements": {
+    "public_staged_entries": 139,
+    "additional_private_metadata_files": 3,
+    "total_staged_entries": 142,
+    "capacity_used_after_admin_staging": 1468968960,
+    "capacity_free_after_admin_staging": 6531031040,
+    "remaining_unallocated_disk_gap_bytes": 122329329664,
+    "full_personalization_peak_measured": false
+  },
+  "evidence": [
+    {"file": "target.py", "sha256": "288b515be5c7abafba007e07654e6d47446f2c80757f9b2a1c9ed8acfe4f833e"},
+    {"file": "stage-target.py", "sha256": "a0364d7f1b9acc2c9a8565399a25f2d464236bb3603283f3d5203761a669cebf"},
+    {"file": "audit-target.py", "sha256": "3e49ade0238b77bc5ec8105f5025dac4053f1428e316b7b94f471682a0ce0ac3"},
+    {"file": "admin-target.py", "sha256": "59a7dc4a9baaf54394e8d6698a4a1645372fcc7dcf11f6ea3d85f7d404b02912"},
+    {"file": "audit-admin.py", "sha256": "40bdaf921ffc0eed3395cbe16bd2e31986ad1bb1e206b13091c1fb2d5b5692cd"},
+    {"file": "physical-stage-receipt.json", "sha256": "c4074f7f774d8ce4b2a460472f055cd88d75884c975c784aa326eb13942a5741"},
+    {"file": "audit-receipt.json", "sha256": "57c90e65ac88f6612e64abe6f22060e616fb1cbac16bd8b0983396e28e4b1715"},
+    {"file": "admin-copy-receipt.json", "sha256": "83864787f0e721a8cc6b0add45ef06a0fdee7fb3d04cf0a2b2d401db06dd29b8"},
+    {"file": "admin-audit-receipt.json", "sha256": "bcd509c52c6c10cea7c961c9c4b87b6158d8af5d1a6c05eec2e3295bd69a151f"}
+  ],
+  "qualification": {
+    "physical_staging_verified": true,
+    "administrator_metadata_present": true,
+    "private_metadata_recorded_in_project": false,
+    "original_stage2_scripts_executed": false,
+    "personalization_attempted": false,
+    "bootability_runtime_acceptance_tested": false,
+    "startup_selection_changed": false,
+    "boot_policy_changed": false,
+    "native_boot_attempted": false,
+    "native_approved": false,
+    "legacy_admin_schg_workaround_applied": false
+  },
+  "remaining": [
+    "Interactive Apple administrator authorization and runtime Bootability/personalization acceptance",
+    "Paired Recovery setup and deliberate startup/boot-policy transition",
+    "Separately approved first RAM-only native diagnostic and recovery readiness",
+    "Native CPU, memory, interrupts, DMA and I/O validation",
+    "ESP/root installation and persistent native Debian qualification"
+  ],
+  "notes": [
+    "Historical stub_info.incomplete.json remains a staging receipt; new stub_info.json includes real administrator metadata but still marks completion false pending personalization",
+    "The pinned installer's schg flag is an older-macOS compatibility workaround; it was not applied here and its relevance to the current personalization path is unqualified",
+    "No passwords were requested or logged; private plist contents remain only on the source and target volumes",
+    "Do not rerun one-shot staging scripts or the completed addPartition command"
+  ]
+}
