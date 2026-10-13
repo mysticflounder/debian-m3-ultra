@@ -2,6 +2,18 @@
 
 ## Boot-stub provisioning checkpoint — 2026-10-13
 
+The bounded candidate has now been assembled into the disposable APFS image
+`scratch/boot-stub-provisioning/complete-candidate-YFOQRXya`: 136 regular
+files and three symlinks, with measured container use 1,467,834,368 bytes,
+free space 6,532,124,672 bytes, and ceiling 7,999,959,040 bytes. The candidate
+and its separately inspected Recovery image are safely detached (the last
+devices were disk9 and disk7 respectively). This is a staged file candidate,
+not a complete personalized install, peak-space qualification, Apple
+boot-policy result, or native-boot qualification. See the
+[candidate inventory](inventory/j575d-boot-stub-candidate-2026-10-13.json).
+The current bounded checkpoint has 43 passing tests (27 stub, 7 FUD and 9
+adapter tests).
+
 The portable Debian disk now passes two standalone UEFI/GRUB cold boots under
 HVF; see [the VM inventory](inventory/debian-portable-uefi-2026-10-13.json).
 That validates the guest disk, not Apple's physical boot chain. The chosen
@@ -21,25 +33,29 @@ plus the previously verified 1,308,622,848-byte BaseSystem asset. The 21
 unique selected identity payloads account for 57,198,538 bytes; summing all
 23 manifest references would double-count two paths.
 
-Known System, Preboot and Recovery logical inputs total 1,372,620,386 bytes.
-This is **not an installed footprint or proof that an 8 GB container fits**:
-generated firmware, local installer files, personalization, APFS allocation
-and peak temporary space are not established. Installer-data exports are
-accounted separately because their destination is not yet fixed.
+Known pre-staging System, Preboot and Recovery logical inputs total
+1,372,620,386 bytes. This is **not an installed footprint**: generated
+firmware, local installer files, personalization, APFS allocation and peak
+temporary space are not represented by this sum. The later detached candidate
+image supplies the bounded 8 GB allocation measurement above.
+Installer-data exports were accounted separately at that historical checkpoint;
+the later candidate places them under Data/installer-data.
 
 **Legacy-installer incompatibility:** the actual 26A428 `bootcaches.plist` has no
 `bless2.RestoreBundlePath`, while the pinned installer indexes that field
-directly. Adding the board to its allowlist is therefore insufficient.
-The measurement report explicitly leaves layout qualification false and
-the 8 GB fit decision unknown. Do not guess the missing path.
+directly. Adding the board to its allowlist is therefore insufficient. The
+isolated adapter now supplies an explicit `restore` root only for the validated
+26A428/J575d identity and preserves the legacy lookup for other profiles; it
+does not mutate the Apple plist or execute the installer.
 
 A bounded follow-up read of Apple's 15.6.1/24G90 restore archive also found
 the exact J575d identity, but its `bootcaches.plist` lacks the same field.
 Thus that older archive does not resolve the incompatibility. Neither archive
-has been submitted for machine-specific personalization. The next step is to
-establish the complete modern Preboot/restore-bundle contract before enabling
-an installer adaptation; a full macOS stub remains the fallback if the minimal
-layout cannot be established.
+has been submitted for machine-specific personalization. The isolated adapter
+and detached candidate now exercise the bounded modern layout; target
+metadata, Apple authentication/paired Recovery, and boot-policy behavior
+remain open. A full macOS stub remains the fallback if the minimal layout
+cannot be established on the physical target.
 
 ### Modern restore-root evidence
 
@@ -77,9 +93,10 @@ recipe or to the 26A428 erase archive. No administrator, credential, ticket,
 or LocalPolicy contents were read.
 
 This resolves the **experimental restore-root choice**, not the complete
-minimal-stub provisioning contract. It does not authorize adding a guessed
-key to Apple's plist, copying the legacy System restore symlink workaround,
-or claiming successful personalization, APFS volume-group creation, or boot.
+minimal-stub provisioning contract. The modern adapter skips the legacy
+System restore symlink workaround. It does not authorize adding a guessed key
+to Apple's plist, claiming successful personalization, APFS volume-group
+creation, or boot.
 
 ### Experimental directory staging
 
@@ -104,14 +121,12 @@ APFS boot volume group or provisioning peak space. All 21 planner, measurement
 and staging tests pass. See the
 [staging inventory](inventory/j575d-boot-stub-stage-2026-10-13.json).
 
-This is deliberately an **incomplete experimental file layout**, combining
-the evidenced modern root with the pinned installer's copy recipe. The next
-offline gates are the modern Bootability packaging/caller contract and
-erase-versus-update differences, followed by a disposable APFS volume-group
-test. Generated firmware, installer/loader files, administrator metadata,
-Apple personalization and actual boot remain separate requirements. No
-installer code or Apple framework was executed; no disk image was attached
-or physical boot volume modified during this staging work.
+This remains an **incomplete experimental file layout**, combining the
+evidenced modern root with the pinned installer's copy recipe. Generated
+firmware, installer/loader files, administrator metadata, Apple
+personalization and actual boot remain separate requirements. No installer
+entry point or Apple framework was executed; the detached disposable images
+were used only for contained file staging and inspection.
 
 ### Disposable APFS test — 2026-10-13
 
@@ -156,10 +171,12 @@ so validation uses the compressed flag, resource fork and transparent hash.
 | Total container use, including metadata | 1,413,390,336 |
 | Container free | 6,586,568,704 |
 
-The **current incomplete candidate fits an 8 GB image**. This does not yet
-qualify the full install budget: firmware package, local installer/loader,
-administrator metadata, personalization and peak temporary allocations
-remain unmeasured. The image is not bootable or personalized. Bootability
+The **earlier incomplete candidate fits an 8 GB image**. The later
+`complete-candidate-YFOQRXya` image also fits, using 1,467,834,368 bytes and
+leaving 6,532,124,672 bytes free under the 7,999,959,040-byte ceiling. Neither
+measurement qualifies the full personalized-install budget: administrator
+metadata, personalization and peak temporary allocations remain unmeasured.
+The image is not bootable or personalized. Bootability
 copy-recipe confirmation does not establish the modern external loader's
 framework/trustcache selection; that caller contract remains separate.
 
@@ -215,6 +232,32 @@ distinct from the outer macOS restore bundle. No Apple framework or service
 was executed for this inspection. Retained traces are
 `scratch/boot-stub-provisioning/selector-map-*`.
 
+### Candidate eligibility and adapter checkpoint — 2026-10-13
+
+The read-only eligibility comparator accepts the actual host `love` value:
+current `26.1.434.0.0,0` versus candidate `26.1.428.0.0,0` yields comparator
+result `3` and `eligible=True`. Host and retained Recovery copies have
+different file hashes, but their normalized BootabilityService disassembly,
+relevant string/constant data and caller disassembly match. This establishes a
+static eligibility/parity result only; no Bootability runtime, Recovery
+operation, Apple authentication, or boot-policy approval was performed. The
+[eligibility report](../scratch/boot-stub-provisioning/eligibility-report.md)
+records the exact inputs and limits.
+
+The isolated source adaptation is retained at
+`../scratch/boot-stub-provisioning/provisioning-adaptation-jikon9lm/` and is
+driven by `scripts/prepare-j575d-installer-adapter.py`. It copies and
+hash-validates the pinned source, uses explicit `restore` only for the
+26A428/J575d identity (build 26A428, variant macOS Customer, RestoreBehavior
+Erase, device j575dap, board 0x44, chip 0x6032), and skips the legacy System
+restore symlink for that profile. Its pure six-file renderer takes separate
+target volume-group and Preboot volume UUIDs and normalizes them to uppercase. It returns the original
+templated app files plus the unchanged direct-inline loader at the actual
+`Finish Installation.app/Contents/Resources/boot.bin` path, and performs no
+writes. The synthetic source-shaped `stub_info` remains incomplete: it omits
+host `AdminUserRecoveryInfo.plist`, credentials and Apple personalization.
+No installer entry point was run.
+
 ### Inert installer extras and firmware inputs — 2026-10-13
 
 Two bounded tools now assemble additional files into fresh project-scratch
@@ -239,7 +282,9 @@ an arbitrary output directory. All regular output files are non-executable.
 The FUD selection is exactly identity 153's non-iBoot/non-stage1 `.im4p`
 inputs: ANE1, DCP2, SecurePageTableMonitor and TrustedExecutionMonitor.
 Their aliases remain contained under `fud_firmware/`. These are source inputs,
-**not extracted or complete Linux runtime firmware**.
+**not extracted or complete Linux runtime firmware**. The current twenty-module
+RAM diagnostic requires no additional Linux vendor firmware with its selected
+DTB. That does not qualify or waive Apple's separate boot-firmware requirements.
 
 The installer app is renamed `Finish Installation.app.inert`; its two scripts
 have `.inert` suffixes and an unconditional `exit 97` before the original
@@ -256,19 +301,43 @@ deployment boot object. No ESP UUID or chainload variables were appended.
 
 Both receipts retain `native_approved: false`. The extras receipt separately
 identifies the staged-layout receipt and the original asset receipt; they are
-different hashes. Administrator metadata, a complete firmware package,
-`stub_info.json`, icon, deployable `boot.bin`, personalization and full/peak
-space qualification remain unresolved. WiFi/Bluetooth/ISP collection requires
-the Recovery tree; ALS collection uses machine-specific inputs excluded from
-this offline task. No claim is made that every collector is necessary for the
-first RAM-only diagnostic. The earlier APFS image is unchanged and detached;
-these workspace bytes do not update its measured allocation.
+different hashes. Administrator metadata, a complete personalized install,
+icon, deployable `boot.bin`, Apple personalization and full/peak space
+qualification remain unresolved. WiFi/Bluetooth/ISP collection was audited
+manifest-only from public Recovery files; no runtime firmware package was
+produced. ALS machine-specific inputs remain excluded. These are optional
+later-profile work, not first-RAM-diagnostic gates. The detached candidate is
+recorded separately; these workspace receipts do not establish native boot.
 
 See the [extras inventory](inventory/j575d-boot-stub-extras-2026-10-13.json)
 for artifact and evidence pins.
 
 Source pins and local artifact receipts are recorded in the
 [provisioning inventory](inventory/j575d-boot-stub-inputs-2026-10-13.json).
+
+### Next physical boundary — user-run only
+
+Both disposable images are detached. The next real boundary is the user's
+explicitly supervised physical 8 GB APFS partition, followed by fresh target
+metadata, interactive Apple authentication/paired Recovery work, and only
+then a separately approved first RAM-only native diagnostic. Actual Linux root
+and ESP creation comes later; no physical partition, personalization, or
+native entrypoint was performed in this checkpoint.
+
+The current read-only layout has 130,329,329,664 bytes free after
+`disk0s2` (macOS, UUID
+`3BCA8FEC-8E47-4A01-8BE2-25C5E2B793A1`) and before Recovery `disk0s3`.
+If Adam elects to run the next step himself, the exact candidate command is:
+
+```sh
+sudo diskutil addPartition disk0s2 APFS 'Debian Boot' 8g
+```
+
+This command is documentation only and must not be run automatically. Recheck
+the physical disk, partition UUID and free extent immediately before running it. After
+it returns, identifiers and roles must be freshly re-read and checked before
+any further action. Do not substitute `eraseDisk`, whole-disk repartitioning,
+or an unreviewed target identifier.
 
 The user has confirmed a verified backup and a USB-C data cable. DFU recovery
 has not been exercised. The user-created free extent is 130,329,329,664 bytes;

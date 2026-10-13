@@ -1,0 +1,100 @@
+{
+  "date": "2026-10-13",
+  "scope": "Offline installer adaptation and disposable APFS candidate; not native boot qualification",
+  "image": {
+    "path": "scratch/boot-stub-provisioning/complete-candidate-YFOQRXya/candidate.asif",
+    "sha256": "47232871bdaae0336bea86c6dba8124c4333c942209bff018b436ecdc8bdceda",
+    "file_bytes": 1459818496,
+    "virtual_disk_bytes": 8000000000,
+    "container_ceiling_bytes": 7999959040,
+    "container_used_bytes": 1467834368,
+    "container_free_bytes": 6532124672,
+    "regular_files": 136,
+    "symlinks": 3,
+    "regular_logical_bytes": 1427004778,
+    "volume_group_uuid": "6C48ECEE-50E5-49F0-ACEF-9BA7C36926F7",
+    "preboot_volume_uuid": "44170F1B-611F-47BB-89A9-0E7FF8F48823",
+    "read_only_reopen_audit": "pass",
+    "detached": true,
+    "full_personalization_peak_measured": false
+  },
+  "evidence": [
+    {
+      "path": "scratch/boot-stub-provisioning/complete-candidate-YFOQRXya/additions-receipt.json",
+      "sha256": "9f1cc7a067541156d89d3e97a2d70ede12b065ad0194a7c8662ce5953a451a66"
+    },
+    {
+      "path": "scratch/boot-stub-provisioning/complete-candidate-YFOQRXya/independent-review.md",
+      "sha256": "46c4340c9aaf359ac6da01c51f947cc83d46c533e8f4bdf88ae98d87a070b923"
+    },
+    {
+      "path": "scratch/boot-stub-provisioning/eligibility-report.md",
+      "sha256": "4274aca525100eca4577fcf92b462866c9714bf004434602748861c4e08e5365"
+    },
+    {
+      "path": "scratch/boot-stub-provisioning/eligibility-rsd-bridge.txt",
+      "sha256": "c6fd5c2a92f751893c5b6fe21c9e39c87abf19c4810a5a287adaf3241948e2a8"
+    },
+    {
+      "path": "scratch/boot-stub-provisioning/eligibility-validator.py",
+      "sha256": "0fad3009fca0643013c042a07cdc8e7fb47cc685158f18ec446a308a21a0b312"
+    },
+    {
+      "path": "scratch/boot-stub-provisioning/runtime-firmware-audit-20261013/report.md",
+      "sha256": "0339688b834337b6642a8d7d5040b26acb99c166ddcbc91d43a8ee253e2f54df"
+    },
+    {
+      "path": "scratch/boot-stub-provisioning/adapter-independent-review.md",
+      "sha256": "606db36fcd475eede35a1745fd7397846fb8e6eb472cb051f9c532b99fdd586f"
+    }
+  ],
+  "adapter": {
+    "script": "scripts/prepare-j575d-installer-adapter.py",
+    "artifact": "scratch/boot-stub-provisioning/provisioning-adaptation-jikon9lm",
+    "installer_revision": "e93743d52178b3e26e428fa05174ef549abf30cb",
+    "profile": "26A428-j575d",
+    "scope": "Hash-pinned source-copy adaptation and pure six-file rendering, not a standalone installer",
+    "tests_passed": 9,
+    "all_targeted_tests_passed": 43,
+    "original_scripts_rendered_but_not_executed": true,
+    "administrator_metadata_synthesized": false
+  },
+  "eligibility": {
+    "host_system_version": "27.0.1",
+    "host_build": "26A434",
+    "actual_manifest_love": "26.1.434.0.0,0",
+    "candidate_restore_version": "26.1.428.0.0,0",
+    "framework_minimum_system_version": "27.0",
+    "static_compare_options": 2,
+    "static_compare_result": 3,
+    "static_version_policy_accepts": true,
+    "host_recovery_normalized_service_instructions_and_relevant_constants_match": true,
+    "runtime_framework_acceptance_tested": false
+  },
+  "firmware": {
+    "diagnostic_initramfs_sha256": "807b823e87a53304106e5f49e48ed5fc918040f21570cbc77e87df26df5613ee",
+    "diagnostic_module_count": 20,
+    "additional_linux_vendor_firmware_required_by_current_ram_diagnostic": false,
+    "optional_collector_audit": "WiFi, Bluetooth, ISP and ASMedia manifests only; no firmware package produced; ALS excluded",
+    "apple_boot_firmware_qualification": "separate; not established by Linux module audit"
+  },
+  "physical_disk": {
+    "read_only_inspected": true,
+    "macos_partition_uuid": "3BCA8FEC-8E47-4A01-8BE2-25C5E2B793A1",
+    "free_gap_bytes": 130329329664,
+    "linux_partitions_created": false,
+    "user_runs_partition_commands": true
+  },
+  "native_approved": false,
+  "personalization_attempted": false,
+  "boot_policy_changed": false,
+  "native_boot_attempted": false,
+  "remaining": [
+    "User-created physical 8 GB APFS stub partition, with freshly verified identifiers",
+    "Real-target volume group, administrator metadata and provisioning",
+    "Interactive Apple authorization, personalization and Recovery setup",
+    "Explicitly approved first RAM diagnostic and recovery readiness",
+    "Native CPU, memory, IRQ, DMA and I/O validation",
+    "ESP/root installation and persistent native Debian qualification"
+  ]
+}
