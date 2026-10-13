@@ -1,0 +1,49 @@
+{
+  "schema": "j575d-boot-stub-stage-v1",
+  "date_utc": "2026-10-13",
+  "status": "experimental directory stage verified; not an installed boot stub",
+  "profile": "26A428",
+  "framework": {
+    "version": "88.0.2",
+    "bytes": 6032752,
+    "sha256": "a1e5d7b781698bc60cce96dc54aba9ab50780291b005e51a07a83d8818023706",
+    "restore_getter_imp": "0x40ac",
+    "staged_restore_getter_imp": "0x4368",
+    "restore_verifier_imp": "0x68a0",
+    "required_members_array": "0x40d758",
+    "default_restore_root": "<source Preboot mount>/<target volume-group UUID>/restore",
+    "default_staged_root": "<source Preboot mount>/<target volume-group UUID>/restore-staged",
+    "executed": false
+  },
+  "host_corroboration": {
+    "build": "26A434",
+    "observed_restore_root": "<mounted Preboot>/<system slot>/restore",
+    "manifest_variant": "macOS Customer Software Update",
+    "equivalent_to_erase_archive": null,
+    "private_admin_security_contents_read": false
+  },
+  "stage_path": "scratch/boot-stub-provisioning/stage-ohgqmpjl",
+  "fake_uuid": "00000000-0000-4000-8000-000000000001",
+  "stage_receipt_sha256": "3ac2361891b4d61a1b8285ea4bdc47b7e03a173ac1b2dab0a607df981535210b",
+  "recovery_representation": "unchanged AEA bytes; not decrypted or resource-fork compressed; not install-equivalent",
+  "regular_files": 125,
+  "symlinks": 3,
+  "regular_bytes": 1372620386,
+  "workspace_du_kib_including_receipt": 1340712,
+  "post_copy_hash_size_link_checks": "PASS",
+  "required_restore_paths": ["BuildManifest.plist", "RestoreVersion.plist", "SystemVersion.plist", "usr/standalone/bootcaches.plist"],
+  "offline_tests_passed": 21,
+  "layout_experimental": true,
+  "boot_qualified": false,
+  "fit_8gb": null,
+  "apfs_volume_group_created": false,
+  "disk_image_attached": false,
+  "personalization_attempted": false,
+  "physical_partition_or_boot_policy_changes": false,
+  "remaining": ["modern Bootability packaging/caller contract", "erase versus update differences", "disposable APFS volume-group test", "generated firmware", "installer and loader files", "administrator metadata", "personalization", "peak space", "native boot"],
+  "evidence": [
+    {"path": "scratch/boot-stub-provisioning/brain-paths-report.md", "sha256": "252c97e76503b2162d9792a7aff8efeaee793eaacd70d983fabd7b2515547cf1"},
+    {"path": "scratch/boot-stub-provisioning/host-modern-layout.md", "sha256": "12cf9d0e3d0f3d8d60e6ec418eae4fa745108e1fd290b180ac11adf2aa41813d"},
+    {"path": "scratch/boot-stub-provisioning/bootability-metadata-26A428/metadata.json", "sha256": "d12b3d1a77e62f916900e1590f66f4a0ca21f67221bfd6abc56e8ce0d8b35b2a"}
+  ]
+}

@@ -27,7 +27,7 @@ generated firmware, local installer files, personalization, APFS allocation
 and peak temporary space are not established. Installer-data exports are
 accounted separately because their destination is not yet fixed.
 
-**Current incompatibility:** the actual 26A428 `bootcaches.plist` has no
+**Legacy-installer incompatibility:** the actual 26A428 `bootcaches.plist` has no
 `bless2.RestoreBundlePath`, while the pinned installer indexes that field
 directly. Adding the board to its allowlist is therefore insufficient.
 The measurement report explicitly leaves layout qualification false and
@@ -37,9 +37,81 @@ A bounded follow-up read of Apple's 15.6.1/24G90 restore archive also found
 the exact J575d identity, but its `bootcaches.plist` lacks the same field.
 Thus that older archive does not resolve the incompatibility. Neither archive
 has been submitted for machine-specific personalization. The next step is to
-establish the supported modern Preboot/restore-bundle layout from independent
-evidence before implementing a local installer adaptation; a full macOS stub
-remains the fallback if the minimal layout cannot be established.
+establish the complete modern Preboot/restore-bundle contract before enabling
+an installer adaptation; a full macOS stub remains the fallback if the minimal
+layout cannot be established.
+
+### Modern restore-root evidence
+
+A subsequent static inspection of the archive's Apple BootabilityBrain
+88.0.2 (arm64e, SHA-256
+`a1e5d7b781698bc60cce96dc54aba9ab50780291b005e51a07a83d8818023706`)
+establishes its default restore-root construction without executing it:
+
+| Method | Implementation address | Default path |
+| --- | --- | --- |
+| `BYRequest.restoreBundlePath` | `0x40ac` | `<source Preboot mount>/<target volume-group UUID>/restore` |
+| `BYRequest.stagedRestoreBundlePath` | `0x4368` | `<source Preboot mount>/<target volume-group UUID>/restore-staged` |
+
+The first method honors an explicit override before constructing its default.
+Both default paths must exist or the getter returns nil. The lowercase
+constants are decoded from CFString records at `0x3ee080` and `0x3ee0c0`;
+they are not inferred from unrelated BootObjects destinations. The paired
+Recovery-info reader selects one getter, then appends `RestoreVersion.plist`.
+Retained disassembly and the trace are under
+`scratch/boot-stub-provisioning/brain-paths-*`.
+
+The same binary's `BYAnalyzeOperation._verifyRestoreBundleWithError:`
+(`0x68a0`) checks four paths under that root: `BuildManifest.plist`,
+`RestoreVersion.plist`, `SystemVersion.plist`, and
+`usr/standalone/bootcaches.plist`. Its static array is at `0x40d758`.
+That method checks presence, not a complete successful personalization flow;
+passing equivalent offline checks must not be described as Apple validation.
+
+Read-only inspection of the Studio's already-mounted public Preboot metadata
+independently found lowercase `restore/` under its system slot. Its public
+manifest identifies a 26A434 software-update restore skeleton. It also has
+`restore/Bootability/Restore/BuildManifest.plist`, so its complete bundle
+contents must not be assumed identical to the pinned installer's older copy
+recipe or to the 26A428 erase archive. No administrator, credential, ticket,
+or LocalPolicy contents were read.
+
+This resolves the **experimental restore-root choice**, not the complete
+minimal-stub provisioning contract. It does not authorize adding a guessed
+key to Apple's plist, copying the legacy System restore symlink workaround,
+or claiming successful personalization, APFS volume-group creation, or boot.
+
+### Experimental directory staging
+
+`scripts/stage-j575d-boot-stub.py --profile 26A428 --receipt <receipt.json>`
+verifies all source hashes and the exact framework pin, then creates a new
+directory only under this checkout's `scratch/boot-stub-provisioning/`.
+It uses synthetic UUID `00000000-0000-4000-8000-000000000001` and the
+evidenced lowercase restore root. It does not modify Apple's bootcaches
+plist or create the legacy System restore symlink. All copied regular files
+are non-executable. Three contained Bootability framework symlinks are
+reconstructed from the retained ZIP receipt.
+The candidate `arm64eBaseSystem.dmg` contains unchanged AEA source bytes;
+renaming does not decrypt it. It does not reproduce the legacy installer's
+resource-fork compression, so Recovery staging is not install-equivalent.
+
+The real-asset run produced 125 regular files and three symlinks. Independent
+post-copy checks verified every recorded hash, size and link, the four
+required restore paths, and the single J575d BuildIdentity. Regular-file bytes
+total 1,372,620,386; `du -sk` reports 1,340,712 KiB including directory/receipt
+overhead on the existing workspace filesystem. Neither figure measures an
+APFS boot volume group or provisioning peak space. All 21 planner, measurement
+and staging tests pass. See the
+[staging inventory](inventory/j575d-boot-stub-stage-2026-10-13.json).
+
+This is deliberately an **incomplete experimental file layout**, combining
+the evidenced modern root with the pinned installer's copy recipe. The next
+offline gates are the modern Bootability packaging/caller contract and
+erase-versus-update differences, followed by a disposable APFS volume-group
+test. Generated firmware, installer/loader files, administrator metadata,
+Apple personalization and actual boot remain separate requirements. No
+installer code or Apple framework was executed; no disk image was attached
+or physical boot volume modified during this staging work.
 
 Source pins and local artifact receipts are recorded in the
 [provisioning inventory](inventory/j575d-boot-stub-inputs-2026-10-13.json).
