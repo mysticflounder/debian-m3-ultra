@@ -1,0 +1,40 @@
+{
+  "schema": "j575d-boot-stub-inputs-v1",
+  "date_utc": "2026-10-13",
+  "status": "offline inputs verified; minimal provisioning layout unresolved",
+  "installer_revision": "e93743d52178b3e26e428fa05174ef549abf30cb",
+  "source_url": "https://updates.cdn-apple.com/2026FallFCS/afcfc88e-bbe6-44bf-a5da-07c56eebc06c/UniversalMac_27.0_26A428_Restore.ipsw",
+  "identity": {"index": 153, "device": "j575dap", "board": "0x44", "chip": "0x6032", "variant": "macOS Customer", "behavior": "Erase"},
+  "non_basesystem_members": 125,
+  "non_basesystem_source_bytes": 95078532,
+  "unique_identity_payloads": 21,
+  "unique_identity_payload_bytes": 57198538,
+  "basesystem_source_bytes": 1308622848,
+  "known_logical_inputs": {"system": 23697, "preboot": 63973841, "recovery": 1308622848, "total": 1372620386},
+  "excluded": ["local installer app and generated files", "generated firmware package", "host administrator metadata", "personalization", "APFS allocation", "peak temporary space"],
+  "installer_data_export_bytes_separate": 33729738,
+  "installed_footprint_verified": false,
+  "fit_8gb": null,
+  "layout_qualified": false,
+  "blocker": "26A428 bootcaches bless2.RestoreBundlePath absent; pinned installer requires it",
+  "older_comparison": {
+    "source_url": "https://updates.cdn-apple.com/2025SummerFCS/fullrestores/093-10809/CFD6DD38-DAF0-40DA-854F-31AAD1294C6F/UniversalMac_15.6.1_24G90_Restore.ipsw",
+    "build": "24G90",
+    "exact_j575d_identity_present": true,
+    "restore_bundle_path": null,
+    "metadata_range_bytes": 1213400,
+    "manifest_sha256": "f0acb211a172292ea8b6081a940e38463572664dad36b451acc0439a905bac7b",
+    "bootcaches_sha256": "95f5081a48d7a18cfcde7e216e71a14679fab366848e84ff622445f99a5ec1f5",
+    "report": "scratch/boot-stub-provisioning/older-candidate-15.6.1/boot-artifact-manifest.json"
+  },
+  "receipts": [
+    {"path": "scratch/boot-stub-provisioning/asset-plan.json", "sha256": "63d51cfb3e9ac991dd39f220d812d535831251e84a19db8c13bf85ff050a085e"},
+    {"path": "scratch/boot-stub-provisioning/assets-noi8v3w1/receipt.json", "sha256": "1e7107d97cf8c0316df6aa27cdba3813103009a7cfa266bb2d981c5840168d35"},
+    {"path": "scratch/boot-stub-provisioning/logical-input-budget-reviewed.json", "sha256": "c2bc16b6d3b2f284a681f0c7210556979234156728804486598a4faae017cdb6"}
+  ],
+  "tests_passed": 14,
+  "physical_partition_changes": false,
+  "boot_policy_changes": false,
+  "personalization_attempted": false,
+  "native_boot_attempted": false
+}

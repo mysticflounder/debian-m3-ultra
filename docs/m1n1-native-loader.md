@@ -1,5 +1,56 @@
 # J575d native loader contract
 
+## Boot-stub provisioning checkpoint — 2026-10-13
+
+The portable Debian disk now passes two standalone UEFI/GRUB cold boots under
+HVF; see [the VM inventory](inventory/debian-portable-uefi-2026-10-13.json).
+That validates the guest disk, not Apple's physical boot chain. The chosen
+route remains a minimal Apple boot stub, with a full second macOS install as
+a fallback rather than a prerequisite.
+
+Offline provisioning work uses installer source
+`e93743d52178b3e26e428fa05174ef549abf30cb` and the official Apple 27.0/26A428
+restore archive. `scripts/plan-j575d-boot-stub.py` selects the exact
+`j575dap` / `0x44` / `0x6032` macOS Customer identity from local metadata.
+`scripts/measure-j575d-stub-inputs.py` verifies local receipt sizes and SHA-256
+hashes and measures known logical inputs. Neither script installs, mounts,
+personalizes, or changes boot policy.
+
+The fetched closure contains 125 non-BaseSystem members (95,078,532 bytes),
+plus the previously verified 1,308,622,848-byte BaseSystem asset. The 21
+unique selected identity payloads account for 57,198,538 bytes; summing all
+23 manifest references would double-count two paths.
+
+Known System, Preboot and Recovery logical inputs total 1,372,620,386 bytes.
+This is **not an installed footprint or proof that an 8 GB container fits**:
+generated firmware, local installer files, personalization, APFS allocation
+and peak temporary space are not established. Installer-data exports are
+accounted separately because their destination is not yet fixed.
+
+**Current incompatibility:** the actual 26A428 `bootcaches.plist` has no
+`bless2.RestoreBundlePath`, while the pinned installer indexes that field
+directly. Adding the board to its allowlist is therefore insufficient.
+The measurement report explicitly leaves layout qualification false and
+the 8 GB fit decision unknown. Do not guess the missing path.
+
+A bounded follow-up read of Apple's 15.6.1/24G90 restore archive also found
+the exact J575d identity, but its `bootcaches.plist` lacks the same field.
+Thus that older archive does not resolve the incompatibility. Neither archive
+has been submitted for machine-specific personalization. The next step is to
+establish the supported modern Preboot/restore-bundle layout from independent
+evidence before implementing a local installer adaptation; a full macOS stub
+remains the fallback if the minimal layout cannot be established.
+
+Source pins and local artifact receipts are recorded in the
+[provisioning inventory](inventory/j575d-boot-stub-inputs-2026-10-13.json).
+
+The user has confirmed a verified backup and a USB-C data cable. DFU recovery
+has not been exercised. The user-created free extent is 130,329,329,664 bytes;
+Linux partitions have not been created. The proposed 8 GB stub / 2 GB ESP /
+120 GB root split remains provisional. The user will run physical partition
+commands, and provisioning/personalization/native testing require separate
+approval. This checkpoint made no physical-disk or boot-policy changes.
+
 ## Fork package integration — 2026-10-11
 
 The explicit `fork-current` profile packages fork revision `b91ede42` with
