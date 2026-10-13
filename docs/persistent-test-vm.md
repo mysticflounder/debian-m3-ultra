@@ -301,6 +301,47 @@ only those fixed resources and creates vmnet; it drops to the invoking user
 before guest execution. `init` must fail closed rather than replace an existing
 disk, and `run` must fail clearly if required project artifacts are absent.
 
+## Separate portable UEFI image (2026-10-12 local)
+
+`out/debian-portable.qcow2` is a new standalone GPT disk, built from an
+independent copy of the stopped stock-kernel VM. The original images were
+not modified. Unlike the direct-kernel P0 profile above, this separately
+authorized profile uses QEMU's AArch64 EDK2 firmware and a **file-backed**
+private UEFI variable store, not Mac firmware or host NVRAM.
+
+The image has a 1,999,634,432-byte FAT32 ESP and a 119,999,037,440-byte
+ext4 root partition. Its virtual disk size is 122,010,000,384 bytes; qcow2
+allocation is roughly 1.66 GB after validation. It contains Debian forky/sid,
+GRUB 2.14-4 and defaults to the existing generic `7.1.12+deb14-arm64` kernel.
+The older Asahi kernel remains an alternate entry, not a native-boot claim.
+
+Run it with `./scripts/portable-vm.sh run`; inspect the offline configuration
+with `./scripts/portable-vm.sh info`. Bridge setup may require `sudo -v`.
+Connect using `ssh -p 22025 -o UserKnownHostsFile=out/portable-known-hosts
+root@127.0.0.1` (one command). Your existing authorized public key is retained;
+password authentication is disabled. The image has a fresh machine ID and
+SSH host keys. Shut down with `systemctl poweroff` inside the guest.
+
+The launcher uses 4 vCPUs, 4 GB RAM, HVF, unique NIC MAC addresses, bridged
+`en0`, and a loopback-only management forward. It does not pass a host kernel
+or initrd. `PORTABLE_VM_SERIAL_LOG=unique-name.log` records the console under
+`out/`; otherwise the console stays on the terminal. The image and variable
+store are personal VM state; do not publish them or start simultaneous clones
+with the same identities/MAC addresses.
+
+Two cold UEFI/GRUB boots passed root/ESP mounts, key-only SSH, DNS, HTTPS,
+saved-file persistence, stable machine/SSH identity and clean shutdown.
+Direct bridged SSH also passed. Final qcow2 check reported no errors. Receipts
+are `out/portable-build.log`, `out/portable-acceptance-boot{1,2}.txt`, and
+`out/portable-boot{1,2}.log`. The image was left powered off.
+
+`scripts/prepare-portable-root-guest.sh` builds only inside the designated
+temporary helper, with a blank serial/size-checked image disk; it is not a
+physical-partition installer. `scripts/check-portable-root-guest.sh` provides
+the record/verify acceptance checks. No physical partitions were created.
+Transferring the individual filesystems, Apple boot-stub provisioning, native
+drivers and physical M3 Ultra boot validation remain separate work.
+
 ## Later work
 
 - P1 continues M3 Ultra CPU-model correctness and fork maintenance using the

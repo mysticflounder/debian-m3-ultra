@@ -1,0 +1,49 @@
+{
+  "status": "validated_in_qemu_virt_only",
+  "image": "out/debian-portable.qcow2",
+  "image_sha256_after_clean_shutdown": "40ff8dcdfdb4b59809c57e74add7c6fda4997de261a24fb6d9d0c93829b2d4c1",
+  "virtual_bytes": 122010000384,
+  "allocated_bytes_at_validation": 1663041536,
+  "esp_bytes": 1999634432,
+  "root_partition_bytes": 119999037440,
+  "root_uuid": "55161698-e395-41b2-9c7e-f91cad872434",
+  "esp_uuid": "92B4-400E",
+  "distribution": "Debian forky/sid (copied from existing stock-kernel VM)",
+  "default_kernel": "7.1.12+deb14-arm64",
+  "grub_version": "2.14-4",
+  "machine": "QEMU virt, HVF cpu host, 4 vCPUs, 4G RAM",
+  "firmware": "/opt/homebrew/share/qemu/edk2-aarch64-code.fd",
+  "private_variable_store": "out/debian-portable-vars.fd",
+  "host_kernel_or_initrd_supplied": false,
+  "cold_boots_passed": 2,
+  "checks": [
+    "UEFI firmware present in guest",
+    "GRUB loads generic kernel from image",
+    "root mounted by filesystem UUID",
+    "EFI partition mounted",
+    "authorized key matches host id_ed25519.pub fingerprint",
+    "SSH password and keyboard-interactive authentication disabled",
+    "DNS and outbound HTTPS",
+    "direct bridged LAN SSH",
+    "persistent marker across cold shutdown/start",
+    "machine identity and SSH host key stable across cold boots",
+    "no failed systemd units reported",
+    "two clean shutdowns",
+    "offline qemu-img check: no errors",
+    "original testvm-debian-root.qcow2 SHA256 unchanged"
+  ],
+  "evidence": [
+    {"path": "out/portable-acceptance-boot1.txt", "sha256": "a623f0e781720e6206fa50632a8216879b9e590bc9b586f18b8e5d02b05efb74"},
+    {"path": "out/portable-acceptance-boot2.txt", "sha256": "50fa1ce0d172438144e6eb2b7003e33bf144209f568103b8e43b5f619a66d3c7"}
+  ],
+  "left_running": false,
+  "physical_partitions_modified": false,
+  "host_boot_policy_or_nvram_modified": false,
+  "native_m3_boot_validated": false,
+  "notes": [
+    "The older Asahi kernel remains an alternate menu entry, not a hardware qualification.",
+    "Image hash changes on subsequent guest writes; recorded hash identifies the tested stopped image.",
+    "Physical transfer must handle individual filesystem partitions; this image is not a host whole-disk replacement.",
+    "Apple boot stub, native kernel configuration/device tree, physical drivers and native boot remain separate."
+  ]
+}
