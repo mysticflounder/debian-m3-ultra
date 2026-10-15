@@ -1,4 +1,14 @@
-# Project status — 2026-10-13 UTC
+# Project status — 2026-10-14
+
+Latest boot transition: Adam reported successful interactive authorization.
+Read-only `bless --getBoot` confirms the verified Debian Boot System volume
+`disk7s2` is selected. The target-only `SystemVersion.plist` rename for paired
+Recovery is complete; `.IAPhysicalMedia` remains intact. No stage-two script,
+`bputil -nc`, `kmutil`, shutdown or native boot has been executed here. Next:
+operator-controlled shutdown/Startup Options into Debian Boot, stopping at the
+Recovery/installer screen before custom boot authorization. See the updated
+[handoff instructions](m1n1-native-loader.md#boot-stub-provisioning-checkpoint--2026-10-13).
+The staging checkpoint below records the earlier state, before authorization.
 
 Latest storage checkpoint: the portable Debian UEFI disk passes two HVF cold
 boots, and the staged `complete-candidate-YFOQRXya` passed its disposable
