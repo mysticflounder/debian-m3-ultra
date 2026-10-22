@@ -1,4 +1,8 @@
-# Project status — 2026-10-14
+# Project status — 2026-10-22
+
+Documentation reconciliation only: the last physical evidence is from
+2026-10-14. No later paired-Recovery entry or native boot has been reported;
+no disk, boot-setting or hardware checks were performed for this update.
 
 Latest boot transition: Adam reported successful interactive authorization.
 Read-only `bless --getBoot` confirms the verified Debian Boot System volume
@@ -8,6 +12,8 @@ Recovery is complete; `.IAPhysicalMedia` remains intact. No stage-two script,
 operator-controlled shutdown/Startup Options into Debian Boot, stopping at the
 Recovery/installer screen before custom boot authorization. See the updated
 [handoff instructions](m1n1-native-loader.md#boot-stub-provisioning-checkpoint--2026-10-13).
+The [authorization/handoff inventory](inventory/j575d-boot-handoff-2026-10-14.json)
+records the evidence and remaining boundary without changing the older staging receipt.
 The staging checkpoint below records the earlier state, before authorization.
 
 Latest storage checkpoint: the portable Debian UEFI disk passes two HVF cold
@@ -16,18 +22,22 @@ boots, and the staged `complete-candidate-YFOQRXya` passed its disposable
 The user then created the physical 8 GB APFS target; scoped provisioning added
 its System/Data/Preboot/Recovery roles. 139 staged records plus three admin records passed
 read-only remount audits for hashes, UUID substitution, ownership, modes,
-Recovery compression and required paths. The target currently uses
-1,468,968,960 bytes with 6,531,031,040 bytes free, and all four volumes are
-unmounted. Full personalization and runtime bootability remain unqualified.
+Recovery compression and required paths. At the 2026-10-13 staging checkpoint,
+the target used 1,468,968,960 bytes with 6,531,031,040 bytes free, and all four
+volumes were unmounted. These are not post-authorization measurements or
+current mount-state claims. Full personalization and paired-Recovery/native
+bootability remain unqualified.
 Offline follow-up stages four FUD inputs/aliases, inert installer templates,
 four installer-data exports and the unchanged unqualified diagnostic loader.
 The current twenty-module RAM-only diagnostic needs no additional Linux vendor firmware;
 firmware collection is an optional later-profile manifest, not a first-RAM
 gate. The modern host Bootability caller's Preboot framework/trust-cache paths
 are traced, and static eligibility comparator result 3 accepts the actual host
-`love` value; runtime selection, Recovery approval and personalization remain
-unqualified. No physical Linux root/ESP partitions, personalization or native
-boot have been performed. Backup and data cable are confirmed; DFU recovery is not
+`love` value; successful paired-Recovery entry, Recovery approval and full
+personalization remain unqualified despite the verified startup selection.
+No physical Linux root/ESP partitions or native boot have been performed.
+Full personalization has not been independently established. Backup and data
+cable are confirmed; DFU recovery is not
 exercised. See the
 [current provisioning checkpoint](m1n1-native-loader.md#boot-stub-provisioning-checkpoint--2026-10-13).
 The current bounded stub/FUD/adapter checkpoint has 43 passing tests. See the
@@ -54,11 +64,15 @@ Current physical boundary: the user-created target is `disk0s5`, store UUID
 Recovery are `F78D7027-7D09-4A12-8165-9B6374513A13` (`disk7s2`),
 `68A1164D-90DE-473B-A9D6-AA6658C60021` (`disk7s3`), and
 `846EEAE0-79F7-482D-B8D3-885EE745845C` (`disk7s4`). Physical staging and readonly
-remount audits passed; admin metadata staging also passed. This does not claim
-provisioning complete or bootable: personalization, `schg`, boot policy,
-startup selection, `bless`, `bputil`, `kmutil`, and native boot remain undone.
-The next boundary requires interactive Apple admin authorization, new boot
-environment/paired-Recovery selection, and separate native approval. The old
+remount audits passed; admin metadata staging also passed. Interactive `bless`
+success was subsequently reported and startup selection verified on October 14;
+the reversible paired-Recovery handoff rename also completed. Full
+personalization and paired-Recovery/native boot remain unqualified. The legacy
+`schg` workaround was not applied; `bputil -nc` and `kmutil configure-boot` were
+not run. Next is operator-controlled entry into Debian Boot's paired Recovery,
+stopping before policy/custom-boot changes; native execution requires separate
+approval. Device identifiers above are historical and must be re-resolved
+before any later disk action. The old
 `diskutil addPartition` command was already run by the user and is historical;
 do not rerun it.
 
@@ -68,10 +82,10 @@ suspicions, and advise Adam whether an issue should be opened. Security fixes
 and additional hardening are outside this project's implementation scope and
 are not boot-completion gates. Do not file issues or disclosures without approval.
 
-Current handoff: the SMP shared-memory fix (`d484a58`) and SMP index guards
+Earlier loader checkpoint: the SMP shared-memory fix (`d484a58`) and SMP index guards
 (`f51c869`) were pushed before this follow-up. Patch 0018 adds MMU/HV direct
 and proxy index validation, preserving canonical exit/unpin sentinels; it is
-committed locally as `14605bf`, not pushed. The twenty-one-patch cross-build
+committed as `14605bf` (not yet pushed at that checkpoint). The twenty-one-patch cross-build
 and linked-layout checks pass; prior sanitizer and mutation results remain
 recorded for the unchanged guards. The subsequent
 [CPU callback trace](m1n1-t6032-startup.md#captured-runtime-callback-path--2026-09-30)
@@ -1181,10 +1195,10 @@ This is not native boot qualification. The dedicated checkout is
 | Native console / interrupts / DMA | UART/AIC/PMGR descriptions checked; USB-extended 20-module closure builds/loads in RAM-only HVF; all four PCIe/DART status entries are enabled only in the host profile | Package/profile handoff, then qualify physical PCIe/DART layout, power/clocks, IRQ, DMA and driver binding on native hardware |
 | RAM-only Linux diagnostic boot | Final USB-extended initramfs HVF run loads all 20 modules, passes 30 markers and records 20 `/proc/modules` members; no native boot or hardware claim | Qualify physical backing/placement, bootargs, initrd window and kernel entry; verified backup/recovery and separate approval are required |
 | NVMe / USB / Ethernet | 0008 event mapping passes seven host tests, five DT tests and 16 targeted binding cases; 0009 USBCTL preservation passes five tests; experimental 0010 M3 role signals pass nine sanitizer tests and a fresh combined 20-module build, with 113 build/package checksums verified | No package installed or booted; PHY providers remain disabled and select-polling default-off. Hardware response decoding, selector freshness/cursor-reset/controller equivalence and IRQ mapping remain unqualified; FIFO fixture does not prove ACK/reinitialization ordering. CIO80 protocol and USB2 reset/sequencing/timing remain open; bounded descriptor mapping and register-value tests are not physical validation. Physical power/clock/IRQ/DMA and PMGR clock contracts still need qualification |
-| Recovery / boot-entry setup | Physical target roles and 142 staged/admin records passed readonly remount audits; all four volumes are unmounted; verified backup and USB-C data cable confirmed; DFU not exercised | Interactive Apple admin authorization, new boot-environment/paired-Recovery selection, then separately approved native actions |
+| Recovery / boot-entry setup | October 14: successful interactive `bless` reported, Debian Boot System UUID selected by read-only check, reversible Recovery handoff rename complete; backup and USB-C data cable previously confirmed; DFU not exercised | Operator-controlled Startup Options into Debian Boot; stop at Recovery/installer screen before policy/custom-boot confirmation; native actions remain separately approved |
 | Portable Debian UEFI disk | Two HVF cold boots, SSH/network and persistence checks passed | Preserve image; VM success does not qualify Apple physical boot |
-| Minimal Apple boot stub | Physical target has 142 staged/admin records; 1,468,968,960 bytes used and 6,531,031,040 free; root:wheel, modes, hashes, UUID substitution, compressed Recovery/resource fork, required paths and admin byte-equality audits passed; see [physical inventory](inventory/j575d-physical-boot-stub-2026-10-13.json) | Runtime Bootability, Apple authentication, personalization, `schg`, boot policy, startup selection and native boot remain unknown; do not call the target complete or bootable |
-| Offline stub extras / firmware inputs | Staged target includes the adapter outputs, extras and admin metadata; `stub_info.json` remains `complete: false` with personalization pending, and legacy `schg` compatibility was not applied | Perform interactive Apple authorization and approved personalization/boot-entry work; Linux runtime firmware remains later-profile work; no install or boot approval |
+| Minimal Apple boot stub | October 13 staging/admin audits passed for 142 records; October 14 authorization/startup selection and handoff recorded in the [handoff inventory](inventory/j575d-boot-handoff-2026-10-14.json); old space/mount measurements are historical | Full personalization, paired Recovery, custom-boot policy and native boot remain unqualified; legacy `schg` relevance remains unqualified; do not call the target complete or bootable |
+| Offline stub extras / firmware inputs | Adapter outputs, extras and admin metadata staged; last recorded `stub_info.json` is `complete: false`; authorization/handoff completed later, but full personalization is not established | Paired-Recovery entry, then separately reviewed policy/custom-boot work; Linux runtime firmware remains later-profile work; no native install or boot approval |
 | Linux storage / partitioning | User-created APFS container `F6577F6B-0EB5-4E21-9761-3EE18E4A2C29` on `disk7` has the System/Data/Preboot/Recovery roles; Linux root/ESP are outside this boot-stub target | The user-run `diskutil addPartition` command is historical; create Linux root/ESP only in a later, separately reviewed storage step |
 | MacBook project migration | Planned, not performed | Agree on transfer/verification plan; no deletion of Studio project data |
 | NFS follow-up | Deferred by Adam | Resume only when requested; historical VM NFS evidence is not native-driver validation |

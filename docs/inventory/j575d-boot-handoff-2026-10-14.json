@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-14",
+  "documentation_reviewed": "2026-10-22",
+  "scope": "Recorded authorization and reversible paired-Recovery handoff; not Recovery entry or native boot qualification",
+  "previous_inventory": "docs/inventory/j575d-physical-boot-stub-2026-10-13.json",
+  "artifact_directory": "scratch/boot-stub-provisioning/physical-target-LtWIwTof",
+  "target": {
+    "partition_uuid": "9D38BA18-6581-413B-815C-17D69DE44BDF",
+    "container_uuid": "F6577F6B-0EB5-4E21-9761-3EE18E4A2C29",
+    "volume_group_uuid": "DAD29544-6687-4B2C-B0E0-87A1D6A700B5",
+    "system_uuid": "F78D7027-7D09-4A12-8165-9B6374513A13",
+    "selected_device_at_verification": "/dev/disk7s2",
+    "device_identifiers_must_be_refreshed_before_actions": true
+  },
+  "recorded_transition": {
+    "interactive_bless_success_reported_by_user": true,
+    "read_only_getBoot_matched_target_system": true,
+    "system_version_renamed_to_disabled": true,
+    "system_version_sha256_preserved": "cb2bc86a40249e4a0b3541989c63f4ad0736fea436c3c366454fa808701becf5",
+    "iapm_preserved": true,
+    "stage2_executed": false,
+    "bputil_or_kmutil_executed": false,
+    "shutdown_or_native_boot_attempted": false
+  },
+  "evidence": [
+    {
+      "file": "post-bless-handoff.json",
+      "sha256": "2c830dc7b64e679fb9da50e43b6239c647d141edf37d2aefa4683d6c8d8afc34"
+    },
+    {
+      "file": "prepare-recovery-handoff.py",
+      "sha256": "0f8bb5510f9f0b61678e6124f65bead9a0be6bab0874e7aa5a4839fa79a2cc51"
+    }
+  ],
+  "remaining": [
+    "Operator-controlled Startup Options entry into Debian Boot, stopping at the Recovery/installer screen",
+    "Separately reviewed target policy and custom-boot configuration; no bputil -nc or kmutil configure-boot approval implied",
+    "Separately approved RAM-only native diagnostic and native CPU, memory, interrupt, DMA and I/O validation",
+    "Later separately reviewed Linux ESP/root installation and persistent native Debian qualification"
+  ],
+  "limitations": [
+    "This is historical evidence, not a fresh disk or boot-state inspection",
+    "No subsequent paired-Recovery entry or native boot has been reported as of the documentation review",
+    "Successful bless and selected startup volume do not establish full personalization, successful Recovery entry or native bootability",
+    "The October 13 space and all-volumes-unmounted measurements predate this transition",
+    "Do not rerun the one-shot helper, partitioning, staging or bless automatically"
+  ]
+}

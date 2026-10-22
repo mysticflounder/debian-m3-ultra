@@ -2,6 +2,10 @@
 
 ## Boot-stub provisioning checkpoint — 2026-10-13
 
+Documentation reviewed 2026-10-22; the last physical evidence remains the
+October 14 transition below. No subsequent paired-Recovery entry or native
+boot has been reported. This review did not inspect or modify the disks.
+
 Update — 2026-10-14: Adam reported successful interactive `bless --setBoot`.
 A fresh read-only `bless --getBoot` returned `/dev/disk7s2`, whose System UUID
 still matches `F78D7027-7D09-4A12-8165-9B6374513A13`. The independently reviewed
@@ -10,6 +14,8 @@ post-bless handoff then renamed only the target's pinned 607-byte
 and the existing `.IAPhysicalMedia`. This follows the pinned installer's
 `prepare_for_step2()` contract. Receipt:
 `scratch/boot-stub-provisioning/physical-target-LtWIwTof/post-bless-handoff.json`.
+The tracked [handoff inventory](inventory/j575d-boot-handoff-2026-10-14.json)
+pins that receipt and helper, separate from the October 13 staging inventory.
 Startup selection has now changed; historical statements below that it was
 unchanged describe the preceding staging checkpoint. This is not native boot
 qualification or proof that paired Recovery will start successfully.
@@ -24,10 +30,11 @@ would change the target policy and configure the native payload. Neither has
 been run here. Do not approve reinstall/erase or proceed through unexpected
 errors. Keep the MacBook available for communication while the Studio is off.
 
-Latest: [physical staging](#physical-staging-checkpoint--2026-10-13) now passes
-read-only persistence checks for 142 entries in the new internal boot container.
-Apple authorization/personalization and native boot remain untested. The
-disposable-image checkpoints below record the preceding preparation work.
+Earlier checkpoint: [physical staging](#physical-staging-checkpoint--2026-10-13)
+passed read-only persistence checks for 142 entries in the new internal boot
+container. This predates the October 14 authorization/handoff above; full
+personalization and paired-Recovery/native boot remain unqualified. The
+disposable-image checkpoints below record still earlier preparation work.
 
 The bounded candidate has now been assembled into the disposable APFS image
 `scratch/boot-stub-provisioning/complete-candidate-YFOQRXya`: 136 regular
@@ -343,6 +350,10 @@ Source pins and local artifact receipts are recorded in the
 [provisioning inventory](inventory/j575d-boot-stub-inputs-2026-10-13.json).
 
 ### Physical staging checkpoint — 2026-10-13
+
+Historical snapshot before the October 14 authorization/handoff above; the
+mount, space and not-yet-performed statements in this subsection apply only
+to this staging checkpoint, not the current handoff.
 
 The user created the physical APFS target: `disk0s5`, store UUID
 `9D38BA18-6581-413B-815C-17D69DE44BDF`, in container
