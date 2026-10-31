@@ -1,6 +1,12 @@
 # Project status — 2026-10-22
 
-Documentation reconciliation only: the last physical evidence is from
+M5 VM checkpoint: the MacBook's retained Debian disk was copied and its qcow2
+reference counts repaired on the copy. Generic-kernel HVF boots, key-only SSH,
+DNS/HTTPS, persistent identity/data, serial access, in-process reboot and clean
+stop/start passed. The working VM is running; use `scripts/m5-vm.sh`. See the
+[M5 acceptance results](persistent-test-vm.md#m5-max-working-vm-2026-10-22).
+
+M3 boot documentation reconciliation: the last physical evidence is from
 2026-10-14. No later paired-Recovery entry or native boot has been reported;
 no disk, boot-setting or hardware checks were performed for this update.
 
@@ -1185,7 +1191,7 @@ This is not native boot qualification. The dedicated checkout is
 | QEMU regression / promotion | Pending qualification | Complete required SMP/PSCI, reboot and save/restore checks on the replacement binary; retain rollback |
 | QEMU CPU feature coverage | Partial; separate from basic VM operation | Continue bounded feature probes where useful; do not treat optional gaps as bare-metal or VM blockers |
 | QEMU upstream submission | Not sent | After approval, refresh/check patches and submit separate qemu-devel email series |
-| M5 Max durable VM | Setup requested; completion unconfirmed | Confirm MacBook setup and capture persistence, SSH, console, networking and restart acceptance evidence |
+| M5 Max durable VM | Validated 2026-10-22; working copy running | `scripts/m5-vm.sh` controls the VM; persistence, key-only SSH, serial, DNS/HTTPS, reboot and clean stop/start pass; bridged LAN/NFS and CPU-feature qualification remain separate |
 | M3 m1n1 capacity / handoff / loader | Full32 comparison builds, inline candidate/official packet assembly, payload tests and handoff fixtures pass; no native boot | Qualify physical placement/source backing and Linux entry; security findings are report-only, not bring-up gates |
 | Exact T6032/J575d board DT | Disabled USB-common candidate integrates 822 records (750 generic plus 72 USB-only); follow-up adds six separate USB2 event windows and passes five DT tests/round-trip and 16 targeted binding cases | Triage 80 existing errors/86 unmatched compatibles (historical whole-board results); CIO80, USB2 and select IRQ remain open; no boot approval |
 | T6032 SoC identity / CPU startup | Cached 32-CPU preflight, packed masks, caller and readiness guards adapted; source-extracted host suites pass | Preserve full comparison regressions; qualify cold reset, release sequencing and RVBAR only after safety gates |

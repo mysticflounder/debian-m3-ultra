@@ -85,7 +85,7 @@ apt-get install -y --no-install-recommends debootstrap e2fsprogs >/dev/null
 echo "==> debootstrap $SUITE"
 rm -rf --one-file-system -- "$R"
 debootstrap --arch=arm64 --variant=minbase \
-  --include=systemd-sysv,udev,initramfs-tools,iproute2,kmod,pciutils,less,nano,ca-certificates \
+  --include=systemd-sysv,udev,initramfs-tools,iproute2,kmod,pciutils,less,vim,unattended-upgrades,ca-certificates \
   "$SUITE" "$R" http://deb.debian.org/debian
 
 echo "==> add bananas archive to the rootfs"
@@ -113,8 +113,9 @@ chroot "$R" env DEBIAN_FRONTEND=noninteractive \
 
 echo "==> provision persistent headless test-VM services"
 install -m 0755 /scripts/test-vm-provision.sh "$R/tmp/test-vm-provision.sh"
+install -m 0755 /scripts/setup-mysticflounder-repo.sh "$R/tmp/setup-mysticflounder-repo.sh"
 chroot "$R" env TEST_VM_BUILD_CHROOT=1 /tmp/test-vm-provision.sh
-rm -f "$R/tmp/test-vm-provision.sh"
+rm -f "$R/tmp/test-vm-provision.sh" "$R/tmp/setup-mysticflounder-repo.sh"
 
 echo "==> configure login on the serial console"
 chroot "$R" bash -c 'echo "root:root" | chpasswd'

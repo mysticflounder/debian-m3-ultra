@@ -342,6 +342,79 @@ the record/verify acceptance checks. No physical partitions were created.
 Transferring the individual filesystems, Apple boot-stub provisioning, native
 drivers and physical M3 Ultra boot validation remain separate work.
 
+## M5 Max working VM (2026-10-22)
+
+The MacBook's retained `out/m5-vm/debian-arm64.qcow2` contains Debian forky/sid
+and matches the retained generic `7.1.13+deb14-arm64` kernel/initrd. Its qcow2
+header was dirty with lazy reference counts enabled, and the initial read-only
+check reported 2,392 errors. An independent APFS copy was created at
+`out/m5-working/debian-arm64.qcow2`. QEMU's reference-count repair fixed 1,196
+inconsistencies on that copy; subsequent offline checks reported zero errors.
+The retained original's SHA-256 was verified unchanged. QEMU documents this
+repair behavior under [qemu-img check and lazy reference counts](https://www.qemu.org/docs/master/tools/qemu-img.html).
+
+The working VM uses Homebrew QEMU 11.1.1, HVF, four vCPUs, 4 GB RAM and a
+120 GiB standalone writable disk. The host currently runs macOS 27.0.1
+(26A434). It boots the generic kernel directly; the separately prepared M3
+UEFI image is not present on this MacBook. Networking uses QEMU user networking
+with management SSH bound to `127.0.0.1:22026`.
+
+```bash
+./scripts/m5-vm.sh start     # detached; waits for SSH readiness
+./scripts/m5-vm.sh ssh       # root, using the existing authorized host key
+./scripts/m5-vm.sh status
+./scripts/m5-vm.sh console   # press Enter; Ctrl-C disconnects
+./scripts/m5-vm.sh stop      # clean guest poweroff
+```
+
+`run` provides a foreground console instead of a detached VM. `info` prints
+the configuration. `SMP`, `MEM`, `M5_VM_SSH_PORT`, `QEMU` and `QEMU_IMG` can
+override launch defaults; use the same port setting for subsequent commands.
+The launcher checks disk integrity before starting and refuses concurrent
+disk use through QEMU's disk and PID-file locks. Serial output appends to
+`out/m5-working/console.log`.
+
+Acceptance passed key-authenticated SSH, disabled password/keyboard-interactive
+authentication, four online CPUs, writable root, DNS, outbound HTTPS, serial
+command execution, a clean shutdown/cold start and an in-process guest reboot.
+The saved marker, machine ID and SSH host-key fingerprint survived the cold
+boot. No failed systemd services were reported. The launcher also passed clean
+stop/start and repeated-start checks. The VM was left running. The existing
+guest VNC service remains on guest loopback port 5901; desktop access was not
+tested. Bridged LAN/NFS and the full M5 CPU-feature contract remain unqualified.
+
+Receipts are under `out/m5-working/`: `image-repair.json`, `image-check*.json`,
+`original-image.sha256`, `acceptance-boot{1,2}.txt`, `reboot-acceptance.txt` and
+`console.log`. The tracked [M5 VM inventory](inventory/m5-vm-2026-10-22.json)
+records the configuration and acceptance scope.
+
+### M5 package and NFS setup (2026-10-31)
+
+The M5 VM has Vim, unattended upgrades and `ferm-nftables`; nano is removed.
+APT update and upgrade completed, and an unattended-upgrade dry run accepted
+the Debian Sid, Bananas and mysticflounder origins. The signed mysticflounder
+Sid repository currently has an empty ARM64 index. A narrowly pinned Trixie
+fallback permits only `ferm-nftables`: version `2.9~1785110799` declares
+`Architecture: all` and passed install, parse, nftables apply and flush tests
+in a disposable ARM64 VM. The working VM has the package installed but its
+firewall service is not enabled. The rootfs and builder provisioning paths
+install these defaults and configure the signed repository.
+
+The guest's `/opt/nfs` is configured as a systemd automount for the Mac's
+`10.0.0.229:/tank/nfs` export. NFS over QEMU user networking reached the
+server but the mount was rejected. A LAN bridge requires macOS administrator
+authorization; run `./scripts/m5-vm-enable-nfs.sh` in a terminal to authorize
+vmnet, restart the VM with a bridged NIC and verify the mount. The helper
+enables the bridge for future starts only after the mount passes. This bridge
+and mount have not yet been validated on this host.
+
+The launcher loads its kernel and initrd from `out/m5-vm`, outside the guest
+disk. APT can install newer guest kernels, but it does not update those host
+files automatically. On 2026-10-31 the guest had `7.2.14+deb14-arm64`
+installed while the running and launcher-selected kernel was
+`7.1.13+deb14-arm64`; switching the boot files requires a separate verified
+update.
+
 ## Later work
 
 - P1 continues M3 Ultra CPU-model correctness and fork maintenance using the

@@ -184,6 +184,14 @@ networking, host SSH, and the NFS client intact. Asahi remains necessary only
 for the separately deferred bare-metal Apple-machine path, not for QEMU's
 standardized `virt` board.
 
+### M5 Max VM
+
+The MacBook's existing Debian image was recovered into a separate working copy
+and validated on 2026-10-22. Use `./scripts/m5-vm.sh start`,
+`./scripts/m5-vm.sh ssh`, and `./scripts/m5-vm.sh stop` for daily operation;
+`./scripts/m5-vm.sh console` attaches to the serial console. See the
+[M5 setup and acceptance results](docs/persistent-test-vm.md#m5-max-working-vm-2026-10-22).
+
 ### CPU passthrough evidence
 
 `scripts/cpu-probe-host.sh` compiles and runs a read-only

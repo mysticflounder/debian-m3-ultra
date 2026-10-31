@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-22",
+  "status": "validated_in_qemu_virt_on_m5_max",
+  "host_macos": "27.0.1 (26A434)",
+  "qemu": "Homebrew 11.1.1",
+  "accelerator": "hvf",
+  "cpu": "host",
+  "vcpus": 4,
+  "memory": "4G",
+  "distribution": "Debian forky/sid",
+  "kernel": "7.1.13+deb14-arm64",
+  "boot_method": "direct kernel/initrd",
+  "image": "out/m5-working/debian-arm64.qcow2",
+  "virtual_bytes": 128849018880,
+  "original_image": "out/m5-vm/debian-arm64.qcow2",
+  "original_image_sha256_verified_unchanged": true,
+  "copy_repair": {
+    "method": "qemu-img check -r all",
+    "inconsistencies_fixed": 1196,
+    "subsequent_offline_check_errors": 0
+  },
+  "ssh": "root@127.0.0.1:22026",
+  "launcher": "scripts/m5-vm.sh",
+  "checks_passed": [
+    "four online vCPUs",
+    "writable root filesystem",
+    "existing host key accepted over SSH",
+    "password and keyboard-interactive authentication disabled",
+    "DNS and outbound HTTPS",
+    "persistent marker across clean shutdown/cold start",
+    "stable machine ID and SSH host key across cold start",
+    "interactive serial command execution",
+    "guest reboot with unchanged QEMU PID and changed boot ID",
+    "no failed systemd units",
+    "launcher clean stop/start",
+    "repeated start preserves the running VM"
+  ],
+  "evidence_directory": "out/m5-working",
+  "left_running": true,
+  "remaining_unqualified": [
+    "bridged LAN and NFS",
+    "VNC desktop interaction",
+    "complete M5 CPU-feature contract"
+  ]
+}

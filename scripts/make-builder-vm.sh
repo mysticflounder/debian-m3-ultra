@@ -25,7 +25,7 @@ apt-get install -y --no-install-recommends debootstrap e2fsprogs >/dev/null
 echo "==> debootstrap $SUITE"
 rm -rf "$R"
 debootstrap --arch=arm64 --variant=minbase \
-  --include=systemd-sysv,udev,initramfs-tools,iproute2,kmod,ca-certificates,less,nano,time \
+  --include=systemd-sysv,udev,initramfs-tools,iproute2,kmod,ca-certificates,curl,gpg,less,vim,unattended-upgrades,time \
   "$SUITE" "$R" http://deb.debian.org/debian
 
 echo "==> apt config in the rootfs"
@@ -55,6 +55,27 @@ mount -t devpts devpts "$R/dev/pts"
 
 echo "==> install kernel and build dependencies (this is the slow part)"
 chroot "$R" apt-get update -qq
+install -m 0755 /scripts/setup-mysticflounder-repo.sh "$R/tmp/setup-mysticflounder-repo.sh"
+chroot "$R" /tmp/setup-mysticflounder-repo.sh
+rm -f "$R/tmp/setup-mysticflounder-repo.sh"
+chroot "$R" apt-get update -qq
+if chroot "$R" apt-cache show ferm-nftables >/dev/null 2>&1; then
+    chroot "$R" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ferm-nftables
+else
+    echo "ferm-nftables is not available for this suite"
+fi
+if [ "$SUITE" = sid ] || [ "$SUITE" = unstable ]; then
+    cat > "$R/etc/apt/apt.conf.d/20auto-upgrades" <<'EOF'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+EOF
+    cat > "$R/etc/apt/apt.conf.d/52local-unattended-origins" <<'EOF'
+Unattended-Upgrade::Origins-Pattern:: "o=Debian,a=unstable,n=sid";
+Unattended-Upgrade::Origins-Pattern:: "o=Debian Bananas,a=unstable-bananas,n=sid-bananas";
+Unattended-Upgrade::Origins-Pattern:: "o=mysticflounder,a=unstable,n=sid";
+Unattended-Upgrade::Origins-Pattern:: "o=mysticflounder,n=trixie";
+EOF
+fi
 chroot "$R" env DEBIAN_FRONTEND=noninteractive apt-get install -y \
     --no-install-recommends linux-image-asahi
 chroot "$R" env DEBIAN_FRONTEND=noninteractive apt-get install -y \

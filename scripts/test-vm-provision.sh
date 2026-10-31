@@ -77,13 +77,44 @@ apt-get update
 apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
+    gpg \
     iproute2 \
     iputils-ping \
     netcat-openbsd \
     netbase \
     nfs-common \
     openssh-server \
-    systemd-resolved
+    systemd-resolved \
+    unattended-upgrades \
+    vim \
+    nano-
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+"$SCRIPT_DIR/setup-mysticflounder-repo.sh"
+apt-get update
+if apt-cache show ferm-nftables >/dev/null 2>&1; then
+    apt-get install -y --no-install-recommends ferm-nftables
+else
+    echo "ferm-nftables is not available for this suite"
+fi
+
+echo "==> enable unattended package updates"
+cat > /etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+EOF
+# The sid suite has codename sid, even when /etc/debian_version reports a
+# different development release.  Include the explicitly configured Bananas
+# archive when present as well.
+if apt-cache policy | grep -q 'a=unstable,n=sid,'; then
+    cat > /etc/apt/apt.conf.d/52local-unattended-origins <<'EOF'
+Unattended-Upgrade::Origins-Pattern:: "o=Debian,a=unstable,n=sid";
+Unattended-Upgrade::Origins-Pattern:: "o=Debian Bananas,a=unstable-bananas,n=sid-bananas";
+Unattended-Upgrade::Origins-Pattern:: "o=mysticflounder,a=unstable,n=sid";
+Unattended-Upgrade::Origins-Pattern:: "o=mysticflounder,n=trixie";
+EOF
+fi
+systemctl enable apt-daily.timer apt-daily-upgrade.timer unattended-upgrades.service
 
 echo "==> configure persistent DNS and SSH"
 systemctl enable systemd-resolved.service ssh.service
@@ -101,6 +132,7 @@ EOF
 
 ssh-keygen -A
 if systemd_is_running; then
+    systemctl start apt-daily.timer apt-daily-upgrade.timer
     systemctl restart systemd-resolved.service
     systemctl restart systemd-networkd.service
     systemctl restart ssh.service
