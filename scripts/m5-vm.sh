@@ -7,6 +7,8 @@ HERE="$(cd "$(dirname "$0")/.." && pwd -P)"
 STATE="$HERE/out/m5-working"
 BOOT="$HERE/out/m5-vm"
 DISK="$STATE/debian-arm64.qcow2"
+HOME_DISK="$STATE/home.qcow2"
+HOME_REQUIRED="$STATE/home-disk-required"
 PIDFILE="$STATE/qemu.pid"
 CONSOLE="$STATE/console.sock"
 QEMU="${QEMU:-/opt/homebrew/bin/qemu-system-aarch64}"
@@ -78,10 +80,17 @@ for input in "$DISK" "$KERNEL" "$INITRD"; do
 done
 [ -x "$QEMU" ] && [ -x "$QEMU_IMG" ] || fail "QEMU executables are unavailable"
 case "$STATE" in *','*|*'\'*) fail "project path contains unsupported QEMU separators" ;; esac
+if [ -e "$HOME_REQUIRED" ] && [ ! -f "$HOME_DISK" ]; then
+    fail "required home disk is missing: $HOME_DISK"
+fi
+if [ -e "$HOME_DISK" ] || [ -L "$HOME_DISK" ]; then
+    [ -f "$HOME_DISK" ] && [ ! -L "$HOME_DISK" ] || fail "home disk must be a regular non-symlink file: $HOME_DISK"
+fi
 
 if [ "$COMMAND" = info ]; then
     echo "Debian M5: HVF, $SMP vCPUs, $MEM RAM, generic kernel $KVER"
     echo "disk: $DISK"
+    [ -f "$HOME_DISK" ] && echo "home disk: $HOME_DISK"
     echo "SSH: $0 ssh"
     echo "console log: $STATE/console.log"
     if running; then
@@ -97,13 +106,24 @@ if running; then
 fi
 "$QEMU_IMG" check -q "$DISK" > "$STATE/disk-check.log" 2>&1 ||
     fail "disk check failed; inspect $STATE/disk-check.log"
+if [ -f "$HOME_DISK" ]; then
+    "$QEMU_IMG" check -q "$HOME_DISK" > "$STATE/home-disk-check.log" 2>&1 ||
+        fail "home disk check failed; inspect $STATE/home-disk-check.log"
+fi
 
 ARGS=(
     -name debian-m5 -machine virt,highmem=on -accel hvf -cpu host
     -smp "$SMP" -m "$MEM"
     -kernel "$KERNEL" -initrd "$INITRD"
     -append "root=/dev/vda rootfstype=ext4 rw console=ttyAMA0"
-    -drive "if=virtio,file=$DISK,format=qcow2,cache=none"
+    -drive "if=none,id=vmroot,file=$DISK,format=qcow2,cache=none"
+    -device virtio-blk-pci,drive=vmroot,serial=m5-root
+)
+if [ -f "$HOME_DISK" ]; then
+    ARGS+=( -drive "if=none,id=vmhome,file=$HOME_DISK,format=qcow2,cache=none"
+            -device virtio-blk-pci,drive=vmhome,serial=m5-home )
+fi
+ARGS+=(
     -netdev "user,id=mgmt,ipv4=on,ipv6=on,hostfwd=tcp:127.0.0.1:$SSH_PORT-:22"
     -device virtio-net-pci,netdev=mgmt,mac=52:54:00:15:00:61
     -display none -monitor none -pidfile "$PIDFILE"

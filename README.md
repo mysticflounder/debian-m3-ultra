@@ -191,6 +191,8 @@ and validated on 2026-10-22. Use `./scripts/m5-vm.sh start`,
 `./scripts/m5-vm.sh ssh`, and `./scripts/m5-vm.sh stop` for daily operation;
 `./scripts/m5-vm.sh console` attaches to the serial console. See the
 [M5 setup and acceptance results](docs/persistent-test-vm.md#m5-max-working-vm-2026-10-22).
+Its persistent `/home` is a separate `out/m5-working/home.qcow2` disk; retain
+both VM disks together when backing up or moving this VM.
 
 ### CPU passthrough evidence
 

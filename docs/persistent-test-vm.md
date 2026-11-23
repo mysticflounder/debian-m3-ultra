@@ -415,6 +415,30 @@ installed while the running and launcher-selected kernel was
 `7.1.13+deb14-arm64`; switching the boot files requires a separate verified
 update.
 
+### M5 persistent home disk (2026-11-23)
+
+The durable M5 VM has a separate sparse 1 TiB qcow2 disk at
+`out/m5-working/home.qcow2`. It contains a GPT partition with an ext4
+filesystem labeled `m5home`, mounted at `/home` by UUID
+`2cd0545d-2195-4236-9a4c-de04a070e9cb`. The launcher attaches it as the
+`m5-home` virtio disk and checks it before boot. The local
+`out/m5-working/home-disk-required` marker makes startup fail if the disk is
+missing; `/etc/fstab` also requires the filesystem at boot. Existing VM copies
+without the home disk and marker keep their previous single-disk behavior.
+
+The pre-existing `/home` was copied with ownership, hard links, ACLs and
+extended attributes preserved, and verified using an rsync checksum dry run
+while the guest VNC service was stopped. The original files remain under the
+root filesystem's mount point. A clean stop/start confirmed the UUID mount,
+account directory permissions, a persistent test file, and the VNC service.
+`df` reported approximately 1007 GiB available immediately after migration;
+the qcow2 image grows on demand and ultimately consumes host storage as used.
+
+Back up or transfer both `debian-arm64.qcow2` and `home.qcow2` together, with
+the VM shut down. Include `home-disk-required`, the matching kernel/initrd and
+launcher when moving the VM. The older standalone M3 Max transfer image is a
+separate VM and does not include this additional disk.
+
 ## Later work
 
 - P1 continues M3 Ultra CPU-model correctness and fork maintenance using the
